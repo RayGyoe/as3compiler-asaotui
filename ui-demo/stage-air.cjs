@@ -64,9 +64,8 @@ function walk(dir, out) {
   for (const e of entries) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) walk(p, out);
-    // `.as` only: `UiNode.as.pre-widget` is a refactor backup and
-    // `NativeLayoutEngine.as.doc` is documentation for a compiler-emitted
-    // built-in, so neither is a compilation unit.
+    // `.as` only: `NativeLayoutEngine.as.doc` is documentation for a
+    // compiler-emitted built-in, so it is not a compilation unit.
     else if (e.name.endsWith('.as')) out.push(p);
   }
   return out;

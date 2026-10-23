@@ -105,5 +105,3 @@ icudtl.dat
 /probes/**/*.samples.txt
 /probes/vec-vs-arr/vec-aot.txt
 /probes/vec-vs-arr/vec-air.txt
-# UiNode.as 的陈旧手工备份（2026-10-22 控件重构前留下的，无脚本会读它）
-*.pre-widget
