@@ -264,7 +264,7 @@
 
 ---
 
-### G14 —— `Array` 落进 `Object` 槽**不装箱**（Number/String/Boolean 都装）：`is Array` 恒假、`as Array` 得 null、`.length` 得 undefined、**`is <userClass>` 直接 SIGSEGV**
+### G14 —— `Array` 落进 `Object` 槽**不装箱**（Number/String/Boolean 都装）：`is Array` 恒假、`as Array` 得 null、`.length` 得 undefined、**`is <userClass>` 直接 SIGSEGV**（✅ **阶段二百五十三已修**）
 
 > **一句话**：AS3 里 `Number`/`String`/`Boolean`/`Array` 都可以是一个 `Object` 变量里的值。我们的 AOT 把**前三个装箱**（`as_number_new`/`as_string_new`/`as_boolean_new`），却把 **`Array` 原样裸指针 cast 成 `Object*`**（`(Object*)(as_array_make(...))`）。于是凡是要问「这个值是什么」的操作，在 Array 上全错——最重的一条是 **`as_is(<数组指针>, &SomeClass_vt)` 把数组头第一个字当成 vtable 去走，进程 `0xC0000005`**。
 >
