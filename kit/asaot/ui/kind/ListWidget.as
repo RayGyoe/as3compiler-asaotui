@@ -55,8 +55,9 @@ package asaot.ui.kind
             var sv:Number = l.selectedIndex;
             if (l.binding != null)
             {
-                // `*`, NOT `Object`: Number() is unaffected by the G9 bug (fixed, 阶段二四八);
-                // `*` is kept for the boxing cost and the G14 Array-identity hazard.
+                // `*`, NOT `Object`: an `Object` slot would box the value once per read.
+                // Number() never depended on the G9 fix (阶段二四八) and the G14 Array-identity
+                // hazard (阶段二百五十三) is closed too, so `*` is now purely the cheaper default.
                 var bv:* = l.binding.get();
                 sv = bv == null ? 0 : Number(bv);
             }

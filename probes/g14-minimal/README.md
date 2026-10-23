@@ -1,5 +1,9 @@
 # `probes/g14-minimal/` — the handoff package for G14
 
+> **✅ The gap is FIXED** (as3compiler 阶段二百五十三, `54bda6d`, v0.4.217): `run.cjs` now exits **1**
+> ("already fixed", listing the three registry spots to update), not 0. This directory stays as the
+> handoff package and as the reverse tripwire -- if it ever exits 0 again, G14 is back.
+
 Smallest program that shows the `Object`-slot Array bug, run on **both** runtimes:
 
 ```

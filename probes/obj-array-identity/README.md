@@ -1,5 +1,12 @@
 # `probes/obj-array-identity/` — does an `Array` in an `Object`-typed slot keep its identity?
 
+> **✅ FIXED (as3compiler 阶段二百五十三, `54bda6d`, v0.4.217).** This probe is now a tripwire on
+> the fix: the AOT deviation set is EMPTY (it held `1, 3, 12, 15, 16, 19, 21, 26` before, five of
+> them `0xC0000005`). The text below describes the BEFORE state and is kept as the record. For what
+> the fix unlocks for the UI library -- and the workaround it let us revert -- see
+> [`reviews/revisit-g14-unlocks-2026-10-23.md`](../../reviews/revisit-g14-unlocks-2026-10-23.md)
+> and the probe [`probes/style-fromany/`](../style-fromany/).
+
 **Yes in AIR. No in our AOT — and four of the wrong answers are `0xC0000005`.**
 
 One command, both runtimes:
@@ -91,3 +98,16 @@ every `is` in the library.
 red for each — flip one AS3 rule (the AIR/reference check must fire), drop a documented
 deviation, invent one, truncate the case list so ids 16/19/21 never run. All four go red, and
 `expect.json` is restored **byte-identically** (verified by hash, printed in the output).
+
+## Status update (2026-10-23): FIXED upstream
+
+The deviation set documented above is **historical**. The compiler session fixed the
+gap in 阶段二百五十三 (`54bda6d`, `fix(g14): Object 槽装 Array 的身份识别与崩溃`) by
+emitting the array test for `Object` slots and guarding `as_is`/`as_v_is_inst` — i.e.
+at the boxing decision, exactly where this probe said the fix belongs.
+
+Re-run (`node run.cjs`) now reports **AOT 26/26 with the AIR rules, 0 deviations,
+0 crashes**; `expect.json`'s deviation set (the thing `tools/gates.cjs` §9 checks) is
+empty. The probe is kept exactly as it was for that reason: it is the regression pin
+that says the gap has not come back. See also `../g14-minimal/run.cjs` (exit 0 =
+reproduced, 1 = fixed) and `../../reviews/handoff-g14-to-compiler-2026-10-23.md`.

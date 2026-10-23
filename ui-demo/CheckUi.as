@@ -183,21 +183,27 @@ checkRect("left rect", app.findByKey("left"), 20, 90, 200, 100);
 checkRect("right rect", app.findByKey("right"), 230, 90, 310, 100);
 
 // ---- 8. an Array-valued `background` must not kill the process -------------
-// TWO subjects, one root cause. (a) The crash assertion is the SEQUENCE: an Array
-// in an Object-typed parameter used to be a bare pointer, so `is Fill` inside
-// Fill.fromAny read the array header as a vtable and took the process down
-// (0xC0000005, compiler-gaps.md G14, probe case 26) -- and a dead process prints
-// nothing, so reaching the checks below IS the result. What we then pin is the
-// observable value: a stop list means a gradient, gradients are deferred, so the
-// answer is "no fill" -- which is also AIR's answer today (its own `fromAny`
-// returns null for an Array), i.e. alignment, not invention. (b) Fixed in
-// as3compiler 阶段二百五十三, the slot's identity is now answerable too: the
-// `arraySlot` checks at the end of this section ask the questions that used to be
-// either a compile-time lie (`is Array` folded to false) or a crash (`is Fill`).
+// (a) The crash assertion is the SEQUENCE: an Array in an Object-typed parameter
+// used to be a bare pointer, so `is Fill` inside Fill.fromAny read the array
+// header as a vtable and took the process down (0xC0000005, compiler-gaps.md G14,
+// probe case 26) -- and a dead process prints nothing, so reaching the checks
+// below IS the result. What we then pin is the observable value: a stop list means
+// a gradient, gradients are deferred, so the answer is "no fill" -- which is also
+// AIR's answer today, i.e. alignment, not invention. (b) Since G14 was fixed in
+// as3compiler 阶段二百五十三 the workaround is gone: this used to be branched at the
+// CALL SITE (`o.background is Array ? Fill.fromArray(...) : Fill.fromAny(...)`)
+// and the branch has been folded back into `Fill.fromAny` itself. The `arraySlot`
+// checks at the end of this section could not even be written before -- they ask
+// the questions that used to be a compile-time lie (`is Array` folded to false) or
+// a crash (`is Fill`).
 var arrBg:StyleRefinement = StyleRefinement.from({ background: [255, 0, 0] });
 check("array background yields no fill (deferred gradient)", arrBg.background == null,
     "argb=" + (arrBg.background == null ? "null" : String(arrBg.background.argb)));
-// The other side of the nail: the scalar path must be untouched by the new branch.
+// The revert is inside fromAny, so ask fromAny DIRECTLY as well: a call somewhere
+// else must not be able to reach a solid fill by forgetting to branch.
+check("Fill.fromAny(Array) itself yields no fill", Fill.fromAny([255, 0, 0]) == null,
+    "fill=" + (Fill.fromAny([255, 0, 0]) == null ? "null" : "solid"));
+// The other side of the nail: the scalar path must be untouched by the revert.
 var scalarBg:StyleRefinement = StyleRefinement.from({ background: 0x2563EB });
 check("scalar background still yields an opaque solid fill",
     scalarBg.background != null && scalarBg.background.argb == 0xFF2563EB,

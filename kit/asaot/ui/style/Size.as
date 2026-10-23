@@ -4,12 +4,19 @@
 // (gapX = width, gapY = height). `null` component == unset (refine leaves the
 // parent's component alone).
 //
-// COMPILER GAP (asaotui/compiler-gaps.md, "Object-parameter array boxing"): an
-// AS3 Array passed as an `Object`-typed parameter loses its Array identity in our
-// AOT -- `o is Array` becomes false and a subsequent `o is <userClass>` can even
-// SIGSEGV. So `fromAny` is only ever called with a SCALAR (Number or Length); the
-// array form goes through `fromArray(a:Array)` with an `as Array` cast at the call
-// site, which the AOT does preserve.
+// `fromAny` IS TOTAL: it accepts every documented shape (a scalar Length/Number, or
+// the [w] / [w, h] array) and dispatches internally. That used to be impossible --
+// see the note below -- so callers had to branch on `is Array` and route the array
+// form to `fromArray` themselves.
+//
+// HISTORY (asaotui/compiler-gaps.md G14, "Array in an Object slot"): until
+// 2026-10-23 an AS3 Array handed to an `Object`-typed parameter lost its Array
+// identity in our AOT -- `o is Array` folded to FALSE and a following
+// `o is <userClass>` read the array header as a vtable (0xC0000005). That is why
+// this split existed. G14 is FIXED (compiler 阶段二百五十三) and measured fixed on
+// both runtimes by `probes/style-fromany/`, so the dispatch moved back in here.
+// `fromArray(a:Array)` is kept as the typed entry point (it keeps `a.length`/`a[0]`
+// statically typed) and is what `fromAny` delegates to.
 package asaot.ui.style
 {
     public class Size
@@ -34,9 +41,11 @@ package asaot.ui.style
         }
 
         // Scalar form: a bare Length sets both axes (a square); a Number is px.
+        // Array form: dispatched here, so this accepts EVERY documented shape.
         public static function fromAny(o:Object):Size
         {
             if (o == null) return null;
+            if (o is Array) return fromArray(o as Array);
             var w:Length = lenOf(o);
             if (w != null) return new Size(w, w);
             return null;

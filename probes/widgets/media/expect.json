@@ -1,0 +1,44 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/media/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "root": "column, align-items flex-start, padding 20, gap 10, size [320,260]. Root rect (0,0,320,260); content starts at (20,20).",
+    "img1": "First child, explicit size [80,40] -> (20,20,80,40). An 8x8 solid #22AA55 source with scaleMode 'stretch': the whole 80x40 is the source colour.",
+    "img2": "Second child, y = 20 + 40 + 10 = 70, size [80,40] -> (20,70,80,40). scaleMode 'none' keeps the 8x8 source at 1:1, centred: x = 20 + (80-8)/2 = 56, y = 70 + (40-8)/2 = 86 -> the source covers (56,86)-(63,93).",
+    "sv": "Third child, y = 70 + 40 + 10 = 120, size [280,60] -> (20,120,280,60). The window is therefore rows 120..179.",
+    "img3": "Fourth child, y = 120 + 60 + 10 = 190, size [80,40] -> (20,190,80,40). scaleMode is LEFT OUT, so the default 'fit' applies: min(80/8, 40/8) = 5, i.e. a 40x40 bitmap centred in the node -- x = 20 + (80-40)/2 = 40, y = 190 + (40-40)/2 = 190 -> the source covers (40,190)-(79,229).",
+    "bands": "Three children of the viewport, each 280x40 with an explicit height, laid out in the viewport's default column: b1 (20,120,280,40), b2 (20,160,280,40), b3 (20,200,280,40). These are the LAYOUT rects and they do NOT move when the view scrolls -- scrollRect slides pixels, not the solve. Content height = 120 > 60, so maxOffsetY = 60.",
+    "points": {
+      "img1_stretched": "Anywhere inside img1's rect is the source colour. (60,40) is its centre = #22AA55.",
+      "img2_source": "The centred 8x8 source of img2 spans (56,86)-(63,93), so its centre (60,90) = #22AA55.",
+      "img2_padding": "(30,75) is inside img2's rect but outside the 1:1 source (which starts at x=56), so it shows the root background #FFFFFF. This is the pixel that proves 'none' really does not scale.",
+      "sv_band1": "offset 0: rows 120..159 are b1 = #EE1111. Sample (160,140), clear of the viewport's edges.",
+      "sv_band2": "rows 160..179 are b2's first 20 rows = #11EE11. Sample (160,170).",
+      "gap_above": "The 10px gap between img2 (ends y=110) and the viewport (starts y=120) is #FFFFFF; sampled at (160,115).",
+      "img3_fit_fill": "The fitted 40x40 bitmap of img3 covers (40,190)-(79,229), so its centre (60,210) is the source colour.",
+      "img3_fit_letterbox": "(30,210) is inside img3's node but LEFT of the fitted bitmap (which starts at x=40), so it is the root background #FFFFFF. This is the pixel that proves the default really is 'fit' (contain) and not 'stretch'."
+    },
+    "behaviour": "Steady-state layout solves do not increase after the settle capture. Then, in the program: contentH/maxOffsetY are 120/60 (a viewport that shrank its content would report 60/0); one wheel notch through Stage.dispatchWheel slides exactly wheelStep = 24px; the band that slid above the window does NOT paint over the gap above it (the clip); an over-large offset clamps to 60; and swapping img1's scaleMode to 'none' re-arranges the bitmap."
+  },
+  "w": 320,
+  "h": 260,
+  "rects": {
+    "root": [0, 0, 320, 260],
+    "img1": [20, 20, 80, 40],
+    "img2": [20, 70, 80, 40],
+    "sv": [20, 120, 280, 60],
+    "b1": [20, 120, 280, 40],
+    "b2": [20, 160, 280, 40],
+    "b3": [20, 200, 280, 40],
+    "img3": [20, 190, 80, 40]
+  },
+  "points": [
+    { "x": 60, "y": 40, "rgb": "#22AA55" },
+    { "x": 60, "y": 90, "rgb": "#22AA55" },
+    { "x": 30, "y": 75, "rgb": "#FFFFFF" },
+    { "x": 160, "y": 140, "rgb": "#EE1111" },
+    { "x": 160, "y": 170, "rgb": "#11EE11" },
+    { "x": 160, "y": 115, "rgb": "#FFFFFF" },
+    { "x": 60, "y": 210, "rgb": "#22AA55" },
+    { "x": 30, "y": 210, "rgb": "#FFFFFF" }
+  ]
+}

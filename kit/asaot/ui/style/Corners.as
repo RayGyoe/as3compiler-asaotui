@@ -25,9 +25,11 @@ package asaot.ui.style
             return new Corners(tl, tr, br, bl);
         }
 
+        // Total: the array form is dispatched here (see Size's header).
         public static function fromAny(o:Object):Corners
         {
             if (o == null) return null;
+            if (o is Array) return fromArray(o as Array);
             if (o is Number) return all(Number(o));
             return null;
         }

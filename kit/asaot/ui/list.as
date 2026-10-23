@@ -30,9 +30,9 @@ package asaot.ui
             if (opts.selectedIndex is Binding)
             {
                 n.binding = Binding(opts.selectedIndex);
-                // `*`, NOT `Object`: a binding value can be anything; `Object` would box
-                // it (one allocation per read) and an Array would lose its identity there
-                // (G9 + G14). Number() was never affected by the G9 bug.
+                // `*`, NOT `Object`: an `Object` slot would box the value once per read.
+                // Number() never depended on the G9 fix (阶段二四八) and the G14 Array-identity
+                // hazard (阶段二百五十三) is closed too, so `*` is now purely the cheaper default.
                 var v:* = n.binding.get();
                 n.selectedIndex = v == null ? 0 : Number(v);
             }

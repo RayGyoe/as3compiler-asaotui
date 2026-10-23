@@ -1,0 +1,17 @@
+id=1 ok
+id=2 NULL
+id=3 ok
+id=4 ok
+id=5 ok
+id=6 ok
+id=7 ok
+id=8 ok
+id=9 ok
+id=10 ok
+id=11 hi
+id=12 42
+id=13 ok
+id=14 ok
+id=15 42
+id=16 true
+id=17 7

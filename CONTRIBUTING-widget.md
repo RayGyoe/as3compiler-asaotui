@@ -135,7 +135,9 @@ cornerRadii, opacity, visibility, text`
 
 1. **G7 一个文件只能有一个与文件名同名的外部可见定义**（mxmlc 硬报错）。且本机文件系统**不区分大小写**：`progress.as` 与 `Progress.as` 是**同一个文件**。所以类叫 `ProgressNode`、工厂文件叫 `progress.as`。
 2. **mxmlc 的文件名匹配区分大小写**（Windows 上也区分）。`p/lower.as` 里放 `lower()` 能编过；`p/Mixed.as` 里放 `mixed()` → **硬错**。
-3. **`Array` 进 `Object` 槽会丢身份，而且会崩**（G14，2026-10-23 实测）：`Number/String/Boolean` 进 `Object` 槽会被**装箱**，`Array` **不会**（裸指针 cast）。后果：`is Array` 常量折成 `false`、`as Array` 得 `null`、`.length` 得 `undefined`，而 **`o is <用户类>` 直接把数组头当 vtable 读 ⇒ `0xC0000005`**（同一条在 `*` 槽也崩）。⇒ 数组一律**显式 `as Array`** 传给 `Array` 形参（`Size.fromArray` / `Edges.fromArray` 就是这么设计的）；**别把「`if (o is Array) return null;`」当作防线**——它会生成 `if (false)`，是死代码（`Fill.fromAny` 里就有这么一句，已登记）。
+3. **`Array` 进 `Object` 槽的身份问题：曾经会崩，已随 G14 修好**（2026-10-23 实测；编译器 **阶段二百五十三**）。**修前**：`Number/String/Boolean` 进 `Object` 槽会**装箱**，`Array` **不会**（裸指针 cast）⇒ `is Array` 折成 `false`、`as Array` 得 `null`、`.length` 得 `undefined`，`o is <用户类>` 把数组头当 vtable 读 ⇒ `0xC0000005`（`*` 槽同样崩）。当时 style 层**因此**把每个入口按形参类型拆成「标量 `fromAny(o:Object)` / 数组 `fromArray(a:Array)`」。
+   **现状**：该拆分**已回退**——`Size / Edges / Corners / LengthEdges / Fill.fromAny` 自己 `if (o is Array)` 分派，`fromArray` 保留为**显式**入口（渐变那条路要它）。⇒ **写法照旧**：数组**可以**直接传给 `Object`（或 `*`）形参，`is Array` 也照常回答。两 runtime 逐字对照：`node probes/style-fromany/run.cjs`（19 格，AOT 与真 AIR 51.4.1 全一致，变异 4/4）。
+   ⚠️ **别**把「防御性的 `if (o is Array) return null;`」当成好习惯：它曾经**编译成 `if (false)`**（死代码——`Fill.fromAny` 里那句就是这么被发现的）。**要留就留真的**，且必须有探针证明它真会被执行到。
 4. **`with` 是保留字**：不能做方法名（`withPatch` 是为此改的名）。
 5. **符号名逐字进生成的 C**（G8）：别用 `bind`（撞 socket `bind(2)`）、`stat`（被 MSVC `stat→_stat64i32` 宏吃掉）等 libc 保留名做函数/方法名。**注（2026-10-23）：上游阶段二四七已把保留名表改成机器生成、文件作用域用 `__` 后缀，G8 已修**（`probes/name-collision/` 4→0 errors）。公开 API 仍叫 `bindTo`：**这是主动选择，不再是被逼的**——① 不依赖编译器的 C 名剪辑，机制一回归就又是 `conflicting types for 'bind'`（而错误文案会把人引向 socket）；② `bindTo` 读起来就是“bind to X”。⇒ **别为“消除绕行”而改回 `bind`**（参见 `compiler-gaps.md` G8 行）。
 6. **AOT 拒绝裸 clang 旗标**（`-g` → `unknown argument`），`--opt` 只接受**单个**旗标。

@@ -35,18 +35,12 @@ package asaot.ui.style
             return f;
         }
 
-        // An ARRAY (a gradient stop list) must reach here only through a caller that
-        // has ALREADY decided the value is an array -- see StyleRefinement.from.
-        // It cannot be detected inside `fromAny(o:Object)`: an Array in an
-        // Object-typed parameter is never boxed, so `is Array` on it is
-        // constant-folded to FALSE and a following `is <class>` reads the array
-        // header as a vtable (0xC0000005). Measured: compiler-gaps.md G14,
-        // probes/obj-array-identity/ case 26.
-        //
-        // A stop list means a GRADIENT, and gradients are deferred (file header), so
-        // this returns null. That is exactly what AIR answers for an Array today via
-        // its own `fromAny`, so we stay aligned instead of inventing a meaning. The
-        // typed parameter is the point: it makes `a.length` safe the day gradients land.
+        // The typed array entry point. An ARRAY (a gradient stop list) means a
+        // GRADIENT, and gradients are deferred (file header), so this returns null --
+        // which is exactly what AIR's own answer is for an Array today, so we stay
+        // aligned instead of inventing a meaning. The typed parameter is the point:
+        // it makes `a.length` safe the day gradients land. `fromAny` delegates here,
+        // so both spellings agree.
         public static function fromArray(a:Array):Fill
         {
             return null;
@@ -55,16 +49,17 @@ package asaot.ui.style
         public static function fromAny(o:Object):Fill
         {
             if (o == null) return null;
-            // DO NOT ADD `o is Array` HERE. It cannot work, and that was measured
-            // rather than assumed: an Array put into an Object-typed parameter is
-            // never boxed, our AOT constant-folds `is Array` to FALSE, and the next
-            // line (`is Fill`) then reads the array header as a vtable and dies with
-            // 0xC0000005. Moving the array check to the FRONT does not help either
-            // (same measurement, case 26). An Array has to be recognised AT THE CALL
-            // SITE, while the value still lives in a `*` dynamic read -- which is what
-            // StyleRefinement.from does. A guard did live here until 2026-10-23; it
-            // compiled to `if (false)`, so it was deleted rather than left looking
-            // like protection.
+            // The array branch is dispatched HERE, so `Fill.fromAny(x)` is total (it
+            // accepts every documented shape). This check used to be impossible: an
+            // Array put into an Object-typed parameter was not boxed, our AOT
+            // constant-folded `is Array` to FALSE, and the next line (`is Fill`) then
+            // read the array header as a vtable and died with 0xC0000005 -- measured,
+            // not assumed (compiler-gaps.md G14, probes/obj-array-identity/ case 26).
+            // A guard that lived here until 2026-10-23 compiled to `if (false)` and was
+            // deleted rather than left looking like protection. G14 is FIXED (compiler
+            // 阶段二百五十三); `probes/style-fromany/` re-measures this on BOTH runtimes,
+            // so the guard is live again instead of being faith.
+            if (o is Array) return fromArray(o as Array);
             if (o is Number) return solid(Number(o));
             if (o is Fill) return Fill(o);
             return null;

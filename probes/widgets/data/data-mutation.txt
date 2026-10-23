@@ -1,0 +1,26 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  the selection colour moves to magenta -> BOTH the hand-written pixel in expect.json and the program-side sample must name the wrong colour
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL row 1 selection at (12,73) want #dbeafe got #ff00ff; row 2 after the click (now selected) at (12,99) want #dbeafe got #ff00ff;
+     FAIL  pixel (12,73) want #dbeafe got #ff00ff
+     restore: byte-identical (698c5040fec46839)
+M2  CAUGHT  the slot window widens by one (inner = w-1) -> page 3 now renders 1..7 with no ellipsis, so pg7 must be reported as mounted when it should not be
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL pg7 is mounted but page 3 should not show it; pg9 is mounted but the window should end at 8; the trailing ellipsis (gap7) is missing at page 6;
+     restore: byte-identical (2734b7cda2db6a4a)
+M3  CAUGHT  the accordion mounts EVERY panel -> a collapsed panel must be reported as mounted
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL p1 (a closed panel) is mounted; the collapsed panel p0 is still mounted (it must not hold space); a panel is mounted with every section collapsed;
+     restore: byte-identical (8b8baa879ecbe549)
+M4  CAUGHT  THE LAYERING BUG THIS PROBE FOUND, re-introduced: give the header its own background again (a child paints in front of the container shape) -> the open header highlight goes invisible, which is exactly what the probe caught on its first run
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL open header fill at (13,140) want #dbeafe got #f3f4f6; section 1 header now open at (13,175) want #dbeafe got #f3f4f6;
+     restore: byte-identical (8b8baa879ecbe549)
+M5  CAUGHT  the text measure publishes its BARE glyph width again, dropping its own padding -> the separator's box shrinks below its content and the run overflows into the next crumb (the defect this pin exists for)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL separator box 8 is not its text 4 + padding 8 (an auto text node must include its insets);
+     restore: byte-identical (752cd235d3e95344)
+
+MUTATION data: 5/5 caught, 0 problem(s)
+RESULT: PASS

@@ -1,5 +1,12 @@
 # 转交：G14 —— `Array` 落进 `Object` 槽不装箱（`is Array` 恒假 / `is <用户类>` 段错误）
 
+> **✅ 已交付并已修**：编译器 **阶段二百五十三**（`54bda6d`, v0.4.217）据此修完；
+> 修前 8 条偏离 ⇒ 修后 **0 偏离 0 崩溃**（`probes/obj-array-identity/run.cjs`）。
+> 本文件保留为**转交时的原始材料**，不再更新；复核实测与「修完解锁了什么」见
+> [`revisit-g14-unlocks-2026-10-23.md`](revisit-g14-unlocks-2026-10-23.md)。
+> 文末「届时我们会更新三处登记」已履行：`compiler-gaps.md` G14、
+> `probes/obj-array-identity/expect.json`（偏离集已清空）、`ui-demo/CheckUi.as` §8。
+
 **收件人**：编译器侧会话（`as3compiler/`）
 **来源**：`asaotui/compiler-gaps.md` G14（本工作区**不动** `as3compiler/src/`）
 **测量时 HEAD**：`a035645` / v0.4.216 · AIR SDK 51.4.1

@@ -1,0 +1,53 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/feedback/Main.as. Never regenerate these by running the probe.",
+  "_note_strokes": "Both spinner colours are sampled in the MIDDLE of a 6px-wide FILLED band, not on a stroke. Measured, not assumed: the radio in probes/widgets/display-probe-sibling `probes/widgets/form` is lineStyle(2) on a radius-7 circle, and its byte-exact frame shows a ONE-pixel ring -- a stroked circle does not rasterize to its declared width, so a fill is the only pass through which a widget's colour can be pinned. See SpinnerWidget's header.",
+  "_derivation": {
+    "root": "column, align-items flex-start, padding 20, gap 10, size [320,260]. Root rect (0,0,320,260); content starts at (20,20), content width 280.",
+    "r1": "First child of the column: explicit width 210, height 40 -> (20,20,210,40). It is a ROW with gap 10 and align-items flex-start, so its children keep their own heights.",
+    "sp": "spinner size [40,40] -> first in the row at (20,20,40,40). Centre (40,40). diameter 40 => the band's OUTER radius is 20, thickness 6 => the inner radius is 14, so the band spans radius 14..20 and its middle is radius 17.",
+    "sk_t": "skeleton variant text, explicit width 160, auto height. 3 lines, barHeight 8, gap 6 => h = 3*8 + 2*6 = 36. Row places it after the 40px spinner plus the 10px gap: x = 20 + 40 + 10 = 70 -> (70,20,160,36). Bars at local y 0..8, 14..22, 28..36 => absolute y 20..28, 34..42, 48..56. The LAST bar (and only the last, since lines > 1) is 160 * 0.6 = 96 wide, so it spans x 70..166.",
+    "sk_c": "skeleton variant circle, size [40,40]. Second child of the column: y = 20 + 40 + 10 = 70 -> (20,70,40,40). Centre (40,90), radius 20.",
+    "sk_r": "skeleton variant rect, size [200,80]. Third child: y = 70 + 40 + 10 = 120 -> (20,120,200,80).",
+    "tp": "tooltip size [120,30]. Fourth child: y = 120 + 80 + 10 = 210 -> (20,210,120,30). Column content ends at 210+30 = 240, plus the 20px padding = 260 = the root height.",
+    "points": {
+      "spinner_arc": "spin false, phase 0 => the arc starts at 12 o'clock and sweeps 3/8 of a turn clockwise (-90..+45 degrees), so 0 degrees is in the MIDDLE of the sweep, not on a square-cut end. At 0 degrees the band's middle radius 17 sits at x = 40 + 17 = 57. The pixel there (column 57 spans x 57..58, centre 57.5) is radius 17.5 from the centre, i.e. 3.5px inside both edges of the 14..20 band. Tone 'info' = #2563EB.",
+      "spinner_track": "The full-circle track is #E5E7EB. 9 o'clock is NOT inside the -90..+45 arc, so sample the same middle radius at x = 40 - 17 = 23 (pixel centre 23.5 => radius 16.5, also well inside 14..20).",
+      "spinner_hollow": "The ring is a band, not a disc: the centre (40,40) is radius 0, which is 14px inside the band's inner edge, so it shows the root background #FFFFFF.",
+      "skeleton_bar": "bar 1 covers y 20..28 and x 70..230; sample its middle (80,24) = #E5E7EB.",
+      "skeleton_gap": "Between bar 1 (ends y 28) and bar 2 (starts y 34): (80,31) shows the root background #FFFFFF, because the skeleton node itself has no background.",
+      "skeleton_last_bar": "bar 3 covers y 48..56; (80,52) is inside it = #E5E7EB.",
+      "skeleton_last_bar_cut": "bar 3 is only 96 wide (x 70..166), so (170,52) is past its end and shows #FFFFFF. 4px of margin from the cut.",
+      "skeleton_circle": "The circle's centre (40,90) = #E5E7EB.",
+      "skeleton_circle_corner": "(23,73) is inside the node's rect but outside the radius-20 circle (distance from (40,90) = sqrt(17^2+17^2) = 24.0), so it shows #FFFFFF.",
+      "skeleton_rect": "The rect skeleton's centre (120,160) = #E5E7EB.",
+      "tooltip_arrow": "arrow 'up' => the bubble starts 6px down and the triangle sits above it, tip at the node's top edge. At y = 213 (halfway between tip y=210 and base y=216) the triangle spans x 80 +/- 3, so (80,213) is inside it = the bubble tone #1F2937.",
+      "tooltip_bubble": "The bubble covers y 216..240 and x 20..140. The label is centred (around x 60..100), so (120,237) is inside the solid bottom-right of the bubble, 3px above its bottom edge and 16px right of the text = #1F2937."
+    },
+    "behaviour": "Steady-state layout solves do not increase after the settle capture; the frozen spinner uses an explicit phase so the frame is byte-deterministic; after the bitmap is written the live description is flipped to spin:true and the probe asserts the spin loop repaints (paintPasses grows) WITHOUT re-solving (layoutSolves flat)."
+  },
+  "w": 320,
+  "h": 260,
+  "rects": {
+    "root": [0, 0, 320, 260],
+    "r1": [20, 20, 210, 40],
+    "sp": [20, 20, 40, 40],
+    "sk_t": [70, 20, 160, 36],
+    "sk_c": [20, 70, 40, 40],
+    "sk_r": [20, 120, 200, 80],
+    "tp": [20, 210, 120, 30]
+  },
+  "points": [
+    { "x": 57, "y": 40, "rgb": "#2563EB" },
+    { "x": 23, "y": 40, "rgb": "#E5E7EB" },
+    { "x": 40, "y": 40, "rgb": "#FFFFFF" },
+    { "x": 80, "y": 24, "rgb": "#E5E7EB" },
+    { "x": 80, "y": 31, "rgb": "#FFFFFF" },
+    { "x": 80, "y": 52, "rgb": "#E5E7EB" },
+    { "x": 170, "y": 52, "rgb": "#FFFFFF" },
+    { "x": 40, "y": 90, "rgb": "#E5E7EB" },
+    { "x": 23, "y": 73, "rgb": "#FFFFFF" },
+    { "x": 120, "y": 160, "rgb": "#E5E7EB" },
+    { "x": 80, "y": 213, "rgb": "#1F2937" },
+    { "x": 120, "y": 237, "rgb": "#1F2937" }
+  ]
+}

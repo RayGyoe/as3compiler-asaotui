@@ -1,0 +1,26 @@
+[a] passes: measure=1 arrange=1 paint=19 solves=1
+img1 abs=20,20,80,40 content=80x40 backing=20,20 dirty=0 nkids=2
+   cast Bitmap(bag)=ok asBitmap=ok
+   extra[bmp]=[object Bitmap] isBitmap=true
+   child1 x=0 y=0 w=80 h=40 sx=10 sy=5
+   kid0 bitmap=false shape=true field=false sprite=false xy=0,0 wh=0x0
+   kid1 bitmap=true shape=false field=false sprite=false xy=0,0 wh=80x40
+img2 abs=20,70,80,40 content=80x40 backing=20,70 dirty=0 nkids=2
+   cast Bitmap(bag)=ok asBitmap=ok
+   extra[bmp]=[object Bitmap] isBitmap=true
+   child1 x=36 y=16 w=8 h=8 sx=1 sy=1
+   kid0 bitmap=false shape=true field=false sprite=false xy=0,0 wh=0x0
+   kid1 bitmap=true shape=false field=false sprite=false xy=36,16 wh=8x8
+[b-after-solve] passes: measure=1 arrange=1 paint=39 solves=1
+img1 abs=20,20,80,40 content=80x40 backing=20,20 dirty=0 nkids=2
+   cast Bitmap(bag)=ok asBitmap=ok
+   extra[bmp]=[object Bitmap] isBitmap=true
+   child1 x=0 y=0 w=80 h=40 sx=10 sy=5
+   kid0 bitmap=false shape=true field=false sprite=false xy=0,0 wh=0x0
+   kid1 bitmap=true shape=false field=false sprite=false xy=0,0 wh=80x40
+img2 abs=20,70,80,40 content=80x40 backing=20,70 dirty=0 nkids=2
+   cast Bitmap(bag)=ok asBitmap=ok
+   extra[bmp]=[object Bitmap] isBitmap=true
+   child1 x=36 y=16 w=8 h=8 sx=1 sy=1
+   kid0 bitmap=false shape=true field=false sprite=false xy=0,0 wh=0x0
+   kid1 bitmap=true shape=false field=false sprite=false xy=36,16 wh=8x8

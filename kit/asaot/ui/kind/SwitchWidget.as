@@ -48,10 +48,11 @@ package asaot.ui.kind
             var cv:Boolean = sw.checked;
             if (sw.binding != null)
             {
-                // `*`, NOT `Object`: a binding value can be anything. `Object` would BOX
-                // it (one allocation per read) and an Array would lose its identity there
-                // (compiler-gaps.md G9 + G14). G9's Boolean-lowering bug is FIXED
-                // (阶段二四八), so this is no longer a correctness workaround.
+                // `*`, NOT `Object`: a binding value can be anything, and an `Object`
+                // slot BOXES it (one allocation per read). Both of the old reasons to
+                // spell this `*` are now historical -- G9 (Boolean lowering) is FIXED in
+                // 阶段二四八 and G14 (Array identity) in 阶段二百五十三 -- so `*` is simply
+                // the cheapest correct default for "a value of unknown type".
                 var bv:* = sw.binding.get();
                 cv = bv != null && Boolean(bv);
             }

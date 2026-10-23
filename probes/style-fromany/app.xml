@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- style-fromany probe: is the style layer's `fromAny` total on real AIR too? -->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.probe.stylefromany</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>stylefromany-probe</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>AirMain.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>

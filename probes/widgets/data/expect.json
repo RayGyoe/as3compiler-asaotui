@@ -1,0 +1,33 @@
+{
+  "_what": "HAND-COMPUTED expectations for probes/widgets/data/Main.as -- see the derivation in the probe header. Never regenerated from the program's own output.",
+  "_layout": "window 350x350; root column padding 10 gap 10; tbl 320x104 @(10,10) rowHeight 26 => header 10..36 + 3 body rows of 26; two equal flex columns => 160 each, column 1 at x=170; acc 320x140 @(10,124); bc 320x20 @(10,274); pg 320x28 @(10,304)",
+  "w": 350,
+  "h": 350,
+  "rects": {
+    "root": [0, 0, 350, 350],
+    "tbl": [10, 10, 320, 104],
+    "hdr": [10, 10, 320, 26],
+    "r0": [10, 36, 320, 26],
+    "r1": [10, 62, 320, 26],
+    "r2": [10, 88, 320, 26],
+    "h:0": [10, 10, 160, 26],
+    "h:1": [170, 10, 160, 26],
+    "r0c0": [10, 36, 160, 26],
+    "r0c1": [170, 36, 160, 26],
+    "r1c0": [10, 62, 160, 26],
+    "r1c1": [170, 62, 160, 26],
+    "r2c0": [10, 88, 160, 26],
+    "r2c1": [170, 88, 160, 26],
+    "acc": [10, 124, 320, 140],
+    "bc": [10, 274, 320, 20],
+    "pg": [10, 304, 320, 28]
+  },
+  "points": [
+    { "x": 12, "y": 15, "rgb": "#f3f4f6", "_why": "header fill, 4px inside the cell padding" },
+    { "x": 12, "y": 36, "rgb": "#e5e7eb", "_why": "1px hairline on the header's bottom edge (fill, not stroke)" },
+    { "x": 12, "y": 47, "rgb": "#ffffff", "_why": "row 0: even, so no stripe -- the white page shows through" },
+    { "x": 12, "y": 73, "rgb": "#dbeafe", "_why": "row 1: selected (1), and the selection paints OVER its stripe" },
+    { "x": 12, "y": 99, "rgb": "#ffffff", "_why": "row 2: even, no stripe, not selected" },
+    { "x": 170, "y": 99, "rgb": "#e5e7eb", "_why": "vertical hairline exactly at the column boundary x=170" }
+  ]
+}

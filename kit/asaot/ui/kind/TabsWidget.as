@@ -104,8 +104,9 @@ package asaot.ui.kind
             var sv:Number = t.selectedIndex;
             if (t.binding != null)
             {
-                // `*`, NOT `Object`: the value is Number-ish, so the G9 bug never bit
-                // here; `*` is kept for the boxing cost and the G14 Array-identity hazard.
+                // `*`, NOT `Object`: an `Object` slot would box the value once per read.
+                // Number() never depended on the G9 fix (阶段二四八) and the G14 Array-identity
+                // hazard (阶段二百五十三) is closed too, so `*` is now purely the cheaper default.
                 var bv:* = t.binding.get();
                 sv = bv == null ? 0 : Number(bv);
             }

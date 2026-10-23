@@ -8,7 +8,7 @@
 //   arm STANDARD  air-gallery-standard/app.xml   (requestedDisplayResolution=standard)
 //
 // Both arms go through run-gallery.cjs (so both get --all-sources, the G11 retry and
-// the shared screenshot measurement), and both run the identical four-page tour with
+// the shared screenshot measurement), and both run the identical five-page tour with
 // the identical logical 700x560 stage. The ONLY thing that may differ is the PNG's
 // pixel size:
 //
@@ -138,7 +138,7 @@ if (high.px && std.px) {
   }
 
   // The strongest form of the claim: the descriptor changes the PIXEL DENSITY and
-  // nothing else. Both tours are hand-computed rect dumps of the same four pages, so
+  // nothing else. Both tours are hand-computed rect dumps of the same five pages, so
   // if the two files are byte-identical then not one logical coordinate moved -- the
   // app never learns how many pixels it is given. A byte comparison also catches a
   // bleed the other way (HiDPI silently rescaling the layout instead of the canvas).

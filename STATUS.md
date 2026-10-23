@@ -2,16 +2,16 @@
 
 > 回答一个问题：**「UI 库写完了吗？」**
 >
-> 结论：**核心做透了，表面层补了一轮，但还不是一个完整工具箱。**
-> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 16 个 kind / 20 个工厂**；
-> **样式面从 18 字段补到 31 字段**；**多页可切换 App 已跑起来**（`ui-demo/demo/GalleryMain.as`）。
+> 结论：**深水区做透了，表面层补齐了一批（控件集 + 多页 App + 组件目录页），但还不是一个完整工具箱。**
+> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 25 个 kind / 29 个工厂**（第二批 media/feedback/data 九件已落地）；
+> **样式面从 18 字段补到 31 字段**；**多页可切换 App 已跑起来**（`ui-demo/demo/GalleryMain.as`，**5 页**、含组件目录页）。
 > 两个 demo 现均用 **`--air-app`** 编译：窗口属性（含**高分辨率/HiDPI**）由 AIR 描述符当唯一真相源。
 > 仍然缺的是：**键盘/焦点（0 处）**、覆盖层类控件（dialog/popover/toast/menu）、
-> 滚动容器、以及动画只覆盖 3 个字段。
+> 列表虚拟化、下拉/日期选择，以及动画只覆盖 3 个字段。
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 
-生成日期：2026-10-23（第二轮） · 对应 `kit/` **53 文件** · 一次性验收：`node tools/gates.cjs`（**18 道门**）
+生成日期：2026-10-23（第三轮） · 对应 `kit/` **114 个 .as** · 一次性验收：`node tools/gates.cjs`（**23 道门**）
 
 ---
 
@@ -24,9 +24,9 @@
 | L2 显示树 / 协调 / 数据流 | ✅ 可用（本轮修 3 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding |
 | L2 事件 | ⚠️ **只有鼠标** | 悬停/按下/点击；**键盘 0 处**（见 §3.1） |
 | L2 动画 | ⚠️ 只覆盖 3 个字段 | `opacity`/`background`/`borderColor` + `transitionMs/Ease`；`probes/widgets/anim` 14 项 |
-| L3 控件库 | ⚠️ **20 个工厂 / 16 个 kind** | 见 §2；仍缺覆盖层与滚动容器 |
+| L3 控件库 | ⚠️ **29 个工厂 / 25 个 kind** | 见 §2；第二批（image/scrollView/spinner/skeleton/tooltip + table/accordion/breadcrumb/pagination）已落地；仍缺覆盖层（dialog/toast/popover）、下拉/日期选择、列表虚拟化 |
 | L3 样式面 | ✅ **31 字段**（本轮补齐 13 个） | 见 §3.2；仅剩 `grid`/`boxShadow`/`cursor` 刻意缺席 |
-| L3 组合能力 | ✅ **多页可切换 App** | `ui-demo/run-gallery.cjs`：4 页共用 body 槽位、控件驱动切页、手算矩形；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 700×560 / high 1050×840） |
+| L3 组合能力 | ✅ **多页可切换 App** | `ui-demo/run-gallery.cjs`：5 页共用 body 槽位（末页是组件目录）、控件驱动切页、手算矩形；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 700×560 / high 1050×840） |
 | L3 可访问性 | ❌ 字段有、消费者无 | `role`/`ariaName`/`Control.tabEnabled` 只是字段 |
 
 ---
@@ -60,6 +60,15 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | `divider(opts)` | `DividerNode` | 1px 分隔线（`orientation`） |
 | `tabs(labels, opts)` | `TabsNode` | 横向分段；**分段是控件自算**，见 §3.1.1 |
 | `list(items, builder, opts)` | `ListNode` | 真容器（每行一个真实 UiNode）；无虚拟滚动 |
+| `image(opts)` | `ImageNode` | 位图控件，**源是 `BitmapData`（不是 URL）**；`scaleMode`: `fit`/`stretch`/`none`；`payload` 懒建 `Bitmap` |
+| `scrollView(opts, children)` | `ScrollViewNode` | **真裁剪**滚动容器（引擎 `scrollRect`）；竖向滚轮；视口用 `setMinMax(min)` 阻断子收缩 |
+| `spinner(opts)` | `SpinnerNode` | 不定进度圆环；`diameter`/`thickness`/`tone`/`spin`/`phase`；**环画成填充带（描边宽度不被遵守）** |
+| `skeleton(opts)` | `SkeletonNode` | 占位骨架；`variant`: `text`/`circle`/`rect` + `lines`/`barHeight`/`gap`/`tone` |
+| `tooltip(text, opts)` | `TooltipNode` | 气泡提示；`arrow`: `up`/`down`/`left`/`right`/`none`；标签**自绘居中**，尺寸可留 auto（自带内边距） |
+| `table(columns, rows, opts)` | `TableNode` | 表头 + 数据行；`rowHeight`/`stripes`/`grid`/`selectedIndex`/`onSelect`；网格/条纹/选中一律**画成填充** |
+| `accordion(sections, opts)` | `AccordionNode` | 单开手风琴；`activeIndex`（`-1` = 全关）/`onToggle`；**header 刻意无背景**（高亮由容器画，子节点在前） |
+| `breadcrumb(items, opts)` | `BreadcrumbNode` | 面包屑；`onNavigate(index)`/`separator`/`currentIndex`；末项与分隔符都不可导航 |
+| `pagination(page, pageCount, opts)` | `PaginationNode` | 翻页器；`windowSize` 槽位窗口、省略号原型 `-1`、`onSelect`/`page` |
 
 配套（非控件）：`bindTo(owner, field)`、`Binding`、`Observable`、`Subscription`、
 `Dirty`、`Theme`、`Style`/`StyleRefinement`/`Fill`/`Edges`/`LengthEdges`/`Corners`/`Length`/`Size`/`TextStyle`、
@@ -70,14 +79,17 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 
 | 类别 | 缺什么 | 影响的界面 |
 |---|---|---|
-| 覆盖层 | `dialog`/`modal`、`popover`、`toast`、`menu`/`contextMenu`、`tooltip` | 任何「确认/提示/菜单」交互 |
-| 滚动 | `scrollView`、`list` 的虚拟滚动与视口裁剪 | 长列表、长表单 |
-| 选择 | `select`/`dropdown`、`datePicker`、`table`、`tree` | 表单、仪表盘 |
-| 图形 | `image`/`icon`（当前无位图控件；`badge`/`avatar` 是文字近似） | 任何带图标的界面 |
-| 反馈 | `spinner`、`skeleton` | 异步态 |
-| 其它 | `accordion`、`breadcrumb`、`pagination` | 导航类 |
+| 覆盖层 | `dialog`/`modal`、`popover`、`toast`、`menu`/`contextMenu` | 任何「确认/提示/菜单」交互 |
+| 选择 | `select`/`dropdown`、`datePicker`、`tree`、`switch` 的中间态 | 表单、设置树 |
+| 虚拟化 | `list`/`table` 的虚拟滚动（当前每个 item/行都是一个真实 UiNode） | 万级列表 |
+| 图形 | `icon`（`image` 已有，但没有图标字体/矢量图标集） | 工具条、按钮图标 |
+| 反馈 | `toast`（`spinner`/`skeleton`/`tooltip` 已有，`progress` 是确定的） | 全局提示 |
+| 其它 | `accordion` 的多开模式、`table` 的排序/列宽拖拽 | 仪表盘 |
 
-**⇒ 现在能舒适写出的是「多页表单 / 设置页 / 列表详情」，写不出「对话框 + 滚动列表 + 图标」类界面。**
+**⇒ 现在能舒适写出的是「多页表单 / 设置页 / 列表详表 / 带图与骨架的异步页」，写不出「对话框 +
+万级滚动列表 + 图标字体」类界面。**（第二批九件落地后，`image`/`scrollView`/`spinner`/
+`skeleton`/`tooltip`/`table`/`accordion`/`breadcrumb`/`pagination` 都已可用，
+各自有手算断言探针：`probes/widgets/{media,feedback,data}`。）
 
 ---
 
@@ -107,8 +119,8 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/UiApp.as KeyboardEvent KEY_DOWN K
 
 | 能力 | 现状 |
 |---|---|
-| **虚拟滚动** | ❌ `list` 对**每个 item 都建一个真实 UiNode** 并参与布局；万级列表会建万级节点 |
-| **视口裁剪 / 滚动** | ❌ 没有 `overflow:hidden` 的滚动容器；`list` 超出自身高度的行会溢出（不裁剪、不可滚） |
+| **虚拟滚动** | ❌ `list`（与 `table` 的行）对**每个 item 都建一个真实 UiNode** 并参与布局；万级列表会建万级节点。`scrollView` 只裁可视区，不省节点 |
+| **视口裁剪 / 滚动** | ⚠️ `scrollView` 用引擎 `scrollRect` 做**真裁剪**并接管竖向滚轮；`list` 本身仍不裁剪（超出自身高度的行会溢出），要滚动就套一层 `scrollView` |
 | **键盘 / 焦点** | ❌ 同 §3.1：`tabs` 不用方向键、`list` 不用上下键选中；都是鼠标点击选中，`tabEnabled=false` |
 | **tabs 分段的布局来源** | ⚠️ 分段是控件**自算**（`from n.absW` 的整数等分），**不是**引擎摆的子节点；`list` 的行**是**引擎摆的真实子节点 |
 | **tabs 的 gap 来源** | ⚠️ `TabsWidget.payload` 先读 `opts.gap`，回落到 `n.resolved.gapX`（已解算值）。若一次重排**恰好只改了 gap**，分段 pitch 会用上一帧的 gap 一帧（`Reconciler` 是「先 resolve 后 payload」，payload 改方向会在同帧重解，见 §3.3） |
@@ -135,16 +147,18 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/UiApp.as KeyboardEvent KEY_DOWN K
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 18 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 23 道门，含 layout-check 133 项
 ```
 
-### 3.3 本轮定位并修复的 3 个框架缺陷（每个都有钉子）
+### 3.3 已定位并修复的框架缺陷（每个都有钉子）
 
 | # | 症状 | 根因 | 修法 | 钉子 / 变异证据 |
 |---|---|---|---|---|
 | 1 | **纯装饰变更永不上屏**（改 `background` 后画面不变） | `UiApp.reflow()` 的绘制闸门只看 `layoutRan`/`_needsPaint`，而 `Dirty.ALL==15` **不含** `M_PAINT==64` ⇒ reconcile 跑过但没绘制 | `reflow()` 里加局部 `reconciled`（本轮 `_pending != 0` 跑过 reconcile 即为真），绘制分支改 `else if (root != null && (this._needsPaint \|\| reconciled))` | `probes/redraw`（14 项）。**变异**：去掉 `reconciled` 项 ⇒ 3 像素 FAIL / exit 1；还原绿 |
 | 2 | **子树里的布局变化永不解算**（多页 demo 里换页后只有容器有矩形，子节点全 `0,0,0,0`；`layoutSolves` 永远 1） | `UiApp.reflow()` 的布局闸门**只读根节点**的 `M_MEASURE\|M_ARRANGE`；深层新建/重排/删除/改样式只在本节点置位 | `UiNode.markLayoutDirty()`：置两位后**沿 `parent` 上爬到根**，遇「已同时带两位」的祖先即停；`applyPayload`(relayout)、`resolveStyle`(f&1 / f&2)、`Reconciler` 新建节点 / 顺序变化 / `destroyMounted` 后父节点 —— 共 6 处调用。**PAINT 位刻意不上传**（祖先自己装饰没变就不该重绘，且纯 paint 变更仍不得重解布局） | `ui-demo/run-gallery.cjs`（第 11 道门）。**变异**：`applyPayload` 里去掉 `directionOverride` 变化时的重解 ⇒ body 沿用**上一页的方向**布局，`colA/colB` 手算矩形 FAIL |
 | 3 | **keyed 重排后节点不移动**（CheckUi 的 `reorder moved 'a' down` / `'b' up` 两红） | `Reconciler.reconcileChildren` 在 `n.children = next` **之后**调 `orderChanged(n, next)` ⇒ 两个引用指向同一个数组，比较自我、恒返回 false ⇒ 从不重解 | 把 `orderChanged` 提到赋值**之前**（紧邻仍需要旧数组的销毁扫描） | `ui-demo CheckUi` 23 项。**证据是本轮真红真绿**：修前 `2 of 23 failed`（两句原话见 `reviews/checkui-fail.txt`），修后 `23 checks, 0 failures`（`reviews/checkui-fixed.txt`） |
+
+| 4 | **auto 宽度的文本节点小于自己的内容**（面包屑分隔符的 `/` 挤在下一个 crumb 上：4px 字形被塞进 8px 盒、向右溢出） | `TextWidget.measure` 把**纯字形宽**当点尺寸发布，而引擎 `boxSizing` 默认 **border-box**（点尺寸 = 整盒）⇒ 内边距反过来吃掉内容。`Badge`/`Button`/`Card`/`Chip` 都加了内边距，只有 `TextWidget` 漏了 | `kind/TextWidget.as` 的 auto 分支改成 `measuredW + padH(padding) + borderH(borderWidths)`（高度同理） | `probes/widgets/data` 程序内断言 `sep.absW == sep.tf.textWidth + 8`（**与自己测量的字形比，不抄字体度量**）。**变异**：`probes/widgets/data/mutation.cjs` M5 把内边距去掉 ⇒ 红并点名「must include its insets」，还原逐字节一致 |
 
 **已知边界（登记，不修）**：`card({title: ...})` 的标题画在内容盒左上角、**不占布局位**，
 因此会压住第一个子节点（`kind/CardWidget.as:81` 的 `tf.x/tf.y = inset`）。
@@ -177,10 +191,10 @@ cd asaotui && node tools/gates.cjs                           # 18 道门，含 l
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **18** 道门：
+一条命令跑全部 **23** 道门：
 
 ```sh
-cd asaotui && node tools/gates.cjs        # 18/18 PASS 才叫绿；参考 reviews/gates-all-10.txt
+> 全量 **23 道门**在 clean 树上跑绿（定稿记录 `reviews/gates-all-12.txt`，编译器 HEAD `9cb054e`；
 ```
 
 > 那道 G11 determinism 门在「**测量期间编译器源码真的在动**」时会给 `[SKIP]`（exit 3）而不是假红/假绿：
@@ -189,12 +203,13 @@ cd asaotui && node tools/gates.cjs        # 18/18 PASS 才叫绿；参考 review
 
 | 验收 | 命令 | 期望 |
 |---|---|---|
-| **多页 App（本轮核心交付）** | `cd asaotui/ui-demo && node run-gallery.cjs` | 4 页 tour 全绿 + 4 张 `gallery-page*.png` + `RESULT: PASS` |
+| **多页 App** | `cd asaotui/ui-demo && node run-gallery.cjs` | 5 页 tour 全绿（含组件目录页）+ 5 张 `gallery-page*.png` + `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4） |
 | **高分辨率（HiDPI）自证** | `cd asaotui/ui-demo && node check-dpi.cjs` | `standard` 700×560(1×) vs `high` 1050×840(1.5×)，且两次 tour 文本**逐字节相同** |
 | **单页登录 App** | `cd asaotui/ui-demo && node build-and-run.cjs` | 8 项手算断言 + `750×563` 截图（1.5×）+ `RESULT: PASS` |
 | **`--air-app` 闭包回归钉（G13，已修）** | `node probes/reach-freefn/run.cjs` | 默认闭包 kept **5/5** 且默认面**能建能跑**（修前是：红 + `unknown superclass 'Base' of 'p_Leaf'`） |
 | 工具箱自检 | `cd asaotui/ui-demo && node run-check.cjs` | `23 checks, 0 failures / RESULT: PASS` |
-| 控件探针 ×5 | `node tools/probe.cjs probes/widgets/{chip,form,display,nav,anim}` | 19 / 41 / 48 / 41 / 14 checks，全 0 failures |
+| 控件探针 ×5（第一批） | `node tools/probe.cjs probes/widgets/{chip,form,display,nav,anim}` | 19 / 41 / 48 / 41 / 14 checks，全 0 failures |
+| 控件探针 ×3（第二批） | `node tools/probe.cjs probes/widgets/{media,feedback,data}` | 43 / 43 / 77 checks，全 0 failures；变异 `tools/mutation-widget-probes.cjs`（media+feedback 4/4）、`probes/widgets/data/mutation.cjs`（**5/5**，含 M4 复现本轮修的层叠 bug、M5 复现本轮修的文本内边距缺陷） |
 | 重绘钉子 | `node tools/probe.cjs probes/redraw` | 14 checks，0 failures |
 | 布局文本半边 | `tools/gates.cjs` 里的 layout-check 门 | `133 checks, 0 failures` |
 | 布局视觉半边 | `cd asaotui && node layout-check/visual-check.cjs` | `12 checks, 0 failures`，EXIT 0（弹真窗 + 读帧缓冲 + 断言） |
@@ -203,7 +218,8 @@ cd asaotui && node tools/gates.cjs        # 18/18 PASS 才叫绿；参考 review
 | 静态钉子（原 G9 扫描） | `node tools/find-bound-truthy.cjs kit seam` | `0` 命中 / 34 个 `:Object` 局部变量无一当条件用。**这道门曾经不可能变红**（它数一个工具从没打印过的字符串），已修为消费退出码；变异 `tools/mutation-bound-truthy.cjs` **4/4** |
 | 「未碰编译器」的仪器自身 | `node tools/fingerprint-parse-check.cjs` | 20 项（含两条前导空格回归断言）；变异 `tools/mutation-parse.cjs` |
 | **G11 结案（生成器确定性）** | `node probes/g11-nondeterminism/run.cjs` | 同源 **5 次**构建 → **1** 份生成 C（`f0ac0ff461e604bf`）+ 拼写三处一致 + 三份历史产物误差 20→1→0；`src/` 内容哈希**逐次构建前后各采一次**（首尾各一次看不见「改完又还原」的窗口）；变异 `mutation.cjs` **10/10** |
-| **G14（新）`Array` 进 `Object` 槽的身份** | `node probes/obj-array-identity/run.cjs` | 26 条×两臂：**AIR 26/26 符合手写 AS3 规则**；AOT 偏离 **8** 条（`is Array` 假 / `as Array` null / `.length` undefined / 5 条 **`0xC0000005`**）；变异 `mutation.cjs` **4/4** |
+| **G14 `Array` 进 `Object` 槽的身份（已修，阶段二百五十三）** | `node probes/obj-array-identity/run.cjs` | 26 条×两臂：**AIR 26/26 符合手写 AS3 规则**，AOT 修后 **26/26 一致（0 偏离、0 崩溃）**；修前 AOT 偏离 8 条（含 5 条 **`0xC0000005`**）。变异 `mutation.cjs` **4/4** |
+| **G16（新）`cond ? null : X` 的条件为假** | `node probes/g16-ternary-null/run.cjs`（门 §9b） | 17 格：**AIR 17/17 一致**；AOT **12 格偏离**（1/3/4/5/7/8/9/10/14/15/16/17 塌成结果类型零值）。门要求 AOT 偏离集**恰好等于**已登记集（新增偏离、用例停跑、**偏离无声消失**都报警）；变异 `mutation.cjs` **4/4** |
 | **`Vector.<T>` vs `Array`（两 runtime）** | `node probes/vec-vs-arr/run.cjs` | N=1M：AOT `Vector.<int>` fill+sum **2ms** vs `Array` **11ms**（**0.18x**）；AIR 同两项 33/36ms（0.92x）。门只钉 AOT **≤0.5x**；变异 `mutation.cjs` **2/2** |
 
 **每道门都做过变异测试**（改一个单位就让门变红并给出非 0 退出码），清单与每道门的
@@ -214,30 +230,38 @@ cd asaotui && node tools/gates.cjs        # 18/18 PASS 才叫绿；参考 review
 ## 5 结论
 
 - **深水区（布局引擎）**：做透了，且有三端交叉验证——这是本项目最有说服力的资产。
-- **中水区（协调/数据流/样式面/控件扩展点）**：本轮补齐并**修掉 3 个真缺陷**——
+- **中水区（协调/数据流/样式面/控件扩展点）**：已补齐，并**修掉 4 个真缺陷**（§3.3）——
   其中 2 个（纯 paint 不上屏、子树布局不解算）只有在**多页 App** 这种形态下才暴露，
-  单页探针永远看不见。这条经验比这 3 个 bug 本身更值钱：**探针要配一个真实应用。**
-- **表面层（交互 / 覆盖层 / 滚动）**：仍是骨架。当前可交付上限约「多页表单 / 列表详情」。
+  单页探针永远看不见；第 4 个（auto 文本忘加自身内边距）只有在**把控件放进真实页面并看图**时才看得见。
+  这条经验比这些 bug 本身更值钱：**探针要配一个真实应用。**
+- **表面层（控件集 / 组件目录页）**：第二批九件已落地并有手算探针；仍缺的见 §2.1。
+  当前可交付上限约「多页表单 / 设置页 / 列表详表 / 带图与骨架的异步页」。
 
 ### 补齐优先级建议
 
 1. **键盘 + 焦点 + 输入回写**（§3.1）——投入最小、解锁最大；现在输入框一重绘就擦字。
 2. **覆盖层**（dialog / toast / popover）——需要「浮层 + 命中测试优先级 + 模态遮罩」三件事，
    是第一个需要新布局语义（脱离父链的绝对定位）的控件族。
-3. **滚动容器 + 列表虚拟化**（§3.1.1）——需要引擎侧支持 `overflow` 的裁剪与滚动偏移。
+3. **列表虚拟化**（§3.1.1）——`scrollView` 已能真裁剪，但 `list`/`table` 仍对每个 item 建真实节点。
 4. **布局动画**（§3.4）——需要先定义「布局动画为什么要重解布局」。
 
 > 本表所有「缺」项均为**登记**，不是对编译器的修改要求——`asaotui` 侧对 `as3compiler/` **没有做任何修改**；
 > 复核：`node tools/compiler-fingerprint.cjs`（快照 `reviews/compiler-tree-fingerprint.json`）。
-> 本轮开工时编译器是 `92a1239`/`0.4.208`；收尾时已到 **`1ac26b4`（阶段二五零）**，工作树 **clean**。
-> 期间的提交全部是并发会话的（阶段二四九 G13、阶段二五零 `--as-class-path`），**没有一个是我的**；
-> 我在本轮只做只读复核与测量（见 §3.5）。
-> 全量 **18 道门**在该 clean 树上跑绿（`reviews/gates-all-10.txt`；`gates-all-9.txt` 是改 G11 窗口钉
+> 本轮开工时编译器是 `92a1239`/`0.4.208`；收尾时已到 **`9cb054e`（阶段254，`--as-class-path` 重构）**
+> ——G14 由 **`54bda6d`（阶段二百五十三）** 修好，其后并发会话又提交了阶段254。**那轮 23 道门是在
+> `9cb054e` 上重跑的**（`reviews/gates-all-12.txt`；`-11` 是在 HEAD 落地前跑的，判据相同）。
+> 期间的编译器侧提交全部是并发会话的（阶段二四九 G13、阶段二五零 `--as-class-path`、
+> 阶段二五三 G14、阶段254 `--as-class-path` 重构），**没有一个是我的**；我在本工作区只做只读复核、测量与 `asaotui/` 内的代码（见 §3.5）。
+> 全量 **23 道门**在 clean 树上跑绿（定稿记录 `reviews/gates-all-12.txt`，编译器 HEAD `9cb054e`；`gates-all-9.txt` 是改 G11 窗口钉
 > 之前的那次，仪器版本不同）；另有一份强制走 `[SKIP]` 分支的
 > 运行做钉子（`reviews/gates-skip-path.txt`）—— 编译器侧这些提交没有弄坏本工作区。
 > 编译器侧缺口登记处仍是 `asaotui/compiler-gaps.md`（G1/G4/G8 上游已修；**G13 已修（阶段二四九）**；
 > **G11 已结案为非缺口**（不是生成器随机，而是**在另一个进程正改写的编译器树上测量**，
 > 见 `reviews/probe-g11-nondeterminism-2026-10-23.md`）；**G12 已结案为非缺口**（见证程序自身声明顺序）；
-> **G9 已修（阶段二四八）但 10 处 `*` 保留**（装箱成本 + G14）；**G14 新登记、未修**
-> （`Array` 进 `Object` 槽不装箱，26 格矩阵中 **5** 条直接 `0xC0000005`；转交编译器侧的**最小复现包** `node probes/g14-minimal/run.cjs`）；G8/G9/G14 的复核与可改动点清单见
+> **G9 已修（阶段二四八）但 10 处 `*` 保留**（`*` 现已是纯粹的性能默认：省一次装箱）；
+> **G14 已修（阶段二百五十三，2026-10-23）**——`Array` 进 `Object` 槽不装箱；转交编译器侧的
+> **最小复现包** `node probes/g14-minimal/run.cjs` 已闭环，26 格矩阵现 **0 偏离 / 0 崩溃**；
+> **G16 新登记、未修、库内已绕行**（`cond ? null : X` 的条件为假时塌成结果类型零值；
+> `probes/g16-ternary-null/`，门 §9b，AOT 现有 **12 格**偏离、AIR 17/17 一致）；
+> G8/G9/G14 的复核与可改动点清单见
 > `reviews/revisit-g8-g9-workarounds-2026-10-23.md`。

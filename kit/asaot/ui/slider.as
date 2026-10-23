@@ -15,7 +15,12 @@ package asaot.ui
             if (opts.value is Binding)
             {
                 n.binding = Binding(opts.value);
-                var v:Object = n.binding.get();
+                // `*`, NOT `Object`, like the boolean siblings: an `Object` slot would
+                // BOX whatever the binding holds (one allocation per read). G9 is FIXED
+                // (阶段二百四十八) and so is G14 (阶段二百五十三), so neither is a
+                // correctness workaround any more -- `*` is simply the right default for
+                // "a value of unknown type", and it stays the cheapest.
+                var v:* = n.binding.get();
                 n.value = v == null ? 0 : Number(v);
             }
             else if (opts.value != null) n.value = Number(opts.value);

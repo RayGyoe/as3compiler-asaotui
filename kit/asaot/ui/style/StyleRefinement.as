@@ -26,26 +26,31 @@ package asaot.ui.style
             if (o.flexDirection != null) r.flexDirection = String(o.flexDirection);
             if (o.width != null) r.size = new Size(lenOf(o.width), r.size != null ? r.size.height : null);
             if (o.height != null) r.size = new Size(r.size != null ? r.size.width : null, lenOf(o.height));
-            // Array-valued shorthands must NOT be handed to an Object-typed
-            // parameter (see Size's header); branch on `is Array` here and cast to
-            // a typed Array parameter instead.
-            if (o.size != null) r.size = o.size is Array ? Size.fromArray(o.size as Array) : Size.fromAny(o.size);
-            if (o.minSize != null) r.minSize = o.minSize is Array ? Size.fromArray(o.minSize as Array) : Size.fromAny(o.minSize);
-            if (o.maxSize != null) r.maxSize = o.maxSize is Array ? Size.fromArray(o.maxSize as Array) : Size.fromAny(o.maxSize);
+            // Every Array-valued shorthand goes through `fromAny`, which is now TOTAL
+            // (it dispatches the array form itself; see Size's header for the G14
+            // history). Until 2026-10-23 each of these lines branched on `is Array` and
+            // cast to a typed Array parameter, because an Array handed to an
+            // Object-typed parameter lost its identity in our AOT. G14 is FIXED, so the
+            // branch moved into the fromAny methods and the call sites read plainly.
+            if (o.size != null) r.size = Size.fromAny(o.size);
+            if (o.minSize != null) r.minSize = Size.fromAny(o.minSize);
+            if (o.maxSize != null) r.maxSize = Size.fromAny(o.maxSize);
             if (o.flexGrow != null) r.flexGrow = Number(o.flexGrow);
             if (o.flexShrink != null) r.flexShrink = Number(o.flexShrink);
             if (o.flexBasis != null) r.flexBasis = lenOf(o.flexBasis);
-            if (o.padding != null) r.padding = o.padding is Array ? Edges.fromArray(o.padding as Array) : Edges.fromAny(o.padding);
+            if (o.padding != null) r.padding = Edges.fromAny(o.padding);
             if (o.borderWidths != null)
             {
-                r.borderWidths = o.borderWidths is Array ? Edges.fromArray(o.borderWidths as Array) : Edges.fromAny(o.borderWidths);
+                r.borderWidths = Edges.fromAny(o.borderWidths);
             }
             if (o.border != null)
             {
                 // Convenience: a uniform border width, matching `border: 1`.
-                var bw:Edges = o.border is Array ? Edges.fromArray(o.border as Array) : Edges.fromAny(o.border);
+                var bw:Edges = Edges.fromAny(o.border);
                 if (bw != null) r.borderWidths = bw;
             }
+            // `gap` is not a class here -- it is a plain pair, so it is parsed inline
+            // and still tests the (dynamic) read directly.
             if (o.gap != null)
             {
                 if (o.gap is Array)
@@ -66,30 +71,22 @@ package asaot.ui.style
             if (o.alignSelf != null) r.alignSelf = String(o.alignSelf);
             if (o.alignContent != null) r.alignContent = String(o.alignContent);
             if (o.flexWrap != null) r.flexWrap = String(o.flexWrap);
-            // margin / inset are LengthEdges: scalar (Length / Number / "auto")
-            // through fromAny, an Array through fromArray (see LengthEdges header).
-            if (o.margin != null) r.margin = o.margin is Array ? LengthEdges.fromArray(o.margin as Array) : LengthEdges.fromAny(o.margin);
-            if (o.inset != null) r.inset = o.inset is Array ? LengthEdges.fromArray(o.inset as Array) : LengthEdges.fromAny(o.inset);
+            // margin / inset are LengthEdges; fromAny takes every documented shape.
+            if (o.margin != null) r.margin = LengthEdges.fromAny(o.margin);
+            if (o.inset != null) r.inset = LengthEdges.fromAny(o.inset);
             if (o.position != null) r.position = String(o.position);
             if (o.overflow != null) r.overflow = String(o.overflow);
             if (o.display != null) r.display = String(o.display);
             if (o.aspectRatio != null) r.aspectRatio = Number(o.aspectRatio);
             // An Array-valued `background` is a gradient stop list (deferred, see
-            // Fill's header). It MUST be branched on HERE, while the value is still a
-            // dynamic read: once it goes into Fill.fromAny's Object-typed parameter
-            // the Array is not boxed, `is Array` there is folded to false, and
-            // `is Fill` reads the array header as a vtable -> 0xC0000005 (G14,
-            // probes/obj-array-identity/ case 26). Until 2026-10-23 this line
-            // forwarded unconditionally -- the one shorthand in this method that
-            // skipped the branch every other Array-valued field does.
+            // Fill's header); `Fill.fromAny` now recognises the array itself and
+            // returns null for it, so this forwards plainly like every other field.
             if (o.background != null)
             {
-                r.background = o.background is Array
-                    ? Fill.fromArray(o.background as Array)
-                    : Fill.fromAny(o.background);
+                r.background = Fill.fromAny(o.background);
             }
             if (o.borderColor != null) r.borderColor = Number(o.borderColor);
-            if (o.cornerRadii != null) r.cornerRadii = o.cornerRadii is Array ? Corners.fromArray(o.cornerRadii as Array) : Corners.fromAny(o.cornerRadii);
+            if (o.cornerRadii != null) r.cornerRadii = Corners.fromAny(o.cornerRadii);
             if (o.opacity != null) r.opacity = Number(o.opacity);
             if (o.visibility != null) r.visibility = String(o.visibility);
             if (o.transitionMs != null) r.transitionMs = Number(o.transitionMs);

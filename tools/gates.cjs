@@ -42,12 +42,34 @@
 //                as a condition in kit/ makes the tool exit 1. This gate used to
 //                count a marker string the tool has never printed, so it could not
 //                go red at all; it now delegates to the tool's exit code.
+//   feedback 43 -- tools/mutation-widget-probes.cjs M1/M2: the skeleton plate colour
+//                and the spinner arc colour each moved 1/255 (both are hand-written
+//                pixels, so the failure names the exact coordinate).
+//   media 43  -- tools/mutation-widget-probes.cjs M3/M4: the "fit" factor becomes
+//                max instead of min (the 8x8 source grows to 80x80 and the letterbox
+//                pixel that proves containment turns solid -- this is the DEFAULT
+//                scale mode, added to the probe after the mutation sweep showed the
+//                default was never exercised), and the scroll clamp forgets the
+//                viewport height (the overscroll no longer stops at 60).
+//   data 77   -- probes/widgets/data/mutation.cjs: 4/4 (SEL_BG 1/255; the slot
+//                window inner w-2 -> w-1; the accordion mounting EVERY panel; and
+//                the layering bug the probe found, re-introduced by giving a header
+//                its own background again), every file restored byte-for-byte.
+//   G16       -- probes/g16-ternary-null/mutation.cjs: 4/4 (patch the shape the
+//                probe measures / claim a passing case is NULL / break a passing
+//                case / make the AIR arm die by returning a bare null from both
+//                branches, which the runner must report instead of silently
+//                comparing against missing lines).
 //   G14       -- probes/obj-array-identity/mutation.cjs: 4/4 (flip an AS3 rule /
 //                drop a documented deviation / invent one / truncate the case list),
 //                every file restored byte-for-byte.
 //   vec vs arr-- probes/vec-vs-arr/mutation.cjs: 2/2, the strong one being "make the
 //                Vector.<int> row actually RUN ON AN ARRAY", which collapses the
 //                measured ratio and fires the >= 2x claim.
+//   style fromAny -- probes/style-fromany/mutation.cjs: 4/4 (drop an array branch /
+//                swap an [h,v] pair / hard-code `is Array` on an Object param to
+//                false), every file restored byte-for-byte. This is the gate on the
+//                REVERT of the workaround G14 had forced on the style layer.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -83,7 +105,8 @@ function record(name, code, detail) {
 }
 
 // ---- 1..3: pure-AS3 probes (windowed; probe.cjs owns build+run+assert) -------
-for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim', 'redraw']) {
+for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim',
+                 'widgets/feedback', 'widgets/media', 'widgets/data', 'redraw']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);
@@ -130,7 +153,7 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 }
 
 // ---- 6b: the multi-page demo tour -------------------------------------------
-// This is the only gate that exercises a WHOLE app: four pages sharing one body
+// This is the only gate that exercises a WHOLE app: five pages sharing one body
 // slot, a widget-driven page switch, and rects that were hand-computed before the
 // run (see ui-demo/demo/GalleryMain.as). It is the pin for the two layout fixes in
 // UiNode (markLayoutDirty propagation out of a subtree, and re-resolving when a
@@ -140,7 +163,7 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const r = sh(process.execPath, ['run-gallery.cjs'], path.join(UI, 'ui-demo'), { ASC_NO_OPEN: '1' });
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /\[gallery\] RESULT: (\S+)/.exec(out);
-  record('gallery tour: 4 pages, widget-driven switch, hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
+  record('gallery tour: 5 pages, widget-driven switch, hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
 }
 
 // ---- 6c: the --air-app reachability probe (G13, fixed 阶段二百四十九) ----------
@@ -187,9 +210,10 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // is kept for the two reasons that survive:
 //   (a) `var x:Object = binding.get()` BOXES the value (`as_value_to_obj`) -> one
 //       GC allocation per read; `var x:*` does not.
-//   (b) an ARRAY in an `Object` slot loses its identity and can even SIGSEGV the
-//       process (G14) -- so `*` is the safe default for anything that may hold an
-//       Array.
+//   (b) `*` is also the safe default for a value that may be an Array, which was a
+//       CORRECTNESS reason while G14 lived. G14 is fixed now (阶段二百五十三), so only
+//       (a) remains -- `*` is still the default because it is the cheaper correct
+//       one, not because the other is broken.
 // DEFECT FIXED HERE: the gate used to count lines matching the string
 // `Boolean-CALL`, which this tool has NEVER printed -- so `bad` was always empty
 // and the gate could not go red whatever the kit contained. A nail that cannot
@@ -243,6 +267,35 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
     + (m ? ' -- deviations ' + m[1].trim() : ''), r.status, out);
 }
 
+// ---- 9b: G16 -- `cond ? null : X` collapses to a zero value -----------------
+// A null LITERAL in the THEN slot makes unifyType fall through to "keep the
+// then-branch type" (src/emit.ts:28936), so the whole conditional is typed `null`
+// and `convert` emits it as a CONSTANT zero (0 / false / NULL) -- the branch that
+// would actually run is thrown away. 17 cases, run on BOTH runtimes; the AIR arm is
+// checked against a HAND-DERIVED rule, so "AIR is the reference" is itself measured.
+// As with G14 before its fix, the gate is green while the AOT deviation set is
+// EXACTLY the documented one. A new deviation goes red; so does a case that stops
+// being run; and so does a deviation VANISHING without this list being updated --
+// because a silently shrinking set would let a regression hide behind a stale
+// expectation. The failure message says which direction to fix.
+const G16_KNOWN = ['1', '3', '4', '5', '7', '8', '9', '10', '14', '15', '16', '17'];
+{
+  const r = sh(process.execPath, ['probes/g16-ternary-null/run.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  // Only "our AOT says X but AIR says Y" lines: an AIR-arm disagreement or a crash
+  // must never be mistaken for the documented deviation set.
+  const aotIds = [...new Set([...out.matchAll(/FAIL  id (\d+): our AOT says/g)].map((m) => m[1]))]
+    .sort((a, b) => Number(a) - Number(b));
+  const armBad = /the REFERENCE disagrees|arm wrote only/.test(out);
+  const same = !armBad && aotIds.join(',') === G16_KNOWN.join(',');
+  record('G16 ternary-null (17 cases, AOT vs AIR) -- AOT deviations: '
+    + (aotIds.join(',') || 'none'), same ? 0 : 1,
+    out + (same ? '' : '\nThe AOT deviation set is no longer the recorded one (' + G16_KNOWN.join(',') + ').'
+      + '\nIf the compiler FIXED G16, that is good news: shrink the recorded set here AND in'
+      + '\nprobes/g16-ternary-null/expect.json, and re-point its mutation M1 (its header says how).'
+      + '\nAny other change is a regression.'));
+}
+
 // ---- 10: Vector.<T> is really faster than Array in OUR AOT -------------------
 // The same benchmark body compiled by BOTH toolchains (so the only difference is
 // the runtime). The claim: our AOT lowers `Vector.<T>` to a MONOMORPHIZED C struct
@@ -260,6 +313,30 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /AOT Vector\.<int> \/ Array = ([\d.]+)x/.exec(out);
   record('Vector vs Array throughput, both runtimes' + (m ? ' (AOT ratio ' + m[1] + 'x)' : ''), r.status, out);
+}
+
+// ---- 11: the style layer's `fromAny` is TOTAL -------------------------------
+// The style layer used to split every entry point in two -- `fromAny(o:Object)` for
+// scalars and `fromArray(a:Array)` for arrays -- because an Array put into an
+// Object-typed parameter lost its identity in our AOT, and a following `is Fill`
+// even SIGSEGV'd (G14). 阶段二百五十三 fixed G14, and the split was then REVERTED:
+// `fromAny` now dispatches the array form itself, so no call site has to know the
+// shape of the value it forwards. This gate makes that revert a measurement rather
+// than a hope -- it asks the questions the library actually depends on (does
+// `is Array` hold for an Object-typed parameter? does every documented shape still
+// land where it should?) on BOTH runtimes, against answers HAND-DERIVED in
+// expect.json (the AIR arm is checked against them too, so "AIR is the reference"
+// is itself measured).
+// A short line count from either arm is a CRASH, not a pass: the case that died
+// stops the program, so the runner fails on the missing tail.
+//   mutation: probes/style-fromany/mutation.cjs (4/4 -- drop an array branch, swap
+//   an [h,v] pair in two different types, and hard-code the mechanism itself to
+//   false; every file restored byte-for-byte by hash).
+{
+  const r = sh(process.execPath, ['probes/style-fromany/run.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /RESULT: (\S+.*)/.exec(out);
+  record('style fromAny is total: 19 cases, AOT vs AIR' + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
 }
 
 // ---- 8: the instrument that certifies "we did not touch the compiler" -------// Instant (pure string parsing, no build). It is a gate because every

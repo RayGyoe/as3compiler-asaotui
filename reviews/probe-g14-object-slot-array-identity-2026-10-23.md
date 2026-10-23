@@ -1,5 +1,12 @@
 # 探针：`Array` 落进 `Object` 槽会不会丢身份？（G14 实测）
 
+> **✅ 后续状态**：G14 已由编译器 **阶段二百五十三**（`54bda6d`, v0.4.217）修好，
+> 26 格矩阵现为 **`deviations none`**（本文件记录的 8 条偏离已全部关闭）。
+> 本文件是**修前**的登记与实测，按当时事实保留。
+> 修后**能力面**的复核（以及 UI 库据此回退的拆分）见
+> [`revisit-g14-unlocks-2026-10-23.md`](revisit-g14-unlocks-2026-10-23.md) 与探针
+> [`probes/style-fromany/`](../../probes/style-fromany/)。
+
 **2026-10-23** · 编译器 HEAD `a035645` / v0.4.216 · AIR 51.4.1（`mxmlc` + `adl`）
 探针：[`probes/obj-array-identity/`](../../probes/obj-array-identity/) · **最小复现包（供转交编译器侧）**：[`probes/g14-minimal/`](../../probes/g14-minimal/) + [`reviews/handoff-g14-to-compiler-2026-10-23.md`](../handoff-g14-to-compiler-2026-10-23.md) · 登记：[`compiler-gaps.md`](../../compiler-gaps.md) **G14** · 门：`tools/gates.cjs` 第 9 道
 

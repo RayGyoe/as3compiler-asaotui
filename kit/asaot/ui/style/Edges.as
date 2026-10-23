@@ -33,11 +33,12 @@ package asaot.ui.style
         //   padding: 12                -> all four
         //   padding: [t, r, b, l]      -> per side
         //   padding: [h, v]            -> horizontal / vertical
-        // Scalar form only; the array form must go through fromArray (see
-        // Size's header for the Object-parameter array-boxing compiler gap).
+        // Total: the array form is dispatched here (see Size's header for why this
+        // used to be split out, and why it is not any more).
         public static function fromAny(o:Object):Edges
         {
             if (o == null) return null;
+            if (o is Array) return fromArray(o as Array);
             if (o is Number) { return all(Number(o)); }
             return null;
         }

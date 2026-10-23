@@ -287,22 +287,24 @@
 > （`toString`/`hasOwnProperty`/`propertyIsEnumerable`/`valueOf`）现在由 `as_dyn_object_builtin`
 > **按堆种类**回答（record `[object Object]`、Dictionary `[object Dictionary]`、Vector 用 `join(",")`），
 > `as_obj_to_str`/`as_obj_default_str` 也认得这两类——此前 `var o:Object = new Dictionary(); o.toString()`
-> 同样是 SIGSEGV。**UI 库（style 层）那两处规避保持原样**（G9 已裁过：『*』读绑定仍是正确默认），
-> 修复只在编译器侧。
+> 同样是 SIGSEGV。**UI 库（style 层）当时那两处规避已经回退**：G14 一死，为它而做的
+> `fromAny`/`fromArray` 形参拆分就没有理由了，已按实测合并（见下表「对 UI 库的影响」行）；
+> G9 裁过的『*』读绑定**仍然保留**（那不是躲缺陷，是省一次装箱的正确默认，理由独立于 G14）。
+> 修复本身只在编译器侧。
 
 | 项 | 内容 |
 |---|---|
-| 判定 | **遗留欠账**（AIR 能做对而我们做不出，且不是平台边界——AIR **26/26** 与 AS3 规则逐条一致）。按 AGENTS.md §1.5 属「错的是我们」那一半 |
+| 判定 | **遗留欠账**（AIR 能做对而我们做不出，且不是平台边界——AIR **26/26** 与 AS3 规则逐条一致）。按 AGENTS.md §1.5 属「错的是我们」那一半。**（登记时的判定；已按此立项，阶段二百五十三修完）** |
 | AIR 参考臂（**先验证参考本身**） | 期望值**手写**在 `probes/obj-array-identity/expect.json` 的 `truth`（按 AS3 语言规则），AIR 臂**26 条全部相符** ⇒ 「以 AIR 为准」这句话本身是被测过的，不是口号 |
 | 现象（**生成 C 逐行实读**，非推测） | `var o:Object = [1,2,3];` 落成 `o = (Object*)(as_array_make(...))` —— **裸数组指针**。于是：① `o is Array` 被**常量折成 `false`**（`as_str_from_bool(false)`）；② `o is Marker` 落成 `as_is(o, &Marker_vt)`；③ `o as Array` 落成 `as_v_obj_val(...)`（Array 的 tag 不是 4 ⇒ **NULL**）；④ `o.length` 走 `as_dyn_get` ⇒ **`undefined`**；⑤ `typeof o` 却是正确的 `"object"` |
 | 崩溃的真因 | `as_is(obj, target_vt)` 里读 `((as_object_header*)obj)->vtable` 再沿 `super` 走。运行时**自己知道**这个危险，注释写着「an Array/Vector/Dictionary 的第一个字是数据指针或 mark 回调，读它本身就是崩溃」——但那个守卫只挡 `target_vt == NULL`；`target_vt` 非空时照读 ⇒ 崩溃。`*` 槽也躲不过：`as_v_is_inst(v, vt)` 对 `tag == 6`（Array）**明确放行**去调 `as_is` |
 | 影响半径（26 格矩阵，**8 条偏离**） | `Object` 槽：`is Array` **假** / `is <userClass>` **崩** / `as Array` NULL / `.length` undefined；`*` 槽：`is Array` **对**、`is <userClass>` **崩**；`Array` 直声明：`is Array` 对、`is <userClass>` **对**（不崩）；`Number`/`String`/`Boolean` 进 `Object` 槽：**全对**（`is <userClass>` 回 false 不崩；`is Number/String/Boolean` 也对）；真类实例：全对。⇒ 缺口**专属于 Array**，不是「Object 槽普遍丢身份」。**决定性格子 26**：把守卫改成「数组检查在前」**也没用**（`is Array` 照样折成 false，随后 `is Marker` 照样崩）⇒ **修复只能在调用点做**，不能在 `fromAny(o:Object)` 内部做 |
-| 对 UI 库的影响 ①：style 层的 `fromAny`/`fromArray` 拆分**不能合并** | `Size`/`LengthEdges`/`Edges`/`Corners`/`Fill` 都把入口拆成「标量走 `fromAny(o:Object)`、数组走 `fromArray(a:Array)`」。这条拆分**不是**过期的临时手段：`fromAny` 里第一句就是 `o is Length` / `o is Fill`（**用户类**）——一旦有 Array 进来就 **SIGSEGV**。⇒ 拆分是**安全要求**，保留 |
-| 对 UI 库的影响 ②：**已修**（2026-10-23，用户拍板） | ① `Fill.fromAny` 里那句 `if (o is Array) return null;` **已删**（它被折成 `if (false)`，留在那儿只是假装有保护），原位换成一段说清「**别再往这里加数组检查**」的注释；② 新增 `Fill.fromArray(a:Array):Fill`，**返回 null**（数组 = 渐变停机列表，而渐变已明确 defer；返回 null 正是 AIR 今天对 Array 的答案，属**对齐**而非发明）；③ `StyleRefinement.from` 的 `background` 补上 `is Array` 分流——它此前是该方法**唯一**没做分流就转发进 `fromAny` 的简写（`size`/`padding`/`margin`/`inset`/`border`/`cornerRadii` 都有）。⇒ `background: [...]` 不再崩（demo/主题仍全传数字色值，故这是**潜伏**修复而非可见变更） |
-| 与 G9 的关系 | 两个**不同**的缺陷，别混：G9 = `Boolean(<Object 槽>)` 读错（**已修**，且只影响 `Boolean`）；G14 = `Object` 槽对 **Array 完全不装箱**（**未修**，影响 `is`/`as`/动态属性，且会崩）。G9 的修复（`Boolean` 分支加 `as_obj_to_value`）**治不了** G14——因为 Array 压根没被装箱，没有箱子可解 |
+| 对 UI 库的影响 ①（**登记时**的判定） | 当时判「`Size`/`LengthEdges`/`Edges`/`Corners`/`Fill` 的 `fromAny`/`fromArray` 拆分**不能合并**」：`fromAny` 里第一句就是 `o is Length` / `o is Fill`（**用户类**），一旦有 Array 进来就 **SIGSEGV**。⇒ 拆分是**当时的安全要求**（不是省事的临时手段）。**这条判定只在 G14 存活期间成立**，见下一行 |
+| 对 UI 库的影响 ②（2026-10-23 当日：**拆分已回退，`fromAny` 全能化**） | G14 修掉后，拆分的前提消失，实测两 runtime 后**合并**：① `Size/Edges/Corners/LengthEdges/Fill.fromAny` 自己 `if (o is Array) return fromX(o as Array);` 分派（**`fromArray` 保留**为显式入口——渐变那条路要它的 `Array` 形参，将来落地时 `.length` 才安全）；② `StyleRefinement.from` 里 6 处 `o.x is Array ? fromX.fromArray(...) : fromX.fromAny(...)` 全部收成 `fromX.fromAny(...)`（`size`/`size` 两组 + `padding`/`borderWidths`/`border`/`margin`/`inset`/`background`/`cornerRadii`），调用点不再知道形参形状；③ `Fill.fromAny` 里那句**曾被折成 `if (false)` 的死守卫**重新变成活代码（不是「加回保护」，是它现在真的会执行）；④ 10 处 `*` 读绑定的**理由注释**重写（G9/G14 均已修，`*` 作为「省一次装箱」的正确默认保留）。**证据**：`probes/style-fromany/`（19 格，AOT 与真 AIR 51.4.1 **逐字一致**，含 `is Array` 进 `Object` 形参这一机制格；变异 **4/4**，源码 sha256 逐字节还原）；库内 End-to-end 钉子 `ui-demo/CheckUi.as` §8（33 格）+ `ui-demo/mutation-checkui-array-bg.cjs` **2/2** |
+| 与 G9 的关系 | 两个**不同**的缺陷，别混：G9 = `Boolean(<Object 槽>)` 读错（**已修**，阶段二百四十八，且只影响 `Boolean`）；G14 = `Object` 槽对 **Array 完全不装箱**（**已修**，阶段二百五十三，影响 `is`/`as`/动态属性，修前会崩）。G9 的修复（`Boolean` 分支加 `as_obj_to_value`）**治不了** G14——因为 Array 压根没被装箱，没有箱子可解；两条各自立项、各自修 |
 | 状态 | **已实测 · ✅ 已修（阶段二百五十三，v0.4.217）**（登记 2026-10-23；见本条顶部修复记录）。作为一道门持续看住（`tools/gates.cjs` 第 9 道）：偏离集**恰好等于**登记集才绿；**新增**偏离、**消失**的偏离、**少跑**的用例都会红。消失时它会说「可能是真修了，去更新登记与期待值」——不假绿；**这条机制本次当场响了一次**（08:30 复测 ⇒ 偏离集变空） |
-| 复现 / 钉子 | **两件**：① 26 格矩阵 `node probes/obj-array-identity/run.cjs` · 变异 `mutation.cjs` **4/4**（翻一条 AS3 规则 / 删一条已登记偏离 / 造一条不存在的偏离 / 砍掉后半段用例）；② **最小复现包**（供转交编译器侧）`node probes/g14-minimal/run.cjs` —— 13 行程序、两 runtime 并排，exit 0 = 复现成功、exit 1 = 已被修（并列出要更新的三处登记）、exit 2 = harness 失败或**参考臂自身与 AS3 规则不符**（此时拒绝下结论）。两者 `finally`/重跑均逐字节还原 |
-| 库内钉子 | `ui-demo/CheckUi.as` **§8**（4 条断言：数组背景**不崩**且无填充、标量背景仍是实色、兄弟字段不被吞、`Fill.fromAny(标量)` 仍实色）；变异 `ui-demo/mutation-checkui-array-bg.cjs` **2/2** —— 把那一行改回原样 ⇒ **`exit 3221225477`**（崩溃当场复现）；把 `Fill.fromAny` 改成恒 null ⇒ 标量断言当场报错（证明它不是同义反复） |
+| 复现 / 钉子 | **三件**：① 26 格矩阵 `node probes/obj-array-identity/run.cjs` · 变异 `mutation.cjs` **4/4**（翻一条 AS3 规则 / 删一条已登记偏离 / 造一条不存在的偏离 / 砍掉后半段用例）；② **最小复现包**（供转交编译器侧）`node probes/g14-minimal/run.cjs` —— 13 行程序、两 runtime 并排，exit 0 = 复现成功、exit 1 = 已被修（并列出要更新的三处登记）、exit 2 = harness 失败或**参考臂自身与 AS3 规则不符**（此时拒绝下结论）；③ **修复后的能力面**（防「修了但没真解锁」）`node probes/style-fromany/run.cjs` —— 19 格问的是**库真正依赖的那个用法**（`Array` 进 `Object` 形参后 `is Array`），AOT 与真 AIR 逐字一致；变异 `mutation.cjs` **4/4**，全部 `finally` 还原并 sha256 逐字节核对 |
+| 库内钉子 | `ui-demo/CheckUi.as` **§8**（5 条断言：数组背景**不崩**且无填充、`Fill.fromAny(Array)` **直接**调用也无填充、标量背景仍是实色、兄弟字段不被吞、`Fill.fromAny(标量)` 仍实色）；变异 `ui-demo/mutation-checkui-array-bg.cjs` **2/2** —— ① 把 `Fill.fromAny` 的数组分支改成返回 `solid(0x000000)` ⇒ 两条数组断言**按名**报红（**注意**：这条变异在 2026-10-23 之前是「改回调用点无分流 ⇒ 当场 `exit 3221225477` 崩溃」，G14 修好后崩溃已经不可能，故判据从**退出码**升级为**断言名**——否则它就成了假钉子）；② 把 `Fill.fromAny` 改成恒不实色 ⇒ 标量断言当场报错（证明它不是同义反复） |
 | 证据落盘 | [`reviews/probe-g14-object-slot-array-identity-2026-10-23.md`](reviews/probe-g14-object-slot-array-identity-2026-10-23.md) · 转交材料 [`reviews/handoff-g14-to-compiler-2026-10-23.md`](reviews/handoff-g14-to-compiler-2026-10-23.md) · 探针 [`probes/obj-array-identity/`](probes/obj-array-identity/)（`Cases.as` 单一用例源、两驱动、两臂原始输出）与 [`probes/g14-minimal/`](probes/g14-minimal/) |
 
 > **历史：当初的定位与转交材料**（阶段二百五十三已按此修掉，保留以便回溯）—— 完整转交材料见
@@ -335,6 +337,33 @@
 
 ---
 
+### G16 —— 三元 `cond ? null : X` 条件为假时**丢值**：对象→`null`、数值→`0`、布尔→`false`（仅 **String** 免疫）
+
+> 量这个方法的位置是一次库内小修：`ImageWidget` 里 `o == null ? null : Bitmap(o)` 每帧都重建 Bitmap、从不 fit。
+> 我原以为是自己的 `arrange` 写漏了，**最小化到 17 格才看清是三元运算符本身**。它**不止影响 UI 库**：
+> 任何 AS3 源码里 `cond ? null : <非 String 表达式>` 在条件为假时都丢值，且**数值/布尔是静默变成 `0`/`false`**
+> ——比 `null` 更难发现。按 AGENTS.md §1.5 这属**遗留欠账**（AIR 全对），且是**通用语义缺陷**，不是 UI 特例。
+
+| 项 | 内容 |
+|---|---|
+| 现象 | `x == null ? null : Bitmap(x)`（`x` 是活对象，条件为假）⇒ 我们返 **`null`**；AIR 返该 Bitmap |
+| 触发面（**精确形状**） | **THEN 槽是字面 `null`**，ELSE 槽是**任何非 String** 的表达式，条件为假 ⇒ 结果被折叠成该结果类型的**零值** |
+| 实测矩阵（17 格 × 双 runtime） | AOT **12 格偏离**（1,3,4,5,7,8,9,10,14,15,16,17）；AIR **17/17** 与 `expect.json` 的手算逐条一致 ⇒ 参考被检验而非假设。格 11/12/13 = 控制组（全对） |
+| 结果类型分档（实测） | 对象型 → `null`（9 格：`Bitmap`/`Object`/属性读/数组元素/`bitmapData`/`{}` 槽读出/函数调用）；**`Number` → `0`**（格 15，期待 42）；**`Boolean` → `false`**（格 16，期待 `true`）；**`int` → `0`**（格 17，期待 7）；**`String` 免疫**（格 11 → `hi` ✓） |
+| 根因（**已定位到两行**） | ① `src/emit.ts:28915-28937` `unifyType`（三元的结果类型）：`a` = **THEN 分支**的类型。`a.kind='null'` 与 `b.kind='object'/'int'/'bool'` 时：同 kind ✗、string 规则（`:28920`）✗、`any` 规则（`:28921`）✗、numeric 集合（`:28932`）**不含 `'null'`** ✗ ⇒ 落到 `:28936` 的 `return a; // fallback: keep the then-branch type` ⇒ **整个三元的静态类型被定成 `null`**。② `src/emit.ts` 的 `convert`：静态类型是 `null` 的表达式被当成「它**就是** null 值」直接发射成常量 —— `:33985-33997`（`number`→`0.0`、`int/uint/int64/uint64`→`0`、`bool`→`false`、`string`/`object`/引用族→`NULL`）+ `:34057`（`object` 槽 → `NULL`）⇒ **运行期真的会跑的那一支被整段丢掉** |
+| 模型可预测性（自检） | 上面两行**精确预测了全部 12 格偏离与 5 格通过**，包括「String 免疫」「`then` 不是 null 就正常」「`x==null ? Bitmap(x) : null` 正常」三件反直觉现象 ⇒ 不是「碰巧」，是机制 |
+| 为什么 String 免疫 | `unifyType:28920` 的 `if (a.kind === 'string' \|\| b.kind === 'string') return { kind: 'string' }` 在 fallback **之前**命中；引用/数值/布尔族没有这条规则 |
+| 为什么格 12（`x == null ? 0 : 42`）正常 | 两侧都是 `int` ⇒ `:28916` 的 `a.kind === b.kind` 命中，根本没走到 fallback（它**不是** null 字面量用例，是「同一形状但不含 null」的对照） |
+| 为什么格 2（`x == null ? Bitmap(x) : null`）正常 | `a` = object ⇒ fallback 返回 **object** ⇒ 类型对；null 侧转成 `NULL` 本来就对。⇒ 说明**故障与「null 是哪一支」强相关**，而不是「三元遇 null 就坏」 |
+| 影响半径 | **不限 UI 库**：任何用户的 `cond ? null : <非 String>` 都丢值；对象型见 `null` 至少还会**崩**在 `#1009`，而**数值/布尔是静默 0/false**（最危险的一档：算出来的数悄悄变 0） |
+| 对 UI 库的影响 | 全库审计命中 **1 处**：`kit/asaot/ui/kind/ImageWidget.as` 的 `bitmapOf(o)` ⇒ 已绕行 |
+| 绕行（库内） | `if (o == null) return null;\n return Bitmap(o);`（**if/return 形式**，实测两臂都对——格 13 是同形对照）；注释指向本条 + `probes/g16-ternary-null/` |
+| 修法方向（**不替他们选实现，只报事实**） | 首选 `unifyType` 补一条族规则：一侧 `null`、另一侧是**引用/数值/布尔**族 ⇒ 返回**另一侧**的类型（与 `:28920` 的 string 规则同型）。可复用的邻居：`:29005` 的 `fam()` 已把 kind 分成 `num/bool/str/null/ref`，同一个分类思想。**只改 `convert` 不够**：那只能保住值，三元的**静态类型**仍然错，后续 `is`/`as`/成员访问/参数类型仍会按 `null` 处理 |
+| 状态 | **已实测 · 未修**（库内唯一命中点已绕行） |
+| 证据落盘 / 复现 | [`probes/g16-ternary-null/`](probes/g16-ternary-null/)：`node run.cjs`（一命令两臂，exit 0=一致 / 1=不一致 / 2=构建错）；`NullCases.as` 17 格单一用例源；`expect.json` 手算规则（含逐格推导）；变异 `mutation.cjs` **4/4**（① 把格 1 改成 if/return 绕行形 ⇒ 该格必须**不再**报 NULL；② 改 `expect.json` 声称格 1 是 `NULL` ⇒ runner 必须报「参考与规则不符」；③ 把**能用的**格 6 改坏 ⇒ 该格必须**加入**失败集；④ 让格 3 两分支都返 null ⇒ 实测 **AIR 臂中途死掉**，runner 必须报「AIR 臂只写了 2/14 行」——这条顺带证明**崩溃检测也有牙**），全部 `finally` 还原 + sha256 逐字节核对 |
+
+---
+
 ## 2 不是缺口：已澄清 / 已关闭
 
 | 事项 | 结论 | 证据 |
@@ -358,7 +387,7 @@
 - 接口 `implements` + 经接口变量分派；接口 vtable 与一致性检查都覆盖（含内建类）
 - `Boolean(obj.prop)` **动态属性读** —— ⚠️ **此条曾被写得过宽**：17 格真值矩阵实测后收窄为「作者侧各种拼写全对」，唯独 **`Boolean()` 用在*静态声明为 `Object` 的局部量*上**会退化成指针测试 ⇒ **见 G9**（✅ 阶段二百四十八已修，26 格 A/B 现 0 差异）
 - `Math.*`、`isNaN`、`toFixed`
-- 数组字面量 / `push` / 下标
+- 数组字面量 / `push` / 下标；**数组进 `Object`（或 `*`）槽后仍保持身份与派发**（`is Array` / `as Array` / `.length` / 下标 / `join` / `String()`）—— ✅ 阶段二百五十三已修（修前 `is Array` 被折成 `false`、`is <用户类>` 直接崩，见 G14；回归钉 `probes/style-fromany/`）
 - `switch`、`for` / `while`、`?:`、`&&` 值语义
 - 字符串 + 数字拼接
 - `as` 转换、顶层脚本、多文件编译

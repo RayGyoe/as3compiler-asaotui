@@ -34,6 +34,11 @@ package demo
         // Motion page -- flipped by the view's per-frame tick(), NOT by a timer.
         public var phase:int = 0;
 
+        // Catalog page (page 4) -- the media/feedback/data widgets' own live state.
+        public var compRow:Number = 1;    // table selection (body row)
+        public var compOpen:Number = 0;   // accordion open section
+        public var compPage:Number = 3;   // pagination page (1-based)
+
         public function GalleryModel():void
         {
             super();

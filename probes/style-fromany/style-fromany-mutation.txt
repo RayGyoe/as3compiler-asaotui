@@ -1,0 +1,15 @@
+M1  CAUGHT (exit 1)  Size.fromAny loses its array branch -> case 1 must stop being (100px,50px)
+     failed cases: 1, 3, 16
+     restore: byte-identical (275284ca0fc2057b)
+M2  CAUGHT (exit 1)  Edges.fromArray swaps [h,v] -> case 5 must stop being (4,8,4,8)
+     failed cases: 5
+     restore: byte-identical (65efabd3ad98553b)
+M3  CAUGHT (exit 1)  the mechanism itself: `is Array` on an Object param hard-coded to false -> case 15 red
+     failed cases: 15
+     restore: byte-identical (2337dc351cba7e96)
+M4  CAUGHT (exit 1)  LengthEdges.fromArray swaps the [h,v] sides -> case 10 must change
+     failed cases: 10
+     restore: byte-identical (8121ff205eb3f936)
+
+MUTATION style-fromany: 4/4 caught, 0 problem(s)
+RESULT: PASS

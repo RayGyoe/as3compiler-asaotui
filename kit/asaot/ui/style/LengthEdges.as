@@ -9,11 +9,9 @@
 // mirrors `Edges` but holds a `Length` per side. `null` per side == unset
 // (leave the parent's value alone when refining), exactly like `Edges`'s NaN.
 //
-// ARRAY-BOXING COMPILER GAP (asaotui/compiler-gaps.md): an AS3 Array handed to
-// an `Object`-typed parameter loses its Array identity in our AOT, so `fromAny`
-// accepts only a SCALAR (a Length, a Number, or the String "auto") and the array
-// form goes through `fromArray(a:Array)` with an explicit `as Array` cast at the
-// call site -- see Size/Edges for the same split.
+// `fromAny` IS TOTAL: it accepts every documented shape -- a scalar, or the
+// [t, r, b, l] / [h, v] / [all] array -- and dispatches the array form itself.
+// See Size's header for why this used to be split into fromAny/fromArray.
 //
 // NO PACKAGE-LEVEL `lengthEdges(...)` HELPER: mxmlc requires every
 // externally-visible definition to live in a file named after it, and a
@@ -40,10 +38,11 @@ package asaot.ui.style
         }
 
         // Scalar form: a bare Length / Number / "auto" sets all four sides.
-        // Scalar only; the array form must go through fromArray (see header).
+        // Array form: dispatched here, so this accepts every documented shape.
         public static function fromAny(o:Object):LengthEdges
         {
             if (o == null) return null;
+            if (o is Array) return fromArray(o as Array);
             var l:Length = lenOf(o);
             if (l != null) return all(l);
             return null;
@@ -79,8 +78,8 @@ package asaot.ui.style
                 && lenSame(this.bottom, o.bottom) && lenSame(this.left, o.left);
         }
 
-        // Built-in checks first (Number / String) then the user class, matching
-        // the ordering Fill.fromAny/Style use for the boxed-array gap.
+        // Built-in checks first (Number / String) then the user class: the order
+        // Fill.fromAny and Size.lenOf use too.
         private static function lenOf(o:Object):Length
         {
             if (o == null) return null;

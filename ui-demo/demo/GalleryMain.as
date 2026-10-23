@@ -15,7 +15,7 @@
 // showWindow: air-gallery/app.xml decides the size, title, renderMode and
 // requestedDisplayResolution.
 //
-// WHAT IT IS: one window, four pages (Home / Widgets / Data / Motion), switched by
+// WHAT IT IS: one window, five pages (Home / Widgets / Data / Motion / Catalog),
 // the kit's `tabs` widget. The page index is a model field, the tabs write their
 // selection back through a Binding, and the view re-describes the one `body` slot
 // the page occupies -- so a page switch is an ordinary notify -> invalidate ->
@@ -23,7 +23,7 @@
 //
 // WHAT IT ALSO DOES, and why: on ADDED_TO_STAGE -- i.e. after the stage exists but
 // strictly BEFORE the bootstrap's showWindow, which blocks on the event loop -- it
-// runs a HEADLESS TOUR of all four pages. For each page it forces a reflow, checks
+// runs a HEADLESS TOUR of all five pages. For each page it forces a reflow, checks
 // which nodes exist (this page's must exist, the other pages' must be GONE -- not
 // merely invisible), hand-computes the gallery columns' rects, writes a PNG of the
 // offscreen render, and finally drives the tabs widget with a synthetic click to
@@ -108,7 +108,7 @@ package demo
             }
 
             var k:int;
-            for (k = 0; k < 4; k++)
+            for (k = 0; k < 5; k++)
             {
                 this.model.page = k;
                 this.app.invalidate(Dirty.ALL);
@@ -139,6 +139,13 @@ package demo
                 treeDiag(this.app.getRoot(), 0, acc);
                 this.report = this.report + "  nodes=" + acc.total + " engineNodeNull=" + acc.nullEng
                     + " zeroRect=" + acc.zero + " detachedBacking=" + acc.detached + "\n" + acc.text;
+                // The counts are a VERDICT, not a comment: every page of every build
+                // so far has had all three at zero, and a node that quietly never
+                // reached the engine (or lost its backing) is exactly what a new
+                // widget's first run looks like -- a missing picture, not a crash.
+                if (int(acc.nullEng) > 0) this.problems = this.problems + "page " + k + " has " + acc.nullEng + " node(s) with no engine node; ";
+                if (int(acc.zero) > 0) this.problems = this.problems + "page " + k + " has " + acc.zero + " node(s) with a zero rect; ";
+                if (int(acc.detached) > 0) this.problems = this.problems + "page " + k + " has " + acc.detached + " backing(s) that were never attached; ";
 
                 // Engine-side view: an explicit px size coming back as 0 can only mean
                 // the node was never calculated, so ask the engine tree itself whether
@@ -185,10 +192,10 @@ package demo
                 this.stage.render(GW, GH, OUT + "-page" + k + ".png");
             }
 
-            this.report = this.report + "== widget-driven switch ==\n";
-            // Four segments across 652 px with gap 8: pitch = (652 - 24) / 4 = 157,
-            // so segment 2 spans local x 330..487 -- click its centre, like a user
-            // would.
+                this.report = this.report + "== widget-driven switch ==\n";
+            // Five segments across 652 px with gap 8: pitch = (652 - 32) / 5 = 124,
+            // so segment 2 spans local x 264..387 -- click its centre (326), like a
+            // user would. (Four segments used to give a pitch of 157 and x=408.)
             var tn:UiNode = this.app.findByKey("tabs");
             if (tn == null)
             {
@@ -199,7 +206,7 @@ package demo
                 this.model.page = 0;
                 this.app.invalidate(Dirty.ALL);
                 this.app.reflow();
-                tn.backing.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false, 408, 19));
+                tn.backing.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false, 326, 19));
                 // The widget invalidated; a real frame would reflow next, so do it here.
                 this.app.reflow();
                 if (int(this.model.page) != 2) this.problems = this.problems + "clicking tab 2 left model.page at " + this.model.page + "; ";
@@ -274,7 +281,8 @@ function pageName(k:int):String
     if (k == 0) return "Home";
     if (k == 1) return "Widgets";
     if (k == 2) return "Data";
-    return "Motion";
+    if (k == 3) return "Motion";
+    return "Catalog";
 }
 
 // The keys that MUST exist on each page, including the widgets that page is the
@@ -285,7 +293,12 @@ function pageKeys(k:int):Array
     if (k == 1) return ["root", "tabs", "body", "colA", "colB", "cardChips", "c1", "c2", "c3", "badgeRow",
                         "cardControls", "r1", "t1", "sl", "cardAvatars", "a1", "p1", "cardActions", "ok"];
     if (k == 2) return ["root", "tabs", "body", "list", "row0", "row1", "row2", "row3", "row4", "detailCard", "picked"];
-    return ["root", "tabs", "body", "animated", "snapped", "motionNote"];
+    if (k == 3) return ["root", "tabs", "body", "animated", "snapped", "motionNote"];
+    // Page 4 -- the component catalog: one key per widget group, plus the table's
+    // rows/cells and the accordion's OPEN panel (section 0 is open in the model).
+    return ["root", "tabs", "body", "colM", "colD", "catImg", "catSpin", "catSk", "catTip",
+            "catTable", "hdr", "r0", "r1", "r0c0", "r0c1", "r1c0", "r1c1",
+            "catAcc", "h0", "h1", "catP0", "catCrumb", "c0", "s0", "c1", "s1", "c2", "catPage", "pg3", "prev", "next"];
 }
 
 // Keys that BELONG TO ANOTHER PAGE. A page switch must remove them: "still
@@ -293,10 +306,11 @@ function pageKeys(k:int):Array
 // prevent, and a bitmap could never tell the two apart.
 function otherKeys(k:int):Array
 {
-    if (k == 0) return ["colA", "colB", "list", "animated", "snapped"];
-    if (k == 1) return ["loginCard", "signin", "list", "animated", "snapped"];
-    if (k == 2) return ["loginCard", "colA", "colB", "animated", "snapped"];
-    return ["loginCard", "colA", "colB", "list"];
+    if (k == 0) return ["colA", "colB", "list", "animated", "snapped", "catTable", "catAcc", "catImg"];
+    if (k == 1) return ["loginCard", "signin", "list", "animated", "snapped", "catTable", "catAcc", "catImg"];
+    if (k == 2) return ["loginCard", "colA", "colB", "animated", "snapped", "catTable", "catAcc", "catImg"];
+    if (k == 3) return ["loginCard", "colA", "colB", "list", "catTable", "catAcc", "catImg"];
+    return ["loginCard", "colA", "colB", "list", "animated", "snapped"];
 }
 
 // Walks the RETAINED tree (not the description) and counts the conditions that

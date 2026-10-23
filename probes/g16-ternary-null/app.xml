@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- G16 probe: does `cond ? null : obj` keep the object? -->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.probe.g16ternarynull</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>g16-probe</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>AirMain.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>

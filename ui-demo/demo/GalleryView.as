@@ -1,4 +1,4 @@
-// demo/GalleryView.as -- the multi-page demo's view: a four-page app whose page
+// demo/GalleryView.as -- the multi-page demo's view: a five-page app whose page
 // switching goes through the tabs widget's Binding.
 //
 // STRUCTURE (and why it is shaped this way):
@@ -20,27 +20,37 @@ package demo
     import asaot.ui.Dirty;
     import asaot.ui.Node;
     import asaot.ui.View;
+    import asaot.ui.accordion;
     import asaot.ui.avatar;
     import asaot.ui.badge;
     import asaot.ui.bindTo;
     import asaot.ui.box;
+    import asaot.ui.breadcrumb;
     import asaot.ui.button;
     import asaot.ui.card;
     import asaot.ui.checkbox;
     import asaot.ui.chip;
     import asaot.ui.column;
     import asaot.ui.divider;
+    import asaot.ui.image;
     import asaot.ui.list;
+    import asaot.ui.pagination;
     import asaot.ui.progress;
     import asaot.ui.radio;
     import asaot.ui.row;
+    import asaot.ui.skeleton;
     import asaot.ui.slider;
+    import asaot.ui.spinner;
+    import asaot.ui.table;
     import asaot.ui.tabs;
     import asaot.ui.text;
     import asaot.ui.textField;
     import asaot.ui.toggle;
+    import asaot.ui.tooltip;
     import asaot.ui.style.Length;
     import asaot.ui.style.StyleRefinement;
+
+    import flash.display.BitmapData;
 
     public class GalleryView extends View
     {
@@ -149,6 +159,27 @@ package demo
             size: [Length.px(180), Length.px(110)], cornerRadii: 10, border: 1, borderColor: 0xD1D5DB
         });
 
+        // ---- page 4: the component catalog -----------------------------------
+        // The 8x8 source of every image on that page. A STATIC (not per-render) so
+        // the image widget sees the same object identity each pass -- a fresh
+        // BitmapData per frame would read as "new pixels" and re-measure for ever.
+        private static const SRC8:BitmapData = new BitmapData(8, 8, false, 0x3366CC);
+        private static const CAT_H:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(72)] });
+        private static const CAT_SPIN_S:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(56)] });
+        private static const CAT_SK_S:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(26)] });
+        // No size: the tooltip's own measure() makes a bubble that fits its label
+        // (and paint() centres the text), so pinning a box here would only be a
+        // wider bubble with a hole in it.
+        private static const CAT_TIP_S:StyleRefinement = StyleRefinement.from({});
+        // 26 * 3 = 78: a header plus two rows, so the table has no dead strip under it.
+        private static const CAT_TBL_S:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(78)] });
+        private static const CAT_ACC_S:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(120)], gap: 2 });
+        private static const CAT_PANEL_S:StyleRefinement = StyleRefinement.from({
+            size: [Length.pct(1), Length.px(32)], background: 0xEAEAEA
+        });
+        private static const CAT_CRUMB_S:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(20)] });
+        private static const CAT_PAGE_S:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(28)] });
+
         public var model:GalleryModel;
         // Evidence that page switching is driven by the widget, not by the tour
         // poking the model: every onChange callback lands here.
@@ -169,15 +200,23 @@ package demo
                 text("asaot.ui", { key: "title", style: TITLE, ariaName: "Product" }),
                 text("Pure-AS3 UI toolkit: described by a View, placed by the AS3 layout engine, painted by the AOT runtime.",
                     { key: "sub", style: SUB, ariaName: "Tagline" }),
-                tabs(["Home", "Widgets", "Data", "Motion"], {
+                tabs(this.tabNames(), {
                     key: "tabs", style: TABS, gap: 8,
                     selectedIndex: bindTo(this.model, "page"),
                     onChange: this.pageChanged
                 }),
                 this.pageBody(p),
-                text("page " + p + " of 3  -  " + this.model.status,
+                text("page " + p + " of " + this.tabNames().length + "  -  " + this.model.status,
                     { key: "status", style: STATUS, ariaName: "Status" })
             ]);
+        }
+
+        // ONE list of page names: the tab strip renders it and the footer counter
+        // reads it, so the count cannot drift from the pages again (it said "of 3"
+        // while there were four tabs, and no assertion noticed).
+        private function tabNames():Array
+        {
+            return ["Home", "Widgets", "Data", "Motion", "Catalog"];
         }
 
         // The per-frame hook. The Motion page's two boxes change colour on a wall
@@ -198,6 +237,7 @@ package demo
             if (p == 0) return this.homePage();
             if (p == 2) return this.dataPage();
             if (p == 3) return this.motionPage();
+            if (p == 4) return this.catalogPage();
             return this.widgetsPage();
         }
 
@@ -276,7 +316,7 @@ package demo
                             button({ key: "del", style: DANGER_S, ariaName: "Danger", label: "Danger", onClick: this.dangerClicked })
                         ]),
                         divider({ key: "hair", orientation: "horizontal" }),
-                        note("16 widget kinds registered.", "actNote")
+                        note("25 widget kinds registered.", "actNote")
                     ])
                 ])
             ]);
@@ -299,6 +339,37 @@ package demo
                         text("Selected: " + picked, { key: "picked", style: NOTE, ariaName: "Selected item" }),
                         note("Engine places every row; a click writes back.", "dataNote")
                     ])
+                ])
+            ]);
+        }
+
+        // ---- page 4: the component catalog ----------------------------------
+        // The widgets the other four pages never showed -- the media, feedback and
+        // data groups -- on two 320px flex columns (the same geometry page 1 uses, so
+        // the tour's column rects are shared). Every size is explicit: this page is
+        // photographed (gallery-page4.png) and its rect report is the text half of
+        // that evidence.
+        private function catalogPage():Node
+        {
+            return row({ key: "body", style: ROWBODY, ariaName: "Component catalog" }, [
+                column({ key: "colM", style: COL, ariaName: "Media and feedback" }, [
+                    image({ key: "catImg", style: CAT_H, bitmapData: SRC8, scaleMode: "fit", smooth: false }),
+                    spinner({ key: "catSpin", style: CAT_SPIN_S, tone: "info", spin: true }),
+                    skeleton({ key: "catSk", style: CAT_SK_S, variant: "rect", tone: 0xE5E7EB }),
+                    tooltip("Saved", { key: "catTip", style: CAT_TIP_S, arrow: "up" })
+                ]),
+                column({ key: "colD", style: COL, ariaName: "Data" }, [
+                    table([{ key: "name", title: "Name" }, { key: "qty", title: "Qty" }],
+                          [{ name: "Widget", qty: 3 }, { name: "Gadget", qty: 12 }],
+                          { key: "catTable", style: CAT_TBL_S, rowHeight: 26, stripes: true, grid: true,
+                            selectedIndex: bindTo(this.model, "compRow") }),
+                    accordion([{ title: "General", content: box({ key: "catP0", style: CAT_PANEL_S }) },
+                               { title: "Advanced", content: box({ key: "catP1", style: CAT_PANEL_S }) }],
+                              { key: "catAcc", style: CAT_ACC_S,
+                                activeIndex: bindTo(this.model, "compOpen") }),
+                    breadcrumb(["Library", "Data", "Raw"], { key: "catCrumb", style: CAT_CRUMB_S }),
+                    pagination(3, 20, { key: "catPage", style: CAT_PAGE_S, windowSize: 7,
+                                        page: bindTo(this.model, "compPage") })
                 ])
             ]);
         }

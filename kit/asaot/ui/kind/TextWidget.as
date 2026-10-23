@@ -40,8 +40,23 @@ package asaot.ui.kind
             if (n.tf == null) return;
             var s:Style = n.resolved;
             PaintKit.measureField(n, n.tf, n.textContent, s);
-            if (PaintKit.autoW(s)) PaintKit.setPointSize(n, LayoutConstants.AXIS_WIDTH, n.state.measuredW);
-            if (PaintKit.autoH(s)) PaintKit.setPointSize(n, LayoutConstants.AXIS_HEIGHT, n.state.measuredH);
+            // The intrinsic size is the CONTENT size, so the box's own padding and
+            // border have to be added on top: the engine's boxSizing defaults to
+            // border-box, i.e. a point size is the WHOLE box. Publishing the bare
+            // text width would leave the padding eating into the text -- a 4px
+            // glyph with 4px padding got an 8px box and its run overflowed into
+            // the next node (seen with the breadcrumb separator). Badge/Button/
+            // Card/Chip already add the insets here; this one did not.
+            if (PaintKit.autoW(s))
+            {
+                PaintKit.setPointSize(n, LayoutConstants.AXIS_WIDTH,
+                    n.state.measuredW + PaintKit.padH(s.padding) + PaintKit.borderH(s.borderWidths));
+            }
+            if (PaintKit.autoH(s))
+            {
+                PaintKit.setPointSize(n, LayoutConstants.AXIS_HEIGHT,
+                    n.state.measuredH + PaintKit.padV(s.padding) + PaintKit.borderV(s.borderWidths));
+            }
         }
 
         public function arrange(n:UiNode):void
