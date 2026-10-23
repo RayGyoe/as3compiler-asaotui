@@ -81,8 +81,9 @@ node tools/gates.cjs     # 已增至 18 道门，18/18 PASS 才叫绿（最新�
 | `reviews/probe-demo-fill-2026-10-22.md` | **demo 底色消失事件**：四次假设、**三次被自己的测量否证**，最后定位为**过期产物（假红）**；沉淀出「先重建再测 / 把变量钉到只剩一个」两条做法与 ASan 取证法 | 已验（无新缺口） |
 | `reviews/probe-asmdef-and-name-collision-2026-10-22.md` | **同一输入两侧同编**：AIR 硬拒「一个文件里的异名 public 定义」而我们放行（**G7**）；`bind` 碰撞与 `stat` 被单宏吃掉（**G8**） | 已验 |
 | `reviews/compiler-tree-fingerprint.json` | 开工时 `as3compiler/` 工作树脏文件的**指纹**（sha256/16）——用于末次复核「我零改动」；复核器 `node tools/compiler-fingerprint.cjs` | 证据 |
-| `reviews/gates-all-9.txt` | **全量 18 道门一次跑绿**的落盘输出（2026-10-23；含新加的 **G14 身份矩阵**与 **Vector vs Array** 两道）；`gates-all-8.txt` 是加门前的 16 道历史留档；另 `gates-skip-path.txt` = 强制走 `[SKIP]` 分支的集成钉子 | 证据 |
-| `reviews/probe-g11-nondeterminism-2026-10-23.md` | **G11 结案**：不是「生成器不确定」，而是**在另一个进程正改写的编译器树上测量**；三份历史产物 + 5 次构建同一哈希 + 变异 8/8 | 已验（非缺口） |
+| `reviews/gates-all-9.txt` | **全量 18 道门一次跑绿**的落盘输出（2026-10-23；含新加的 **G14 身份矩阵**与 **Vector vs Array** 两道）；`gates-all-10.txt` 是**改完 G11 窗口钉之后的复跑**（同一个 18 道，仪器换了一版，旧记录不再代表现在的仪器）；`gates-all-8.txt` 是加门前的 16 道历史留档；另 `gates-skip-path.txt` = 强制走 `[SKIP]` 分支的集成钉子 | 证据 |
+| `reviews/probe-g11-nondeterminism-2026-10-23.md` | **G11 结案**：不是「生成器不确定」，而是**在另一个进程正改写的编译器树上测量**；三份历史产物 + 5 次构建同一哈希 + 变异 10/10 | 已验（非缺口） |
+| `reviews/g11-false-red-window-2026-10-23.md` | **G11 的一次假红**：端点哈希对看不见「写入→还原」窗口（并发会话的 mutation harness 恰好保证逐字节还原）⇒ 改为**逐次构建**采样 `src/`、把差异归因给「源码动过」（exit 3 `[SKIP]`），并把**归因本身**做成变异目标 **M6b** | 已修 |
 | `reviews/revisit-g8-g9-workarounds-2026-10-23.md` | **G8/G9 绕行复核（本轮）**：底层已修后，当初「为了通过」的决定能不能撤？→ 逐项给出**不能撤**的理由（装箱成本、G14、不把公开 API 名押在 C 名剪辑上），并列出**可改动点清单**；另含 **`Vector` vs `Array` 实测**（AOT 0.18x / AIR 0.92x）。本轮改动：7 处陈旧绕行注释、1 道「不可能变红」的门、2 道新门 | 已验 |
 | `reviews/probe-g14-object-slot-array-identity-2026-10-23.md` | **G14 实测**：`Array` 进 `Object` 槽不装箱 ⇒ `is Array` 恒假、`as Array` null、`.length` undefined、`is <用户类>` **`0xC0000005`**（**26 条**×两臂；AIR 先自证 26/26 符合手写规则）；`Fill.fromAny` 的 `is Array` 守卫是**死代码**（**已删**） | 已验（未修） |
 | `reviews/handoff-g14-to-compiler-2026-10-23.md` | **G14 转交材料**（给编译器侧会话）：一条命令复现 + 期望/实际并排 + 三处根因（`emit.ts:32576` 的 `is Array` 少一个 `object` 分支【邻居 `is Class`/`is Vector` 都有】· `runtime.ts:1178` 的 `as_is` 只挡 `target_vt==NULL` · `runtime.ts:2026` 对 `tag==6` 放行）+ 两条修法路线 + 「修完我们的门会故意变红」的说明 | 已交付 |

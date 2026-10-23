@@ -2,7 +2,7 @@
 
 - 日期：2026-10-23
 - 结论：`compiler-gaps.md` **G11 结案为非缺口**（原文的「最严重一条」判定撤回）
-- 一条命令：`node probes/g11-nondeterminism/run.cjs`（变异 `mutation.cjs` 7/7）
+- 一条命令：`node probes/g11-nondeterminism/run.cjs`（变异 `mutation.cjs` 10/10）
 - 证据落盘：`probes/g11-nondeterminism/`（含三份历史产物）、`run-2026-10-22.txt`、`mutation-2026-10-22.txt`
 
 ---

@@ -1,0 +1,21 @@
+
+== 2026-10-23T00:53:28.219Z ==
+PASS M1 struct field -> time__ is detected
+     clang errors 18, kinds [Date._time]; first: no member named '_time' in 'Date'
+PASS M2 props entry -> nope is detected
+     clang errors 1; first: no member named 'nope' in 'Date'
+PASS M3 baseline build produced C
+     baseline sha256/16 ae3fabbe9fc30ad8
+PASS M3 a one-literal source change changes the generated C
+     baseline ae3fabbe9fc30ad8 vs mutant f1f4bde1e175bdcc
+PASS M4 flipping artifact-3's expectation makes the gate red
+     exit 1, FAIL line naming artifact-3: present
+PASS M5 a mid-run generator move is INCONCLUSIVE (exit 3), never a green
+     exit 3 (want 3), INCONCLUSIVE text: present
+PASS M6a a generator move DURING a build is INCONCLUSIVE (exit 3), never a green
+     exit 3 (want 3), build-1 reason: present
+PASS M6b nondeterminism is blamed ONLY when no build was contaminated
+     0 contaminated -> "THE GENERATOR IS NONDETERMINISTIC", failure true | 1 contaminated -> "the generator MOVED mid-run (see the src/ stamp on each build above) -- NOT evidence of nondeterminism", failure false
+PASS every watched file restored byte-for-byte
+     artifact-3-consistent.c f63f256a66b64923, artifact-1-struct-time__.c 710dab8769241f9b, artifact-2-struct-socket-1-error.c 98cd3d4e6e259221, run.cjs eea3e1bbdda5a994
+PASS no mutant left on disk

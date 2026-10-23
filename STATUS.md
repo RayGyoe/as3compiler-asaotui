@@ -180,7 +180,7 @@ cd asaotui && node tools/gates.cjs                           # 18 道门，含 l
 一条命令跑全部 **18** 道门：
 
 ```sh
-cd asaotui && node tools/gates.cjs        # 18/18 PASS 才叫绿；参考 reviews/gates-all-9.txt
+cd asaotui && node tools/gates.cjs        # 18/18 PASS 才叫绿；参考 reviews/gates-all-10.txt
 ```
 
 > 那道 G11 determinism 门在「**测量期间编译器源码真的在动**」时会给 `[SKIP]`（exit 3）而不是假红/假绿：
@@ -202,7 +202,7 @@ cd asaotui && node tools/gates.cjs        # 18/18 PASS 才叫绿；参考 review
 | AOT ↔ AIR 像素 | `air-check/` | 两张 200×120 BMP **0 字节差异** |
 | 静态钉子（原 G9 扫描） | `node tools/find-bound-truthy.cjs kit seam` | `0` 命中 / 34 个 `:Object` 局部变量无一当条件用。**这道门曾经不可能变红**（它数一个工具从没打印过的字符串），已修为消费退出码；变异 `tools/mutation-bound-truthy.cjs` **4/4** |
 | 「未碰编译器」的仪器自身 | `node tools/fingerprint-parse-check.cjs` | 20 项（含两条前导空格回归断言）；变异 `tools/mutation-parse.cjs` |
-| **G11 结案（生成器确定性）** | `node probes/g11-nondeterminism/run.cjs` | 同源 **5 次**构建 → **1** 份生成 C（`f0ac0ff461e604bf`）+ 拼写三处一致 + 三份历史产物误差 20→1→0；变异 `mutation.cjs` **8/8** |
+| **G11 结案（生成器确定性）** | `node probes/g11-nondeterminism/run.cjs` | 同源 **5 次**构建 → **1** 份生成 C（`f0ac0ff461e604bf`）+ 拼写三处一致 + 三份历史产物误差 20→1→0；`src/` 内容哈希**逐次构建前后各采一次**（首尾各一次看不见「改完又还原」的窗口）；变异 `mutation.cjs` **10/10** |
 | **G14（新）`Array` 进 `Object` 槽的身份** | `node probes/obj-array-identity/run.cjs` | 26 条×两臂：**AIR 26/26 符合手写 AS3 规则**；AOT 偏离 **8** 条（`is Array` 假 / `as Array` null / `.length` undefined / 5 条 **`0xC0000005`**）；变异 `mutation.cjs` **4/4** |
 | **`Vector.<T>` vs `Array`（两 runtime）** | `node probes/vec-vs-arr/run.cjs` | N=1M：AOT `Vector.<int>` fill+sum **2ms** vs `Array` **11ms**（**0.18x**）；AIR 同两项 33/36ms（0.92x）。门只钉 AOT **≤0.5x**；变异 `mutation.cjs` **2/2** |
 
@@ -232,7 +232,8 @@ cd asaotui && node tools/gates.cjs        # 18/18 PASS 才叫绿；参考 review
 > 本轮开工时编译器是 `92a1239`/`0.4.208`；收尾时已到 **`1ac26b4`（阶段二五零）**，工作树 **clean**。
 > 期间的提交全部是并发会话的（阶段二四九 G13、阶段二五零 `--as-class-path`），**没有一个是我的**；
 > 我在本轮只做只读复核与测量（见 §3.5）。
-> 全量 **18 道门**在该 clean 树上跑绿（`reviews/gates-all-9.txt`）；另有一份强制走 `[SKIP]` 分支的
+> 全量 **18 道门**在该 clean 树上跑绿（`reviews/gates-all-10.txt`；`gates-all-9.txt` 是改 G11 窗口钉
+> 之前的那次，仪器版本不同）；另有一份强制走 `[SKIP]` 分支的
 > 运行做钉子（`reviews/gates-skip-path.txt`）—— 编译器侧这些提交没有弄坏本工作区。
 > 编译器侧缺口登记处仍是 `asaotui/compiler-gaps.md`（G1/G4/G8 上游已修；**G13 已修（阶段二四九）**；
 > **G11 已结案为非缺口**（不是生成器随机，而是**在另一个进程正改写的编译器树上测量**，

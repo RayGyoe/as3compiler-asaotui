@@ -19,6 +19,12 @@
 //                       and require the gate to exit non-zero naming that artifact.
 //                       This is the only mutation that touches the checker itself; it
 //                       is restored by hash.
+//   M5  skip arm:       make the run see the generator move mid-run and require exit 3
+//                       (SKIP) with the reason printed -- never a green.
+//   M6  attribution:    a generator that moves DURING a build must not be reported as
+//                       "the generator is nondeterministic" (the false red this probe
+//                       produced on 2026-10-23), while a genuine 2-hash run with no
+//                       contaminated build must still be.
 //
 // The three artifacts and run.cjs are restored byte-for-byte (sha256 checked) in
 // `finally`; the mutants are deleted. Nothing here touches the compiler repo: the
@@ -37,7 +43,7 @@ const UI = path.resolve(HERE, '..', '..');
 const REPO = path.resolve(UI, '..', 'as3compiler');
 const RUN = path.join(HERE, 'run.cjs');
 const CONSISTENT = path.join(HERE, 'artifact-3-consistent.c');
-const { cErrors, logKinds } = require(RUN);
+const { cErrors, logKinds, distinctVerdict } = require(RUN);
 
 const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
 const results = [];
@@ -150,6 +156,34 @@ try {
     check('M5 a mid-run generator move is INCONCLUSIVE (exit 3), never a green',
       r.status === 3 && says,
       'exit ' + r.status + ' (want 3), INCONCLUSIVE text: ' + (says ? 'present' : 'ABSENT'));
+  }
+  {
+    // ---- M6: a generator that moves DURING a build is not a nondeterminism verdict ---
+    // Two halves, because either one alone is passable by a wrong implementation.
+    // (a) end-to-end: ASC_G11_FORCE_ITER=<n> makes the per-build sample at iteration n
+    // see a move; the only acceptable outcome is exit 3 with that build named.
+    // (b) the discriminating decision, driven directly: two distinct outputs with NO
+    // contaminated build must still read as the DEFECT, and the same two outputs with
+    // one contaminated build must stop being called nondeterminism. Without (b), "skip
+    // whenever the hashes differ" would pass (a) while silently retiring the only
+    // measurement in this project that can detect a genuinely nondeterministic generator.
+    const r = spawnSync(process.execPath, [RUN], {
+      cwd: UI, encoding: 'utf8', maxBuffer: 1 << 26,
+      env: { ...process.env, ASC_G11_RUNS: '1', ASC_G11_EVIDENCE: 'off', ASC_G11_FORCE_ITER: '1' }
+    });
+    const out = (r.stdout || '') + (r.stderr || '');
+    const says = /blocked by: the compiler source changed during build 1/.test(out) && !/^PASS:/m.test(out);
+    check('M6a a generator move DURING a build is INCONCLUSIVE (exit 3), never a green',
+      r.status === 3 && says,
+      'exit ' + r.status + ' (want 3), build-1 reason: ' + (says ? 'present' : 'ABSENT'));
+
+    const clean = distinctVerdict(2, 5, 0);
+    const contaminated = distinctVerdict(2, 5, 1);
+    check('M6b nondeterminism is blamed ONLY when no build was contaminated',
+      !!clean.failure && !contaminated.failure
+        && /NONDETERMINISTIC/.test(clean.label) && /NOT evidence/.test(contaminated.label),
+      '0 contaminated -> ' + JSON.stringify(clean.label) + ', failure ' + !!clean.failure
+      + ' | 1 contaminated -> ' + JSON.stringify(contaminated.label) + ', failure ' + !!contaminated.failure);
   }
 } finally {
   // ---- restore, and prove it by hash ---------------------------------------

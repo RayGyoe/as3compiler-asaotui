@@ -52,7 +52,7 @@ node probes/g11-nondeterminism/run.cjs
 | part | assertion |
 |---|---|
 | **A** | the compiler tree is printed: `HEAD`, `src/` **content hash**, tracked modifications, untracked files. Dirty vs `HEAD` is **context**, not a verdict — determinism is a property of a *generator revision*, so what matters is that the revision's bytes do not move while we build (checked after B) |
-| **B** | **5 builds** of the same program, same command, same tree, with the **input hash** and the **`src/` content hash** recorded before *and* after ⇒ exactly **one** distinct generated C (`3698965 B`, `sha256/16 = f0ac0ff461e604bf`) |
+| **B** | **5 builds** of the same program, same command, same tree, with the **input hash** recorded before and after and the **`src/` content hash sampled around *every single build*** ⇒ exactly **one** distinct generated C (`3698965 B`, `sha256/16 = f0ac0ff461e604bf`). Sampling per build rather than once at the two ends is load-bearing: an edit that is put in place and **reverted** inside the window leaves both endpoints identical, so an endpoint pair cannot tell "the generator is unstable" from "a build caught someone's mutant". The compiler session's own mutation harness (`as3compiler/temp/g14/mutate.cjs`) does exactly write-mutant / run / restore-original-bytes, and it produced a false red here on 2026-10-23 |
 | **C** | spelling tripwire on the fresh C: `Date._time` / `TextField.___restrict` / `ServerSocketConnectEvent.socket` must agree in the **struct**, in the **props table** and in the **hand-written body literal** — the three places G11 disconnected |
 | **D** | the three artifacts must report the expected clang errors **and** decay monotonically (the trend, not just the values) |
 | **E** | the hazard set in my failing log must equal the hazard set in artifact-1 — the cross-check that ties the two artifacts together |
@@ -65,13 +65,13 @@ be erasable by a later red).
 | exit | verdict | when |
 |---|---|---|
 | `0` | **PASS** | all five measurements green **and** the `src/` content hash was stable across them. On a dirty-but-stable tree the PASS names the content hash and says so: determinism is certified *for that revision*, not for the commit |
-| `3` | **INCONCLUSIVE** | all measurements green but the compiler source **moved mid-run** — a green would pin a tree we never saw, a red would blame this workspace for someone else's edit. The gate reports this as a loud `[SKIP]` and counts it separately |
-| `1` | **FAIL** | a measurement actually came out wrong (several hashes, a spelling disagreement, artifacts not decaying, a missing/incorrect hazard set) |
+| `3` | **INCONCLUSIVE** | all measurements green but the compiler source **moved mid-run** — including a move confined to one build (the per-build samples catch it; the endpoint pair does not) — a green would pin a tree we never saw, a red would blame this workspace for someone else's edit. The gate reports this as a loud `[SKIP]` and counts it separately |
+| `1` | **FAIL** | a measurement actually came out wrong (several hashes **with no contaminated build**, a spelling disagreement, artifacts not decaying, a missing/incorrect hazard set) |
 
 ## Teeth
 
 ```
-node probes/g11-nondeterminism/mutation.cjs      # 8/8
+node probes/g11-nondeterminism/mutation.cjs      # 10/10
 ```
 
 | mutation | what it changes | what must go red |
@@ -81,12 +81,14 @@ node probes/g11-nondeterminism/mutation.cjs      # 8/8
 | **M3** | one string literal in `Main.as` | the generated C's hash **must change** — otherwise "5 identical hashes" could be a constant, i.e. a vacuous equality |
 | **M4** | `run.cjs`'s own expectation for artifact-3 (0 → 1 error) | the gate must fail with a `FAIL: artifact-3-consistent.c` line |
 | **M5** | `ASC_G11_FORCE_SKIP=1` (the generator *pretends* to have moved mid-run) | the gate must report **INCONCLUSIVE with exit 3** and must **not** print `PASS:` — otherwise a test hook could launder an unmeasured run into a green |
+| **M6a** | `ASC_G11_FORCE_ITER=1` (the generator *pretends* to have moved **during** build 1) | same: exit 3, with build 1 named as the contaminated one |
+| **M6b** | `distinctVerdict()` driven directly: 2 distinct outputs with 0 vs 1 contaminated build | with 0 contaminated it must still read `THE GENERATOR IS NONDETERMINISTIC` **and** raise the failure; with 1 it must say "NOT evidence of nondeterminism" and raise nothing. Without this half, "skip whenever the hashes differ" would satisfy M6a while silently retiring the only measurement here that can detect a genuinely nondeterministic generator |
 
 Every watched file is restored in `finally` and verified by sha256; the mutants are
 deleted. Nothing here writes to the compiler repo — the whole point of G11 is that the
 compiler tree must stay clean.
 
-## Two things this exercise changed outside the probe
+## Things this exercise changed outside the probe
 
 * **Both demo runners no longer retry the build.** They print the compiler tree state
   instead (`ui-demo/air-run.cjs::compilerTree`). A retry hid the cause *and* would disguise
@@ -98,6 +100,18 @@ compiler tree must stay clean.
   other session works", i.e. a coin flip, and a gate nobody can trust. The criterion is now
   *"did the generator revision move during the measurement"*, which is both stricter about
   the thing that matters and immune to someone else's uncommitted work.
+* **…and sharper again, because the endpoint pair had a hole.** On 2026-10-23 08:45 (+0800)
+  this gate printed a red — `distinct hashes: 2 of 5  -> THE GENERATOR IS NONDETERMINISTIC`,
+  one build 82 B shorter than the other four — while its own `src/` hash was *identical*
+  before and after. Both readings were true and the conclusion was still wrong: the compiler
+  session was running its G14 mutation harness (`as3compiler/temp/g14/mutate.cjs`) at that
+  moment, and that harness writes a mutant, runs the unit group, then **writes the original
+  bytes back** (hashing them to prove it). A before/after pair cannot see an edit that is
+  reverted inside the window — and *revert-in-place is the guarantee the harness makes*.
+  12 clean re-runs afterwards produced 1 hash. Fix: sample `src/` around **every** build and
+  attribute the difference to the move (exit 3, `[SKIP]`) instead of to the generator. The
+  attribution itself is now a mutation target (M6b), so "skip whenever the hashes differ" —
+  which would retire the only real nondeterminism detector here — cannot pass.
 
 ## On this machine, the tree really is being edited concurrently
 

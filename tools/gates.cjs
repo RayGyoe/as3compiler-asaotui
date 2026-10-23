@@ -30,11 +30,13 @@
 //                makes both arms render 1.5x and the assertions fire (2 failures).
 //   fp parse  -- tools/mutation-parse.cjs: restoring the old per-record trim() makes 4
 //                assertions go red (the path is sliced into `rc/reach.ts`).
-//   G11       -- probes/g11-nondeterminism/mutation.cjs: four mutations (inject the
+//   G11       -- probes/g11-nondeterminism/mutation.cjs: six mutation groups (inject the
 //                naming break into the HEALTHY artifact / point a props entry at a
 //                field that does not exist / change one string literal in the source
-//                (the hash must move) / flip the gate's own expectation) go red when
-//                they should (7/7, restoring every file by hash). The gap itself is
+//                (the hash must move) / flip the gate's own expectation / a generator
+//                that MOVED mid-run must be INCONCLUSIVE / a move confined to ONE build
+//                must be blamed on the move, not called nondeterminism) go red when
+//                they should (10/10, restoring every file by hash). The gap itself is
 //                closed -- this gate is the instrument that replaced "just retry".
 //   style scan-- tools/mutation-bound-truthy.cjs: one planted `:Object` local used
 //                as a condition in kit/ makes the tool exit 1. This gate used to

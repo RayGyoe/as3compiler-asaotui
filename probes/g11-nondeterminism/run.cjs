@@ -10,7 +10,12 @@
 //      input. This is not a hypothesis: see measurement D.
 //   B. N builds of the same program, same command, same tree -> ONE hash. If the
 //      generator were nondeterministic this is where it would show, and it is the
-//      only measurement that could show it.
+//      only measurement that could show it. The generator's own bytes are sampled
+//      around EVERY build, not once at the two ends: an edit that is put in place and
+//      then REVERTED inside the window leaves both endpoints identical, so the
+//      endpoint pair cannot tell "the generator is unstable" from "someone compiled a
+//      mutant and put it back". Revert-in-place is what the compiler session's own
+//      mutation harness does, and it produced a false red here on 2026-10-23.
 //   C. a spelling tripwire on the freshly generated C: the three built-in fields
 //      G11 named (Date._time, TextField.___restrict, ServerSocketConnectEvent.socket)
 //      must be spelled the BLOCK-scope way in the struct, in the props table AND in
@@ -24,6 +29,9 @@
 // Usage:   node probes/g11-nondeterminism/run.cjs
 // Env:     ASC_G11_RUNS  number of builds in measurement B (default 5)
 //          ASC_CC        clang to use (default: clang on PATH)
+//          ASC_G11_FORCE_SKIP=1     mutation hook: the end-of-run re-hash sees a move
+//          ASC_G11_FORCE_ITER=<n>   mutation hook: the per-build sample at n sees a move
+//          ASC_G11_EVIDENCE=off     do not append to the evidence file
 //
 // Evidence: probes/g11-nondeterminism/run-<date>.txt   (APPENDED, never overwritten
 //           -- an earlier green must not be erasable by a later red).
@@ -65,6 +73,26 @@ function srcTreeHash() {
   return h.digest('hex').slice(0, 16);
 }
 const errLines = (s) => (s || '').split(/\r?\n/).filter((l) => /error:/.test(l));
+
+// The one decision this probe exists to make, isolated so mutation.cjs can drive it
+// directly: N builds differed. That is EITHER nondeterminism OR the generator's own
+// bytes changed under one of the builds -- and in the second case it is not evidence of
+// anything at all. Only the first reading is a defect. (`movedBuilds` comes from the
+// per-build samples in B, never from the endpoint pair: an edit that is reverted inside
+// the window leaves both endpoints identical, so the endpoints cannot answer this.)
+function distinctVerdict(uniqSize, runs, movedBuilds) {
+  if (uniqSize === 1) return { label: 'ONE output for one input' };
+  if (movedBuilds > 0) {
+    return {
+      label: 'the generator MOVED mid-run (see the src/ stamp on each build above)'
+        + ' -- NOT evidence of nondeterminism'
+    };
+  }
+  return {
+    label: 'THE GENERATOR IS NONDETERMINISTIC',
+    failure: 'the ' + runs + ' builds produced ' + uniqSize + ' distinct C files'
+  };
+}
 
 // ---------------------------------------------------------------------------
 // The one checker both this probe and its mutation use: compile the generated C
@@ -271,14 +299,28 @@ function main() {
   ];
   const hashes = [];
   const fieldProblems = [];
+  const srcSamples = [];   // the generator's own bytes immediately before/after EVERY build
   for (let i = 1; i <= RUNS; i++) {
     if (fs.existsSync(GEN)) fs.unlinkSync(GEN);
+    // Sampled around EACH build, not once at the two ends of the run. A before/after
+    // pair taken only at the ends cannot see an edit that is put in place and REVERTED
+    // inside the window -- and revert-in-place is exactly what the compiler session's
+    // own mutation harness (as3compiler/temp/g14/mutate.cjs) does: it writes a mutant,
+    // runs the unit group, then writes the ORIGINAL BYTES back and hashes them to prove
+    // it. Both endpoints then agree while a build in between compiled the mutant.
+    // Observed live 2026-10-23 08:45 +0800: run 4 of 5 differed by 82 B from the other
+    // four, inside exactly such a window, with srcHashBefore == srcHashAfter.
+    const before = process.env.ASC_G11_FORCE_ITER === String(i) ? srcHashBefore + '-moved' : srcTreeHash();
     const t0 = Date.now();
     const r = spawnSync(process.execPath, args, { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 28, timeout: 600000 });
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
+    const after = srcTreeHash();
+    srcSamples.push({ i, before, after });
+    const stamp = '  [src ' + before.slice(0, 8) + (after === before ? '' : ' -> ' + after.slice(0, 8))
+      + (before !== srcSamples[0].before || after !== before ? ' MOVED' : '') + ']';
     if (r.status !== 0 || !fs.existsSync(GEN)) {
       const errs = errLines((r.stdout || '') + (r.stderr || ''));
-      say('   run ' + i + ': BUILD FAILED (exit ' + r.status + ', ' + errs.length + ' C errors, ' + secs + 's)');
+      say('   run ' + i + ': BUILD FAILED (exit ' + r.status + ', ' + errs.length + ' C errors, ' + secs + 's)' + stamp);
       for (const e of errs.slice(0, 3)) say('       ' + e.slice(-140));
       if (errs.length) say('       -> this is the G11 SYMPTOM. Check the dirty list in A before anything else.');
       failures.push('run ' + i + ' did not build');
@@ -289,14 +331,13 @@ function main() {
     hashes.push(h);
     const sp = spellingProblems(fs.readFileSync(GEN, 'utf8'));
     fieldProblems.push(...sp.map((p) => 'run ' + i + ': ' + p));
-    say('   run ' + i + ': ' + size + ' B  sha256/16 ' + h + '  (' + secs + 's)');
+    say('   run ' + i + ': ' + size + ' B  sha256/16 ' + h + '  (' + secs + 's)' + stamp);
   }
   const uniq = new Set(hashes);
   const input1 = inputHash();
-  // Mutation hook (used by mutation.cjs M5): pretend the generator moved mid-run, so the
-  // INCONCLUSIVE/exit-3 branch is exercised by the real code path rather than by a copy
-  // of it. Off by default, and it cannot fake a green -- it can only turn a PASS into a
-  // SKIP, never the other way round.
+  // Mutation hooks, both used by mutation.cjs. They can only turn a PASS into a SKIP,
+  // never the other way round. ASC_G11_FORCE_SKIP fakes the END-of-run re-hash moving;
+  // ASC_G11_FORCE_ITER=<n> fakes the per-build sample at iteration n moving.
   const srcHashAfter = process.env.ASC_G11_FORCE_SKIP === '1' ? srcHashBefore + '-moved' : srcTreeHash();
   say('   input hash after the runs: ' + input1 + (input1 === input0 ? ' (unchanged)' : ' (CHANGED -- the measurement is void)'));
   say('   src/ content hash after the runs: ' + srcHashAfter
@@ -304,8 +345,14 @@ function main() {
                                       : ' (CHANGED -> the compiler moved mid-run)'));
   if (input1 !== input0) failures.push('the input sources changed during the measurement (' + input0 + ' -> ' + input1 + ')');
   if (srcHashAfter !== srcHashBefore) blockers.push('the compiler source changed mid-run (' + srcHashBefore + ' -> ' + srcHashAfter + ')');
-  say('   distinct hashes: ' + uniq.size + ' of ' + hashes.length + (uniq.size === 1 ? '  -> ONE output for one input' : '  -> THE GENERATOR IS NONDETERMINISTIC'));
-  if (uniq.size !== 1) failures.push('the ' + hashes.length + ' builds produced ' + uniq.size + ' distinct C files');
+  // A build that overlapped an in-place edit compiled a generator revision that exists
+  // nowhere on disk now, so whatever it emitted counts neither for nor against
+  // determinism. This is the reading the endpoint pair misses.
+  const movedBuilds = srcSamples.filter((s) => s.before !== srcSamples[0].before || s.after !== s.before);
+  for (const s of movedBuilds) blockers.push('the compiler source changed during build ' + s.i + ' (' + s.before + ' -> ' + s.after + ')');
+  const v = distinctVerdict(uniq.size, hashes.length, movedBuilds.length);
+  say('   distinct hashes: ' + uniq.size + ' of ' + hashes.length + '  -> ' + v.label);
+  if (v.failure) failures.push(v.failure);
   say('');
 
   // ---- C: spelling tripwire on the fresh C --------------------------------
@@ -401,4 +448,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { cErrors, spellingProblems, structFieldNames, logKinds };
+module.exports = { cErrors, spellingProblems, structFieldNames, logKinds, distinctVerdict };
