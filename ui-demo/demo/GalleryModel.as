@@ -39,6 +39,14 @@ package demo
         public var compOpen:Number = 0;   // accordion open section
         public var compPage:Number = 3;   // pagination page (1-based)
 
+        // Overlay page (page 5) -- the floating layer's author-owned visibility.
+        // The dialog is OPEN on arrival so the page shows its scrim and its centred
+        // panel without anyone clicking; the menu starts closed so the tour can
+        // prove an unopened overlay takes no space and no clicks.
+        public var ovlDlg:Boolean = true;
+        public var ovlMenu:Boolean = false;
+        public var ovlToast:Boolean = true;
+
         public function GalleryModel():void
         {
             super();

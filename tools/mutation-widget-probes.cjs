@@ -5,7 +5,8 @@
 // nothing to cite for their teeth. This is that citation.
 //
 // Every mutation is a deliberate one-token change to the thing the probe measures:
-// a palette constant, the fit factor, and the scroll clamp. After each one the probe
+// a palette constant, the fit factor, the scroll clamp, and -- M5/M6 -- the two halves
+// of the paint-scheduling contract a spinner depends on. After each one the probe
 // MUST fail AND must fail with the specific line named in `expect`, so that "it went
 // red" is never confused with "it failed to build". Every file is restored in
 // `finally` and its sha256 compared byte-for-byte with the pre-mutation hash.
@@ -60,6 +61,26 @@ const MUTATIONS = [
     find: 'var maxY:Number = ch - h;',
     replace: 'var maxY:Number = ch;',
     expect: 'clamped offset is',
+  },
+  {
+    id: 'M5',
+    probe: 'probes/widgets/feedback',
+    why: 'paintDirty clears M_PAINT AFTER painting -> a paint that raises its own next frame has '
+      + 'that request erased, so the spinning spinner repaints once and freezes',
+    file: 'kit/asaot/ui/UiApp.as',
+    find: '                n.dirty = n.dirty & ~Dirty.M_PAINT;\n                n.paintSelf();',
+    replace: '                n.paintSelf();\n                n.dirty = n.dirty & ~Dirty.M_PAINT;',
+    expect: 'spinning repainted only',
+  },
+  {
+    id: 'M6',
+    probe: 'probes/widgets/feedback',
+    why: 'the spinner self-perpetuating frame asks for a LAYOUT bit instead of paint -> the whole '
+      + 'tree re-measures every frame (it still spins, but no longer paint-only)',
+    file: 'kit/asaot/ui/kind/SpinnerWidget.as',
+    find: '            if (spinning) n.app.markPaint(n);',
+    replace: '            if (spinning) { n.dirty |= Dirty.M_MEASURE; n.markLayoutDirty(); n.app.markPaint(n); }',
+    expect: 'spinning re-solved layout',
   },
 ];
 

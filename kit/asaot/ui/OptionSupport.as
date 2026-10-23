@@ -44,5 +44,23 @@ package asaot.ui
                 n.addChild(Node(children[i]));
             }
         }
+
+        // "A single value or a list" -- NOT `Array(v)`.
+        //
+        // `Array(v)` is the Array CONSTRUCTOR called as a function, so it always
+        // creates a new array: `Array([1,2])` is a 1-element array HOLDING [1,2]
+        // (length 1, `Array(a) === a` is false, `Array(3).length` is 3). Measured on
+        // adl 51.4.1 with our AOT agreeing on all 8 shapes -- probes/array-coerce/.
+        // Using it as a coercion here is what produced
+        // "#1034 cannot convert [object BoxNode] to asaot.ui.Node" from dialog()'s
+        // footer: the cast was handed the OUTER array, which stringifies to its
+        // single element's "[object BoxNode]".
+        public static function list(v:*):Array
+        {
+            if (v == null) return null;
+            if (v is Array) return v as Array;
+            var one:Array = [v];
+            return one;
+        }
     }
 }

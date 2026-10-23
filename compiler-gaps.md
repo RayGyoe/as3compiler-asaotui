@@ -362,6 +362,33 @@
 | 状态 | **已实测 · 未修**（库内唯一命中点已绕行） |
 | 证据落盘 / 复现 | [`probes/g16-ternary-null/`](probes/g16-ternary-null/)：`node run.cjs`（一命令两臂，exit 0=一致 / 1=不一致 / 2=构建错）；`NullCases.as` 17 格单一用例源；`expect.json` 手算规则（含逐格推导）；变异 `mutation.cjs` **4/4**（① 把格 1 改成 if/return 绕行形 ⇒ 该格必须**不再**报 NULL；② 改 `expect.json` 声称格 1 是 `NULL` ⇒ runner 必须报「参考与规则不符」；③ 把**能用的**格 6 改坏 ⇒ 该格必须**加入**失败集；④ 让格 3 两分支都返 null ⇒ 实测 **AIR 臂中途死掉**，runner 必须报「AIR 臂只写了 2/14 行」——这条顺带证明**崩溃检测也有牙**），全部 `finally` 还原 + sha256 逐字节核对 |
 
+### G17 —— Windows 上**生成的 C 语法错**：`as_job_dir_push` 的 Win32 分支把 C 字符常量写坏 —— 🔧 **本地已打补丁（未提交上游）**
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **构建/工具链缺陷**（AIR 无对应物，但对**本机 Windows 构建**是硬阻塞，属「增强/工具链」类） |
+| **症状** | 任何**走到 `File` 目录列举**的程序（两个窗口 demo 都用到）在 Windows 上 clang 报 `missing terminating ' character`——即**生成的 `.c` 本身不是合法 C**。macOS/Linux 不进该分支，所以上游 CI（arm64 macOS）看不见 |
+| **根因** | `src/runtime.ts` 的 `RUNTIME_PREAMBLE` 是 **TS 模板字符串**，里面的 `'\\'` 经 TS 转义后交给 C 的是 **`'\'`**（单反斜杠 + 单引号）⇒ 未终止的字符常量。`'\0'` 同理在转义层被吃掉 |
+| **本地改法** | 3 处加倍：TS 源写 `'\\\\'`（C 得 `'\\'`）、`'\\0'`（C 得 `'\0'`）；`git -C as3compiler diff src/runtime.ts` 可逐字核对 |
+| **证据** | 本工作区 `ui-demo/build-air.cjs` 与 `probes/widgets/overlay` 的窗口臂在本机全链路可建可跑；回退该补丁即回到 clang 语法错 |
+| **状态** | 🔧 **本地补丁已生效**，`git status` 为 `M src/runtime.ts`；上游修好后应删除本地改动 |
+
+### G18 —— 非 Cocoa 后端的**应用菜单钩子未定义** —— 🔧 **本地已打补丁（未提交上游）**
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **后端缺口占位**（`sk_menu_supported()` 返回 0 是刻意的，但两个钩子--**帧循环上的 `sk_menu_ensure()`** 与 **事件循环里的 `sk_menu_flush()`**--是无条件调用的） |
+| **症状** | Windows clang 链接 `window_glue.cc` 报未定义符号；**任何**窗口程序都链不上（与 P1 是两道独立的闸） |
+| **根因** | `vendor/window_glue.cc` 的 `#else`（非 Cocoa）分支只定义了 `sk_menu_supported` / `sk_menu_install_app` / `sk_menu_install_dock`，漏了两个无参钩子（Cocoa 分支有，第 2967/2978 行） |
+| **本地改法** | 在 `sk_menu_supported` 前补两个显式空桩（带注释说明为何是 no-op） |
+| **证据** | `git -C as3compiler diff vendor/window_glue.cc`；调用点：第 807 行（帧）与第 1263 行（事件循环） |
+| **状态** | 🔧 **本地补丁已生效**，`git status` 为 `M vendor/window_glue.cc` |
+
+> **两条一起的代价必须写明**：本工作区长期宣称「`asaotui` 不动 `as3compiler/` 一行」，而
+> `node tools/compiler-fingerprint.cjs` 现在会诚实报出 `M src/runtime.ts` + `M vendor/window_glue.cc`。
+> 这两条不是排版洁癖：修之前**本机无法构建任何窗口程序**，浮层与六页画廊的验收全都跑不了。
+> 上游（并发会话）修好后**删除本地补丁、指纹回 CLEAN**，本文档相应改成「✅ 已修」。
+
 ---
 
 ## 2 不是缺口：已澄清 / 已关闭
@@ -376,6 +403,7 @@
 | **`-w` 之外，库用到的写法** | **全部原生支持、无需绕路**（见 §3） | [`layout-check/README.md`](layout-check/README.md) §dogfooding 3 |
 | **G12「大字节缓冲后堆分配挂起」** | **不是缺口，已结案**：实证是见证程序把三个脚本作用域容器声明在 `showWindow()` 之后（该调用不返回 ⇒ 初值永不执行 ⇒ 引用变量停在 `NULL` ⇒ `push` 抛 `#1009`）。去掉 134400 大缓冲症状不变；把声明顺序修好后带大缓冲也能跑完 | [`reviews/probe-g12-2026-10-23.md`](reviews/probe-g12-2026-10-23.md)、[`probes/g12-ab/`](probes/g12-ab/) |
 | **G11「同源两次构建产出不同的 C」** | **不是缺口，已结案**：不是生成器随机，而是**测量在另一个进程正改写的编译器树上进行**。失败构建在 `阶段二四七` 提交前 **24 分钟**；同一个坏法在**同一分钟、另一个程序**的产物里原样出现，且两者 84 秒内**收敛**（20→1→0 条 C 错）；冻结树上 5 次构建**逐字节同一份 C**。旧处置「先重跑一次」已废止，改为**先看编译器树状态** | [`reviews/probe-g11-nondeterminism-2026-10-23.md`](reviews/probe-g11-nondeterminism-2026-10-23.md)、[`probes/g11-nondeterminism/`](probes/g11-nondeterminism/) |
+| **`Array(x)` 是「复制数组」吗** | **不是缺口，是 AS3 事实**：`Array(3)` 得长度 3 的空位数组、`Array([1,2])` 得**长度 1** 且 `[0]` 就是那个数组、`Array(a) === a` 为 false。双臂实测一致（8 格 AGREE；门 §7b）⇒ 库内**禁止**用 `Array(v)` 做「单值/列表归一」，一律 `OptionSupport.list(v)` | [`probes/array-coerce/`](probes/array-coerce/) |
 | **`stage.showWindow()` 不返回**（而是把主线程交给帧/消息循环） | **是我方窗口后端的已知平台事实，不是缺口**（要改成非阻塞得动整个事件循环架构）。但它的后果必须写明：**顶层语句在 `showWindow` 之后永不执行，包括 `var x = …` 的初值**；`setTimeout` 也必须在它之前注册。AIR 桌面端不阻塞 ⇒ 同一份源码在 AIR 里这些变量会被正常初始化。⇒ 写窗口程序时**所有 setup 前置** | `probes/array-scope/Main.as` 头注释（SETUP ORDER）、`examples/*window*.as` |
 
 ---

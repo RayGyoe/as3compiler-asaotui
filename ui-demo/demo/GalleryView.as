@@ -180,6 +180,25 @@ package demo
         private static const CAT_CRUMB_S:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(20)] });
         private static const CAT_PAGE_S:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(28)] });
 
+        // ---- page 5: the floating layer --------------------------------------
+        // The page BODY is ordinary layout; everything that floats comes from
+        // renderOverlay() below, which is the toolkit's second retained tree. A
+        // dialog is open on arrival so page 5 shows the scrim, the centred panel and
+        // the toast stack without the tour clicking anything.
+        private static const OVL_BTN_S:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(160), Length.px(34)], background: 0xFFFFFF, border: 1,
+            borderColor: 0xD1D5DB, cornerRadii: 8, text: { fontSize: 13, color: 0x374151 }
+        });
+        // 264 x 80: the dialog's own arithmetic is 1+18+80+12+28+18+1 = 158 tall, so
+        // the panel is centred at y = (560-158)/2 = 201 with no font metrics involved.
+        private static const OVL_BODY_S:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(264), Length.px(80)], background: 0xF9FAFB
+        });
+        private static const OVL_OK_S:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(100), Length.px(28)], background: 0x2563EB, cornerRadii: 6,
+            text: { fontSize: 13, fontWeight: "bold", color: 0xFFFFFF }
+        });
+
         public var model:GalleryModel;
         // Evidence that page switching is driven by the widget, not by the tour
         // poking the model: every onChange callback lands here.
@@ -216,7 +235,7 @@ package demo
         // while there were four tabs, and no assertion noticed).
         private function tabNames():Array
         {
-            return ["Home", "Widgets", "Data", "Motion", "Catalog"];
+            return ["Home", "Widgets", "Data", "Motion", "Catalog", "Overlay"];
         }
 
         // The per-frame hook. The Motion page's two boxes change colour on a wall
@@ -238,6 +257,7 @@ package demo
             if (p == 2) return this.dataPage();
             if (p == 3) return this.motionPage();
             if (p == 4) return this.catalogPage();
+            if (p == 5) return this.overlayPage();
             return this.widgetsPage();
         }
 
@@ -372,6 +392,84 @@ package demo
                                         page: bindTo(this.model, "compPage") })
                 ])
             ]);
+        }
+
+        // ---- page 5: the floating layer --------------------------------------
+        // The second tree is rebuilt from this description on every reflow, and it is
+        // NULL on every other page -- which is what proves the layer is torn down
+        // rather than merely hidden (the tour checks the keys are GONE).
+        override public function renderOverlay():Node
+        {
+            if (int(this.model.page) != 5) return null;
+            var m:GalleryModel = this.model;
+            // Method references, not closures: an anonymous function is supported,
+            // but a named handler keeps the wiring readable and is what every other
+            // page already does (the tabs widget takes this.pageChanged).
+            var d:Node = dialog({
+                key: "ovlDlg", open: m.ovlDlg, width: 300, title: "Unsaved changes",
+                footer: [ box({ key: "ovlOk", style: OVL_OK_S, ariaName: "ok" }) ],
+                onClose: this.ovlDlgClosed
+            }, [
+                box({ key: "ovlDlgBody", style: OVL_BODY_S, ariaName: "dialog body" })
+            ]);
+            var mn:Node = menu({
+                key: "ovlMenu", open: m.ovlMenu, anchorKey: "ovlBtn",
+                placement: "bottom", offset: 6, width: 160,
+                items: ["Rename", "Duplicate", "Delete"], selectedIndex: -1,
+                onSelect: this.ovlMenuPicked,
+                onClose: this.ovlMenuClosed
+            });
+            var ts:Node = toastHost({ key: "ovlToasts" }, [
+                toast({ key: "ovlT1", open: m.ovlToast, message: "Draft saved", tone: "success",
+                        onClose: this.ovlToastClosed })
+            ]);
+            return overlay([d, mn, ts]);
+        }
+
+        private function overlayPage():Node
+        {
+            return column({ key: "body", style: BODY, ariaName: "Overlay page" }, [
+                text("Six floating surfaces in a SECOND retained tree: the page below never re-lays out when one opens.",
+                    { key: "ovlNote", style: NOTE }),
+                row({ key: "ovlRow", style: ROW }, [
+                    button({ key: "ovlBtn", label: "Actions", style: OVL_BTN_S,
+                             onClick: this.ovlMenuClicked })
+                ]),
+                note("The dialog, the menu and the toast are author-owned: `open` lives in the model.", "ovlNote2")
+            ]);
+        }
+
+        private function ovlDlgClosed():void
+        {
+            this.model.ovlDlg = false;
+            this.invalidate(Dirty.VALUE);
+        }
+
+        private function ovlMenuClosed():void
+        {
+            this.model.ovlMenu = false;
+            this.invalidate(Dirty.VALUE);
+        }
+
+        private function ovlMenuPicked(i:int):void
+        {
+            // Choosing an item closes the menu; the selection itself is not kept on
+            // this page (the menu is here to show the floating layer, not to edit a
+            // model value).
+            this.model.ovlMenu = false;
+            this.invalidate(Dirty.VALUE);
+        }
+
+        private function ovlToastClosed():void
+        {
+            this.model.ovlToast = false;
+            this.invalidate(Dirty.VALUE);
+        }
+
+        private function ovlMenuClicked():void
+        {
+            this.model.ovlMenu = !this.model.ovlMenu;
+            this.invalidate(Dirty.VALUE);
         }
 
         public function buildRow(item:Object, index:int):Node

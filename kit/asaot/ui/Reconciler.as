@@ -23,6 +23,8 @@ package asaot.ui
 {
     import asaot.ui.style.StyleRefinement;
 
+    import flash.display.DisplayObject;
+
     public class Reconciler
     {
         private var app:UiApp;
@@ -228,6 +230,21 @@ package asaot.ui
                     n.backing.setChildIndex(c.backing, base + i);
                 }
             }
+        }
+
+        // Tear a whole root down (the overlay root, when View.renderOverlay()
+        // starts returning null). Same path as any other removal -- engine
+        // detach, display detach, tween cancel -- just addressed from the root.
+        public function destroyRoot(n:UiNode):void
+        {
+            // A ROOT has no parent NODE, so destroySubtree's "remove me from my
+            // parent's backing" step never runs for it: the overlay host would stay
+            // attached to the stage container -- invisible and empty, but above the
+            // main tree -- for the rest of the session, one per teardown.
+            // Detach the display object here, BEFORE destroySubtree nulls n.backing.
+            var b:DisplayObject = n.backing;
+            this.destroyMounted(n);
+            if (b != null && b.parent != null) b.parent.removeChild(b);
         }
 
         private function destroyMounted(n:UiNode):void

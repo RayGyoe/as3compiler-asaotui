@@ -21,7 +21,7 @@
 ```sh
 git clone https://github.com/RayGyoe/as3compiler.git ../as3compiler   # 必须同级目录
 cp ../as3compiler/vendor/skia/lib/windows-x64/icudtl.dat ui-demo/     # 文字引擎数据（已 ignore）
-node tools/gates.cjs     # 已增至 23 道门，23/23 PASS 才叫绿（最新落盘 reviews/gates-all-12.txt）
+node tools/gates.cjs     # 已增至 25 道门，25/25 PASS 才叫绿（最新落盘 reviews/gates-all-13.txt）
 ```
 
 两个第三方检出**故意不入库**（它们自带 `.git`，入库会退化成 gitlink 而丢内容），按需取回：
@@ -34,23 +34,26 @@ node tools/gates.cjs     # 已增至 23 道门，23/23 PASS 才叫绿（最新�
 AIR SDK（`mxmlc` / `adl`，探针的**参考臂**要用）按 §「本机环境」以 `AIRSDK_HOME` 指向。
 什么进库、什么不进库的判据写在 [`.gitignore`](.gitignore) 头部的注释里。
 
-## 交付（2026-10-23，两轮）—— 一条命令复核
+## 交付（2026-10-23，第三轮）—— 一条命令复核
 
 ```sh
-node tools/gates.cjs     # 已增至 23 道门，23/23 PASS 才叫绿（最新落盘 reviews/gates-all-12.txt）
+node tools/gates.cjs     # 已增至 25 道门，25/25 PASS 才叫绿（最新落盘 reviews/gates-all-13.txt）
 ```
 
 | 交付 | 内容 |
 |---|---|
-| **多页可切换 App** | `ui-demo/demo/`（Model + 一个 `render()` 的 View）+ `demo/GalleryMain.as`：**5 页**（Home / Widgets / Data / Motion / **Catalog 组件目录**）共用同一个 `body` 槽位，`tabs` 控件驱动切页；页面矩形**先手算再断言**，并落 5 张截图；tour 把「无 engine 节点 / 零矩形 / backing 未挂」**升级为判据**（变异自证）；**`--air-app` 构建（描述符即窗口真相源，已开高分辨率）** |
-| **控件集 4 → 25 个 kind / 29 个工厂** | 第一批：`radio`/`toggle`/`slider`/`progress`/`divider`/`badge`/`avatar`/`card`/`chip`/`tabs`/`list`（`probes/widgets/{chip,form,display,nav,anim}`：19/41/48/41/14）；第二批：`image`/`scrollView`/`spinner`/`skeleton`/`tooltip` + `table`/`accordion`/`breadcrumb`/`pagination`（`probes/widgets/{media,feedback,data}`：43/43/77）。**每个都配手算断言的端到端探针，且每个探针都做过变异测试** |
+| **多页可切换 App（6 页）** | `ui-demo/demo/`（Model + 一个 `render()` 的 View）+ `demo/GalleryMain.as`：**6 页**（Home / Widgets / Data / Motion / **Catalog 组件目录** / **Overlay 浮层**）共用同一个 `body` 槽位，`tabs` 控件驱动切页；页面矩形**先手算再断言**，并落 6 张截图；tour 把「无 engine 节点 / 零矩形 / backing 未挂」**升级为判据**（变异自证），并在浮层页额外钉「切页后 `stage.numChildren` 回基线 + `findByKey(ovlDlg)==null`」；**`--air-app` 构建（描述符即窗口真相源，已开高分辨率）** |
+| **控件集 4 → 31 个 kind / 37 个工厂** | 第一批：`radio`/`toggle`/`slider`/`progress`/`divider`/`badge`/`avatar`/`card`/`chip`/`tabs`/`list`（`probes/widgets/{chip,form,display,nav,anim}`：19/41/48/41/14）；第二批：`image`/`scrollView`/`spinner`/`skeleton`/`tooltip` + `table`/`accordion`/`breadcrumb`/`pagination`（`probes/widgets/{media,feedback,data}`：43/43/77）；**第三批浮层六件**：`dialog`/`drawer`/`popover`/`menu`/`toast`/`select` + `overlay`/`toastHost` 宿主（`probes/widgets/overlay`：**65**）。**每个都配手算断言的端到端探针，且每个探针都做过变异测试** |
+| **浮层系统（第二棵保留树）** | `View.renderOverlay()` + `UiApp.overlayRoot`：主树 describe/reconcile 完后**再**解浮层树、最后画、置顶；锚定弹层读锚点**本帧**矩形；`OverlayChrome`（调色板/风格常量）与 `OverlayList`（菜单/下拉共用行几何 + `localYIn`）集中复用；可选的 `WidgetTeardown` 销毁钩子（`Widget` 接口不加方法）。证据 `probes/widgets/overlay` 变异 **7/7**（其中 5 例是把本轮真缺陷重新植入） |
 | **样式面 18 → 31 字段** | `justifyContent`/`alignItems`/`alignSelf`/`alignContent`/`flexWrap`/`margin:LengthEdges`/`inset:LengthEdges`/`position`/`overflow`/`display`/`aspectRatio` + 动画两字段；非法字符串**抛错** |
 | **动画** | `anim/`（`Ease`/`Tween`/`Anim`）+ `Style.transitionMs/Ease` + 每帧 `View.tick(nowMs)`（时钟用单调 `getTimer()`） |
-| **修掉 4 个真框架缺陷** | 纯 paint 变更不上屏；子树布局变化永不解算；keyed 重排不重解；**auto 文本节点忘加自身内边距**（border-box 下 4px 字形被塞进 8px 盒并溢出到下一个 crumb）——**都带钉子与变异证据**，详情 [`STATUS.md`](STATUS.md) §3.3 |
-| **验收文化** | **23 道门每道都做过变异测试**（改 1 个单位必须变红）；探针协议与「会咬人的事实」见 [`CONTRIBUTING-widget.md`](CONTRIBUTING-widget.md) |
+| **修掉 12 个真框架缺陷** | 纯 paint 变更不上屏；子树布局变化永不解算；keyed 重排不重解；**auto 文本节点忘加自身内边距**；**浮层树永不再解**；**面板无 shapeA**；**`width` 选项撑坏 layer**；**`e.localY` 是 TARGET-relative**；**可见性翻转不上屏**；**销毁的弹层仍监听 stage（`#1009`）**；**浮层宿主留在 stage 上**；**旋转 spinner 只画一次**（被「每帧误判窗口尺寸」遮住）——**都带钉子与变异证据**，详情 [`STATUS.md`](STATUS.md) §3.3 |
+| **验收文化** | **25 道门每道都做过变异测试**（改 1 个单位必须变红）；探针协议与「会咬人的事实」见 [`CONTRIBUTING-widget.md`](CONTRIBUTING-widget.md) |
 
-**经验（比这三个 bug 本身更值钱）**：前两个缺陷在**单页探针里永远看不见**——只有
-「多页共用槽位、换页时换掉整棵子树」这种形态才会暴露。⇒ **探针要配一个真实应用。**
+**经验（比这些 bug 本身更值钱）**：前两个缺陷在**单页探针里永远看不见**——只有
+「多页共用槽位、换页时换掉整棵子树」这种形态才会暴露；最后两个（销毁的弹层还在监听 stage、
+浮层宿主留在 stage 上）只有**建了再拆**的程序能看见——**探针从不拆树**。
+⇒ **探针要配一个真实应用，而且要让它换页。**
 
 ## 目录内容
 
@@ -61,10 +64,10 @@ node tools/gates.cjs     # 已增至 23 道门，23/23 PASS 才叫绿（最新�
 | `ui-toolkit-api-design.md` | `asaot.ui` 的 AS3 侧 API 草案（L3 作者模型，1352 行） | 草案 |
 | `u1-scope.md` | U1 范围一页纸（做/不做/DoD/已知边界） | 计划 |
 | `u1-implementation-plan.md` | U1 实施计划（阶段号与版本号、file-by-file 改动清单、回退路径）——**已搁置，仅备查**（原文是 native/Yoga 路径；当前走纯 AS3） | 计划（搁置） |
-| `compiler-gaps.md` | **编译器底层支持缺口登记（G1~G15）**：`System.exit` / `flash.accessibility` / Tab 上限 64 / `-w` / 触摸 / wasm+C++ / **定义规则不强制** / **符号名冲突**（**已修，绕行保留为主动选择**） / **`Boolean(Object)` 退化**（**已修，`*` 保留为正确默认**） / `Date.now` / ~~生成不确定~~（**已结案为非缺口**）/ ~~大分配后挂起~~（**已结案为非缺口**）/ **`--air-app` 闭包**（已修）/ **`Array` 进 `Object` 槽不装箱（G14，✅ 阶段二百五十三已修；为它做的 style 层拆分已回退）** / **`getQualifiedClassName(Dictionary)` 回 `"Object"`（G15，未修）**，含实测证据与判定；**这是唯一登记处，不动编译器代码** | 登记 |
-| `STATUS.md` | **完成度实测表**：分层结论 + 29 个工厂全清单 + 仍缺的控件 + 样式面 31 字段 + **修掉的 4 个框架缺陷（带钉子与变异证据）** + 23 道门的复核命令 | 已更新（2026-10-23） |
-| `CONTRIBUTING-widget.md` | **控件贡献者契约**：三件套配方（`XNode.as` / `x.as` / `kind/XWidget.as` + 探针）、`Widget` 7 方法逐条、值类型与 unset 哨兵、**会咬人的编译器/平台事实**（§4 通用 14 条 + **§4c 集合选型 `Vector` vs `Array`（实测）** + §4b `--air-app` 专用 6 条）、稳态零分配、验证方式、报告格式 | 契约 |
-| `probes/` | **编译器行为证据探针**（不依赖推理）：`asmdef-rule/`（G7）、`case-rule/`（G7 子规则：**mxmlc 文件名匹配区分大小写**，Windows 上也一样）、`name-collision/`（G8）、`clock/`（G10 + 时钟语义）、`bind-truthy/`（G9）、`array-scope/`（G11+G12）、`g11-nondeterminism/`（**G11 结案**：5 次构建同一哈希 + 三份历史产物 20→1→0 + 变异 7/7）、**`obj-array-identity/`（G14：**26 条**×两臂，AIR 作参考，**偏离集现为空**，变异 4/4）、**`style-fromany/`（**G14 修后的能力面**：19 格×两臂问「`Array` 进 `Object` 形参后 `is Array` 还成不成立」，库据此回退了 style 层拆分；变异 4/4）、**`g14-minimal/`（**G14 最小复现包**：13 行程序、两 runtime 并排，**供转交编译器侧**；exit 0=复现 / 1=已修（列出要更新的三处登记）/ 2=harness 失败或参考臂自身与 AS3 规则不符）、**`vec-vs-arr/`（`Vector.<T>` vs `Array` 两 runtime 对照**，变异 2/2）、`arrpush/`、`redraw/`（**纯 paint 变更必须上屏**的钉子）、`widgets/{chip,form,display,nav,anim}/`（**控件的端到端探针**，19/41/48/41/14 项手算断言）、`kit-crash/`、`graphics-order/`、`silent-null/`、`kit-fill/`、`compiler-crash/` | 已验（一处入口：`node tools/gates.cjs`） |
+| `compiler-gaps.md` | **编译器底层支持缺口登记（G1~G18）**：`System.exit` / `flash.accessibility` / Tab 上限 64 / `-w` / 触摸 / wasm+C++ / **定义规则不强制** / **符号名冲突**（**已修**） / **`Boolean(Object)` 退化**（**已修**） / `Date.now` / ~~生成不确定~~（**非缺口**）/ ~~大分配后挂起~~（**非缺口**）/ **`--air-app` 闭包**（已修）/ **`Array` 进 `Object` 槽（G14，✅ 已修）** / **`getQualifiedClassName(Dictionary)`（G15，未修）** / **`cond ? null : X`（G16，未修，库内已绕行）** / **G17 Windows 生成的 C 语法错** 与 **G18 非 Cocoa 菜单钩子未定义**（🔧 **本轮两个本地补丁，未提交上游**）；含实测证据与判定；**这是唯一登记处** | 登记 |
+| `STATUS.md` | **完成度实测表**：分层结论 + 37 个工厂全清单 + 仍缺的控件 + 样式面 31 字段 + **修掉的 11 个框架缺陷（带钉子与变异证据）** + 25 道门的复核命令 | 已更新（2026-10-23 第四轮） |
+| `CONTRIBUTING-widget.md` | **控件贡献者契约**：三件套配方（`XNode.as` / `x.as` / `kind/XWidget.as` + 探针）、`Widget` 7 方法逐条 + **`WidgetTeardown` 可选销毁钩子（§2b）**、值类型与 unset 哨兵、**会咬人的编译器/平台事实**（§4 通用 14 条 + **§4a 浮层/工厂 8 条** + §4b `--air-app` 专用 6 条 + §4c 集合选型）、稳态零分配、验证方式、报告格式 | 契约 |
+| `probes/` | **编译器行为证据探针**（不依赖推理）：`asmdef-rule/`（G7）、`case-rule/`（G7 子规则）、`name-collision/`（G8）、`clock/`（G10）、`bind-truthy/`（G9）、`array-scope/`（G11+G12）、`g11-nondeterminism/`（**G11 结案**，变异 7/7）、**`obj-array-identity/`（G14：26 条×两臂，偏离集现为空，变异 4/4）**、**`style-fromany/`（19 格×两臂，变异 4/4）**、**`g14-minimal/`（最小复现包）**、**`vec-vs-arr/`（两 runtime 对照，变异 2/2）**、**`g16-ternary-null/`（17 格×两臂，变异 4/4）**、**`array-coerce/`（`Array(x)` 恒 wrap：8 格 AGREE）**、`arrpush/`、`redraw/`、`widgets/{chip,form,display,nav,anim}`、`widgets/{media,feedback,data}`、**`widgets/overlay`（浮层 65 项，变异 7/7）**、`kit-crash/`、`graphics-order/`、`silent-null/`、`kit-fill/`、`compiler-crash/`、`reach-freefn/` | 已验（一处入口：`node tools/gates.cjs`） |
 | `gpui-borrow-map.md` | **GPUI 借鉴映射表**：每条借鉴都指到 `gpui-src/` 的**具体文件**（尽量带行号）；另列**明确不借**的 6 项及原因。本工作区任何「借 GPUI」的说法必须能落到此表某一行 | 核对口径 |
 | `u1-prototype/` | **U1 接缝原型**：`yoga_glue.h`/`.cc` + 手算矩形验收测（17 项全绿） | 已验 |
 | `seam/` | **布局接缝契约**：纯 AS3 接口 `asaot.ui.LayoutEngine` + `As3LayoutEngine`（纯 AS3 子集，**已实现 P1~P8**）+ `NativeLayoutEngine` 内建类形态说明 | 契约已定；AS3 侧已实现 |
@@ -72,8 +75,8 @@ node tools/gates.cjs     # 已增至 23 道门，23/23 PASS 才叫绿（最新�
 | `tools/` | 跨臂通用小工具：`gates.cjs`（**一次跑完 23 道门**，每道都做过变异测试）、`probe.cjs`（探针运行器：建→弹窗→等证据→比对→退出码）、`bmpdiff.cjs`（报**像素**差异并定位坐标）、`pngread.cjs`（**零依赖 PNG→RGBA**，含 `runs` 行/列颜色游程）、`text-metrics.cjs`（量渲染文字的**字形间距**，把「看着不对」变成测量）、`mxmlc-check.cjs`（源树交给真 AIR 参考编译器）、`as3-index.cjs`、`ls.cjs`（本机 bash 无 coreutils）、`clean-probes.cjs`、`find-bound-truthy.cjs`（`*`/`Object` 静态钉子，**已修「不可能变红」的接线缺陷**）、`mutation-bound-truthy.cjs`、`compiler-fingerprint.cjs`（**复核 `as3compiler/` 零改动**）、`repro-array-scope.cjs`（G11/G12 复现器） | 已验 |
 | `diff-check/` | **布局差分测试**：同一份冻结规格（`spec/cases.txt`）喂 Yoga 与纯 AS3 引擎，逐行比对；含单侧变异证明 harness 有牙 | 已验（**三方 105 行逐字符相同**） |
 | `air-check/` | **「库能否在 AIR 上跑」的实测**：`mxmlc` 编整个接缝库 + `adl` 运行；`verify-air.cjs` 一键跑完并自动 diff 三臂；`AirKitProbe.as` / `KitFns.as` = 「每个公开类型/每个包级工厂能不能被真 AIR 解析」的逐符号编译探针 | 已验（**105 项**一致）；KitFns 当场抓出 4 个未解析工厂（G7 子规则） |
-| `kit/` | **L3 工具链本体**（借鉴 GPUI 的作者模型：`Style` / `Node` / `UiNode` / `Reconciler` / `View` / 控件），纯 AS3，命名空间 `asaot.ui.*`：**29 个工厂 / 25 个 kind**（含 `tabs`/`list`/`card`/`slider`/`toggle`/`progress`/`chip`/`badge`/`avatar`/`divider`/`radio`）、**31 个样式字段**、`anim/`（opacity/background/borderColor 过渡） | 建设中（分层结论见 `STATUS.md`） |
-| `ui-demo/` | **可运行窗口 demo**：单页登录页（`demo/UiDemoMain.as`）＋ **多页可切换 App**（`demo/GalleryModel.as` + `demo/GalleryView.as` + `demo/GalleryMain.as`：5 页共用 body 槽位、控件驱动切页、手算矩形断言、落 5 张 PNG）；两个 demo 均用 **`as-aot --air-app`** 编译（窗口属性与高分辨率由 AIR 描述符控制）；`run-gallery.cjs` / `build-and-run.cjs` 一条命令建→跑→断言；`check-dpi.cjs` 自证高分辨率成因 | 已验（`RUN: PASS`） |
+| `kit/` | **L3 工具链本体**（借鉴 GPUI 的作者模型：`Style` / `Node` / `UiNode` / `Reconciler` / `View` / 控件），纯 AS3，命名空间 `asaot.ui.*`：**37 个工厂 / 31 个 kind**、**31 个样式字段**、`anim/`（opacity/background/borderColor 过渡）、**浮层（第二棵保留树）** 与 `WidgetTeardown` | 建设中（分层结论见 `STATUS.md`） |
+| `ui-demo/` | **可运行窗口 demo**：单页登录页（`demo/UiDemoMain.as`）＋ **多页可切换 App**（`demo/GalleryModel.as` + `demo/GalleryView.as` + `demo/GalleryMain.as`：**6 页**共用 body 槽位、控件驱动切页、手算矩形断言、落 6 张 PNG、含浮层页）；两个 demo 均用 **`as-aot --air-app`** 编译；`run-gallery.cjs` / `build-and-run.cjs` 一条命令建→跑→断言；`check-dpi.cjs` 自证高分辨率成因 | 已验（`RUN: PASS`） |
 | `reviews/doc-verify-2026-10-22.md` | 主文档事实校验记录（18 处行号修正、10 处断言证伪） | 已验 |
 | `reviews/probe-builtin-implements-user-iface-2026-10-22.md` | 前置闸门探针：**内建类 implements 用户 `.as` 接口**（正例 `x=120` + 反证 `does not implement`）⇒ 架构无需回退 | 已验 |
 | `reviews/probe-exit-paths-2026-10-22.md` | 退出路径探针：惯用路径 `NativeApplication.nativeApplication.exit()` **我们已支持且实测跑通**；`System.exit` 才是 AIR 有我们无（G1，影响极低） | 已验 |
@@ -81,7 +84,7 @@ node tools/gates.cjs     # 已增至 23 道门，23/23 PASS 才叫绿（最新�
 | `reviews/probe-demo-fill-2026-10-22.md` | **demo 底色消失事件**：四次假设、**三次被自己的测量否证**，最后定位为**过期产物（假红）**；沉淀出「先重建再测 / 把变量钉到只剩一个」两条做法与 ASan 取证法 | 已验（无新缺口） |
 | `reviews/probe-asmdef-and-name-collision-2026-10-22.md` | **同一输入两侧同编**：AIR 硬拒「一个文件里的异名 public 定义」而我们放行（**G7**）；`bind` 碰撞与 `stat` 被单宏吃掉（**G8**） | 已验 |
 | `reviews/compiler-tree-fingerprint.json` | 开工时 `as3compiler/` 工作树脏文件的**指纹**（sha256/16）——用于末次复核「我零改动」；复核器 `node tools/compiler-fingerprint.cjs` | 证据 |
-| `reviews/gates-all-9.txt` | **全量 18 道门一次跑绿**的落盘输出（2026-10-23；含新加的 **G14 身份矩阵**与 **Vector vs Array** 两道）；`gates-all-10.txt` 是**改完 G11 窗口钉之后的复跑**（同一个 18 道，仪器换了一版，旧记录不再代表现在的仪器）；`gates-all-8.txt` 是加门前的 16 道历史留档；`gates-all-11/12.txt` 是**第三轮（组件目录页 + auto 文本缺陷）之后的两次复跑**（**23 道门**，`-12` 是编译器 HEAD 定在 `9cb054e` 之后的定稿记录）；另 `gates-skip-path.txt` = 强制走 `[SKIP]` 分支的集成钉子 | 证据 |
+| `reviews/gates-all-9.txt` | **全量 18 道门一次跑绿**的落盘输出（2026-10-23；含新加的 **G14 身份矩阵**与 **Vector vs Array** 两道）；`gates-all-10.txt` 是**改完 G11 窗口钉之后的复跑**；`gates-all-8.txt` 是加门前的 16 道历史留档；`gates-all-11/12.txt` 是**第三轮（组件目录页 + auto 文本缺陷）之后的两次复跑**（**23 道门**）；**`gates-all-13.txt` 是本轮（浮层六件 + 六页画廊）的定稿（**25 道门**，含 overlay 探针与 `Array(x)` 两臂门）**；另 `gates-skip-path.txt` = 强制走 `[SKIP]` 分支的集成钉子 | 证据 |
 | `reviews/probe-g11-nondeterminism-2026-10-23.md` | **G11 结案**：不是「生成器不确定」，而是**在另一个进程正改写的编译器树上测量**；三份历史产物 + 5 次构建同一哈希 + 变异 10/10 | 已验（非缺口） |
 | `reviews/g11-false-red-window-2026-10-23.md` | **G11 的一次假红**：端点哈希对看不见「写入→还原」窗口（并发会话的 mutation harness 恰好保证逐字节还原）⇒ 改为**逐次构建**采样 `src/`、把差异归因给「源码动过」（exit 3 `[SKIP]`），并把**归因本身**做成变异目标 **M6b** | 已修 |
 | `reviews/revisit-g8-g9-workarounds-2026-10-23.md` | **G8/G9 绕行复核（本轮）**：底层已修后，当初「为了通过」的决定能不能撤？→ 逐项给出**不能撤**的理由（装箱成本、G14、不把公开 API 名押在 C 名剪辑上），并列出**可改动点清单**；另含 **`Vector` vs `Array` 实测**（AOT 0.18x / AIR 0.92x）。本轮改动：7 处陈旧绕行注释、1 道「不可能变红」的门、2 道新门 | 已验 |
@@ -175,6 +178,46 @@ node tools/gates.cjs     # 已增至 23 道门，23/23 PASS 才叫绿（最新�
 > 所以 `diff-check/` 让 Yoga 臂与 AS3 臂**读同一份** `spec/cases.txt`；并且做过**单侧变异**
 > （把纯 AS3 引擎默认方向钉死 column）—— 差分当场抓到 `f.child1` 不一致。默认方向那个 bug
 > 正是这样活下来的：a~e 全部显式设向，默认方向写错也照样全绿。
+
+## 浮层怎么用（`renderOverlay` 第二棵树）
+
+浮层**不写在 `render()` 里**，而是写在 `View.renderOverlay()` 里；返回 `null` 就表示「本页不浮任何东西」，
+整棵树会被 `destroyRoot` 拆掉（**不是隐藏**）。`open` 一律归作者的模型所有：
+
+```as3
+// 主树照常写；页面不需要知道弹层存在
+override public function render():Node
+{
+    return column({ key: "root" }, [
+        button({ key: "ask", label: "Delete", onClick: onAsk }),
+        text("…")
+    ]);
+}
+
+// 第二棵树：只在需要浮层的那一页返回非 null
+override public function renderOverlay():Node
+{
+    if (!model.confirming && model.toasts.length == 0) return null;
+    return overlay([
+        dialog({ key: "dlg", open: model.confirming, width: 300, title: "Delete?",
+                 closeOnScrim: true, onClose: onCancel,
+                 footer: [ button({ key: "yes", label: "Delete", onClick: onConfirm }) ] },
+               [ text("This cannot be undone.") ]),
+        toastHost({ key: "toasts" }, [
+            toast({ key: "t1", open: true, message: "Saved", tone: "success" })
+        ])
+    ]);
+}
+```
+
+四个必须知道的事实（都有探针与变异钉着，详见 [`STATUS.md`](STATUS.md) §3.6）：
+
+1. **子序列 = 堆叠序**：没有 `z-index`，后写在数组里的在上。
+2. **弹层的 `open` 不会自己改**：点遮罩只会调 `onClose`，要你把 `open=false` 并 `invalidate`。
+3. **锚定弹层用 key 字符串**：`menu({ anchorKey: "ask", placement: "bottom" })` 在本帧解析锚点矩形；
+   不做越界翻转（锚点靠边会出窗）。
+4. **关掉不等于销毁**：`open=false` 只是 `visible=false`（保留行/滚动态、不吃点击）；
+   只有整棵 `renderOverlay()` 返回 null 才拆节点，而拆时**挂在外部的监听/定时器**由 `WidgetTeardown` 释放。
 
 ## 命名空间硬约束
 

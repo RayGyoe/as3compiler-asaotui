@@ -1,0 +1,43 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  the dialog LAYER keeps the explicit `size.width` that the control's own `width` option leaks into a style shorthand -> an explicit size BEATS `inset` in a flex solve, the layer shrinks to the panel width and the centring collapses
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL dialog panel is 0,300 not 230,300; the scrim over white is not #999999 (0x66 alpha == 0.4 -> 255*0.6) is #ffffff not #999999; the scrim does not reach the top-right corner is #ffffff not #999999;
+     FAIL  rect dlg:scrim[w] want 760 got 300
+     FAIL  rect dlg:panel[x] want 230 got 0
+     FAIL  rect dlg:ok[x] want 411 got 181
+     ... and 2 more
+     restore: byte-identical (b183b7cf962ccbba)
+M2  CAUGHT  the scrim goes from 0.4 to 0.6 alpha -> the hand-computed composite over white (255*0.6) no longer matches, on BOTH sampled points
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the scrim over white is not #999999 (0x66 alpha == 0.4 -> 255*0.6) is #666666 not #999999; the scrim does not reach the top-right corner is #666666 not #999999; the drawer's scrim over white is #666666 not #999999;
+     FAIL  pixel (700,300) want #999999 got #666666
+     FAIL  pixel (740,10) want #999999 got #666666
+     restore: byte-identical (de0533c304e2b218)
+M3  CAUGHT  rowAt stops using the row's own solved rect and matches every row from the top -> a click reported as row 0, so the band never moves
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the select reported row 0 not 2; the select did not report: value is Alpha; the band did not move to row 2 after the click is #ffffff not #dbeafe; the menu reported row 0 not 2; the band did not move down after the row click is #ffffff not #dbeafe;
+     restore: byte-identical (c03d5a08761ed4ae)
+M4  CAUGHT  THE FIRST DEFECT THIS PROBE FOUND, re-introduced: the overlay tree is solved once against the 560x460 pre-window fallback and never re-solved when the stage reports 760x560
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL dialog is not vertically centred: 151+158; dialog panel is 130,300 not 230,300; the scrim over white is not #999999 (0x66 alpha == 0.4 -> 255*0.6) is #ffffff not #999999; the scrim does not reach the top-right corner is #ffffff not #999999; toasts are not flush right (324,324 not 524); the last toast's bottom is 444 not 544;
+     FAIL  rect dlg:scrim[w] want 760 got 560
+     FAIL  rect dlg:scrim[h] want 560 got 460
+     FAIL  rect dlg:panel[x] want 230 got 130
+     ... and 9 more
+     restore: byte-identical (170874cae4914507)
+M5  CAUGHT  THE SECOND DEFECT THIS PROBE FOUND, re-introduced: the panel surface is not created, so paintBox (and OverlayList.band) null-guard out of their work -- the surface has a correct solved rect and paints nothing
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the popover panel's padding is not white is #999999 not #ffffff; the menu's selected row band is #ffffff not #dbeafe; menu row 0 must not be banded is #f3f4f6 not #ffffff; the band did not move down after the row click is #ffffff not #dbeafe;
+     restore: byte-identical (cc763102388cf288)
+M6  CAUGHT  the stack gap drops from 8 to 0 -> the toasts touch, and the probe's exact stack arithmetic (gap 8, last bottom 544) no longer holds
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the toast gap is not 8 (512 -> 512);
+     restore: byte-identical (de0533c304e2b218)
+M7  CAUGHT  THE FOURTH DEFECT THIS PROBE FOUND, re-introduced: a visibility flip writes the field but raises no arrange bit, so the display object keeps the old visibility -- the dropdown reopens in the tree and stays invisible on screen
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the band did not move to row 2 after the click is #ffffff not #dbeafe;
+     restore: byte-identical (a7c27df5720f52ec)
+
+MUTATION overlay: 7/7 caught, 0 problem(s)
+RESULT: PASS

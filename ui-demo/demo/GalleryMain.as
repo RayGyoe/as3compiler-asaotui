@@ -64,6 +64,9 @@ package demo
         private var app:UiApp;
         private var problems:String = "";
         private var report:String = "";
+        // Stage child count on a page with NO overlay tree -- the baseline the
+        // teardown check at the end of the tour compares against.
+        private var _kidsBase:int = -1;
 
         public function GalleryMain():void
         {
@@ -108,7 +111,7 @@ package demo
             }
 
             var k:int;
-            for (k = 0; k < 5; k++)
+            for (k = 0; k < 6; k++)
             {
                 this.model.page = k;
                 this.app.invalidate(Dirty.ALL);
@@ -117,6 +120,8 @@ package demo
                 // toolkit makes (describe+reconcile, then measure/arrange/paint).
                 this.app.reflow();
 
+                // One root, no overlay tree yet: the display list before any layer.
+                if (k == 0) this._kidsBase = this.stage.numChildren;
                 var here:Array = pageKeys(k);
                 var gone:Array = otherKeys(k);
                 var i:int;
@@ -146,6 +151,18 @@ package demo
                 if (int(acc.nullEng) > 0) this.problems = this.problems + "page " + k + " has " + acc.nullEng + " node(s) with no engine node; ";
                 if (int(acc.zero) > 0) this.problems = this.problems + "page " + k + " has " + acc.zero + " node(s) with a zero rect; ";
                 if (int(acc.detached) > 0) this.problems = this.problems + "page " + k + " has " + acc.detached + " backing(s) that were never attached; ";
+                // The SECOND retained tree gets the same two hard counters. Not the
+                // zero-rect one: a CLOSED overlay (the menu with open:false) legitimately
+                // has no solved rect -- measure writes its insets when it opens -- so a
+                // zero there would be an assertion that lies.
+                var oacc:Object = { total: 0, nullEng: 0, zero: 0, detached: 0, shown: 0, text: "" };
+                var oroot:UiNode = this.app.getOverlayRoot();
+                if (oroot != null) treeDiag(oroot, 0, oacc);
+                this.report = this.report + "  overlay nodes=" + oacc.total
+                    + " engineNodeNull=" + oacc.nullEng + " detachedBacking=" + oacc.detached
+                    + (oacc.total > 0 ? String.fromCharCode(10) + oacc.text : String.fromCharCode(10));
+                if (int(oacc.nullEng) > 0) this.problems = this.problems + "page " + k + " overlay has " + oacc.nullEng + " node(s) with no engine node; ";
+                if (int(oacc.detached) > 0) this.problems = this.problems + "page " + k + " overlay has " + oacc.detached + " backing(s) that were never attached; ";
 
                 // Engine-side view: an explicit px size coming back as 0 can only mean
                 // the node was never calculated, so ask the engine tree itself whether
@@ -192,10 +209,30 @@ package demo
                 this.stage.render(GW, GH, OUT + "-page" + k + ".png");
             }
 
+            // TEARDOWN INVARIANT: leaving the overlay page must take the second
+            // tree off the STAGE. A root node has no parent NODE, so the ordinary
+            // "remove me from my parent backing" step cannot do it -- without the
+            // explicit detach in Reconciler.destroyRoot, every visit to page 5
+            // leaves one empty Sprite stacked above the main tree for the rest of
+            // the session.
+            this.model.page = 0;
+            this.app.invalidate(Dirty.ALL);
+            this.app.reflow();
+            var kidsNow:int = this.stage.numChildren;
+            var dlgGone:Boolean = this.app.findByKey("ovlDlg") == null;
+            this.report = this.report + "== overlay teardown ==" + String.fromCharCode(10) + "  stage.numChildren=" + kidsNow
+                + " (baseline " + this._kidsBase + ") findByKey(ovlDlg)=null:" + dlgGone + String.fromCharCode(10);
+            if (this._kidsBase >= 0 && kidsNow != this._kidsBase)
+            {
+                this.problems = this.problems + "leaving page 5 left " + (kidsNow - this._kidsBase)
+                    + " display object(s) on the stage (expected " + this._kidsBase + ", got " + kidsNow + "); ";
+            }
+            if (!dlgGone) this.problems = this.problems + "the overlay tree survived the page switch; ";
+
                 this.report = this.report + "== widget-driven switch ==\n";
-            // Five segments across 652 px with gap 8: pitch = (652 - 32) / 5 = 124,
-            // so segment 2 spans local x 264..387 -- click its centre (326), like a
-            // user would. (Four segments used to give a pitch of 157 and x=408.)
+            // Six segments across 652 px with gap 8: segment width (652 - 5*8)/6 = 102,
+            // pitch 110, so index 2 spans local x 220..330 -- click its centre (326),
+            // like a user would. (Five segments used to give pitch 132 and x=408 did.)
             var tn:UiNode = this.app.findByKey("tabs");
             if (tn == null)
             {
@@ -282,7 +319,8 @@ function pageName(k:int):String
     if (k == 1) return "Widgets";
     if (k == 2) return "Data";
     if (k == 3) return "Motion";
-    return "Catalog";
+    if (k == 4) return "Catalog";
+    return "Overlay";
 }
 
 // The keys that MUST exist on each page, including the widgets that page is the
@@ -296,6 +334,16 @@ function pageKeys(k:int):Array
     if (k == 3) return ["root", "tabs", "body", "animated", "snapped", "motionNote"];
     // Page 4 -- the component catalog: one key per widget group, plus the table's
     // rows/cells and the accordion's OPEN panel (section 0 is open in the model).
+    if (k == 5) return ["root", "tabs", "body", "ovlNote", "ovlBtn",
+                        // ... and the FLOATING tree. findByKey searches both roots, so these
+                        // prove the overlay was reconciled and laid out against the window,
+                        // not merely described.
+                        "ovlDlg", "ovlDlg:panel", "ovlDlgBody", "ovlOk",
+                        "ovlToasts", "ovlT1",
+                        // The menu is CLOSED on this page; it still occupies its place in
+                        // the tree, and its stage listener is what the teardown check
+                        // below is about.
+                        "ovlMenu", "ovlMenu:i0"];
     return ["root", "tabs", "body", "colM", "colD", "catImg", "catSpin", "catSk", "catTip",
             "catTable", "hdr", "r0", "r1", "r0c0", "r0c1", "r1c0", "r1c1",
             "catAcc", "h0", "h1", "catP0", "catCrumb", "c0", "s0", "c1", "s1", "c2", "catPage", "pg3", "prev", "next"];
@@ -306,11 +354,12 @@ function pageKeys(k:int):Array
 // prevent, and a bitmap could never tell the two apart.
 function otherKeys(k:int):Array
 {
-    if (k == 0) return ["colA", "colB", "list", "animated", "snapped", "catTable", "catAcc", "catImg"];
-    if (k == 1) return ["loginCard", "signin", "list", "animated", "snapped", "catTable", "catAcc", "catImg"];
-    if (k == 2) return ["loginCard", "colA", "colB", "animated", "snapped", "catTable", "catAcc", "catImg"];
-    if (k == 3) return ["loginCard", "colA", "colB", "list", "catTable", "catAcc", "catImg"];
-    return ["loginCard", "colA", "colB", "list", "animated", "snapped"];
+    if (k == 0) return ["colA", "colB", "list", "animated", "snapped", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
+    if (k == 1) return ["loginCard", "signin", "list", "animated", "snapped", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
+    if (k == 2) return ["loginCard", "colA", "colB", "animated", "snapped", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
+    if (k == 3) return ["loginCard", "colA", "colB", "list", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
+    if (k == 4) return ["loginCard", "colA", "colB", "list", "animated", "snapped", "ovlDlg", "ovlBtn"];
+    return ["loginCard", "colA", "colB", "list", "animated", "snapped", "catTable", "catAcc"];
 }
 
 // Walks the RETAINED tree (not the description) and counts the conditions that

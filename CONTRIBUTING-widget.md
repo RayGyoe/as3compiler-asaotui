@@ -88,7 +88,7 @@ package asaot.ui
 | `wantsPress()` | 结构期一次 | 要不要 MOUSE_DOWN/UP 的按下态（纯视觉，永不重排） |
 | `measure(n)` | pass 1，可多次 | 只写"内在尺寸"：用 `PaintKit.measureField(n, n.tf, text, s)` 量文字，`PaintKit.autoW/H(s)` 判断是否自适应，然后 `PaintKit.setPointSize(n, LayoutConstants.AXIS_WIDTH, v)` |
 | `arrange(n)` | pass 2 | `n.absX/absY/absW/absH` 已是解算结果。放内部显示对象；用 `PaintKit.insetX/insetY/contentW/contentH(n)` |
-| `paint(n)` | pass 3 | 画。**稳态零分配**（见 §5）。背景/边框走 `PaintKit.paintBox(n, s, PaintKit.w1(n), PaintKit.h1(n))` |
+| `paint(n)` | pass 3 | 画。**稳态零分配**（见 §5）。背景/边框走 `PaintKit.paintBox(n, s, PaintKit.w1(n), PaintKit.h1(n))` 。若要「下一帧接着画」（动画自走），结尾调 `n.app.markPaint(n)`——驱动是**先清位后画**，所以这样抬的请求会活到下一帧；但**不得**同时抬布局位（那会让整棵树每帧重解，`probes/widgets/feedback` 两句断言钉着） |
 | `click(n)` | 点击时 | **返回 true = 我消费了这次点击**，`onClick` 不会再触发（复选框就是这么做的）。否则返回 false |
 
 **`n.desc`** = 本帧的描述节点，可 `ProgressNode(n.desc).value` 读本 kind 字段。
@@ -103,6 +103,28 @@ package asaot.ui
    `UiNode.applyPayload` 已替 `directionOverride` 做了这件事：`resolveStyle(true)`——
    `true` = 保留 `previous`（它是动画的「起点」，重定基准会静默吃掉同帧的 tween）。
    **新控件若也往 resolve 里喂料，照这个模式加。**
+
+### 2b 可选销毁钩子 `WidgetTeardown`（**只要你在 `build()` 里挂了节点外的东西，就必须实现**）
+
+```as3
+public interface WidgetTeardown { function teardown(n:UiNode):void; }
+```
+
+`Widget` 是已发布契约，不因销毁再多一个方法；需要清理的 kind 写
+`class FooWidget implements Widget, WidgetTeardown`。
+`UiNode.destroySubtree()` 会在 **null 掉 `n.extra`/`n.backing` 之前**调用它（顺序：`Anim.clear` →
+`teardown` → 递归子件 → 置空），`Reconciler.destroyRoot()` 对整棵根子树同样如此。
+
+| 你在 `build()` 里做了什么 | 必须在 `teardown()` 里做什么 |
+|---|---|
+| `stage.addEventListener(...)`（弹层的「点外面关闭」） | `Stage(st).removeEventListener(...)`。**不拆的后果不是泄漏，是崩溃**：下一击回调读已 null 的 `n.extra` → `#1009`，整个 App 死掉（阶段：浮层六件已踩，
+`ui-demo/mutation-gallery-teardown.cjs` M1 可复现） |
+| `setTimeout` / `setInterval`（吐司自动关） | `clearTimeout` / `clearInterval` |
+| 全局注册表（`Widgets.register` 除外） | 注销。稳态不得增长 |
+| 只往 `n.backing` 加子件 | 不需要实现这个接口（节点自己拆） |
+
+**探针测不出来这一类缺陷**（探针只建不拆）⇒ 钉子必须放在**多页 tour**里（`stage.numChildren` 回基线 +
+`findByKey(已关闭的弹层) == null`）。
 
 ---
 
@@ -126,8 +148,8 @@ package asaot.ui
 borderWidths, gap, gapX, gapY, boxSizing, background, border, borderColor,
 cornerRadii, opacity, visibility, text`
 
-> 另有一路 worker 正在补 `justifyContent/alignItems/alignSelf/margin/inset/position`。
-> **你的控件代码不要用它们**（否则会编译失败），但你写的**探针**可以在它们落地后用。
+> **样式面 31 字段已全部落地**（`style/Style.as`；`justifyContent/alignItems/alignSelf/alignContent/flexWrap/margin/inset/position/aspectRatio/display/overflow` 都已接线）。
+> 仍刻意缺席：`grid`、`boxShadow`、`cursor`（引擎不实现，`applyEngineStyle` 会抛错）。完整清单见 [`STATUS.md`](STATUS.md) §3.2。
 
 ---
 
@@ -149,6 +171,17 @@ cornerRadii, opacity, visibility, text`
 12. **先大分配、后堆分配会挂起**（G12）：`ByteArray.length=` / `BitmapData.draw` + `getPixels` 之后，**创建或增长任何 GC 对象**（`push` 首个元素、字符串拼接、`new` 类实例）可能让进程**保留存活外观但停步**（不是崩溃）。读图/读文件之后建 UI 节点就是命中形状 ⇒ 日志写成**文件**并每步追加，才能看出卡在哪一句。
 13. **AOT `--run` 时，程序的 cwd = 你传给 AOT 的那个 cwd**（不是 exe 所在目录）。本仓曾因此把 `bind-truthy.txt` / `clock.txt` 两个证据文件写进了 `as3compiler/` 源码树。⇒ 要么证据写**绝对路径**，要么像 `tools/probe.cjs` 那样：构建用编译器目录当 cwd，**启动 exe 时用探针目录当 cwd**。**注意**：构建本身也会把产物（`.exe`、`icudtl.dat` 这类数据文件）放到那个 cwd ⇒ 拿编译器仓库当 cwd 跑构建，就会在**源码树里**留下未跟踪产物（本仓已发生过一次：`icudtl.dat`；2026-10-23 上游会话已把它删掉，但机制不变）。复核工具：`node tools/compiler-fingerprint.cjs`（工作树一脏就报，包括**新出现的** `??` 文件；它的 porcelain 解析自身有钉子 `tools/fingerprint-parse-check.cjs`——那处曾因 `.trim()` 静默漏报首个脏文件）。
 14. **控件自绘的标签不占布局位**：`progress`/`slider` 的标签画在节点**顶部**、轨道在 `height-12`（⇒ 高度 < ~28 会自己压自己）；`card({title:...})` 的标题画在内容盒左上、**不占子节点位置**（⇒ 压住第一个子节点）。两者都不是 bug，是「标签自绘 + 尺寸由作者给」的约定：**给够高度，或把标签写成真正的子节点**。
+
+### 4a 浮层 / 工厂类的新增实测（第三批六件吞出来的，都会重复发生）
+
+> **A1** **`Array(x)` 恒 wrap，不是复制**：`Array([1,2])` 是**长度 1** 的数组（`[0]` 就是那个数组）、`Array(3)` 是长度 3 的空位数组。拿它做「单值/列表归一」会在 `for (i<len)` 里拿到一个 Array 当元素——若接着 `is <某节点类>` 就抛 `#1034`。 **必用 `OptionSupport.list(v)`**（`kit/asaot/ui/OptionSupport.as`）。两臂实测：`node probes/array-coerce/run.cjs`（门 §7b）。
+> **A2** **工厂签名不统一，多看一行再写调用**：`column/row/overlay` 有**第二参 `children`**；`dialog/drawer/popover` 也收；而 `button/checkbox/divider/image/menu/select/skeleton/spinner/textField/toast` **只接 `opts:Object=null`**。⇒ `button("OK", {...})` 是**编译错**（`too many arguments (expected 1, got 2)`），要写 `button({ label: "OK", ... })`。
+> **A3** **控件自己的选项名会变成样式简写**：`OptionSupport.applyOpts` 会调 `StyleRefinement.from(opts)`，所以 `{width: 300}` / `{size: [300, 200]}` 不只被你的控件读到，**也被当成 layer 的显式尺寸**。flex 里显式 size **赢过 inset** ⇒ 居中/拉满的弹层会缩成 300 宽。⇒ 浮层类工厂 patch 完 layer style 后**必须** `n.style.size = null;`。
+> **A4** **面板类 kind 必须自建 `shapeA`（child 0）**：`PaintKit.paintBox` 与 `OverlayList.band` 对 `n.shapeA == null` 是**静默 return**（为了兼容不画的控件）⇒ 矩形全对、屏幕全白。
+> **A5** **`MouseEvent.localX/localY` 是 TARGET-relative**（冒泡时保持不变，与 AIR 一致）：点击目标是「行」时，你拿到的 y 永远在 `0..rowHeight`，**跟你点在哪行无关**。容器内坐标走 `OverlayList.localYIn(n, e)`（沿 parent 累加 `t.y`，chain 断了返回 `NaN`）。
+> **A6** **只改 `visible` 的 payload 也要抬 arrange**：`visible` 是 `arrangeSelf` 写给 `backing` 的，不抬位就“树上是 true、屏上是旧值”。模式：`if (vis != n.visible) { n.dirty |= Dirty.M_ARRANGE | Dirty.M_PAINT; n.markLayoutDirty(); }`。
+> **A7** **`Function(opts.fn)` 是 AOT 解析错**（写成 `(opts.fn as Function)`）；**`tabEnabled` 只在 `Control`**（`Element` 子类写了会报未定义属性）；**`Edges.fromArray` 的二元形式是 `[水平, 垂直]`（h,v）**，**不是** CSS 的 v,h。
+> **A8** **`node -e` 里别写 `\n`**：经 bash 传递后变成**字面换行**，生成的 `.as` 里字符串字面量变成真换行 ⇒ `Lex error: unterminated string literal`（本轮踩中两次）。长脚本写 `.cjs` 文件；实在要在字符串里换行就写 `String.fromCharCode(10)`。
 
 ### 4b `--air-app` 专用（demo 一律走这条路，见 `ui-demo/README.md`）
 

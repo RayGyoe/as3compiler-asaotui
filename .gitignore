@@ -11,7 +11,7 @@
 #       删掉会把引用变成死链
 #     · `probes/g11-nondeterminism/artifact-*.c` —— **不可再生**（是过去某版
 #       编译器的输出，今天编不出来），且被该目录的 run.cjs / mutation.cjs 当**输入**读
-#     · `ui-demo/air-*/gallery-page*.png` —— 画廊 4 页截图（README 的成品展示）
+#     · `ui-demo/air-*/gallery-page*.png` —— 画廊 6 页截图（README 的成品展示）
 #
 #   不进库 = 可再生的输出 + 第三方检出
 #     · 生成的 `.c`（每个 2.6~3.8 MB）、*.exe、*.o、*.a、*.wasm、*.swf
@@ -72,7 +72,7 @@ icudtl.dat
 # --- §5 构建输出目录 -------------------------------------------------------
 # ui-demo/air-*/ 是 stage-air.cjs 的暂存树（其 src/ 是 ui-demo/demo/ 的逐字节拷贝）
 /ui-demo/air-*/*
-# …但 4 页画廊截图（两种 DPI 各 4 张，是 DPI A/B 的证据）与单页截图是成品，留下
+# …但 6 页画廊截图（两种 DPI 各 6 张，是 DPI A/B 的证据）与单页截图是成品，留下
 !/ui-demo/air-*/gallery-page*.png
 !/ui-demo/air-*/uidemo-shot.png
 # 早期 junction 试验的残骸：`_jtest/asaot` 是指向本机的符号链接，入库无意义

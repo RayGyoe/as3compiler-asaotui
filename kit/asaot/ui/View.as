@@ -26,6 +26,28 @@ package asaot.ui
             return null;
         }
 
+        // The OVERLAY tree (see UiApp.overlayRoot). A SECOND, independent
+        // description root reconciled against the stage on top of `render()`'s
+        // tree -- it is how dialog / drawer / popover / menu / toast escape the
+        // flex flow and the parent's box. Returns null when nothing floats
+        // (the default), and null tears any existing overlay tree down.
+        //
+        // WHY A SECOND ROOT AND NOT A CHILD OF render(): an overlay must be able
+        // to cover the WHOLE window and be painted last no matter where in the
+        // tree its trigger sits. A child would be laid out inside its parent's
+        // box and drawn in child order, so a dialog declared in a form row would
+        // be clipped to that row's rectangle and painted under every later
+        // sibling. Being a separate retained root gives both properties for free
+        // and keeps the main tree's layout numbers untouched.
+        //
+        // The tree is laid out AFTER the main one, so `absX/absY/absW/absH` read
+        // from `app.findByKey(anchor)` during an overlay node's measure are THIS
+        // frame's final anchor rect, not last frame's.
+        public function renderOverlay():Node
+        {
+            return null;
+        }
+
         // Per-frame author hook, called once per frame BEFORE the dirty check, so
         // a tick that invalidates is serviced in THIS frame's present rather than
         // the next one.

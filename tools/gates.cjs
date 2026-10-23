@@ -42,9 +42,14 @@
 //                as a condition in kit/ makes the tool exit 1. This gate used to
 //                count a marker string the tool has never printed, so it could not
 //                go red at all; it now delegates to the tool's exit code.
-//   feedback 43 -- tools/mutation-widget-probes.cjs M1/M2: the skeleton plate colour
-//                and the spinner arc colour each moved 1/255 (both are hand-written
-//                pixels, so the failure names the exact coordinate).
+//   feedback 43 -- tools/mutation-widget-probes.cjs M1/M2/M5/M6: the skeleton plate
+//                colour and the spinner arc colour each moved 1/255 (both are
+//                hand-written pixels, so the failure names the exact coordinate); and
+//                the two halves of the paint-scheduling contract a spinner depends on
+//                -- M5 restores "clear M_PAINT after painting", which erases the very
+//                request a paint pass raises for its own next frame ("repainted only
+//                2 time(s) in 10 frames"), and M6 makes the spin ask for a LAYOUT bit
+//                instead of paint ("spinning re-solved layout 9 time(s)").
 //   media 43  -- tools/mutation-widget-probes.cjs M3/M4: the "fit" factor becomes
 //                max instead of min (the 8x8 source grows to 80x80 and the letterbox
 //                pixel that proves containment turns solid -- this is the DEFAULT
@@ -70,6 +75,26 @@
 //                swap an [h,v] pair / hard-code `is Array` on an Object param to
 //                false), every file restored byte-for-byte. This is the gate on the
 //                REVERT of the workaround G14 had forced on the style layer.
+//   overlay 65 -- probes/widgets/overlay/mutation.cjs: 7/7. Five of the seven are the
+//                REAL DEFECTS the probe found while it was written (overlay tree
+//                solved once against the pre-window fallback and never re-solved; a
+//                panel surface that was never created, so its rect was right and it
+//                painted nothing; the control's own `width` option leaking into a
+//                style shorthand and shrinking the layer; row routing that read a
+//                target-relative localY; a visibility flip that raised no arrange
+//                bit and never reached the display object). The other two move a
+//                hand-computed pixel/geometry by one unit.
+//   gallery teardown -- ui-demo/mutation-gallery-teardown.cjs: 2/2, and both are
+//                defects the SIX-page tour found and no probe could (a probe never
+//                destroys an overlay tree): dropping the WidgetTeardown hook leaves
+//                a destroyed menu's stage listener running on a nulled scratch bag
+//                (#1009 on the next click -> the tour never finishes), and dropping
+//                the root detach leaves the empty host Sprite on the stage (the
+//                tour's stage.numChildren verdict names it).
+//   array(x)  -- probes/array-coerce/: `Array(arg)` must wrap a non-number in ONE
+//                element on BOTH runtimes (SQL: Array([1,2]).length == 1 and [0] is
+//                Array). Found when `Array(opts.items)` in the overlay factories
+//                threw #1034 in the AOT; OptionSupport.list() is the replacement.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -106,7 +131,7 @@ function record(name, code, detail) {
 
 // ---- 1..3: pure-AS3 probes (windowed; probe.cjs owns build+run+assert) -------
 for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim',
-                 'widgets/feedback', 'widgets/media', 'widgets/data', 'redraw']) {
+                 'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay', 'redraw']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);
@@ -153,17 +178,21 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 }
 
 // ---- 6b: the multi-page demo tour -------------------------------------------
-// This is the only gate that exercises a WHOLE app: five pages sharing one body
-// slot, a widget-driven page switch, and rects that were hand-computed before the
-// run (see ui-demo/demo/GalleryMain.as). It is the pin for the two layout fixes in
-// UiNode (markLayoutDirty propagation out of a subtree, and re-resolving when a
-// widget override changes the direction) -- neither is visible to a single-page
-// probe, because a single-page app never swaps a subtree under an unchanged style.
+// This is the only gate that exercises a WHOLE app: six pages sharing one body
+// slot, a widget-driven page switch, a SECOND retained tree (page 5 floats a
+// dialog + menu + toast on the overlay root and tears it down again), and rects
+// that were hand-computed before the run (see ui-demo/demo/GalleryMain.as). It is
+// the pin for the two layout fixes in UiNode (markLayoutDirty propagation out of a
+// subtree, and re-resolving when a widget override changes the direction) --
+// neither is visible to a single-page probe, because a single-page app never swaps
+// a subtree under an unchanged style -- and for the two teardown fixes (a destroyed
+// overlay's stage listener; the overlay root being left on the stage), which need a
+// page switch to be visible at all.
 {
   const r = sh(process.execPath, ['run-gallery.cjs'], path.join(UI, 'ui-demo'), { ASC_NO_OPEN: '1' });
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /\[gallery\] RESULT: (\S+)/.exec(out);
-  record('gallery tour: 5 pages, widget-driven switch, hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
+  record('gallery tour: 6 pages (incl. the overlay tree), hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
 }
 
 // ---- 6c: the --air-app reachability probe (G13, fixed 阶段二百四十九) ----------
@@ -337,6 +366,22 @@ const G16_KNOWN = ['1', '3', '4', '5', '7', '8', '9', '10', '14', '15', '16', '1
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /RESULT: (\S+.*)/.exec(out);
   record('style fromAny is total: 19 cases, AOT vs AIR' + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
+}
+
+// ---- 7b: `Array(x)` wraps -- the runtime fact the overlay factories ran into ---
+// Eight cases on BOTH runtimes: the AOT arm and the AIR arm must agree, case by
+// case. This is not a compiler-gap probe (there is no gap -- AIR behaves the same);
+// it exists because the library got this wrong once: `Array(opts.items)` was used
+// to normalise "one item or a list" and threw #1034 in the AOT on a BoxNode, since
+// `Array([a,b])` is a ONE-element array in AS3 and not a copy of the list. The fix
+// is `OptionSupport.list()`, and this gate is the measurement that keeps anyone
+// from "simplifying" it back. The AIR arm is what makes "this is AS3, not our bug"
+// a measurement instead of an assertion.
+{
+  const r = sh(process.execPath, ['probes/array-coerce/run.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /RESULT: (\S+.*)/.exec(out);
+  record('Array(x) wraps on both runtimes (8 cases, AOT vs AIR)' + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
 }
 
 // ---- 8: the instrument that certifies "we did not touch the compiler" -------// Instant (pure string parsing, no build). It is a gate because every

@@ -210,7 +210,21 @@ package asaot.ui
             this.desc = desc;
             this.role = Element(desc).role;
             this.ariaName = Element(desc).ariaName;
-            this.visible = Element(desc).visible;
+            // A VISIBILITY FLIP MUST REACH THE DISPLAY OBJECT. `visible` is written
+            // onto backing.visible by arrangeSelf, which only runs inside an arrange
+            // sweep -- so a payload that changed nothing else (a dropdown reopening
+            // with a label that already matched, say) left the node's `visible`
+            // correct in the tree and the Sprite stale on screen. Opening worked the
+            // first time (the subtree was new) and closing worked (the label changed
+            // and forced a relayout); reopening did nothing. Raising the arrange bit
+            // is the honest fix: it is also what makes a hidden subtree stop picking.
+            var vis:Boolean = Element(desc).visible;
+            if (vis != this.visible)
+            {
+                this.visible = vis;
+                this.dirty |= Dirty.M_ARRANGE | Dirty.M_PAINT;
+                this.markLayoutDirty();
+            }
 
             var dirBefore:String = this.directionOverride;
             var relayout:Boolean = this.widget.payload(this, desc);
@@ -640,6 +654,11 @@ package asaot.ui
             // Drop any in-flight tweens for this subtree BEFORE the node's scratch
             // bag is nulled, so the animator's active list never holds a dead node.
             Anim.clear(this);
+            // A kind that attached something OUTSIDE the node -- a stage listener, a
+            // timer -- releases it here, while extra/app/backing are still readable.
+            // (Without this a destroyed menu kept its stage CLICK listener and the
+            // next click in the window threw #1009 on the nulled scratch bag.)
+            if (this.widget is WidgetTeardown) WidgetTeardown(this.widget).teardown(this);
             for (var i:int = 0; i < this.children.length; i++)
             {
                 this.children[i].destroySubtree();

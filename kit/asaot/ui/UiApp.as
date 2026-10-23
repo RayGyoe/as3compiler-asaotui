@@ -53,6 +53,12 @@ package asaot.ui
         public var enterFrameTicks:int;
 
         private var root:UiNode;
+        // The SECOND retained root: everything that floats above the layout tree
+        // (dialog / drawer / popover / menu / toast). Reconciled from
+        // View.renderOverlay(). It is a separate display object attached after
+        // the main root, so it is painted last and can cover the whole window;
+        // it never participates in the main tree's flex layout.
+        private var overlayRoot:UiNode;
         private var reconciler:Reconciler;
         private var _pending:int;
         private var _needsPaint:Boolean;
@@ -119,6 +125,19 @@ package asaot.ui
             return this.root != null ? this.root.backing : null;
         }
 
+        // The overlay root (null until the view first returns a non-null
+        // renderOverlay()). Exposed for tests and for widgets that need the
+        // window-sized coordinate space.
+        public function getOverlayRoot():UiNode
+        {
+            return this.overlayRoot;
+        }
+
+        public function overlayDisplay():DisplayObject
+        {
+            return this.overlayRoot != null ? this.overlayRoot.backing : null;
+        }
+
         // ---- the single dirty entry point -------------------------------
         public function invalidate(dirty:int):void
         {
@@ -182,7 +201,45 @@ package asaot.ui
             var availW:Number = (this.stage != null && this.stage.stageWidth > 0) ? this.stage.stageWidth : 560;
             var availH:Number = (this.stage != null && this.stage.stageHeight > 0) ? this.stage.stageHeight : 460;
 
+            // CONSUME THE PAINT REQUEST AT THE TOP, not at the bottom. A paint pass
+            // can RAISE the next one -- SpinnerWidget's spin does exactly that: it
+            // derives its angle from the frame clock and ends with `markPaint(n)`.
+            // Clearing `_needsPaint` at the END of reflow therefore erased the
+            // request that the pass just made, and a spinning spinner repainted
+            // ONCE and then froze. It only looked alive because of an unrelated
+            // accident: `_solvedW` used to be written only by the main root's solve
+            // branch, so the ENTER_FRAME size check saw a mismatch every frame and
+            // re-described the view, which repainted as a side effect. Fixing the
+            // percentage-root re-solve below removed that accident and exposed it.
+            // Swapping the flag here is the honest form: this number is what THIS
+            // frame asked for; anything marked during the pass belongs to the next.
+            var wantsPaint:Boolean = this._needsPaint;
+            this._needsPaint = false;
+
+            // A WINDOW RESIZE MUST RE-SOLVE PERCENTAGE-SIZED ROOTS. `size: [100%,100%]`
+            // is resolved against `avail` at SOLVE time, but nothing in the tree
+            // changed -- the styles are the same pointers, so the reconciler's
+            // pointer test skips resolveStyle and the roots keep the rect they were
+            // solved with. The overlay host is exactly that shape: it was measured
+            // at the 560x460 fallback (the first frame runs before the window
+            // exists) and stayed there while the stage was already 760x560, so every
+            // overlay surface was laid out in a 200px-too-narrow box.
+            if (availW != this._solvedW || availH != this._solvedH)
+            {
+                if (this.root != null)
+                {
+                    this.root.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE;
+                    this.root.markLayoutDirty();
+                }
+                if (this.overlayRoot != null)
+                {
+                    this.overlayRoot.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE;
+                    this.overlayRoot.markLayoutDirty();
+                }
+            }
+
             var reconciled:Boolean = false;
+            var reconciledOverlay:Boolean = false;
             if (this._pending != 0)
             {
                 var desc:Node = this.view.render();
@@ -196,30 +253,67 @@ package asaot.ui
                 {
                     this.stageContainer.addChild(this.root.backing);
                 }
+
+                // The overlay tree (see View.renderOverlay). Reconciled in the
+                // same describe phase, but SOLVED after the main tree so an
+                // anchored overlay reads this frame's final anchor rect.
+                var odesc:Node = this.view.renderOverlay();
+                if (odesc != null)
+                {
+                    this.overlayRoot = this.reconciler.reconcile(this.overlayRoot, odesc, null);
+                    if (this.overlayRoot.backing != null && this.overlayRoot.backing.parent == null
+                        && this.stageContainer != null)
+                    {
+                        this.stageContainer.addChild(this.overlayRoot.backing);
+                    }
+                    reconciledOverlay = true;
+                }
+                else if (this.overlayRoot != null)
+                {
+                    this.reconciler.destroyRoot(this.overlayRoot);
+                    this.overlayRoot = null;
+                    reconciledOverlay = true;
+                }
                 reconciled = true;
+            }
+
+            // Keep the overlay on top of the display list. It is normally added
+            // after the main root and therefore already on top; this only has to
+            // repair the one case where the main root was re-attached later.
+            if (reconciledOverlay && this.overlayRoot != null && this.overlayRoot.backing != null
+                && this.overlayRoot.backing.parent != null && this.stageContainer != null)
+            {
+                var top:int = this.stageContainer.numChildren - 1;
+                if (top >= 0 && this.stageContainer.getChildIndex(this.overlayRoot.backing) != top)
+                {
+                    this.stageContainer.setChildIndex(this.overlayRoot.backing, top);
+                }
             }
 
             var layoutRan:Boolean = false;
             if (this.root != null && (this.root.dirty & (Dirty.M_MEASURE | Dirty.M_ARRANGE)) != 0)
             {
-                this.measurePasses = this.measurePasses + 1;
-                measurePass(this.root);
-                this.layoutSolves = this.layoutSolves + 1;
-                this.engine.calculate(this.root.engineNode, availW, availH, LayoutConstants.DIR_LTR);
-                this.arrangePasses = this.arrangePasses + 1;
-                arrangePass(this.root, 0, 0);
-                this._solvedW = availW;
-                this._solvedH = availH;
+                this.solveRoot(this.root, availW, availH);
+                layoutRan = true;
+            }
+            // MAIN FIRST, OVERLAY SECOND. An anchored overlay (popover / menu)
+            // reads its anchor's solved rect during its own measure pass, so the
+            // anchor has to be final by then -- that ordering is the whole reason
+            // this is a second `solveRoot` call and not one merged tree.
+            if (this.overlayRoot != null
+                && (this.overlayRoot.dirty & (Dirty.M_MEASURE | Dirty.M_ARRANGE)) != 0)
+            {
+                this.solveRoot(this.overlayRoot, availW, availH);
                 layoutRan = true;
             }
 
             if (layoutRan)
             {
                 this.paintPasses = this.paintPasses + 1;
-                paintAll(this.root);
+                if (this.root != null) paintAll(this.root);
+                if (this.overlayRoot != null) paintAll(this.overlayRoot);
             }
-            else if (this.root != null && (this._needsPaint || reconciled))
-            {
+            else if (wantsPaint || reconciled)            {
                 // A reconciled frame MUST get a paint sweep even when nothing
                 // reflowed. An author change that only affects decoration (a
                 // background, a border colour) arrives as a re-describe plus
@@ -234,11 +328,26 @@ package asaot.ui
                 // `paintDirty` paints only nodes whose M_PAINT bit is set, so the
                 // extra work is one O(n) walk plus O(changed) painting.
                 this.paintPasses = this.paintPasses + 1;
-                paintDirty(this.root);
+                if (this.root != null) paintDirty(this.root);
+                if (this.overlayRoot != null) paintDirty(this.overlayRoot);
             }
 
             this._pending = 0;
-            this._needsPaint = false;
+        }
+
+        // One root: intrinsic measure, engine solve, arrange. Shared by the main
+        // tree and the overlay tree so the two can never drift apart in how they
+        // are driven.
+        private function solveRoot(r:UiNode, availW:Number, availH:Number):void
+        {
+            this.measurePasses = this.measurePasses + 1;
+            measurePass(r);
+            this.layoutSolves = this.layoutSolves + 1;
+            this.engine.calculate(r.engineNode, availW, availH, LayoutConstants.DIR_LTR);
+            this.arrangePasses = this.arrangePasses + 1;
+            arrangePass(r, 0, 0);
+            this._solvedW = availW;
+            this._solvedH = availH;
         }
 
         private function measurePass(n:UiNode):void
@@ -260,8 +369,13 @@ package asaot.ui
 
         private function paintAll(n:UiNode):void
         {
-            n.paintSelf();
+            // CONSUME THE BIT BEFORE PAINTING. A paint pass may raise its OWN next
+            // frame (SpinnerWidget's spin ends with `markPaint`); clearing the bit
+            // afterwards erased that request and the spinner repainted once. Same
+            // rule as `wantsPaint` at the top of reflow: what this pass asked for is
+            // being served now, what the pass raises belongs to the next one.
             n.dirty = n.dirty & ~Dirty.M_PAINT;
+            n.paintSelf();
             for (var i:int = 0; i < n.children.length; i++) paintAll(n.children[i]);
         }
 
@@ -269,8 +383,8 @@ package asaot.ui
         {
             if ((n.dirty & Dirty.M_PAINT) != 0)
             {
-                n.paintSelf();
                 n.dirty = n.dirty & ~Dirty.M_PAINT;
+                n.paintSelf();
             }
             for (var i:int = 0; i < n.children.length; i++) paintDirty(n.children[i]);
         }
@@ -283,7 +397,12 @@ package asaot.ui
 
         public function findByKey(k:Object):UiNode
         {
-            return findScoped(this.root, k);
+            var hit:UiNode = findScoped(this.root, k);
+            if (hit != null) return hit;
+            // The overlay tree is a second root; a key is unique across BOTH trees
+            // (the main tree wins a collision, which is also what a test author
+            // expects: content over chrome).
+            return findScoped(this.overlayRoot, k);
         }
 
         private function findScoped(n:UiNode, k:Object):UiNode
