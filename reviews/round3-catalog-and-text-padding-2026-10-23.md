@@ -19,7 +19,7 @@
 | **控件集补完** | 第二批九件全部落地：`image` / `scrollView` / `spinner` / `skeleton` / `tooltip` + `table` / `accordion` / `breadcrumb` / `pagination` ⇒ **25 kind / 29 工厂** | `node tools/probe.cjs probes/widgets/{media,feedback,data}` ⇒ **43 / 43 / 77 checks, 0 failures** |
 | **air-gallery 补齐** | 第 5 页 **Catalog**：media/feedback/data 九件同屏；tour 现在遍历 **5 页**、落 **5 张** PNG，页脚 off-by-one 修掉（`segs = (652 - 8*(n-1))/n`，n 从标签数组算，不再写死） | `cd ui-demo && node run-gallery.cjs` ⇒ `RESULT: PASS`；`air-gallery/gallery.txt` 里有 page 4 的手算矩形；`gallery-page4.png` |
 | **发现并修掉一条真框架缺陷** | **auto 宽度的文本节点发布的是「纯字形宽」，而引擎 `boxSizing` 默认 border-box（点尺寸 = 整盒）** ⇒ 有内边距的 auto 文本，盒比内容小，字形溢出到邻居身上（面包屑分隔符 `/` 贴在下一个 crumb 上） | 钉子：`probes/widgets/data` 程序内断言 `sep.absW == sep.tf.textWidth + 8`；变异 M5 复现 ⇒ 红并点名 `must include its insets` |
-| **把「静态诊断」升级成判据** | 画廊 tour 一直在**数**三类静默失败（无 engine 节点 / 零矩形 / backing 未挂）但只写进日志；现在它们进 `problems` ⇒ 新控件的「悄悄没上屏」不再能被 PASS 掩盖 | 变异 `ui-demo/mutation-gallery-zerorect.cjs`：目录页 `image` 设成 0×0 ⇒ tour 红并点名 `page 4 has N node(s) with a zero rect`；baseline 绿、还原逐字节一致 |
+| **把「静态诊断」升级成判据** | 画廊 tour 一直在**数**三类静默失败（无 engine 节点 / 零矩形 / backing 未挂）但只写进日志；现在它们进 `problems` ⇒ 新控件的「悄悄没上屏」不再能被 PASS 掩盖 | 变异 `ui-demo/mutation-gallery-zerorect.cjs`（**4 行全绿**）：`M1 actually rewrote the screenshots`（先证明变异**真的**改到了像素）→ `M1 ... -> named red`（tour 红并点名 `page 4 has N node(s) with a zero rect`）→ `M1 screenshots restored byte-identical`（5 张 PNG 逐字节还原）；baseline 绿、源码还原逐字节一致 |
 | **文档计数纠偏** | `16 kind / 20 工厂`、`53 文件`、`18 道门`、`4 页`、`16 widget kinds registered.`（demo 里**渲染出来的**那句话）全部按实测改成 **25 / 29 / 114 个 .as / 23 道门 / 5 页 / 25** | `git diff STATUS.md README.md ui-demo/README.md` |
 
 ---
@@ -95,19 +95,34 @@ nodes=45 engineNodeNull=0 zeroRect=0 detachedBacking=0
 
 但只有「三页里这页多了/少了节点」这类**键存在性**断言会进 `problems`，这三个数永远只是日志 ⇒
 新控件「建了节点却没上屏」会是一个带 0 的 PASS。本轮把它们接进 `problems`，并配
-`ui-demo/mutation-gallery-zerorect.cjs`：
+`ui-demo/mutation-gallery-zerorect.cjs`（现在 **4 行判据**）：
 
 ```
-MUTATION PASS  baseline (unmutated) gallery tour   [exit=0 + RESULT: PASS]
-MUTATION PASS  M1 catalog image sized 0x0 -> named red   [exit=1 + the zero-rect verdict named the page]
-restore: GalleryView.as byte-identical
-MUTATION gallery-zero-rect: PASS (1/1)
+MUTATION PASS  baseline (unmutated) gallery tour                    [exit=0 + RESULT: PASS]
+MUTATION PASS  M1 actually rewrote the screenshots                  [the mutated build really does overwrite the five tracked PNGs]
+MUTATION PASS  M1 catalog image sized 0x0 -> named red              [exit=1 + the zero-rect verdict named the page]
+MUTATION PASS  M1 screenshots restored byte-identical               [5 PNG(s), same bytes as before the mutation]
+restore: GalleryView.as byte-identical; screenshots byte-identical
+MUTATION gallery-zero-rect: PASS (1/1 + 2 pins)
 ```
+
+第 2 行是**成本为零的牙齿证明**：如果哪天变异不再改到像素（例如 `fit` 的退化分支被改掉），
+第 4 行的「还原成功」会退化成一句空话——这一行专门拦住它。
+
+> **这条 pin 是踩出来的，不是想出来的。** 第一次跑这个变异时我**掐掉**了长跑（以为它挂了），
+> 结果磁盘上留下的 `gallery-page4.png` 是**变异版**——目录页那张图里面的 `image` 被从居中画到了左边。
+> 这正是「变异把**被追踪的证据文件**改成了假图」这一类事故。⇒ 变异机现在把 5 张 PNG 也在
+> `finally` 里按字节还原，并用**读回磁盘的哈希**自证（不是「我写过」而是「现在读到的就是原来那串」）。
+> 顺带把「渲染是否确定」也当场量了：**现在跑一次完整 `run-gallery.cjs`，5 张 PNG 与提交里那 5 张逐字节相同**
+> （`sha256` 对比 ⇒ 渲染是确定的，截图可以当证据）。
 
 ---
 
 ## 4 如实登记的边界（本轮**不**做）
 
+0. **跑画廊时要带 `ASC_NO_OPEN=1`**：不带它直接 `node run-gallery.cjs` 会挂在「开窗」那一步
+   （我这次就挂了一次、600s 超时后被迫掐掉——截图其实已经落盘了）。变异机与门都自带这个环境变量，
+   手动跑时请照抄。
 1. **页脚原来是 `page p of 3`（4 页时报 3）**，tour 不管这句话 ⇒ 已改成从标签数组的长度算，
    但**没有任何断言盯着它**（它只出现在 PNG 里）。若要钉，需要一个读 PNG 文字的手段（现在没有 OCR，
    也不该为这句话引一个）。
