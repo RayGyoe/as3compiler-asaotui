@@ -271,11 +271,24 @@
 > **两条臂都是实测**：同一份 **26** 条用例，我们的 AOT（**每条一个进程**，因为其中几条会崩）与真 AIR 51.4.1（`mxmlc`→`adl`）。
 > 一条命令：`node probes/obj-array-identity/run.cjs`；变异 `mutation.cjs` **4/4**。
 >
-> **⚠ 状态更新（2026-10-23 08:30 复测，首版提交时加入）**：编译器侧已在**工作树**里修掉本条
-> （`M src/emit.ts` + `M src/runtime.ts`），AOT 实测 **26 格全部与 AIR 一致（0 偏离、0 崩溃）**；
-> 但**该修复尚未提交**（编译器 HEAD 仍是阶段二五二 `a035645`），本工作区 `expect.json` 的偏离登记
-> 已随之被清空（清空脚本留档 `probes/obj-array-identity/fix-expect.cjs`）。⇒ **下文所有「未修」措辞只在**
-> **编译器提交前成立**；阶段号落定后把本条移入 §2「已修」，并连带重审 style 层那些为躲它而做的拆分。
+> **✅ 已修（阶段二百五十三，v0.4.217）**。修法**不是**把 Array 装箱（那会牵动 `Object*` 与
+> `as_array*` 的全部既存隐式转换），而是**让 `Object` 接收者走 `*` 接收者早已走通的那条运行时通路**：
+> ① 判定 —— `is Array` / `as Array` / `.constructor` 改发 `as_obj_is_array` / `as_obj_as_array` /
+> `as_obj_class_of`（按 GC 堆种类分派，与 tag-6 的 `as_v_is_array` 同口径）；② 调用 —— `Object` 接收者的
+> 成员调用**一律** `as_dyn_call`，运行时按堆种类走 `as_arr_call` / `as_vec_call_hook` / vtable，
+> **不再**把数组头当 vtable 走；③ 读写删 —— `as_dyn_get` / `as_dyn_del` / `for each` 走
+> `as_array_key_get` / `as_dyn_del` / `as_obj_to_value`；④ **两条不变量**兜住「野读」这一类：
+> `as_is` / `as_iface_lookup` 先过 `as_has_vtable`（**白名单**：只有真带 vtable 的堆种类才读首字），
+> `as_v_is_inst` 不再放行 tag 6 去 `as_is`。
+> **验收**：26 格矩阵 0 偏离 0 崩溃；**扩展矩阵 59 例 / 55 行与真 AIR 51.4.1 逐字相同**（`temp/g14/ab.cjs`）；
+> 新增示例 `examples/object-array-identity.as`（79 条断言，期望值全部是 adl 实测）+ 单元钉子
+> `unit: object/array-identity`（23 条源级/发射级），**变异 8/8 被抓**、源码 sha256 逐字节还原。
+> 顺带补齐同一族的其余面：`Dictionary`/`Vector` 也没有 vtable，`Object` 自有的四个方法
+> （`toString`/`hasOwnProperty`/`propertyIsEnumerable`/`valueOf`）现在由 `as_dyn_object_builtin`
+> **按堆种类**回答（record `[object Object]`、Dictionary `[object Dictionary]`、Vector 用 `join(",")`），
+> `as_obj_to_str`/`as_obj_default_str` 也认得这两类——此前 `var o:Object = new Dictionary(); o.toString()`
+> 同样是 SIGSEGV。**UI 库（style 层）那两处规避保持原样**（G9 已裁过：『*』读绑定仍是正确默认），
+> 修复只在编译器侧。
 
 | 项 | 内容 |
 |---|---|
@@ -287,12 +300,12 @@
 | 对 UI 库的影响 ①：style 层的 `fromAny`/`fromArray` 拆分**不能合并** | `Size`/`LengthEdges`/`Edges`/`Corners`/`Fill` 都把入口拆成「标量走 `fromAny(o:Object)`、数组走 `fromArray(a:Array)`」。这条拆分**不是**过期的临时手段：`fromAny` 里第一句就是 `o is Length` / `o is Fill`（**用户类**）——一旦有 Array 进来就 **SIGSEGV**。⇒ 拆分是**安全要求**，保留 |
 | 对 UI 库的影响 ②：**已修**（2026-10-23，用户拍板） | ① `Fill.fromAny` 里那句 `if (o is Array) return null;` **已删**（它被折成 `if (false)`，留在那儿只是假装有保护），原位换成一段说清「**别再往这里加数组检查**」的注释；② 新增 `Fill.fromArray(a:Array):Fill`，**返回 null**（数组 = 渐变停机列表，而渐变已明确 defer；返回 null 正是 AIR 今天对 Array 的答案，属**对齐**而非发明）；③ `StyleRefinement.from` 的 `background` 补上 `is Array` 分流——它此前是该方法**唯一**没做分流就转发进 `fromAny` 的简写（`size`/`padding`/`margin`/`inset`/`border`/`cornerRadii` 都有）。⇒ `background: [...]` 不再崩（demo/主题仍全传数字色值，故这是**潜伏**修复而非可见变更） |
 | 与 G9 的关系 | 两个**不同**的缺陷，别混：G9 = `Boolean(<Object 槽>)` 读错（**已修**，且只影响 `Boolean`）；G14 = `Object` 槽对 **Array 完全不装箱**（**未修**，影响 `is`/`as`/动态属性，且会崩）。G9 的修复（`Boolean` 分支加 `as_obj_to_value`）**治不了** G14——因为 Array 压根没被装箱，没有箱子可解 |
-| 状态 | **已实测 · 未修 ⇒ 工作树已修，待提交**（登记 2026-10-23；见本条顶部「⚠ 状态更新」）。作为一道门持续看住（`tools/gates.cjs` 第 9 道）：偏离集**恰好等于**登记集才绿；**新增**偏离、**消失**的偏离、**少跑**的用例都会红。消失时它会说「可能是真修了，去更新登记与期待值」——不假绿；**这条机制本次当场响了一次**（08:30 复测 ⇒ 偏离集变空） |
+| 状态 | **已实测 · ✅ 已修（阶段二百五十三，v0.4.217）**（登记 2026-10-23；见本条顶部修复记录）。作为一道门持续看住（`tools/gates.cjs` 第 9 道）：偏离集**恰好等于**登记集才绿；**新增**偏离、**消失**的偏离、**少跑**的用例都会红。消失时它会说「可能是真修了，去更新登记与期待值」——不假绿；**这条机制本次当场响了一次**（08:30 复测 ⇒ 偏离集变空） |
 | 复现 / 钉子 | **两件**：① 26 格矩阵 `node probes/obj-array-identity/run.cjs` · 变异 `mutation.cjs` **4/4**（翻一条 AS3 规则 / 删一条已登记偏离 / 造一条不存在的偏离 / 砍掉后半段用例）；② **最小复现包**（供转交编译器侧）`node probes/g14-minimal/run.cjs` —— 13 行程序、两 runtime 并排，exit 0 = 复现成功、exit 1 = 已被修（并列出要更新的三处登记）、exit 2 = harness 失败或**参考臂自身与 AS3 规则不符**（此时拒绝下结论）。两者 `finally`/重跑均逐字节还原 |
 | 库内钉子 | `ui-demo/CheckUi.as` **§8**（4 条断言：数组背景**不崩**且无填充、标量背景仍是实色、兄弟字段不被吞、`Fill.fromAny(标量)` 仍实色）；变异 `ui-demo/mutation-checkui-array-bg.cjs` **2/2** —— 把那一行改回原样 ⇒ **`exit 3221225477`**（崩溃当场复现）；把 `Fill.fromAny` 改成恒 null ⇒ 标量断言当场报错（证明它不是同义反复） |
 | 证据落盘 | [`reviews/probe-g14-object-slot-array-identity-2026-10-23.md`](reviews/probe-g14-object-slot-array-identity-2026-10-23.md) · 转交材料 [`reviews/handoff-g14-to-compiler-2026-10-23.md`](reviews/handoff-g14-to-compiler-2026-10-23.md) · 探针 [`probes/obj-array-identity/`](probes/obj-array-identity/)（`Cases.as` 单一用例源、两驱动、两臂原始输出）与 [`probes/g14-minimal/`](probes/g14-minimal/) |
 
-> **若将来要修（属编译器侧，需另立阶段）—— 定位已完成**，完整转交材料见
+> **历史：当初的定位与转交材料**（阶段二百五十三已按此修掉，保留以便回溯）—— 完整转交材料见
 > [`reviews/handoff-g14-to-compiler-2026-10-23.md`](reviews/handoff-g14-to-compiler-2026-10-23.md)：
 >
 > ① **静默假**：`src/emit.ts:32576` 的 `x is Array` 分支只给 `any` 槽发了正确的运行时测试（`as_v_is_array`），`Object` 槽直接落到 `return 'false'`——而**紧接其后的 `is Class`(`:32591`) 与 `is Vector.<T>`(`:32624`) 都有 `o.type.kind === 'object'` 分支**，形状相同（`as_v_obj((void*)(code))` 打箱后再问）；同文件 `is Object`(`:32561`) 还留着长注释说「这里曾经把静态已知的 scalar/array 折成 false，是错的」。⇒ 看起来是**同一类错误的漏网实例**。
@@ -300,6 +313,25 @@
 > ③ `*` 槽也崩：`src/runtime.ts:2026` 的 `as_v_is_inst` 对 `tag == 6` 放行去调 `as_is`。
 > ④ 「不装箱」的明文在 `src/runtime.ts:3432`（`case 4: case 6: return v.ptr;`）⇒ `Object*` 与 `as_array*` 在 C 层**同型**。两条修法路线：**(A)** 让判定认得「裸容器指针」（改 ②③，① 顺势好）；**(B)** 让 Array 也装箱（与 `Object*` 的全部既存隐式转换都相关，面更大）。我们**不替他们选**（不了解其表示/性能约束），只报事实：`is Number/String/Boolean` 在 `Object` 槽上**今天是对的**，修法别弄坏它。
 > 修完 `run.cjs` 的偏离集会变空 ⇒ 转成 `GAP-CHANGED` 叫我们更新登记（这条设计是故意的）。
+
+---
+
+### G15 —— `getQualifiedClassName(new Dictionary())` 返回 `"Object"`（AIR：`"flash.utils::Dictionary"`）
+
+> 阶段二百五十三修 G14 时**顺带量到**的相邻缺口，**不是** G14 的衍生：`getQualifiedClassName` 不走
+> 方法派发，与「Object 槽装 Array」无关。**已确认是既有缺陷**：同一程序在阶段二五二（`a035645`，
+> G14 修复前的干净工作树）跑出同样的 `"Object"`。⇒ 单列，不夹带进 G14 的提交。
+
+| 项 | 内容 |
+|---|---|
+| 现象 | `var d:Object = new Dictionary(); getQualifiedClassName(d)` ⇒ 我们 `"Object"`，AIR `"flash.utils::Dictionary"` |
+| 同批对照（**都对**） | `[1]` ⇒ `"Array"`；`new Vector.<int>()` ⇒ `"__AS3__.vec::Vector.<int>"`；`{}` ⇒ `"Object"`（AIR 同） |
+| 判定 | **遗留欠账**（AIR 能做对）。影响面：诊断/序列化里按『qcn』分流的代码会把这个 Dictionary 当普通 record |
+| 机制（**已定位，未改**） | `as_obj_class_of`（阶段二百五十三新增）对 `dk==1`（Dictionary）返回 `null`，`getQualifiedClassName` 于是退到默认 `"Object"`；Dictionary 没有 vtable，`as_v_class_of` 那条路也拿不到类名 |
+| 修法方向 | 与 `as_obj_is_array` 同型：给「无 vtable 的堆种类」一个按种类回答类名的入口（Dictionary 直接 `flash.utils::Dictionary`，另需覆盖 `ByteArray`/`String` 等），并在 `as_obj_class_of` 里接上 |
+| 状态 | **已实测 · 未修** |
+| 证据落盘 | `temp/g14/DictAot.as`（AOT 14 行）· `temp/g14/DictAir.as` + `temp/g14/dict-air.txt`（AIR 原始输出）· 驱动 `temp/g14/air-run.cjs` |
+| 备注 | 同一批里 **13/14 行已与 AIR 逐字一致**，唯一不一致的就是本行 ⇒ 这张小矩阵可以当本条的验收网 |
 
 ---
 

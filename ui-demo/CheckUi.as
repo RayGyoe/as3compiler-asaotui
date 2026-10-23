@@ -183,13 +183,17 @@ checkRect("left rect", app.findByKey("left"), 20, 90, 200, 100);
 checkRect("right rect", app.findByKey("right"), 230, 90, 310, 100);
 
 // ---- 8. an Array-valued `background` must not kill the process -------------
-// The crash assertion is the SEQUENCE: an Array in an Object-typed parameter is
-// not boxed, so `is Fill` inside Fill.fromAny would read the array header as a
-// vtable and take the process down (0xC0000005, compiler-gaps.md G14, probe case
-// 26) -- and a dead process prints nothing, so reaching the checks below IS the
-// result. What we then pin is the observable value: a stop list means a gradient,
-// gradients are deferred, so the answer is "no fill" -- which is also AIR's answer
-// today (its own `fromAny` returns null for an Array), i.e. alignment, not invention.
+// TWO subjects, one root cause. (a) The crash assertion is the SEQUENCE: an Array
+// in an Object-typed parameter used to be a bare pointer, so `is Fill` inside
+// Fill.fromAny read the array header as a vtable and took the process down
+// (0xC0000005, compiler-gaps.md G14, probe case 26) -- and a dead process prints
+// nothing, so reaching the checks below IS the result. What we then pin is the
+// observable value: a stop list means a gradient, gradients are deferred, so the
+// answer is "no fill" -- which is also AIR's answer today (its own `fromAny`
+// returns null for an Array), i.e. alignment, not invention. (b) Fixed in
+// as3compiler 阶段二百五十三, the slot's identity is now answerable too: the
+// `arraySlot` checks at the end of this section ask the questions that used to be
+// either a compile-time lie (`is Array` folded to false) or a crash (`is Fill`).
 var arrBg:StyleRefinement = StyleRefinement.from({ background: [255, 0, 0] });
 check("array background yields no fill (deferred gradient)", arrBg.background == null,
     "argb=" + (arrBg.background == null ? "null" : String(arrBg.background.argb)));
@@ -206,6 +210,25 @@ var diffPair:StyleRefinement = StyleRefinement.from({ background: [1, 2, 3], bor
 check("an array background does not swallow the sibling fields",
     diffPair.background == null && diffPair.borderColor == 0x111111,
     "borderColor=" + diffPair.borderColor);
+
+// Since G14 was fixed (as3compiler 阶段二百五十三, v0.4.217) the slot's IDENTITY is
+// answerable too, and that is what the two lines above could only observe from the
+// outside. Before the fix `o is Array` was folded to a compile-time `false` and the
+// `is Fill` test below took the process down with 0xC0000005, so neither could be
+// written at all. The expected values are AIR 51.4.1's (probes/obj-array-identity,
+// 26/26 cases agreeing after the fix).
+var arraySlot:Object = [1, 2, 3];
+check("an Object slot still answers `is Array`", (arraySlot is Array),
+    "is Array=" + (arraySlot is Array));
+check("an Object slot is `is Fill` false, not a 0xC0000005", !(arraySlot is Fill),
+    "is Fill=" + (arraySlot is Fill));
+check("an Object slot answers .length and indexing",
+    arraySlot.length == 3 && arraySlot[1] == 2,
+    "length=" + arraySlot.length + " [1]=" + arraySlot[1]);
+check("an Object slot dispatches Array methods", arraySlot.join("-") == "1-2-3",
+    "join=" + arraySlot.join("-"));
+check("an Object slot stringifies as an Array", String(arraySlot) == "1,2,3",
+    "String=" + String(arraySlot));
 
 trace("CHECKUI: " + checks + " checks, " + failures + " failures");
 if (failures > 0)

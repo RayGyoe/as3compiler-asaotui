@@ -224,12 +224,16 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 
 // ---- 9: G14 -- does an Array in an `Object`-typed slot keep its identity? ----
 // 26 cases, run on BOTH runtimes: our AOT (one process PER CASE, because several
-// of them SIGSEGV) and real AIR (mxmlc + adl). The AIR arm is checked against a
-// HAND-WRITTEN AS3 rule, so "AIR is the reference" is itself a measured claim.
-// The gate is green while the AOT deviation set is EXACTLY the documented set
-// (7 ids): a new deviation, a deviation that quietly vanishes, or a case that
-// stops being run all go red. A vanishing deviation is the interesting one -- it
-// is what a real compiler-side fix looks like, and the message says so.
+// of them SIGSEGV'd before the fix) and real AIR (mxmlc + adl). The AIR arm is
+// checked against a HAND-WRITTEN AS3 rule, so "AIR is the reference" is itself a
+// measured claim.
+// The gate is green while the AOT deviation set is EXACTLY the documented set: it
+// is EMPTY since as3compiler 阶段二百五十三 (v0.4.217) and held 7 ids before that. A
+// new deviation goes red; so does a case that stops being run. The interesting
+// direction is the other one -- a deviation VANISHING without expect.json being
+// updated also goes red, and the message says "if this is the fix, shrink the
+// recorded set" -- because a silently shrinking set would let a regression hide
+// behind a stale expectation.
 //   mutation: probes/obj-array-identity/mutation.cjs (4/4, restoring by hash).
 {
   const r = sh(process.execPath, ['probes/obj-array-identity/run.cjs'], UI);
