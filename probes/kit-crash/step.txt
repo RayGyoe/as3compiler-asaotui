@@ -1,0 +1,10 @@
+S0 file+imports ok
+S1 new StepView ok
+S2 new Stage ok
+S3 new UiApp ok
+S4 mount ok  (describe=1 solves=1)
+S5 attachRoot ok
+S6 getRoot ok  root=box
+S7 findByKey ok  a=0,0,100,40
+S8 steady reflow ok (solves=1)
+DONE all steps survived

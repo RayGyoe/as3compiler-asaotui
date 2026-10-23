@@ -1,0 +1,12 @@
+=== WASI import shape of emscripten standalone output ===
+--- build/wasm_floor.wasm (2072 B) ---
+wasi_snapshot_preview1: 2 imports
+total import functions: 2
+--- build/wasm_yoga_min.wasm (125252 B) ---
+wasi_snapshot_preview1: 4 imports
+total import functions: 4
+
+=== 'used' attribute forces emscripten export (root cause of weak wasm DCE) ===
+source tmp/vis2.c: vis_used = __attribute__((visibility("default"), used)); vis_plain = __attribute__((visibility("default")))
+linked via: emcc -O2 -sSTANDALONE_WASM build/vis2.a -o build/vis2.wasm
+exports: memory, vis_used, _start, __indirect_function_table, __errno_location, stackSave, stackRestore, stackAlloc

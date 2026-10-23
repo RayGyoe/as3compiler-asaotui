@@ -1,0 +1,19 @@
+== build libyoga variants ==
+
+== [1] -O2 -DNDEBUG + -Wl,--strip-debug (project default shape) ==
+o2               seam_test =   140008 B ( 136.7 KiB)
+   run: node --no-warnings /c/Users/rayle/Desktop/as3compiler-aot/asaotui/measurements/wasi-probe/attrib/../run-wasi.mjs /c/Users/rayle/Desktop/as3compiler-aot/asaotui/measurements/wasi-probe/attrib/u1-wasip1/o2/test_layout.wasm
+  survived all NULL calls  OK
+
+---- 17 checks, 0 failures ----
+RESULT: PASS
+   (exit 0)
+
+== [2] -Oz -DNDEBUG -flto + -Wl,--strip-debug (LTO) ==
+oz_lto           seam_test =    92209 B (  90.0 KiB)
+   run: node --no-warnings /c/Users/rayle/Desktop/as3compiler-aot/asaotui/measurements/wasi-probe/attrib/../run-wasi.mjs /c/Users/rayle/Desktop/as3compiler-aot/asaotui/measurements/wasi-probe/attrib/u1-wasip1/oz_lto/test_layout.wasm
+  survived all NULL calls  OK
+
+---- 17 checks, 0 failures ----
+RESULT: PASS
+   (exit 0)

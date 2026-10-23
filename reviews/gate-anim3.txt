@@ -1,0 +1,3 @@
+[probe] building anim
+[probe] built probes\widgets\anim\Main.exe
+[probe] TIMEOUT: anim never wrote anim.done (window never settled?)

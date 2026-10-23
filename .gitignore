@@ -1,0 +1,109 @@
+# ===========================================================================
+# asaotui —— 忽略规则：什么进库、为什么
+#
+# 判据不是「文件大不大」，而是 **一个干净克隆能不能重建它**：
+#
+#   进库 = 输入 + 不可再生的证据
+#     · 源码与脚本：*.as  *.cjs  *.sh  *.md  *.json（expect.json 等）
+#     · 手写 C（**构建输入**，见 §4 末尾的完整清单）
+#     · 证据文本：reviews/*.txt、*.log、probes/**/*.txt —— 文档按**路径**引用
+#       它们（例 `reviews/gates-all-9.txt`、`probes/g11-nondeterminism/README.md`），
+#       删掉会把引用变成死链
+#     · `probes/g11-nondeterminism/artifact-*.c` —— **不可再生**（是过去某版
+#       编译器的输出，今天编不出来），且被该目录的 run.cjs / mutation.cjs 当**输入**读
+#     · `ui-demo/air-*/gallery-page*.png` —— 画廊 4 页截图（README 的成品展示）
+#
+#   不进库 = 可再生的输出 + 第三方检出
+#     · 生成的 `.c`（每个 2.6~3.8 MB）、*.exe、*.o、*.a、*.wasm、*.swf
+#     · icudtl.dat（文字引擎运行时数据，一份 9.7 MB，来源见 §3）
+#     · gpui-src/（上游 zed 的 sparse checkout）、measurements/yoga-src/
+#       —— 两者**自带 `.git`**，入库会退化成 gitlink；取回命令见 README「克隆后的准备」
+#
+# ⚠ 本文件刻意**没有**一刀切 `*.c`：手写 C 是「被跟踪的构建输入」（与 as3compiler
+#   仓库 .gitignore 的 `!vendor/**/*.c` 同口径），故按目录逐个禁生成物，见 §4。
+# ===========================================================================
+
+# --- §1 编辑器 / 系统垃圾 --------------------------------------------------
+.DS_Store
+Thumbs.db
+*~
+*.orig
+*.rej
+
+# --- §2 构建产物（二进制） -------------------------------------------------
+# 全部可由 `node tools/gates.cjs` 或各探针自己的 run.cjs / mutation.cjs 重建
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.obj
+*.o
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.map
+*.wasm
+*.wat
+
+# --- §3 文字引擎运行时数据 -------------------------------------------------
+# 窗口后端要求可执行文件同目录有 icudtl.dat。克隆后拷一份即可，来源二选一：
+#   ../as3compiler/vendor/skia/lib/windows-x64/icudtl.dat    （最省事）
+#   $AIRSDK_HOME/runtimes/air/win/icudtl.dat
+icudtl.dat
+
+# --- §4 编译器生成的 C（逐目录；手写 C 例外） ------------------------------
+# 生成物每个 2.6~3.8 MB：整棵树里 52 个 `.c` 合计 80 MB，2 个就抵得上整个仓库。
+/diff-check/as3-driver/*.c
+/layout-check/*.c
+/probes/**/*.c
+/ui-demo/*.c
+# 例外：G11 的三份历史产物是**证据**且被 G11 门当输入读（`sha16()` / `readFileSync`）
+!probes/g11-nondeterminism/artifact-*.c
+#
+# 手写 C —— 不匹配上面任何一条，因此始终入库（是构建输入，不是产物）：
+#   diff-check/yoga-driver/yoga_driver.c
+#   u1-prototype/test_layout.c   u1-prototype/yoga_glue.cc   u1-prototype/yoga_glue.h
+#   u1-prototype/probes/{probe,raw,mixed}.c
+#   measurements/tmp/{c_floor,yoga_min,yoga_one,yoga_many,vis,vis2,hello,w}.c
+#   measurements/wasi-probe/{floor_printf,smoke}.c + attrib/controls/*.{c,cc}
+
+# --- §5 构建输出目录 -------------------------------------------------------
+# ui-demo/air-*/ 是 stage-air.cjs 的暂存树（其 src/ 是 ui-demo/demo/ 的逐字节拷贝）
+/ui-demo/air-*/*
+# …但 4 页画廊截图（两种 DPI 各 4 张，是 DPI A/B 的证据）与单页截图是成品，留下
+!/ui-demo/air-*/gallery-page*.png
+!/ui-demo/air-*/uidemo-shot.png
+# 早期 junction 试验的残骸：`_jtest/asaot` 是指向本机的符号链接，入库无意义
+/ui-demo/_jtest/
+/measurements/build/
+/u1-prototype/build/
+
+# --- §6 第三方检出（取回命令见 README「克隆后的准备」） --------------------
+/gpui-src/
+/measurements/yoga-src/
+
+# --- §7 打包 / 运行产物 ----------------------------------------------------
+# ⚠ 本节的规则**不能写行尾注释**：.gitignore 里只有**行首** `#` 才是注释，
+#   行中 `#` 会连同前面的空白一起被当成 pattern 的一部分 —— 规则就静默失效了。
+#   （本文件第一版就踩了这个坑：`*.done` 与 `/layout-check/*.bmp` 看似在列，实测不生效。）
+*.swf
+*.abc
+# --air-app 落盘的构建清单（生成物，run-gallery.cjs 建完才读）
+*.build.json
+*.exports.json
+# 探针/运行的完成标记
+*.done
+/probes/**/*.bmp
+/probes/**/*.rects.txt
+# 2.4 MB 帧缓冲，verify-visual.cjs 每次重新生成
+/layout-check/*.bmp
+# 每跑一次就变的测量日志（计时随负载浮动 ±1ms；anim 那份还是**追加**写、会无限增长）。
+# durable 版本是 review/README 里的表格，不是这些转瞬即变的数字——不然每跑一次门都会把工作树弄脏。
+/probes/**/*.log.txt
+/probes/**/*.samples.txt
+/probes/vec-vs-arr/vec-aot.txt
+/probes/vec-vs-arr/vec-air.txt
+# UiNode.as 的陈旧手工备份（2026-10-22 控件重构前留下的，无脚本会读它）
+*.pre-widget

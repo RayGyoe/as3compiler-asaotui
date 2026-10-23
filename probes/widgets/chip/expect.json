@@ -1,0 +1,21 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/chip/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "rects": "root: column, padding 20, gap 8. Chips are explicit [120,28]. So x=20 for all; y = 20, 20+28+8=56, 56+28+8=92.",
+    "points": "4px inside the pill's left edge at the vertical centre (chip.y+14): x=24. Radius 8, so the full width is covered at mid-height. The label is centred, so x=24 is clear of glyphs.",
+    "colors": "ChipWidget tone table: neutral #E5E7EB / info #DBEAFE / danger #FEE2E2."
+  },
+  "w": 200,
+  "h": 160,
+  "rects": {
+    "c1": [20, 20, 120, 28],
+    "c2": [20, 56, 120, 28],
+    "c3": [20, 92, 120, 28]
+  },
+  "points": [
+    { "x": 24, "y": 34, "rgb": "#E5E7EB" },
+    { "x": 24, "y": 70, "rgb": "#DBEAFE" },
+    { "x": 24, "y": 106, "rgb": "#FEE2E2" },
+    { "x": 4, "y": 4, "rgb": "#FFFFFF" }
+  ]
+}

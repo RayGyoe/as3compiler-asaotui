@@ -1,0 +1,1 @@
+[31mLex error at 34:13: unterminated string literal (line terminator in string)[0m

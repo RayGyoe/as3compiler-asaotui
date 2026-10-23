@@ -1,0 +1,2592 @@
+mutator: air-gallery-standard/app.xml  3c68d5b42fdf94aa -> 38b02de8e035af02
+mutator: control arm is now requestedDisplayResolution=high (both arms identical)
+
+   + flash.text: text engine linked (program uses flash.text)
+  nodes=14 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=2 root.engineKids=5 body.engineKids=3 bodyParentIsRoot=true uiKidsBody=3
+  body[0]=loginCard parentIsBody=true engineKids=5
+  after 2 redundant reflows:
+  nodes=43 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=3 root.engineKids=5 body.engineKids=2 bodyParentIsRoot=true uiKidsBody=2
+  body[0]=colA parentIsBody=true engineKids=2
+  after 2 redundant reflows:
+  nodes=26 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=4 root.engineKids=5 body.engineKids=2 bodyParentIsRoot=true uiKidsBody=2
+  body[0]=list parentIsBody=true engineKids=9
+  after 2 redundant reflows:
+  nodes=11 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=5 root.engineKids=5 body.engineKids=3 bodyParentIsRoot=true uiKidsBody=3
+  body[0]=motionNote parentIsBody=true engineKids=0
+  after 2 redundant reflows:
+  gallery-page0.png  1050x840  56826 B
+  gallery-page1.png  1050x840  73988 B
+  gallery-page2.png  1050x840  51372 B
+  gallery-page3.png  1050x840  47005 B
+   + flash.text: text engine linked (program uses flash.text)
+  nodes=14 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=2 root.engineKids=5 body.engineKids=3 bodyParentIsRoot=true uiKidsBody=3
+  body[0]=loginCard parentIsBody=true engineKids=5
+  after 2 redundant reflows:
+  nodes=43 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=3 root.engineKids=5 body.engineKids=2 bodyParentIsRoot=true uiKidsBody=2
+  body[0]=colA parentIsBody=true engineKids=2
+  after 2 redundant reflows:
+  nodes=26 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=4 root.engineKids=5 body.engineKids=2 bodyParentIsRoot=true uiKidsBody=2
+  body[0]=list parentIsBody=true engineKids=9
+  after 2 redundant reflows:
+  nodes=11 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=5 root.engineKids=5 body.engineKids=3 bodyParentIsRoot=true uiKidsBody=3
+  body[0]=motionNote parentIsBody=true engineKids=0
+  after 2 redundant reflows:
+  gallery-page0.png  1050x840  56826 B
+  gallery-page1.png  1050x840  73988 B
+  gallery-page2.png  1050x840  51372 B
+  gallery-page3.png  1050x840  47005 B
+  HIGH      high      stage 700x560  ->  PNG 1050x840   scale 1.5   tour exit 0
+  STANDARD  high      stage 700x560  ->  PNG 1050x840   scale 1.5   tour exit 0
+  tour text: IDENTICAL (3033 B, to the byte)
+RESULT: FAIL
+  STANDARD arm rendered at 1.5x; <requestedDisplayResolution>standard must be 1x
+  HIGH and STANDARD produced the same PNG size (1050x840): the descriptor line changed nothing, so it is not the cause
+  325 |     if (n >= (1u << 20) && getenv("ASC_GC_STATS") != NULL) {
+      |                            ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+  657 |     if (getenv("ASC_GC_STATS") == NULL) return;
+      |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+  825 |     if (type == GCT_RAW && size >= (64u << 10) && getenv("ASC_GC_STATS") != NULL && (gc_dbg_n++ % 50) == 0) {
+      |                                                   ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |             ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |         ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |               ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                              ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                                                                                                                                                         ~~~
+       |                                                                                                                                                                                                         %zu
+       |                                                       ^~~~~~~~~~~~~~~~~~~~
+       |                           ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                  ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                      ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                  ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                   ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                              ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                              ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                  ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                                              ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                                                               ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                             ^~~~~
+      |                                                  ^
+       |           ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                  ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                  ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                  ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                                     ^
+  524 |         _CRT_INSECURE_DEPRECATE(localtime_s)
+      |         ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                            ^
+  517 |         _Check_return_ _CRT_INSECURE_DEPRECATE(gmtime_s)
+      |                        ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                  ^
+  517 |         _Check_return_ _CRT_INSECURE_DEPRECATE(gmtime_s)
+      |                        ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |   ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                            ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |   ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |             ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                   ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |   ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                       ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |             ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |             ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                             ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                            ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |           ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                          ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~
+       |         ~                                                      ^    ~
+       |                                                                ^~
+       |                                                                =
+       |        ~~~~^~~~~
+       |       ~    ^    ~
+       |            ^~
+       |            =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |          ~~^~~~~~~
+       |         ~  ^      ~
+       |            ^~
+       |            =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                     ~
+       |             ^~
+       |             =
+       |          ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~     ^                                      ~
+       |               ^~
+       |               =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                     ~
+       |             ^~
+       |             =
+       |          ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~     ^                                      ~
+       |               ^~
+       |               =
+       |        ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~  ^                                   ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~  ^                                          ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~  ^                                        ~
+       |          ^~
+       |          =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                     ~
+       |             ^~
+       |             =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                       ~
+       |             ^~
+       |             =
+       |        ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~    ^                                  ~
+       |            ^~
+       |            =
+       |          ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~   ^                                       ~
+       |             ^~
+       |             =
+       |          ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~   ^                                               ~
+       |             ^~
+       |             =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                          ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                                  ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                       ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                          ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                                  ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                       ~
+       |           ^~
+       |           =
+       |          ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~    ^                                  ~
+       |              ^~
+       |              =
+       |          ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~    ^                                  ~
+       |              ^~
+       |              =
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~      ^                                              ~
+       |              ^~
+       |              =
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~      ^                                        ~
+       |              ^~
+       |              =
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~      ^                                             ~
+       |              ^~
+       |              =
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~      ^                                             ~
+       |              ^~
+       |              =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                      ^                                            ~
+       |                                                                                ^~
+       |                                                                                =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                   ^                                                 ~
+       |                                                                             ^~
+       |                                                                             =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                   ^                                                 ~
+       |                                                                             ^~
+       |                                                                             =
+       |        ~~~~~~^~~~
+       |       ~      ^   ~
+       |              ^~
+       |              =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                          ^                                            ~
+       |                                                                                    ^~
+       |                                                                                    =
+       |              ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~      ^                                        ~
+       |                    ^~
+       |                    =
+       |              ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~      ^                                       ~
+       |                    ^~
+       |                    =
+       |          ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~   ^                                         ~
+       |             ^~
+       |             =
+       |            ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |           ~   ^                                       ~
+       |               ^~
+       |               =
+       |              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~   ^                                        ~
+       |                 ^~
+       |                 =
+       |                ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~   ^                                             ~
+       |                   ^~
+       |                   =
+       |                  ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |                 ~   ^                                             ~
+       |                     ^~
+       |                     =
+       |                    ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |                   ~   ^                                              ~
+       |                       ^~
+       |                       =
+       |                ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~   ^                                        ~
+       |                   ^~
+       |                   =
+       |              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~   ^                                         ~
+       |                 ^~
+       |                 =
+       |                ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~   ^                                       ~
+       |                   ^~
+       |                   =
+       |          ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~        ^                                         ~
+       |                  ^~
+       |                  =
+       |            ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |           ~        ^                                           ~
+       |                    ^~
+       |                    =
+       |              ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~        ^                                                ~
+       |                      ^~
+       |                      =
+       |                ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~        ^                                               ~
+       |                        ^~
+       |                        =
+       |                  ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |                 ~        ^                                               ~
+       |                          ^~
+       |                          =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                       ^                                     ~
+       |                                                                                 ^~
+       |                                                                                 =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                       ^                                       ~
+       |                                                                                 ^~
+       |                                                                                 =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                   ^                                                 ~
+       |                                                                             ^~
+       |                                                                             =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~                                                                   ^                                                 ~
+       |                                                                           ^~
+       |                                                                           =
+       |        ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~        ^                                                ~
+       |                ^~
+       |                =
+       |        ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~        ^                                               ~
+       |                ^~
+       |                =
+       |        ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~        ^                                               ~
+       |                ^~
+       |                =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~                                                                      ^                                            ~
+       |                                                                              ^~
+       |                                                                              =
+       |              ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~  ^                                           ~
+       |                ^~
+       |                =
+       |                ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~  ^                                         ~
+       |                  ^~
+       |                  =
+       |              ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~  ^                                         ~
+       |                ^~
+       |                =
+       |                ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~  ^                                       ~
+       |                  ^~
+       |                  =
+       |        ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~         ^                                    ~
+       |                 ^~
+       |                 =
+       |          ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~         ^                                   ~
+       |                   ^~
+       |                   =
+       |            ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |           ~         ^                                     ~
+       |                     ^~
+       |                     =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                    ~
+       |             ^~
+       |             =
+       |          ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~     ^                                     ~
+       |               ^~
+       |               =
+       |            ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |           ~     ^                                   ~
+       |                 ^~
+       |                 =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                     ~
+       |             ^~
+       |             =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                       ~
+       |             ^~
+       |             =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~^~~~~~~
+       |       ~     ^      ~
+       |             ^~
+       |             =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                                                                                                    ^   ~
+       |                                                                                                                            ^~
+       |                                                                                                                            =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                     ^      ~
+       |                                                             ^~
+       |                                                             =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                     ^      ~
+       |                                                             ^~
+       |                                                             =
+       |        ~~~~~~^~~~~~~
+       |       ~      ^      ~
+       |              ^~
+       |              =
+       |          ~~~~~~~^~~~~~
+       |         ~       ^     ~
+       |                 ^~
+       |                 =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~^~~~~~~
+       |       ~     ^      ~
+       |             ^~
+       |             =
+       |          ~~~^~~~~~~
+       |         ~   ^      ~
+       |             ^~
+       |             =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~~~~~^~~~
+       |       ~      ^   ~
+       |              ^~
+       |              =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                 ^      ~
+       |                         ^~
+       |                         =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                        ^      ~
+       |                                                                ^~
+       |                                                                =
+       |        ~~~~~~~~~^~~~~~~
+       |       ~         ^      ~
+       |                 ^~
+       |                 =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                   ^      ~
+       |                                                           ^~
+       |                                                           =
+       |        ~~~~~~^~~~
+       |       ~      ^   ~
+       |              ^~
+       |              =
+       |            ~~~~~~~~~^~~~~~~~~~~
+       |           ~         ^          ~
+       |                     ^~
+       |                     =
+       |          ~~~~~~~~~^~~~~~~~
+       |         ~         ^       ~
+       |                   ^~
+       |                   =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~             ^                                                                   ~
+       |                     ^~
+       |                     =
+       |        ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~             ^                                                                     ~
+       |                     ^~
+       |                     =
+       |        ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~             ^                                                                     ~
+       |                     ^~
+       |                     =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |          ~~~~~^~~~~~~
+       |         ~     ^      ~
+       |               ^~
+       |               =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                                                      ^   ~
+       |                                                                              ^~
+       |                                                                              =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                                                        ^   ~
+       |                                                                                ^~
+       |                                                                                =
+       |          ~~~^~~~~
+       |         ~   ^    ~
+       |             ^~
+       |             =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |            ~~~~~~~~~^~~~~~~
+       |           ~         ^      ~
+       |                     ^~
+       |                     =
+       |          ~~^~~~
+       |         ~  ^   ~
+       |            ^~
+       |            =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |          ~~~~~~~~~^~~~~~~
+       |         ~         ^      ~
+       |                   ^~
+       |                   =
+       |          ~~^~~~~~~
+       |         ~  ^      ~
+       |            ^~
+       |            =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                                                   ~
+       |             ^~
+       |             =
+       |        ~~~~~~~~~^~~~
+       |       ~         ^   ~
+       |                 ^~
+       |                 =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                           ^      ~
+       |                                                                   ^~
+       |                                                                   =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                             ^      ~
+       |                                                                     ^~
+       |                                                                     =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                         ^      ~
+       |                                                                 ^~
+       |                                                                 =
+       |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |             ~                                                      ^      ~
+       |                                                                    ^~
+       |                                                                    =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                             ^      ~
+       |                                                                     ^~
+       |                                                                     =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                          ^      ~
+       |                                                                  ^~
+       |                                                                  =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                           ^      ~
+       |                                                                   ^~
+       |                                                                   =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                         ^      ~
+       |                                                                 ^~
+       |                                                                 =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                          ^      ~
+       |                                                                  ^~
+       |                                                                  =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                           ^      ~
+       |                                                                   ^~
+       |                                                                   =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+      |             ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |             ^
+  334 | __DEFINE_CPP_OVERLOAD_STANDARD_NFUNC_0_2_EX(
+      | ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |             ^
+  334 | __DEFINE_CPP_OVERLOAD_STANDARD_NFUNC_0_2_EX(
+      | ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+  325 |     if (n >= (1u << 20) && getenv("ASC_GC_STATS") != NULL) {
+      |                            ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+  657 |     if (getenv("ASC_GC_STATS") == NULL) return;
+      |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+  825 |     if (type == GCT_RAW && size >= (64u << 10) && getenv("ASC_GC_STATS") != NULL && (gc_dbg_n++ % 50) == 0) {
+      |                                                   ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |             ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |         ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |               ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                              ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                                                                                                                                                         ~~~
+       |                                                                                                                                                                                                         %zu
+       |                                                       ^~~~~~~~~~~~~~~~~~~~
+       |                           ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                  ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                      ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                  ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                   ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                              ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                              ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                  ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                                              ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                                                               ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |     ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                             ^~~~~
+      |                                                  ^
+       |           ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                  ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                  ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                  ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                                     ^
+  524 |         _CRT_INSECURE_DEPRECATE(localtime_s)
+      |         ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                            ^
+  517 |         _Check_return_ _CRT_INSECURE_DEPRECATE(gmtime_s)
+      |                        ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                  ^
+  517 |         _Check_return_ _CRT_INSECURE_DEPRECATE(gmtime_s)
+      |                        ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |   ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                            ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |   ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |             ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                   ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |   ^
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                       ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |             ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |             ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                             ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                                                                            ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |           ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |         ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |                          ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |       ^
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~
+       |         ~                                                      ^    ~
+       |                                                                ^~
+       |                                                                =
+       |        ~~~~^~~~~
+       |       ~    ^    ~
+       |            ^~
+       |            =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |          ~~^~~~~~~
+       |         ~  ^      ~
+       |            ^~
+       |            =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                     ~
+       |             ^~
+       |             =
+       |          ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~     ^                                      ~
+       |               ^~
+       |               =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                     ~
+       |             ^~
+       |             =
+       |          ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~     ^                                      ~
+       |               ^~
+       |               =
+       |        ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~  ^                                   ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~  ^                                          ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~  ^                                        ~
+       |          ^~
+       |          =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                     ~
+       |             ^~
+       |             =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                       ~
+       |             ^~
+       |             =
+       |        ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~    ^                                  ~
+       |            ^~
+       |            =
+       |          ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~   ^                                       ~
+       |             ^~
+       |             =
+       |          ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~   ^                                               ~
+       |             ^~
+       |             =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                          ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                                  ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                       ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                          ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                                  ~
+       |           ^~
+       |           =
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~   ^                                       ~
+       |           ^~
+       |           =
+       |          ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~    ^                                  ~
+       |              ^~
+       |              =
+       |          ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~    ^                                  ~
+       |              ^~
+       |              =
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~      ^                                              ~
+       |              ^~
+       |              =
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~      ^                                        ~
+       |              ^~
+       |              =
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~      ^                                             ~
+       |              ^~
+       |              =
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~      ^                                             ~
+       |              ^~
+       |              =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                      ^                                            ~
+       |                                                                                ^~
+       |                                                                                =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                   ^                                                 ~
+       |                                                                             ^~
+       |                                                                             =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                   ^                                                 ~
+       |                                                                             ^~
+       |                                                                             =
+       |        ~~~~~~^~~~
+       |       ~      ^   ~
+       |              ^~
+       |              =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                          ^                                            ~
+       |                                                                                    ^~
+       |                                                                                    =
+       |              ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~      ^                                        ~
+       |                    ^~
+       |                    =
+       |              ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~      ^                                       ~
+       |                    ^~
+       |                    =
+       |          ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~   ^                                         ~
+       |             ^~
+       |             =
+       |            ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |           ~   ^                                       ~
+       |               ^~
+       |               =
+       |              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~   ^                                        ~
+       |                 ^~
+       |                 =
+       |                ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~   ^                                             ~
+       |                   ^~
+       |                   =
+       |                  ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |                 ~   ^                                             ~
+       |                     ^~
+       |                     =
+       |                    ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |                   ~   ^                                              ~
+       |                       ^~
+       |                       =
+       |                ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~   ^                                        ~
+       |                   ^~
+       |                   =
+       |              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~   ^                                         ~
+       |                 ^~
+       |                 =
+       |                ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~   ^                                       ~
+       |                   ^~
+       |                   =
+       |          ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~        ^                                         ~
+       |                  ^~
+       |                  =
+       |            ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |           ~        ^                                           ~
+       |                    ^~
+       |                    =
+       |              ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~        ^                                                ~
+       |                      ^~
+       |                      =
+       |                ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~        ^                                               ~
+       |                        ^~
+       |                        =
+       |                  ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |                 ~        ^                                               ~
+       |                          ^~
+       |                          =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                       ^                                     ~
+       |                                                                                 ^~
+       |                                                                                 =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                       ^                                       ~
+       |                                                                                 ^~
+       |                                                                                 =
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~                                                                   ^                                                 ~
+       |                                                                             ^~
+       |                                                                             =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~                                                                   ^                                                 ~
+       |                                                                           ^~
+       |                                                                           =
+       |        ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~        ^                                                ~
+       |                ^~
+       |                =
+       |        ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~        ^                                               ~
+       |                ^~
+       |                =
+       |        ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~        ^                                               ~
+       |                ^~
+       |                =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~                                                                      ^                                            ~
+       |                                                                              ^~
+       |                                                                              =
+       |              ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~  ^                                           ~
+       |                ^~
+       |                =
+       |                ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~  ^                                         ~
+       |                  ^~
+       |                  =
+       |              ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |             ~  ^                                         ~
+       |                ^~
+       |                =
+       |                ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |               ~  ^                                       ~
+       |                  ^~
+       |                  =
+       |        ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~         ^                                    ~
+       |                 ^~
+       |                 =
+       |          ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~         ^                                   ~
+       |                   ^~
+       |                   =
+       |            ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |           ~         ^                                     ~
+       |                     ^~
+       |                     =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                    ~
+       |             ^~
+       |             =
+       |          ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |         ~     ^                                     ~
+       |               ^~
+       |               =
+       |            ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |           ~     ^                                   ~
+       |                 ^~
+       |                 =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                     ~
+       |             ^~
+       |             =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                       ~
+       |             ^~
+       |             =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~^~~~~~~
+       |       ~     ^      ~
+       |             ^~
+       |             =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                                                                                                    ^   ~
+       |                                                                                                                            ^~
+       |                                                                                                                            =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                     ^      ~
+       |                                                             ^~
+       |                                                             =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                     ^      ~
+       |                                                             ^~
+       |                                                             =
+       |        ~~~~~~^~~~~~~
+       |       ~      ^      ~
+       |              ^~
+       |              =
+       |          ~~~~~~~^~~~~~
+       |         ~       ^     ~
+       |                 ^~
+       |                 =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~^~~~~~~
+       |       ~     ^      ~
+       |             ^~
+       |             =
+       |          ~~~^~~~~~~
+       |         ~   ^      ~
+       |             ^~
+       |             =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~~~~~^~~~
+       |       ~      ^   ~
+       |              ^~
+       |              =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                 ^      ~
+       |                                                         ^~
+       |                                                         =
+       |        ~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                 ^      ~
+       |                         ^~
+       |                         =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                        ^      ~
+       |                                                                ^~
+       |                                                                =
+       |        ~~~~~~~~~^~~~~~~
+       |       ~         ^      ~
+       |                 ^~
+       |                 =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                   ^      ~
+       |                                                           ^~
+       |                                                           =
+       |        ~~~~~~^~~~
+       |       ~      ^   ~
+       |              ^~
+       |              =
+       |            ~~~~~~~~~^~~~~~~~~~~
+       |           ~         ^          ~
+       |                     ^~
+       |                     =
+       |          ~~~~~~~~~^~~~~~~~
+       |         ~         ^       ~
+       |                   ^~
+       |                   =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~             ^                                                                   ~
+       |                     ^~
+       |                     =
+       |        ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~             ^                                                                     ~
+       |                     ^~
+       |                     =
+       |        ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~             ^                                                                     ~
+       |                     ^~
+       |                     =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                              ^   ~
+       |                                                      ^~
+       |                                                      =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~^~~~~~~
+       |       ~    ^      ~
+       |            ^~
+       |            =
+       |          ~~~~~^~~~~~~
+       |         ~     ^      ~
+       |               ^~
+       |               =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                                                      ^   ~
+       |                                                                              ^~
+       |                                                                              =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+       |       ~                                                                        ^   ~
+       |                                                                                ^~
+       |                                                                                =
+       |          ~~~^~~~~
+       |         ~   ^    ~
+       |             ^~
+       |             =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |            ~~~~~~~~~^~~~~~~
+       |           ~         ^      ~
+       |                     ^~
+       |                     =
+       |          ~~^~~~
+       |         ~  ^   ~
+       |            ^~
+       |            =
+       |        ~~~^~~~~~~
+       |       ~   ^      ~
+       |           ^~
+       |           =
+       |          ~~~~~~~~~^~~~~~~
+       |         ~         ^      ~
+       |                   ^~
+       |                   =
+       |          ~~^~~~~~~
+       |         ~  ^      ~
+       |            ^~
+       |            =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       |       ~     ^                                                                   ~
+       |             ^~
+       |             =
+       |        ~~~~~~~~~^~~~
+       |       ~         ^   ~
+       |                 ^~
+       |                 =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                           ^      ~
+       |                                                                   ^~
+       |                                                                   =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                             ^      ~
+       |                                                                     ^~
+       |                                                                     =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                         ^      ~
+       |                                                                 ^~
+       |                                                                 =
+       |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |             ~                                                      ^      ~
+       |                                                                    ^~
+       |                                                                    =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                             ^      ~
+       |                                                                     ^~
+       |                                                                     =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                          ^      ~
+       |                                                                  ^~
+       |                                                                  =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                           ^      ~
+       |                                                                   ^~
+       |                                                                   =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                         ^      ~
+       |                                                                 ^~
+       |                                                                 =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                          ^      ~
+       |                                                                  ^~
+       |                                                                  =
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+       |       ~                                                           ^      ~
+       |                                                                   ^~
+       |                                                                   =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~
+       |       ~  ^   ~
+       |          ^~
+       |          =
+       |        ~~^~~~~~~
+       |       ~  ^      ~
+       |          ^~
+       |          =
+      |             ^
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |             ^
+  334 | __DEFINE_CPP_OVERLOAD_STANDARD_NFUNC_0_2_EX(
+      | ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+      |             ^
+  334 | __DEFINE_CPP_OVERLOAD_STANDARD_NFUNC_0_2_EX(
+      | ^
+      |                 ^
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+
+==== MUTATION: PASS -- the mutant makes check-dpi go red (check-dpi has teeth) ====
+mutator: air-gallery-standard/app.xml restored  3c68d5b42fdf94aa  (identical)

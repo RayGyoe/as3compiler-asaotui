@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- vec-vs-arr probe: Vector.<T> vs Array throughput, same body on both runtimes. -->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.probe.vecvsarr</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>vec-probe</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>BenchAir.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>

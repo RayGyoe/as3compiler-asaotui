@@ -1,0 +1,62 @@
+
+== 2026-10-22T22:01:54.977Z ==
+PASS M1 struct field -> time__ is detected
+     clang errors 18, kinds [Date._time, other]; first: no member named '_time' in 'Date'
+FAIL M2 props entry -> nope is detected
+     clang errors 1; first: no member named 'nope' in 'Date'
+PASS M3 baseline build produced C
+     baseline sha256/16 f0ac0ff461e604bf
+PASS M3 a one-literal source change changes the generated C
+     baseline f0ac0ff461e604bf vs mutant b43af7dffcc8f671
+PASS M4 flipping artifact-3's expectation makes the gate red
+     exit 1, FAIL line naming artifact-3: present
+PASS every watched file restored byte-for-byte
+     artifact-3-consistent.c f63f256a66b64923, artifact-1-struct-time__.c 710dab8769241f9b, artifact-2-struct-socket-1-error.c 98cd3d4e6e259221, run.cjs 9636385fb5bca294
+PASS no mutant left on disk
+
+== 2026-10-22T22:02:38.578Z ==
+PASS M1 struct field -> time__ is detected
+     clang errors 18, kinds [Date._time]; first: no member named '_time' in 'Date'
+PASS M2 props entry -> nope is detected
+     clang errors 1; first: no member named 'nope' in 'Date'
+PASS M3 baseline build produced C
+     baseline sha256/16 f0ac0ff461e604bf
+PASS M3 a one-literal source change changes the generated C
+     baseline f0ac0ff461e604bf vs mutant b43af7dffcc8f671
+PASS M4 flipping artifact-3's expectation makes the gate red
+     exit 1, FAIL line naming artifact-3: present
+PASS every watched file restored byte-for-byte
+     artifact-3-consistent.c f63f256a66b64923, artifact-1-struct-time__.c 710dab8769241f9b, artifact-2-struct-socket-1-error.c 98cd3d4e6e259221, run.cjs f5603fd9a85fb3a6
+PASS no mutant left on disk
+
+== 2026-10-22T22:17:24.426Z ==
+PASS M1 struct field -> time__ is detected
+     clang errors 18, kinds [Date._time]; first: no member named '_time' in 'Date'
+PASS M2 props entry -> nope is detected
+     clang errors 1; first: no member named 'nope' in 'Date'
+PASS M3 baseline build produced C
+     baseline sha256/16 f0ac0ff461e604bf
+PASS M3 a one-literal source change changes the generated C
+     baseline f0ac0ff461e604bf vs mutant b43af7dffcc8f671
+PASS M4 flipping artifact-3's expectation makes the gate red
+     exit 1, FAIL line naming artifact-3: present
+PASS every watched file restored byte-for-byte
+     artifact-3-consistent.c f63f256a66b64923, artifact-1-struct-time__.c 710dab8769241f9b, artifact-2-struct-socket-1-error.c 98cd3d4e6e259221, run.cjs 87faa3e31afb2c96
+PASS no mutant left on disk
+
+== 2026-10-22T22:23:35.724Z ==
+PASS M1 struct field -> time__ is detected
+     clang errors 18, kinds [Date._time]; first: no member named '_time' in 'Date'
+PASS M2 props entry -> nope is detected
+     clang errors 1; first: no member named 'nope' in 'Date'
+PASS M3 baseline build produced C
+     baseline sha256/16 f0ac0ff461e604bf
+PASS M3 a one-literal source change changes the generated C
+     baseline f0ac0ff461e604bf vs mutant b43af7dffcc8f671
+PASS M4 flipping artifact-3's expectation makes the gate red
+     exit 1, FAIL line naming artifact-3: present
+PASS M5 a mid-run generator move is INCONCLUSIVE (exit 3), never a green
+     exit 3 (want 3), INCONCLUSIVE text: present
+PASS every watched file restored byte-for-byte
+     artifact-3-consistent.c f63f256a66b64923, artifact-1-struct-time__.c 710dab8769241f9b, artifact-2-struct-socket-1-error.c 98cd3d4e6e259221, run.cjs 276b7415588422fd
+PASS no mutant left on disk

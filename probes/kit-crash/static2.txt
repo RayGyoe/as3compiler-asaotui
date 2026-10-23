@@ -1,0 +1,8 @@
+U0 start
+U1 new MixedOne ok (1 mixed const)
+U2 read MixedOne.A1 ok
+U3 about to new FiveConsts()
+U4 new FiveConsts ok (FIVE consts, CheckView exact set)
+U5 read LAYOUT_ROOT ok
+U6 mount+attachRoot ok (solves=1)
+DONE five-const shapes all survived

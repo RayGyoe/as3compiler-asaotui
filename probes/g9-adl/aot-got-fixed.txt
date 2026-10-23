@@ -1,0 +1,28 @@
+AOT (阶段二百四十八 修复后)
+AOT GOT A1.obj.false(Boolean) = false
+GOT A1.obj.false(typeof) = boolean
+GOT A1.obj.false(String) = false
+GOT A1.obj.false(isBoolean) = true
+GOT A1.obj.false(==false) = true
+GOT A1.obj.false(===false) = true
+GOT A1.obj.false(Number) = 0
+GOT A1.obj.false(==null) = false
+A1.obj.false(if) = skipped
+GOT B1.obj.zero(Boolean) = false
+GOT B1.obj.zero(typeof) = number
+GOT B2.obj.emptyStr(Boolean) = false
+GOT B2.obj.emptyStr(typeof) = string
+GOT B3.obj.NaN(Boolean) = false
+GOT B4.obj.str(Boolean) = true
+GOT B5.obj.five(Boolean) = true
+GOT B5.obj.five(typeof) = number
+GOT B6.obj.null(Boolean) = false
+GOT C1.star.false(Boolean) = false
+GOT C2.boolThenObj(Boolean) = false
+GOT D1.newBoolean(false).typeof = boolean
+GOT D1.newBoolean(false).isBoolean = true
+GOT D1.newBoolean(false).Boolean = false
+GOT D1.newBoolean(false).String = false
+GOT E1.prop.false(Boolean) = false
+GOT E1.prop.false(typeof) = boolean
+---- 26 checks, 0 failures ----

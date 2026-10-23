@@ -1,0 +1,5 @@
+[probe] building redraw
+[probe] built probes\redraw\Main.exe
+
+PROBE redraw: 14 checks, 0 failures
+RESULT: PASS

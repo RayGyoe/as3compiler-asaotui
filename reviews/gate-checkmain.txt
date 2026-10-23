@@ -1,0 +1,1810 @@
+== as-aot: AS3 subset -> C -> native ==
+[1/4] read        ../asaotui/layout-check/CheckMain.as, ../asaotui/seam/asaot/ui/LayoutConstants.as, ../asaotui/seam/asaot/ui/LayoutEngine.as, ../asaotui/seam/asaot/ui/as3/As3LayoutNode.as, ../asaotui/seam/asaot/ui/as3/As3LayoutEngine.as
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+[4/4] compile     clang -O2 -ffp-contract=off -l shell32 -o ../asaotui/layout-check/CheckMain.exe ../asaotui/layout-check/CheckMain.c -I ./vendor/curl/include -L ./vendor/curl/lib/windows-x64 -l zlib
+../asaotui/layout-check/CheckMain.c:325:28: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+  325 |     if (n >= (1u << 20) && getenv("ASC_GC_STATS") != NULL) {
+      |                            ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:657:9: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+  657 |     if (getenv("ASC_GC_STATS") == NULL) return;
+      |         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:825:51: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+  825 |     if (type == GCT_RAW && size >= (64u << 10) && getenv("ASC_GC_STATS") != NULL && (gc_dbg_n++ % 50) == 0) {
+      |                                                   ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:1090:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 1090 |     strcpy(e, tmp);
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:1110:13: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 1110 |             strcpy(r, buf);
+      |             ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:1117:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 1117 |     strcpy(r, buf);
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:1908:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 1908 |     strcpy(r, d);
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:1914:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 1914 |     strcpy(r, d);
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:5982:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 5982 |     strcpy(last, p);
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:6006:9: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 6006 |         strcpy(r, s);
+      |         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:6053:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 6053 |     strcpy(r, buf);
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:6065:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 6065 |     strcpy(r, buf);
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:6271:25: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 6271 |         const char* e = getenv("ASC_GC_AUDIT");
+      |                         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:6272:25: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 6272 |         const char* s = getenv("ASC_GC_AUDIT_STRICT");
+      |                         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:6287:25: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 6287 |         const char* s = getenv("ASC_GC_AUDIT_STRICT");
+      |                         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:6913:25: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 6913 |         const char* e = getenv("ASC_GC_RELEASE");
+      |                         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:7031:25: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 7031 |         const char* e = getenv("ASC_GC_BUDGET");
+      |                         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:7077:25: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 7077 |         const char* e = getenv("ASC_GC_THRESHOLD");
+      |                         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:8509:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 8509 |     strcpy(r, c.b.buf);
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:8567:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 8567 |     strcpy(r, out);
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:10105:15: warning: 'fopen' is deprecated: This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 10105 |     FILE* f = fopen(path, "rb");
+       |               ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdio.h:212:20: note: 'fopen' has been explicitly marked deprecated here
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:10968:30: warning: 'fopen' is deprecated: This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 10968 |             void* h = (void*)fopen(j->path, mode);
+       |                              ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdio.h:212:20: note: 'fopen' has been explicitly marked deprecated here
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:12380:48: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 12380 |     if (as_dbg_frame_on < 0) as_dbg_frame_on = getenv("ASC_FRAME_STATS") != NULL ? 1 : 0;
+       |                                                ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:12416:55: warning: format specifies type 'long' but the argument has type 'size_t' (aka 'unsigned long long') [-Wformat]
+ 12411 |     fprintf(stderr, "FRAME n=%d p50=%.2f p95=%.2f p99=%.2f max=%.2f(worstgc=%.2f) over8ms=%d over17ms=%d | gcmax=%.2f gcavg=%.2f gcshare=%.1f%% | rss=%.0fMB arena=%.0fMB heaptotal=%.0fMB inuse=%.0fMB/%ldobj segs=%zu freeb=%.0fMB | live=%d cached=%d\n",
+       |                                                                                                                                                                                                         ~~~
+       |                                                                                                                                                                                                         %zu
+ 12412 |             n, as_dbg_sort_ms[n / 2], as_dbg_sort_ms[n * 95 / 100], as_dbg_sort_ms[n * 99 / 100],
+ 12413 |             as_dbg_sort_ms[n - 1], as_dbg_gc_ms[worst], over8, over17,
+ 12414 |             gc_max, gc_sum / (double)n, frame_sum > 0 ? 100.0 * gc_sum / frame_sum : 0.0,
+ 12415 |             as_system_private_memory() / 1048576.0, (double)as_arena_used_bytes() / 1048576.0, gc_heap_total_bytes() / 1048576.0,
+ 12416 |             (double)gc_dbg_inuse_bytes() / 1048576.0, gc_dbg_inuse_count(), segs,
+       |                                                       ^~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:12811:27: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 12811 |         const char* env = getenv("LANG");
+       |                           ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:12812:25: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 12812 |         if (!env) env = getenv("LC_ALL");
+       |                         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13057:34: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13057 |                 if (target == 1) strcpy(out, "gl_FragColor");
+       |                                  ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13059:22: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13059 |                 else strcpy(out, "oc");
+       |                      ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13061:34: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13061 |                 if (target == 1) strcpy(out, "gl_Position"); else strcpy(out, "op");
+       |                                  ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13061:67: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13061 |                 if (target == 1) strcpy(out, "gl_Position"); else strcpy(out, "op");
+       |                                                                   ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13075:30: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13075 |             if (target == 1) strcpy(out, "gl_FragDepth"); else strcpy(out, "od"); break;
+       |                              ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13075:64: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13075 |             if (target == 1) strcpy(out, "gl_FragDepth"); else strcpy(out, "od"); break;
+       |                                                                ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13080:30: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13080 |             if (target == 2) strcpy(out, "float4(iid, iid, iid, iid)");
+       |                              ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13089:34: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13089 |     if (strcmp(sw, "xyzw") == 0) strcpy(out, reg);
+       |                                  ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13135:94: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13135 |                 t2 = AGAL_FS; n2 = (int)(s2lo & 0xFFFF); agal_reg_name(s2b, t2, n2, target); strcpy(s2, s2b); strcpy(sw2, "xyzw");
+       |                                                                                              ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:13135:111: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 13135 |                 t2 = AGAL_FS; n2 = (int)(s2lo & 0xFFFF); agal_reg_name(s2b, t2, n2, target); strcpy(s2, s2b); strcpy(sw2, "xyzw");
+       |                                                                                                               ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:14347:5: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 14347 |     strcpy(copy, name);
+       |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:27237:45: warning: passing 'char *[3]' to parameter of type 'const char **' discards qualifiers in nested pointer types [-Wincompatible-pointer-types-discards-qualifiers]
+ 27237 |   as_throw(TypeError_new(as_str_concat_n(3, parts), 1123));
+       |                                             ^~~~~
+../asaotui/layout-check/CheckMain.c:7193:50: note: passing argument to parameter 'parts' here
+ 7193 | static char* as_str_concat_n(int n, const char** parts) {
+      |                                                  ^
+../asaotui/layout-check/CheckMain.c:40532:11: warning: 'sscanf' is deprecated: This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 40532 |   int n = sscanf(s, "%d/%d/%d %d:%d:%d", &year, &mon, &day, &hour, &min, &sec);
+       |           ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdio.h:2239:20: note: 'sscanf' has been explicitly marked deprecated here
+ 2239 |     _Check_return_ _CRT_INSECURE_DEPRECATE(sscanf_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:40533:18: warning: 'sscanf' is deprecated: This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 40533 |   if (n < 3) n = sscanf(s, "%d/%d/%d", &year, &mon, &day);
+       |                  ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdio.h:2239:20: note: 'sscanf' has been explicitly marked deprecated here
+ 2239 |     _Check_return_ _CRT_INSECURE_DEPRECATE(sscanf_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:40534:18: warning: 'sscanf' is deprecated: This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 40534 |   if (n < 3) n = sscanf(s, "%d-%d-%dT%d:%d:%d", &year, &mon, &day, &hour, &min, &sec);
+       |                  ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdio.h:2239:20: note: 'sscanf' has been explicitly marked deprecated here
+ 2239 |     _Check_return_ _CRT_INSECURE_DEPRECATE(sscanf_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:40535:18: warning: 'sscanf' is deprecated: This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 40535 |   if (n < 3) n = sscanf(s, "%d-%d-%d", &year, &mon, &day);
+       |                  ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdio.h:2239:20: note: 'sscanf' has been explicitly marked deprecated here
+ 2239 |     _Check_return_ _CRT_INSECURE_DEPRECATE(sscanf_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:40539:85: warning: 'localtime' is deprecated: This function or variable may be unsafe. Consider using localtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 40539 | static struct tm* Date_tm(Date* o) { time_t t = (time_t)(o->_time / 1000.0); return localtime(&t); }
+       |                                                                                     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\time.h:524:9: note: 'localtime' has been explicitly marked deprecated here
+  524 |         _CRT_INSECURE_DEPRECATE(localtime_s)
+      |         ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:40605:28: warning: 'gmtime' is deprecated: This function or variable may be unsafe. Consider using gmtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 40605 |   struct tm lt = *t, gt = *gmtime(&tt);
+       |                            ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\time.h:517:24: note: 'gmtime' has been explicitly marked deprecated here
+  517 |         _Check_return_ _CRT_INSECURE_DEPRECATE(gmtime_s)
+      |                        ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:40624:18: warning: 'gmtime' is deprecated: This function or variable may be unsafe. Consider using gmtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 40624 |   struct tm* g = gmtime(&t);
+       |                  ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\time.h:517:24: note: 'gmtime' has been explicitly marked deprecated here
+  517 |         _Check_return_ _CRT_INSECURE_DEPRECATE(gmtime_s)
+      |                        ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:41397:3: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 41397 |   strcpy(out + lo + insLen, as_tf_text(tf) + hi);
+       |   ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:42656:44: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 42656 |   char* u = as_str_alloc(strlen(url) + 1); strcpy(u, url);
+       |                                            ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:43489:3: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 43489 |   strcpy(s, source);
+       |   ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:43541:13: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 43541 |   char* h = getenv("USERPROFILE");
+       |             ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:43640:19: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 43640 |   char* appdata = getenv("APPDATA");
+       |                   ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:43805:3: warning: 'strcpy' is deprecated: This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 43805 |   strcpy(cur, path);
+       |   ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\string.h:130:1: note: 'strcpy' has been explicitly marked deprecated here
+  130 | __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1(
+      | ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:835:5: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1'
+  835 |     __DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX(_ReturnType, _ReturnPolicy, _DeclSpec, _FuncName, _FuncName##_s, _DstType, _SalAttributeDst, _DstType, _Dst, _TType1, _TArg1)
+      |     ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\corecrt.h:1894:17: note: expanded from macro '__DEFINE_CPP_OVERLOAD_STANDARD_FUNC_0_1_EX'
+ 1894 |                 _CRT_INSECURE_DEPRECATE(_SecureFuncName) _DeclSpec _ReturnType __cdecl _FuncName(_SalAttributeDst _DstType *_Dst, _TType1 _TArg1);
+      |                 ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:44131:23: warning: 'fopen' is deprecated: This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 44131 |   o->_handle = (void*)fopen(file->nativePath, mode);
+       |                       ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdio.h:212:20: note: 'fopen' has been explicitly marked deprecated here
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:44266:13: warning: 'fopen' is deprecated: This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 44266 |   FILE* f = fopen(p, "rb");
+       |             ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdio.h:212:20: note: 'fopen' has been explicitly marked deprecated here
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:44399:13: warning: 'fopen' is deprecated: This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 44399 |   FILE* f = fopen(o->path, "wb");
+       |             ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdio.h:212:20: note: 'fopen' has been explicitly marked deprecated here
+  212 |     _Check_return_ _CRT_INSECURE_DEPRECATE(fopen_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:45158:9: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 45158 |     if (getenv("ASC_PASS_TRACE") != NULL) { double _bdt1 = as_now_ms(); if (_bdt1 - _bdt0 >= 3.0) fprintf(stderr, "t=%.0f pass capture-rast ms=%.2f %dx%d rs=%.3f\n", as_now_ms(), _bdt1 - _bdt0, sw, sh, rs); }
+       |         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:45175:7: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 45175 |   if (getenv("ASC_PASS_TRACE") != NULL) fprintf(stderr, "t=%.0f capture-xform ia=%.4f ib=%.4f ic=%.4f id=%.4f tx=%.3f ty=%.3f rs=%.3f sm=%d\n", as_now_ms(), ia, ib, ic, id, itx, ity, rs, (int)smoothing);
+       |       ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:45230:7: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 45230 |   if (getenv("ASC_PASS_TRACE") != NULL) { double _smp1 = as_now_ms(); if (_smp1 - _smp0 >= 3.0) fprintf(stderr, "t=%.0f pass capture-sample ms=%.2f %dx%d\n", as_now_ms(), _smp1 - _smp0, cx1 - cx0, cy1 - cy0); }
+       |       ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:47067:45: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 47067 |   { static int n = 0; if (n++ % 120 == 0 && getenv("ASC_S3D_TRACE") != NULL) fprintf(stderr, "s3d_trace present: w=%d h=%d tex=%p lw=%d lh=%d\n", w, h, ASC_stage3d_tex, ASC_stage3d_lw, ASC_stage3d_lh); }
+       |                                             ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:48202:7: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 48202 |   if (getenv("ASC_NO_AUTO_BAKE") == NULL && o->visible && !o->_cache_flag && !o->_auto_baked && o->_auto_still == ASC_AUTO_BAKE_FRAMES) {
+       |       ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:48204:76: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 48204 |     if (as_render_bounds(o, &bl, &bt, &br, &bb)) { o->_auto_baked = 1; if (getenv("ASC_BAKE_TRACE") != NULL) fprintf(stderr, "t=%.0f bake_on o=%p bl=%.4f bt=%.4f w=%.4f h=%.4f\n", as_now_ms(), (void*)o, bl, bt, br - bl, bb - bt); } else o->_auto_still = 0;
+       |                                                                            ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:48234:11: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 48234 |       if (getenv("ASC_BAKE_TRACE") != NULL) { static int _bcapped = 0; if (_bcapped < 60) { _bcapped++; fprintf(stderr, "t=%.0f bake_capped o=%p lw=%d lh=%d sx=%.5f sy=%.5f dt=%.5f\n", as_now_ms(), (void*)o, lw, lh, sx, sy, bdt_x); } }
+       |           ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:48241:9: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 48241 |     if (getenv("ASC_BAKE_TRACE") != NULL) fprintf(stderr, "t=%.0f bake_rebuild o=%p bl=%.4f bt=%.4f lw=%d lh=%d pw=%d ph=%d sx=%.5f sy=%.5f\n", as_now_ms(), (void*)o, bl, bt, lw, lh, pw, ph, sx, sy);
+       |         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:48242:9: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 48242 |     if (getenv("ASC_BAKE_TRACE") != NULL) { double _tx = 0.0, _ty = 0.0; as_skia_canvas_total_scale(canvas, &_tx, &_ty); double _ex = (_tx > 0.0) ? fabs((double)pw / ((double)lw * _tx) - 1.0) : 0.0; if (_ex > 0.002 || _tx != _ty) fprintf(stderr, "t=%.0f bake_anis o=%p lw=%d lh=%d pw=%d ph=%d sx=%.5f sy=%.5f ctx=%.5f cty=%.5f ex=%.5f\n", as_now_ms(), (void*)o, lw, lh, pw, ph, sx, sy, _tx, _ty, _ex); }
+       |         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:48265:9: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 48265 |     if (getenv("ASC_BAKE_TRACE") != NULL) { static int _bc = 0; double _bx = 0.0, _by = 0.0; as_skia_canvas_total_scale(canvas, &_bx, &_by); double _ex2 = (_bx > 0.0) ? fabs((double)pw / ((double)lw * _bx) - 1.0) : 0.0; if (_bc < 80 && (_ex2 > 0.002 || _bx != _by)) { _bc++; fprintf(stderr, "t=%.0f bake_blit o=%p lw=%d pw=%d bx=%.5f by=%.5f ex=%.5f\n", as_now_ms(), (void*)o, lw, pw, _bx, _by, _ex2); } }
+       |         ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:48843:7: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 48843 |   if (getenv("ASC_PASS_TRACE") != NULL) { double _p3 = as_now_ms(); if (_p3 - _p0 >= 4.0) fprintf(stderr, "t=%.0f pass paint acquire=%.2f draw=%.2f flush=%.2f live=%d cached=%d\n", as_now_ms(), _p1 - _p0, _p2 - _p1, _p3 - _p2, as_dbg_live_n, as_dbg_cached_n); }
+       |       ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:48939:7: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 48939 |   if (getenv("ASC_MOUSE_TRACE") != NULL) {
+       |       ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:48942:26: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 48942 |     const char* _mt_lv = getenv("ASC_MOUSE_TRACE");
+       |                          ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:49017:7: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 49017 |   if (getenv("ASC_PASS_TRACE") != NULL) { double _pdt = as_now_ms() - _pt0; if (_pdt >= 4.0) fprintf(stderr, "t=%.0f pass paint ms=%.2f live=%d cached=%d\n", as_now_ms(), _pdt, as_dbg_live_n - _pl, as_dbg_cached_n - _pc); }
+       |       ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:49040:7: warning: 'getenv' is deprecated: This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+ 49040 |   if (getenv("ASC_PASS_TRACE") != NULL) { double _fdt = as_now_ms() - _ft0; if (_fdt >= 4.0) fprintf(stderr, "t=%.0f pass frame ms=%.2f\n", as_now_ms(), _fdt); }
+       |       ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt\stdlib.h:1183:20: note: 'getenv' has been explicitly marked deprecated here
+ 1183 |     _Check_return_ _CRT_INSECURE_DEPRECATE(_dupenv_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+../asaotui/layout-check/CheckMain.c:52298:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52298 |   if ((phys == asaot_ui_LayoutConstants_EDGE_LEFT)) {
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52298:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 52298 |   if ((phys == asaot_ui_LayoutConstants_EDGE_LEFT)) {
+       |       ~     ^                                    ~
+../asaotui/layout-check/CheckMain.c:52298:13: note: use '=' to turn this equality comparison into an assignment
+ 52298 |   if ((phys == asaot_ui_LayoutConstants_EDGE_LEFT)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:52314:15: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52314 |     if ((phys == asaot_ui_LayoutConstants_EDGE_RIGHT)) {
+       |          ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52314:15: note: remove extraneous parentheses around the comparison to silence this warning
+ 52314 |     if ((phys == asaot_ui_LayoutConstants_EDGE_RIGHT)) {
+       |         ~     ^                                     ~
+../asaotui/layout-check/CheckMain.c:52314:15: note: use '=' to turn this equality comparison into an assignment
+ 52314 |     if ((phys == asaot_ui_LayoutConstants_EDGE_RIGHT)) {
+       |               ^~
+       |               =
+../asaotui/layout-check/CheckMain.c:52330:17: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52330 |       if ((phys == asaot_ui_LayoutConstants_EDGE_TOP)) {
+       |            ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52330:17: note: remove extraneous parentheses around the comparison to silence this warning
+ 52330 |       if ((phys == asaot_ui_LayoutConstants_EDGE_TOP)) {
+       |           ~     ^                                   ~
+../asaotui/layout-check/CheckMain.c:52330:17: note: use '=' to turn this equality comparison into an assignment
+ 52330 |       if ((phys == asaot_ui_LayoutConstants_EDGE_TOP)) {
+       |                 ^~
+       |                 =
+../asaotui/layout-check/CheckMain.c:52376:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52376 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52376:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 52376 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |       ~     ^                                     ~
+../asaotui/layout-check/CheckMain.c:52376:13: note: use '=' to turn this equality comparison into an assignment
+ 52376 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:52379:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52379 |   if ((unit == asaot_ui_LayoutConstants_UNIT_PERCENT)) {
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52379:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 52379 |   if ((unit == asaot_ui_LayoutConstants_UNIT_PERCENT)) {
+       |       ~     ^                                       ~
+../asaotui/layout-check/CheckMain.c:52379:13: note: use '=' to turn this equality comparison into an assignment
+ 52379 |   if ((unit == asaot_ui_LayoutConstants_UNIT_PERCENT)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:52607:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52607 |   if ((axis == asaot_ui_LayoutConstants_AXIS_WIDTH)) {
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52607:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 52607 |   if ((axis == asaot_ui_LayoutConstants_AXIS_WIDTH)) {
+       |       ~     ^                                     ~
+../asaotui/layout-check/CheckMain.c:52607:13: note: use '=' to turn this equality comparison into an assignment
+ 52607 |   if ((axis == asaot_ui_LayoutConstants_AXIS_WIDTH)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:52611:15: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52611 |     if ((axis == asaot_ui_LayoutConstants_AXIS_HEIGHT)) {
+       |          ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52611:15: note: remove extraneous parentheses around the comparison to silence this warning
+ 52611 |     if ((axis == asaot_ui_LayoutConstants_AXIS_HEIGHT)) {
+       |         ~     ^                                      ~
+../asaotui/layout-check/CheckMain.c:52611:15: note: use '=' to turn this equality comparison into an assignment
+ 52611 |     if ((axis == asaot_ui_LayoutConstants_AXIS_HEIGHT)) {
+       |               ^~
+       |               =
+../asaotui/layout-check/CheckMain.c:52630:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52630 |   if ((axis == asaot_ui_LayoutConstants_AXIS_WIDTH)) {
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52630:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 52630 |   if ((axis == asaot_ui_LayoutConstants_AXIS_WIDTH)) {
+       |       ~     ^                                     ~
+../asaotui/layout-check/CheckMain.c:52630:13: note: use '=' to turn this equality comparison into an assignment
+ 52630 |   if ((axis == asaot_ui_LayoutConstants_AXIS_WIDTH)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:52639:15: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52639 |     if ((axis == asaot_ui_LayoutConstants_AXIS_HEIGHT)) {
+       |          ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52639:15: note: remove extraneous parentheses around the comparison to silence this warning
+ 52639 |     if ((axis == asaot_ui_LayoutConstants_AXIS_HEIGHT)) {
+       |         ~     ^                                      ~
+../asaotui/layout-check/CheckMain.c:52639:15: note: use '=' to turn this equality comparison into an assignment
+ 52639 |     if ((axis == asaot_ui_LayoutConstants_AXIS_HEIGHT)) {
+       |               ^~
+       |               =
+../asaotui/layout-check/CheckMain.c:52856:10: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52856 |   if ((e == asaot_ui_LayoutConstants_EDGE_ALL)) {
+       |        ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52856:10: note: remove extraneous parentheses around the comparison to silence this warning
+ 52856 |   if ((e == asaot_ui_LayoutConstants_EDGE_ALL)) {
+       |       ~  ^                                   ~
+../asaotui/layout-check/CheckMain.c:52856:10: note: use '=' to turn this equality comparison into an assignment
+ 52856 |   if ((e == asaot_ui_LayoutConstants_EDGE_ALL)) {
+       |          ^~
+       |          =
+../asaotui/layout-check/CheckMain.c:52863:10: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52863 |   if ((e == asaot_ui_LayoutConstants_EDGE_HORIZONTAL)) {
+       |        ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52863:10: note: remove extraneous parentheses around the comparison to silence this warning
+ 52863 |   if ((e == asaot_ui_LayoutConstants_EDGE_HORIZONTAL)) {
+       |       ~  ^                                          ~
+../asaotui/layout-check/CheckMain.c:52863:10: note: use '=' to turn this equality comparison into an assignment
+ 52863 |   if ((e == asaot_ui_LayoutConstants_EDGE_HORIZONTAL)) {
+       |          ^~
+       |          =
+../asaotui/layout-check/CheckMain.c:52870:10: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52870 |   if ((e == asaot_ui_LayoutConstants_EDGE_VERTICAL)) {
+       |        ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52870:10: note: remove extraneous parentheses around the comparison to silence this warning
+ 52870 |   if ((e == asaot_ui_LayoutConstants_EDGE_VERTICAL)) {
+       |       ~  ^                                        ~
+../asaotui/layout-check/CheckMain.c:52870:10: note: use '=' to turn this equality comparison into an assignment
+ 52870 |   if ((e == asaot_ui_LayoutConstants_EDGE_VERTICAL)) {
+       |          ^~
+       |          =
+../asaotui/layout-check/CheckMain.c:52884:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52884 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52884:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 52884 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |       ~     ^                                     ~
+../asaotui/layout-check/CheckMain.c:52884:13: note: use '=' to turn this equality comparison into an assignment
+ 52884 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:52887:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52887 |   if ((unit == asaot_ui_LayoutConstants_UNIT_PERCENT)) {
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52887:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 52887 |   if ((unit == asaot_ui_LayoutConstants_UNIT_PERCENT)) {
+       |       ~     ^                                       ~
+../asaotui/layout-check/CheckMain.c:52887:13: note: use '=' to turn this equality comparison into an assignment
+ 52887 |   if ((unit == asaot_ui_LayoutConstants_UNIT_PERCENT)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:52989:12: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52989 |   if ((dir == asaot_ui_LayoutConstants_DIR_RTL)) {
+       |        ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52989:12: note: remove extraneous parentheses around the comparison to silence this warning
+ 52989 |   if ((dir == asaot_ui_LayoutConstants_DIR_RTL)) {
+       |       ~    ^                                  ~
+../asaotui/layout-check/CheckMain.c:52989:12: note: use '=' to turn this equality comparison into an assignment
+ 52989 |   if ((dir == asaot_ui_LayoutConstants_DIR_RTL)) {
+       |            ^~
+       |            =
+../asaotui/layout-check/CheckMain.c:52990:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52990 |     if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW)) {
+       |          ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52990:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 52990 |     if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW)) {
+       |         ~   ^                                       ~
+../asaotui/layout-check/CheckMain.c:52990:13: note: use '=' to turn this equality comparison into an assignment
+ 52990 |     if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:52993:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 52993 |     if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW_REVERSE)) {
+       |          ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:52993:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 52993 |     if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW_REVERSE)) {
+       |         ~   ^                                               ~
+../asaotui/layout-check/CheckMain.c:52993:13: note: use '=' to turn this equality comparison into an assignment
+ 52993 |     if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW_REVERSE)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:53012:11: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53012 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN)) {
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53012:11: note: remove extraneous parentheses around the comparison to silence this warning
+ 53012 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN)) {
+       |       ~   ^                                          ~
+../asaotui/layout-check/CheckMain.c:53012:11: note: use '=' to turn this equality comparison into an assignment
+ 53012 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN)) {
+       |           ^~
+       |           =
+../asaotui/layout-check/CheckMain.c:53015:11: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53015 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN_REVERSE)) {
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53015:11: note: remove extraneous parentheses around the comparison to silence this warning
+ 53015 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN_REVERSE)) {
+       |       ~   ^                                                  ~
+../asaotui/layout-check/CheckMain.c:53015:11: note: use '=' to turn this equality comparison into an assignment
+ 53015 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN_REVERSE)) {
+       |           ^~
+       |           =
+../asaotui/layout-check/CheckMain.c:53018:11: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53018 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW)) {
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53018:11: note: remove extraneous parentheses around the comparison to silence this warning
+ 53018 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW)) {
+       |       ~   ^                                       ~
+../asaotui/layout-check/CheckMain.c:53018:11: note: use '=' to turn this equality comparison into an assignment
+ 53018 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW)) {
+       |           ^~
+       |           =
+../asaotui/layout-check/CheckMain.c:53027:11: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53027 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN)) {
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53027:11: note: remove extraneous parentheses around the comparison to silence this warning
+ 53027 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN)) {
+       |       ~   ^                                          ~
+../asaotui/layout-check/CheckMain.c:53027:11: note: use '=' to turn this equality comparison into an assignment
+ 53027 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN)) {
+       |           ^~
+       |           =
+../asaotui/layout-check/CheckMain.c:53030:11: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53030 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN_REVERSE)) {
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53030:11: note: remove extraneous parentheses around the comparison to silence this warning
+ 53030 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN_REVERSE)) {
+       |       ~   ^                                                  ~
+../asaotui/layout-check/CheckMain.c:53030:11: note: use '=' to turn this equality comparison into an assignment
+ 53030 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_COLUMN_REVERSE)) {
+       |           ^~
+       |           =
+../asaotui/layout-check/CheckMain.c:53033:11: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53033 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW)) {
+       |        ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53033:11: note: remove extraneous parentheses around the comparison to silence this warning
+ 53033 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW)) {
+       |       ~   ^                                       ~
+../asaotui/layout-check/CheckMain.c:53033:11: note: use '=' to turn this equality comparison into an assignment
+ 53033 |   if ((fd == asaot_ui_LayoutConstants_FLEX_DIR_ROW)) {
+       |           ^~
+       |           =
+../asaotui/layout-check/CheckMain.c:53050:14: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53050 |     if ((dir == asaot_ui_LayoutConstants_DIR_RTL)) {
+       |          ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53050:14: note: remove extraneous parentheses around the comparison to silence this warning
+ 53050 |     if ((dir == asaot_ui_LayoutConstants_DIR_RTL)) {
+       |         ~    ^                                  ~
+../asaotui/layout-check/CheckMain.c:53050:14: note: use '=' to turn this equality comparison into an assignment
+ 53050 |     if ((dir == asaot_ui_LayoutConstants_DIR_RTL)) {
+       |              ^~
+       |              =
+../asaotui/layout-check/CheckMain.c:53062:14: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53062 |     if ((dir == asaot_ui_LayoutConstants_DIR_RTL)) {
+       |          ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53062:14: note: remove extraneous parentheses around the comparison to silence this warning
+ 53062 |     if ((dir == asaot_ui_LayoutConstants_DIR_RTL)) {
+       |         ~    ^                                  ~
+../asaotui/layout-check/CheckMain.c:53062:14: note: use '=' to turn this equality comparison into an assignment
+ 53062 |     if ((dir == asaot_ui_LayoutConstants_DIR_RTL)) {
+       |              ^~
+       |              =
+../asaotui/layout-check/CheckMain.c:53088:14: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53088 |   if ((align == asaot_ui_LayoutConstants_ALIGN_SPACE_BETWEEN)) {
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53088:14: note: remove extraneous parentheses around the comparison to silence this warning
+ 53088 |   if ((align == asaot_ui_LayoutConstants_ALIGN_SPACE_BETWEEN)) {
+       |       ~      ^                                              ~
+../asaotui/layout-check/CheckMain.c:53088:14: note: use '=' to turn this equality comparison into an assignment
+ 53088 |   if ((align == asaot_ui_LayoutConstants_ALIGN_SPACE_BETWEEN)) {
+       |              ^~
+       |              =
+../asaotui/layout-check/CheckMain.c:53091:14: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53091 |   if ((align == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53091:14: note: remove extraneous parentheses around the comparison to silence this warning
+ 53091 |   if ((align == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |       ~      ^                                        ~
+../asaotui/layout-check/CheckMain.c:53091:14: note: use '=' to turn this equality comparison into an assignment
+ 53091 |   if ((align == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |              ^~
+       |              =
+../asaotui/layout-check/CheckMain.c:53094:14: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53094 |   if ((align == asaot_ui_LayoutConstants_ALIGN_SPACE_AROUND)) {
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53094:14: note: remove extraneous parentheses around the comparison to silence this warning
+ 53094 |   if ((align == asaot_ui_LayoutConstants_ALIGN_SPACE_AROUND)) {
+       |       ~      ^                                             ~
+../asaotui/layout-check/CheckMain.c:53094:14: note: use '=' to turn this equality comparison into an assignment
+ 53094 |   if ((align == asaot_ui_LayoutConstants_ALIGN_SPACE_AROUND)) {
+       |              ^~
+       |              =
+../asaotui/layout-check/CheckMain.c:53097:14: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53097 |   if ((align == asaot_ui_LayoutConstants_ALIGN_SPACE_EVENLY)) {
+       |        ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53097:14: note: remove extraneous parentheses around the comparison to silence this warning
+ 53097 |   if ((align == asaot_ui_LayoutConstants_ALIGN_SPACE_EVENLY)) {
+       |       ~      ^                                             ~
+../asaotui/layout-check/CheckMain.c:53097:14: note: use '=' to turn this equality comparison into an assignment
+ 53097 |   if ((align == asaot_ui_LayoutConstants_ALIGN_SPACE_EVENLY)) {
+       |              ^~
+       |              =
+../asaotui/layout-check/CheckMain.c:53108:10: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53108 |   if ((a == b)) {
+       |        ~~^~~~
+../asaotui/layout-check/CheckMain.c:53108:10: note: remove extraneous parentheses around the comparison to silence this warning
+ 53108 |   if ((a == b)) {
+       |       ~  ^   ~
+../asaotui/layout-check/CheckMain.c:53108:10: note: use '=' to turn this equality comparison into an assignment
+ 53108 |   if ((a == b)) {
+       |          ^~
+       |          =
+../asaotui/layout-check/CheckMain.c:53146:80: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53146 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->positionType) == asaot_ui_LayoutConstants_POSITION_ABSOLUTE)) {
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53146:80: note: remove extraneous parentheses around the comparison to silence this warning
+ 53146 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->positionType) == asaot_ui_LayoutConstants_POSITION_ABSOLUTE)) {
+       |         ~                                                                      ^                                            ~
+../asaotui/layout-check/CheckMain.c:53146:80: note: use '=' to turn this equality comparison into an assignment
+ 53146 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->positionType) == asaot_ui_LayoutConstants_POSITION_ABSOLUTE)) {
+       |                                                                                ^~
+       |                                                                                =
+../asaotui/layout-check/CheckMain.c:53181:77: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53181 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53181:77: note: remove extraneous parentheses around the comparison to silence this warning
+ 53181 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |         ~                                                                   ^                                                 ~
+../asaotui/layout-check/CheckMain.c:53181:77: note: use '=' to turn this equality comparison into an assignment
+ 53181 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |                                                                             ^~
+       |                                                                             =
+../asaotui/layout-check/CheckMain.c:53215:77: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53215 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(n)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53215:77: note: remove extraneous parentheses around the comparison to silence this warning
+ 53215 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(n)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |         ~                                                                   ^                                                 ~
+../asaotui/layout-check/CheckMain.c:53215:77: note: use '=' to turn this equality comparison into an assignment
+ 53215 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(n)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |                                                                             ^~
+       |                                                                             =
+../asaotui/layout-check/CheckMain.c:53275:14: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53275 |   if ((count == 0)) {
+       |        ~~~~~~^~~~
+../asaotui/layout-check/CheckMain.c:53275:14: note: remove extraneous parentheses around the comparison to silence this warning
+ 53275 |   if ((count == 0)) {
+       |       ~      ^   ~
+../asaotui/layout-check/CheckMain.c:53275:14: note: use '=' to turn this equality comparison into an assignment
+ 53275 |   if ((count == 0)) {
+       |              ^~
+       |              =
+../asaotui/layout-check/CheckMain.c:53295:84: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53295 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(child)))->positionType) == asaot_ui_LayoutConstants_POSITION_ABSOLUTE)) {
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53295:84: note: remove extraneous parentheses around the comparison to silence this warning
+ 53295 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(child)))->positionType) == asaot_ui_LayoutConstants_POSITION_ABSOLUTE)) {
+       |         ~                                                                          ^                                            ~
+../asaotui/layout-check/CheckMain.c:53295:84: note: use '=' to turn this equality comparison into an assignment
+ 53295 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(child)))->positionType) == asaot_ui_LayoutConstants_POSITION_ABSOLUTE)) {
+       |                                                                                    ^~
+       |                                                                                    =
+../asaotui/layout-check/CheckMain.c:53466:20: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53466 |         if ((align == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |              ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53466:20: note: remove extraneous parentheses around the comparison to silence this warning
+ 53466 |         if ((align == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |             ~      ^                                        ~
+../asaotui/layout-check/CheckMain.c:53466:20: note: use '=' to turn this equality comparison into an assignment
+ 53466 |         if ((align == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |                    ^~
+       |                    =
+../asaotui/layout-check/CheckMain.c:53479:20: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53479 |         if ((align == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |              ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53479:20: note: remove extraneous parentheses around the comparison to silence this warning
+ 53479 |         if ((align == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |             ~      ^                                       ~
+../asaotui/layout-check/CheckMain.c:53479:20: note: use '=' to turn this equality comparison into an assignment
+ 53479 |         if ((align == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |                    ^~
+       |                    =
+../asaotui/layout-check/CheckMain.c:53494:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53494 |     if ((ac == asaot_ui_LayoutConstants_ALIGN_FLEX_END)) {
+       |          ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53494:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 53494 |     if ((ac == asaot_ui_LayoutConstants_ALIGN_FLEX_END)) {
+       |         ~   ^                                         ~
+../asaotui/layout-check/CheckMain.c:53494:13: note: use '=' to turn this equality comparison into an assignment
+ 53494 |     if ((ac == asaot_ui_LayoutConstants_ALIGN_FLEX_END)) {
+       |             ^~
+       |             =
+../asaotui/layout-check/CheckMain.c:53497:15: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53497 |       if ((ac == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |            ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53497:15: note: remove extraneous parentheses around the comparison to silence this warning
+ 53497 |       if ((ac == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |           ~   ^                                       ~
+../asaotui/layout-check/CheckMain.c:53497:15: note: use '=' to turn this equality comparison into an assignment
+ 53497 |       if ((ac == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |               ^~
+       |               =
+../asaotui/layout-check/CheckMain.c:53500:17: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53500 |         if ((ac == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53500:17: note: remove extraneous parentheses around the comparison to silence this warning
+ 53500 |         if ((ac == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |             ~   ^                                        ~
+../asaotui/layout-check/CheckMain.c:53500:17: note: use '=' to turn this equality comparison into an assignment
+ 53500 |         if ((ac == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |                 ^~
+       |                 =
+../asaotui/layout-check/CheckMain.c:53503:19: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53503 |           if ((ac == asaot_ui_LayoutConstants_ALIGN_SPACE_AROUND)) {
+       |                ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53503:19: note: remove extraneous parentheses around the comparison to silence this warning
+ 53503 |           if ((ac == asaot_ui_LayoutConstants_ALIGN_SPACE_AROUND)) {
+       |               ~   ^                                             ~
+../asaotui/layout-check/CheckMain.c:53503:19: note: use '=' to turn this equality comparison into an assignment
+ 53503 |           if ((ac == asaot_ui_LayoutConstants_ALIGN_SPACE_AROUND)) {
+       |                   ^~
+       |                   =
+../asaotui/layout-check/CheckMain.c:53507:21: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53507 |             if ((ac == asaot_ui_LayoutConstants_ALIGN_SPACE_EVENLY)) {
+       |                  ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53507:21: note: remove extraneous parentheses around the comparison to silence this warning
+ 53507 |             if ((ac == asaot_ui_LayoutConstants_ALIGN_SPACE_EVENLY)) {
+       |                 ~   ^                                             ~
+../asaotui/layout-check/CheckMain.c:53507:21: note: use '=' to turn this equality comparison into an assignment
+ 53507 |             if ((ac == asaot_ui_LayoutConstants_ALIGN_SPACE_EVENLY)) {
+       |                     ^~
+       |                     =
+../asaotui/layout-check/CheckMain.c:53511:23: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53511 |               if ((ac == asaot_ui_LayoutConstants_ALIGN_SPACE_BETWEEN)) {
+       |                    ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53511:23: note: remove extraneous parentheses around the comparison to silence this warning
+ 53511 |               if ((ac == asaot_ui_LayoutConstants_ALIGN_SPACE_BETWEEN)) {
+       |                   ~   ^                                              ~
+../asaotui/layout-check/CheckMain.c:53511:23: note: use '=' to turn this equality comparison into an assignment
+ 53511 |               if ((ac == asaot_ui_LayoutConstants_ALIGN_SPACE_BETWEEN)) {
+       |                       ^~
+       |                       =
+../asaotui/layout-check/CheckMain.c:53537:19: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53537 |           if ((al == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |                ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53537:19: note: remove extraneous parentheses around the comparison to silence this warning
+ 53537 |           if ((al == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |               ~   ^                                        ~
+../asaotui/layout-check/CheckMain.c:53537:19: note: use '=' to turn this equality comparison into an assignment
+ 53537 |           if ((al == asaot_ui_LayoutConstants_ALIGN_STRETCH)) {
+       |                   ^~
+       |                   =
+../asaotui/layout-check/CheckMain.c:53546:17: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53546 |         if ((al == asaot_ui_LayoutConstants_ALIGN_FLEX_END)) {
+       |              ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53546:17: note: remove extraneous parentheses around the comparison to silence this warning
+ 53546 |         if ((al == asaot_ui_LayoutConstants_ALIGN_FLEX_END)) {
+       |             ~   ^                                         ~
+../asaotui/layout-check/CheckMain.c:53546:17: note: use '=' to turn this equality comparison into an assignment
+ 53546 |         if ((al == asaot_ui_LayoutConstants_ALIGN_FLEX_END)) {
+       |                 ^~
+       |                 =
+../asaotui/layout-check/CheckMain.c:53549:19: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53549 |           if ((al == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |                ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53549:19: note: remove extraneous parentheses around the comparison to silence this warning
+ 53549 |           if ((al == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |               ~   ^                                       ~
+../asaotui/layout-check/CheckMain.c:53549:19: note: use '=' to turn this equality comparison into an assignment
+ 53549 |           if ((al == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |                   ^~
+       |                   =
+../asaotui/layout-check/CheckMain.c:53635:18: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53635 |     if ((justify == asaot_ui_LayoutConstants_JUSTIFY_CENTER)) {
+       |          ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53635:18: note: remove extraneous parentheses around the comparison to silence this warning
+ 53635 |     if ((justify == asaot_ui_LayoutConstants_JUSTIFY_CENTER)) {
+       |         ~        ^                                         ~
+../asaotui/layout-check/CheckMain.c:53635:18: note: use '=' to turn this equality comparison into an assignment
+ 53635 |     if ((justify == asaot_ui_LayoutConstants_JUSTIFY_CENTER)) {
+       |                  ^~
+       |                  =
+../asaotui/layout-check/CheckMain.c:53638:20: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53638 |       if ((justify == asaot_ui_LayoutConstants_JUSTIFY_FLEX_END)) {
+       |            ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53638:20: note: remove extraneous parentheses around the comparison to silence this warning
+ 53638 |       if ((justify == asaot_ui_LayoutConstants_JUSTIFY_FLEX_END)) {
+       |           ~        ^                                           ~
+../asaotui/layout-check/CheckMain.c:53638:20: note: use '=' to turn this equality comparison into an assignment
+ 53638 |       if ((justify == asaot_ui_LayoutConstants_JUSTIFY_FLEX_END)) {
+       |                    ^~
+       |                    =
+../asaotui/layout-check/CheckMain.c:53641:22: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53641 |         if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_BETWEEN)) {
+       |              ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53641:22: note: remove extraneous parentheses around the comparison to silence this warning
+ 53641 |         if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_BETWEEN)) {
+       |             ~        ^                                                ~
+../asaotui/layout-check/CheckMain.c:53641:22: note: use '=' to turn this equality comparison into an assignment
+ 53641 |         if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_BETWEEN)) {
+       |                      ^~
+       |                      =
+../asaotui/layout-check/CheckMain.c:53646:24: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53646 |           if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_AROUND)) {
+       |                ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53646:24: note: remove extraneous parentheses around the comparison to silence this warning
+ 53646 |           if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_AROUND)) {
+       |               ~        ^                                               ~
+../asaotui/layout-check/CheckMain.c:53646:24: note: use '=' to turn this equality comparison into an assignment
+ 53646 |           if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_AROUND)) {
+       |                        ^~
+       |                        =
+../asaotui/layout-check/CheckMain.c:53650:26: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53650 |             if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_EVENLY)) {
+       |                  ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53650:26: note: remove extraneous parentheses around the comparison to silence this warning
+ 53650 |             if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_EVENLY)) {
+       |                 ~        ^                                               ~
+../asaotui/layout-check/CheckMain.c:53650:26: note: use '=' to turn this equality comparison into an assignment
+ 53650 |             if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_EVENLY)) {
+       |                          ^~
+       |                          =
+../asaotui/layout-check/CheckMain.c:53706:81: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53706 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->flexBasisUnit) == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53706:81: note: remove extraneous parentheses around the comparison to silence this warning
+ 53706 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->flexBasisUnit) == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |         ~                                                                       ^                                     ~
+../asaotui/layout-check/CheckMain.c:53706:81: note: use '=' to turn this equality comparison into an assignment
+ 53706 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->flexBasisUnit) == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |                                                                                 ^~
+       |                                                                                 =
+../asaotui/layout-check/CheckMain.c:53709:81: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53709 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->flexBasisUnit) == asaot_ui_LayoutConstants_UNIT_PERCENT)) {
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53709:81: note: remove extraneous parentheses around the comparison to silence this warning
+ 53709 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->flexBasisUnit) == asaot_ui_LayoutConstants_UNIT_PERCENT)) {
+       |         ~                                                                       ^                                       ~
+../asaotui/layout-check/CheckMain.c:53709:81: note: use '=' to turn this equality comparison into an assignment
+ 53709 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->flexBasisUnit) == asaot_ui_LayoutConstants_UNIT_PERCENT)) {
+       |                                                                                 ^~
+       |                                                                                 =
+../asaotui/layout-check/CheckMain.c:53722:77: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53722 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53722:77: note: remove extraneous parentheses around the comparison to silence this warning
+ 53722 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |         ~                                                                   ^                                                 ~
+../asaotui/layout-check/CheckMain.c:53722:77: note: use '=' to turn this equality comparison into an assignment
+ 53722 |     if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |                                                                             ^~
+       |                                                                             =
+../asaotui/layout-check/CheckMain.c:53745:75: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53745 |   if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53745:75: note: remove extraneous parentheses around the comparison to silence this warning
+ 53745 |   if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |       ~                                                                   ^                                                 ~
+../asaotui/layout-check/CheckMain.c:53745:75: note: use '=' to turn this equality comparison into an assignment
+ 53745 |   if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->boxSizing) == asaot_ui_LayoutConstants_BOX_SIZING_CONTENT_BOX)) {
+       |                                                                           ^~
+       |                                                                           =
+../asaotui/layout-check/CheckMain.c:53767:16: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53767 |   if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_BETWEEN)) {
+       |        ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53767:16: note: remove extraneous parentheses around the comparison to silence this warning
+ 53767 |   if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_BETWEEN)) {
+       |       ~        ^                                                ~
+../asaotui/layout-check/CheckMain.c:53767:16: note: use '=' to turn this equality comparison into an assignment
+ 53767 |   if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_BETWEEN)) {
+       |                ^~
+       |                =
+../asaotui/layout-check/CheckMain.c:53770:16: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53770 |   if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_AROUND)) {
+       |        ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53770:16: note: remove extraneous parentheses around the comparison to silence this warning
+ 53770 |   if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_AROUND)) {
+       |       ~        ^                                               ~
+../asaotui/layout-check/CheckMain.c:53770:16: note: use '=' to turn this equality comparison into an assignment
+ 53770 |   if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_AROUND)) {
+       |                ^~
+       |                =
+../asaotui/layout-check/CheckMain.c:53773:16: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53773 |   if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_EVENLY)) {
+       |        ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53773:16: note: remove extraneous parentheses around the comparison to silence this warning
+ 53773 |   if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_EVENLY)) {
+       |       ~        ^                                               ~
+../asaotui/layout-check/CheckMain.c:53773:16: note: use '=' to turn this equality comparison into an assignment
+ 53773 |   if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_EVENLY)) {
+       |                ^~
+       |                =
+../asaotui/layout-check/CheckMain.c:53785:78: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53785 |   if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->positionType) == asaot_ui_LayoutConstants_POSITION_ABSOLUTE)) {
+       |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53785:78: note: remove extraneous parentheses around the comparison to silence this warning
+ 53785 |   if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->positionType) == asaot_ui_LayoutConstants_POSITION_ABSOLUTE)) {
+       |       ~                                                                      ^                                            ~
+../asaotui/layout-check/CheckMain.c:53785:78: note: use '=' to turn this equality comparison into an assignment
+ 53785 |   if (((((asaot_ui_as3_As3LayoutNode*)as_req_obj((void*)(c)))->positionType) == asaot_ui_LayoutConstants_POSITION_ABSOLUTE)) {
+       |                                                                              ^~
+       |                                                                              =
+../asaotui/layout-check/CheckMain.c:53898:16: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53898 |         if ((j == asaot_ui_LayoutConstants_JUSTIFY_FLEX_END)) {
+       |              ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53898:16: note: remove extraneous parentheses around the comparison to silence this warning
+ 53898 |         if ((j == asaot_ui_LayoutConstants_JUSTIFY_FLEX_END)) {
+       |             ~  ^                                           ~
+../asaotui/layout-check/CheckMain.c:53898:16: note: use '=' to turn this equality comparison into an assignment
+ 53898 |         if ((j == asaot_ui_LayoutConstants_JUSTIFY_FLEX_END)) {
+       |                ^~
+       |                =
+../asaotui/layout-check/CheckMain.c:53901:18: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53901 |           if ((j == asaot_ui_LayoutConstants_JUSTIFY_CENTER)) {
+       |                ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53901:18: note: remove extraneous parentheses around the comparison to silence this warning
+ 53901 |           if ((j == asaot_ui_LayoutConstants_JUSTIFY_CENTER)) {
+       |               ~  ^                                         ~
+../asaotui/layout-check/CheckMain.c:53901:18: note: use '=' to turn this equality comparison into an assignment
+ 53901 |           if ((j == asaot_ui_LayoutConstants_JUSTIFY_CENTER)) {
+       |                  ^~
+       |                  =
+../asaotui/layout-check/CheckMain.c:53909:16: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53909 |         if ((a == asaot_ui_LayoutConstants_ALIGN_FLEX_END)) {
+       |              ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53909:16: note: remove extraneous parentheses around the comparison to silence this warning
+ 53909 |         if ((a == asaot_ui_LayoutConstants_ALIGN_FLEX_END)) {
+       |             ~  ^                                         ~
+../asaotui/layout-check/CheckMain.c:53909:16: note: use '=' to turn this equality comparison into an assignment
+ 53909 |         if ((a == asaot_ui_LayoutConstants_ALIGN_FLEX_END)) {
+       |                ^~
+       |                =
+../asaotui/layout-check/CheckMain.c:53912:18: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53912 |           if ((a == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |                ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53912:18: note: remove extraneous parentheses around the comparison to silence this warning
+ 53912 |           if ((a == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |               ~  ^                                       ~
+../asaotui/layout-check/CheckMain.c:53912:18: note: use '=' to turn this equality comparison into an assignment
+ 53912 |           if ((a == asaot_ui_LayoutConstants_ALIGN_CENTER)) {
+       |                  ^~
+       |                  =
+../asaotui/layout-check/CheckMain.c:53926:17: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53926 |   if ((physEdge == asaot_ui_LayoutConstants_EDGE_LEFT)) {
+       |        ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53926:17: note: remove extraneous parentheses around the comparison to silence this warning
+ 53926 |   if ((physEdge == asaot_ui_LayoutConstants_EDGE_LEFT)) {
+       |       ~         ^                                    ~
+../asaotui/layout-check/CheckMain.c:53926:17: note: use '=' to turn this equality comparison into an assignment
+ 53926 |   if ((physEdge == asaot_ui_LayoutConstants_EDGE_LEFT)) {
+       |                 ^~
+       |                 =
+../asaotui/layout-check/CheckMain.c:53929:19: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53929 |     if ((physEdge == asaot_ui_LayoutConstants_EDGE_TOP)) {
+       |          ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53929:19: note: remove extraneous parentheses around the comparison to silence this warning
+ 53929 |     if ((physEdge == asaot_ui_LayoutConstants_EDGE_TOP)) {
+       |         ~         ^                                   ~
+../asaotui/layout-check/CheckMain.c:53929:19: note: use '=' to turn this equality comparison into an assignment
+ 53929 |     if ((physEdge == asaot_ui_LayoutConstants_EDGE_TOP)) {
+       |                   ^~
+       |                   =
+../asaotui/layout-check/CheckMain.c:53932:21: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 53932 |       if ((physEdge == asaot_ui_LayoutConstants_EDGE_RIGHT)) {
+       |            ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:53932:21: note: remove extraneous parentheses around the comparison to silence this warning
+ 53932 |       if ((physEdge == asaot_ui_LayoutConstants_EDGE_RIGHT)) {
+       |           ~         ^                                     ~
+../asaotui/layout-check/CheckMain.c:53932:21: note: use '=' to turn this equality comparison into an assignment
+ 53932 |       if ((physEdge == asaot_ui_LayoutConstants_EDGE_RIGHT)) {
+       |                     ^~
+       |                     =
+135 warnings generated.
+Build successful: ../asaotui/layout-check/CheckMain.exe
+Generated C kept at: ../asaotui/layout-check/CheckMain.c
+--- output ---
+=== a) root w=100 h=50 ===
+  OK   a.root  got (0.00,0.00,100.00,50.00)  want (0.00,0.00,100.00,50.00)
+=== b) column + padding(16) + row-gap(10), 3 children 100x40 ===
+  OK   b.root  got (0.00,0.00,200.00,300.00)  want (0.00,0.00,200.00,300.00)
+  OK   b.child0  got (16.00,16.00,100.00,40.00)  want (16.00,16.00,100.00,40.00)
+  OK   b.child1  got (16.00,66.00,100.00,40.00)  want (16.00,66.00,100.00,40.00)
+  OK   b.child2  got (16.00,116.00,100.00,40.00)  want (16.00,116.00,100.00,40.00)
+=== c) row + grow 1:2:3, basis 0, root 300x100 ===
+  OK   c.child0  got (0.00,0.00,50.00,100.00)  want (0.00,0.00,50.00,100.00)
+  OK   c.child1  got (50.00,0.00,100.00,100.00)  want (50.00,0.00,100.00,100.00)
+  OK   c.child2  got (150.00,0.00,150.00,100.00)  want (150.00,0.00,150.00,100.00)
+=== d) percent vs parent padding(20)+border(10) ===
+  OK   d.root  got (0.00,0.00,200.00,100.00)  want (0.00,0.00,200.00,100.00)
+  OK   d.child  got (30.00,30.00,70.00,20.00)  want (30.00,30.00,70.00,20.00)
+=== e1) min-width wins over shrink ===
+  OK   e1.child  got (0.00,0.00,150.00,50.00)  want (0.00,0.00,150.00,50.00)
+=== e2) max-width wins over grow ===
+  OK   e2.child  got (0.00,0.00,150.00,50.00)  want (0.00,0.00,150.00,50.00)
+=== f) web defaults -> an unset direction defaults to row ===
+  OK   f.child0  got (0.00,0.00,50.00,40.00)  want (0.00,0.00,50.00,40.00)
+  OK   f.child1  got (50.00,0.00,50.00,40.00)  want (50.00,0.00,50.00,40.00)
+=== g) no web defaults -> an unset direction defaults to column ===
+  OK   g.child0  got (0.00,0.00,50.00,40.00)  want (0.00,0.00,50.00,40.00)
+  OK   g.child1  got (0.00,40.00,50.00,40.00)  want (0.00,40.00,50.00,40.00)
+=== h) justify-content (6 values) ===
+  OK   h1.justifyFlexStart0  got (10.00,10.00,30.00,10.00)  want (10.00,10.00,30.00,10.00)
+  OK   h1.justifyFlexStart2  got (70.00,10.00,30.00,10.00)  want (70.00,10.00,30.00,10.00)
+  OK   h2.justifyCenter0  got (55.00,10.00,30.00,10.00)  want (55.00,10.00,30.00,10.00)
+  OK   h2.justifyCenter2  got (115.00,10.00,30.00,10.00)  want (115.00,10.00,30.00,10.00)
+  OK   h3.justifyFlexEnd0  got (100.00,10.00,30.00,10.00)  want (100.00,10.00,30.00,10.00)
+  OK   h3.justifyFlexEnd2  got (160.00,10.00,30.00,10.00)  want (160.00,10.00,30.00,10.00)
+  OK   h4.justifySpaceBetween0  got (10.00,10.00,30.00,10.00)  want (10.00,10.00,30.00,10.00)
+  OK   h4.justifySpaceBetween2  got (160.00,10.00,30.00,10.00)  want (160.00,10.00,30.00,10.00)
+  OK   h5.justifySpaceAround0  got (25.00,10.00,30.00,10.00)  want (25.00,10.00,30.00,10.00)
+  OK   h5.justifySpaceAround2  got (145.00,10.00,30.00,10.00)  want (145.00,10.00,30.00,10.00)
+  OK   h6.justifySpaceEvenly0  got (32.50,10.00,30.00,10.00)  want (32.50,10.00,30.00,10.00)
+  OK   h6.justifySpaceEvenly2  got (137.50,10.00,30.00,10.00)  want (137.50,10.00,30.00,10.00)
+=== i) justify-content + gap ===
+  OK   i1.justifyGapBetween0  got (10.00,10.00,30.00,10.00)  want (10.00,10.00,30.00,10.00)
+  OK   i1.justifyGapBetween2  got (160.00,10.00,30.00,10.00)  want (160.00,10.00,30.00,10.00)
+  OK   i2.justifyGapAround0  got (23.33,10.00,30.00,10.00)  want (23.33,10.00,30.00,10.00)
+  OK   i2.justifyGapAround2  got (146.67,10.00,30.00,10.00)  want (146.67,10.00,30.00,10.00)
+  OK   i3.justifyGapEvenly0  got (30.00,10.00,30.00,10.00)  want (30.00,10.00,30.00,10.00)
+  OK   i3.justifyGapEvenly2  got (140.00,10.00,30.00,10.00)  want (140.00,10.00,30.00,10.00)
+=== j) align-items / align-self ===
+  OK   j1.alignStart0  got (10.00,10.00,30.00,10.00)  want (10.00,10.00,30.00,10.00)
+  OK   j1.alignStart1  got (40.00,10.00,30.00,10.00)  want (40.00,10.00,30.00,10.00)
+  OK   j2.alignCenter0  got (10.00,45.00,30.00,10.00)  want (10.00,45.00,30.00,10.00)
+  OK   j2.alignCenter1  got (40.00,45.00,30.00,10.00)  want (40.00,45.00,30.00,10.00)
+  OK   j3.alignEnd0  got (10.00,80.00,30.00,10.00)  want (10.00,80.00,30.00,10.00)
+  OK   j3.alignEnd1  got (40.00,80.00,30.00,10.00)  want (40.00,80.00,30.00,10.00)
+  OK   j4.alignStretch0  got (10.00,10.00,30.00,80.00)  want (10.00,10.00,30.00,80.00)
+  OK   j4.alignStretch1  got (40.00,10.00,30.00,80.00)  want (40.00,10.00,30.00,80.00)
+  OK   j5.alignSelfCenter  got (10.00,45.00,30.00,10.00)  want (10.00,45.00,30.00,10.00)
+  OK   j5.alignSelfEnd  got (40.00,80.00,30.00,10.00)  want (40.00,80.00,30.00,10.00)
+  OK   j6.alignSelfStretch  got (10.00,10.00,30.00,80.00)  want (10.00,10.00,30.00,80.00)
+  OK   j6.alignSelfInherit  got (40.00,10.00,30.00,10.00)  want (40.00,10.00,30.00,10.00)
+=== k) flex-wrap / align-content / wrap-reverse ===
+  OK   k1.wrap0  got (10.00,10.00,60.00,40.00)  want (10.00,10.00,60.00,40.00)
+  OK   k1.wrap1  got (75.00,10.00,60.00,40.00)  want (75.00,10.00,60.00,40.00)
+  OK   k1.wrap2  got (10.00,55.00,60.00,40.00)  want (10.00,55.00,60.00,40.00)
+  OK   k1.wrap3  got (75.00,55.00,60.00,40.00)  want (75.00,55.00,60.00,40.00)
+  OK   k1.wrap4  got (10.00,100.00,60.00,40.00)  want (10.00,100.00,60.00,40.00)
+  OK   k3.acBetween0  got (10.00,10.00,90.00,40.00)  want (10.00,10.00,90.00,40.00)
+  OK   k3.acBetween1  got (10.00,80.00,90.00,40.00)  want (10.00,80.00,90.00,40.00)
+  OK   k3.acBetween2  got (10.00,150.00,90.00,40.00)  want (10.00,150.00,90.00,40.00)
+  OK   k4.acCenter0  got (10.00,40.00,90.00,40.00)  want (10.00,40.00,90.00,40.00)
+  OK   k4.acCenter1  got (10.00,80.00,90.00,40.00)  want (10.00,80.00,90.00,40.00)
+  OK   k4.acCenter2  got (10.00,120.00,90.00,40.00)  want (10.00,120.00,90.00,40.00)
+  OK   k5.acEnd0  got (10.00,70.00,90.00,40.00)  want (10.00,70.00,90.00,40.00)
+  OK   k5.acEnd1  got (10.00,110.00,90.00,40.00)  want (10.00,110.00,90.00,40.00)
+  OK   k5.acEnd2  got (10.00,150.00,90.00,40.00)  want (10.00,150.00,90.00,40.00)
+  OK   k6.acAround0  got (10.00,20.00,90.00,40.00)  want (10.00,20.00,90.00,40.00)
+  OK   k6.acAround1  got (10.00,80.00,90.00,40.00)  want (10.00,80.00,90.00,40.00)
+  OK   k6.acAround2  got (10.00,140.00,90.00,40.00)  want (10.00,140.00,90.00,40.00)
+  OK   k7.wrapReverse0  got (10.00,150.00,60.00,40.00)  want (10.00,150.00,60.00,40.00)
+  OK   k7.wrapReverse2  got (10.00,105.00,60.00,40.00)  want (10.00,105.00,60.00,40.00)
+  OK   k7.wrapReverse4  got (10.00,60.00,60.00,40.00)  want (10.00,60.00,60.00,40.00)
+=== k8) column wrap ===
+  OK   k8.colWrap0  got (10.00,10.00,60.00,40.00)  want (10.00,10.00,60.00,40.00)
+  OK   k8.colWrap1  got (10.00,55.00,60.00,40.00)  want (10.00,55.00,60.00,40.00)
+  OK   k8.colWrap2  got (10.00,100.00,60.00,40.00)  want (10.00,100.00,60.00,40.00)
+  OK   k8.colWrap3  got (10.00,145.00,60.00,40.00)  want (10.00,145.00,60.00,40.00)
+  OK   k8.colWrap4  got (75.00,10.00,60.00,40.00)  want (75.00,10.00,60.00,40.00)
+=== l) margin ===
+  OK   l1.marginPoint0  got (15.00,10.00,30.00,10.00)  want (15.00,10.00,30.00,10.00)
+  OK   l1.marginPoint1  got (52.00,10.00,30.00,10.00)  want (52.00,10.00,30.00,10.00)
+  OK   l2.marginPercent  got (28.00,28.00,30.00,10.00)  want (28.00,28.00,30.00,10.00)
+  OK   l3.marginHV  got (15.00,14.00,30.00,10.00)  want (15.00,14.00,30.00,10.00)
+  OK   l4.marginStart  got (8.00,0.00,30.00,10.00)  want (8.00,0.00,30.00,10.00)
+  OK   l4.marginEnd  got (38.00,0.00,30.00,10.00)  want (38.00,0.00,30.00,10.00)
+=== m) position relative ===
+  OK   m1.relativeInset  got (60.00,15.00,30.00,10.00)  want (60.00,15.00,30.00,10.00)
+  OK   m2.relativeNegative  got (-10.00,5.00,30.00,10.00)  want (-10.00,5.00,30.00,10.00)
+=== n) position absolute ===
+  OK   n1.absoluteFlow  got (15.00,15.00,30.00,10.00)  want (15.00,15.00,30.00,10.00)
+  OK   n1.absoluteInset  got (25.00,35.00,50.00,20.00)  want (25.00,35.00,50.00,20.00)
+  OK   n2.absoluteRightBottom  got (120.00,140.00,50.00,20.00)  want (120.00,140.00,50.00,20.00)
+  OK   n3.absoluteCentred  got (75.00,90.00,50.00,20.00)  want (75.00,90.00,50.00,20.00)
+  OK   n4.absolutePercent  got (28.00,18.00,50.00,20.00)  want (28.00,18.00,50.00,20.00)
+=== o) percent padding / gap ===
+  OK   o1.percentPadding  got (20.00,20.00,30.00,20.00)  want (20.00,20.00,30.00,20.00)
+  OK   o2.percentGapRow1  got (58.00,10.00,30.00,10.00)  want (58.00,10.00,30.00,10.00)
+  OK   o2.percentGapRow2  got (106.00,10.00,30.00,10.00)  want (106.00,10.00,30.00,10.00)
+  OK   o3.percentGapCol  got (10.00,48.00,30.00,20.00)  want (10.00,48.00,30.00,20.00)
+=== p) reverse directions / RTL ===
+  OK   p1.rowReverse0  got (160.00,10.00,30.00,10.00)  want (160.00,10.00,30.00,10.00)
+  OK   p1.rowReverse1  got (121.00,10.00,30.00,10.00)  want (121.00,10.00,30.00,10.00)
+  OK   p1.rowReverse2  got (86.00,10.00,30.00,10.00)  want (86.00,10.00,30.00,10.00)
+  OK   p2.columnReverse0  got (10.00,180.00,30.00,10.00)  want (10.00,180.00,30.00,10.00)
+  OK   p2.columnReverse1  got (10.00,165.00,30.00,10.00)  want (10.00,165.00,30.00,10.00)
+  OK   p2.columnReverse2  got (10.00,150.00,30.00,10.00)  want (10.00,150.00,30.00,10.00)
+  OK   p3.rtlRow0  got (170.00,0.00,30.00,10.00)  want (170.00,0.00,30.00,10.00)
+  OK   p3.rtlRow1  got (140.00,0.00,30.00,10.00)  want (140.00,0.00,30.00,10.00)
+  OK   p4.rtlStart0  got (162.00,0.00,30.00,10.00)  want (162.00,0.00,30.00,10.00)
+  OK   p4.rtlStart1  got (132.00,0.00,30.00,10.00)  want (132.00,0.00,30.00,10.00)
+  OK   p5.ltrStart  got (12.00,0.00,30.00,10.00)  want (12.00,0.00,30.00,10.00)
+=== q) overflow (stored only) ===
+  OK   q1.overflowRoot  got (0.00,0.00,200.00,100.00)  want (0.00,0.00,200.00,100.00)
+  OK   q1.overflowChild  got (10.00,10.00,300.00,80.00)  want (10.00,10.00,300.00,80.00)
+=== r) justifyContent (style field) ===
+  OK   r1.justifyCenter0  got (10.00,90.00,30.00,10.00)  want (10.00,90.00,30.00,10.00)
+  OK   r1.justifyCenter1  got (10.00,100.00,30.00,10.00)  want (10.00,100.00,30.00,10.00)
+  OK   r2.justifyBetween0  got (10.00,10.00,30.00,10.00)  want (10.00,10.00,30.00,10.00)
+  OK   r2.justifyBetween1  got (10.00,180.00,30.00,10.00)  want (10.00,180.00,30.00,10.00)
+=== s) alignItems (style field) ===
+  OK   s1.alignCenter0  got (85.00,10.00,30.00,10.00)  want (85.00,10.00,30.00,10.00)
+  OK   s1.alignCenter1  got (85.00,20.00,30.00,10.00)  want (85.00,20.00,30.00,10.00)
+  OK   s2.alignEnd0  got (160.00,10.00,30.00,10.00)  want (160.00,10.00,30.00,10.00)
+  OK   s2.alignEnd1  got (160.00,20.00,30.00,10.00)  want (160.00,20.00,30.00,10.00)
+=== s3) alignItems baseline refuses (AS3 gap) ===
+  OK   s3.alignItemsBaseline (throws as documented)
+=== t) alignSelf (style field) ===
+  OK   t1.alignSelfCenter  got (85.00,10.00,30.00,10.00)  want (85.00,10.00,30.00,10.00)
+  OK   t1.alignSelfEnd  got (160.00,20.00,30.00,10.00)  want (160.00,20.00,30.00,10.00)
+  OK   t2.alignSelfStretch  got (10.00,10.00,180.00,10.00)  want (10.00,10.00,180.00,10.00)
+  OK   t3.alignSelfBaseline (throws as documented)
+=== u) alignContent (style field) ===
+  OK   u1.acStart0  got (10.00,10.00,90.00,40.00)  want (10.00,10.00,90.00,40.00)
+  OK   u1.acStart1  got (10.00,50.00,90.00,40.00)  want (10.00,50.00,90.00,40.00)
+  OK   u1.acStart2  got (10.00,90.00,90.00,40.00)  want (10.00,90.00,90.00,40.00)
+=== v) flexWrap nowrap (style field) ===
+  OK   v1.nowrap0  got (10.00,10.00,60.00,10.00)  want (10.00,10.00,60.00,10.00)
+  OK   v1.nowrap1  got (70.00,10.00,60.00,10.00)  want (70.00,10.00,60.00,10.00)
+  OK   v1.nowrap2  got (130.00,10.00,60.00,10.00)  want (130.00,10.00,60.00,10.00)
+  OK   v1.nowrap3  got (190.00,10.00,60.00,10.00)  want (190.00,10.00,60.00,10.00)
+=== w) margin (style field) ===
+  OK   w1.marginPoint  got (16.00,16.00,30.00,10.00)  want (16.00,16.00,30.00,10.00)
+  OK   w2.marginPercent  got (28.00,10.00,30.00,10.00)  want (28.00,10.00,30.00,10.00)
+  OK   w3.marginAuto (throws as documented)
+=== x) position / inset (style field) ===
+  OK   x1.relativeLeft  got (25.00,10.00,30.00,10.00)  want (25.00,10.00,30.00,10.00)
+  OK   x2.absoluteFlow  got (15.00,15.00,30.00,10.00)  want (15.00,15.00,30.00,10.00)
+  OK   x2.absoluteInset  got (30.00,20.00,40.00,20.00)  want (30.00,20.00,40.00,20.00)
+  OK   x3.positionStatic (throws as documented)
+=== y) overflow (style field) ===
+  OK   y1.overflowHidden  got (10.00,10.00,500.00,80.00)  want (10.00,10.00,500.00,80.00)
+  OK   y2.overflowScroll  got (10.00,10.00,500.00,80.00)  want (10.00,10.00,500.00,80.00)
+=== z) display refuses (AS3 gap) ===
+  OK   z1.displayFlex (throws as documented)
+  OK   z2.displayNone (throws as documented)
+=== aa) aspectRatio refuses (AS3 gap) ===
+  OK   aa1.aspectRatio (throws as documented)
+---- 133 checks, 0 failures ----
+RESULT: PASS

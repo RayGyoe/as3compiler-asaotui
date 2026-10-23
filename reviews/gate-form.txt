@@ -1,0 +1,8 @@
+[probe] building form
+[probe] built probes\widgets\form\Main.exe
+
+PROBE form: 41 checks, 3 failures
+  FAIL  program verdict: FAIL DIAG r2.checked=TRUE; radio binding not written: false; switch binding not written: false;
+  FAIL  pixel (18,56) want #FFFFFF got #2563eb
+  FAIL  pixel (38,124) want #D1D5DB got #ffffff
+RESULT: FAIL

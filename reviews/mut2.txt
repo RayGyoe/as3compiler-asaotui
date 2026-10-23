@@ -1,0 +1,7 @@
+[probe] building chip
+[probe] built probes\widgets\chip\Main.exe
+
+PROBE chip: 19 checks, 2 failures
+  FAIL  rect c2[y] want 56 got 57
+  FAIL  rect c3[y] want 92 got 94
+RESULT: FAIL

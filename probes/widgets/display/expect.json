@@ -1,0 +1,54 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/display/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "layout": "root: column, padding 20, gap 10, explicit [320,460]. Every child has an EXPLICIT size, so nothing shrinks/stretches. Children stack in order; each y = prevY + prevH + 10, starting at y = 20 (padding-top). x = 20 (padding-left) for all.",
+    "rects": {
+      "d1": "horizontal divider, explicit [280,1] -> [20,20,280,1]",
+      "d2": "first y = 20+1+10 = 31; vertical divider explicit [1,40] -> [20,31,1,40]",
+      "b1": "y = 31+40+10 = 81; badge [40,16] -> [20,81,40,16]",
+      "b2": "y = 81+16+10 = 107 -> [20,107,40,16]",
+      "b3": "y = 107+16+10 = 133 -> [20,133,40,16]",
+      "a1": "y = 133+16+10 = 159; avatar [48,48] -> [20,159,48,48]",
+      "a2": "y = 159+48+10 = 217 -> [20,217,48,48]",
+      "card": "y = 217+48+10 = 275; card [280,120] -> [20,275,280,120]",
+      "card-child": "child of the card, laid out by the engine inside the card's content box: border 1 + padding 12 on both axes, so x = 20+1+12 = 33, y = 275+1+12 = 288; explicit [100,30] -> [33,288,100,30]"
+    },
+    "points": {
+      "page": "(4,4) is the root's own background 0xFFFFFF",
+      "d1": "(100,20): the horizontal hairline is drawn 1px tall at the node's vertical centre; node y=20 h=1 => row 20. colour = style background 0x112233",
+      "d2": "(20,50): the vertical hairline is 1px wide at the node's horizontal centre; node x=20 w=1 => col 20, rows 31..71. colour 0x112233",
+      "b1": "(24,89): 4px inside the left edge at the pill's vertical centre (y = 81+8 = 89); radius 8 => the left cap's full width is covered at mid-height. tone neutral bg #E5E7EB. x=24 is left of the centred glyph",
+      "b2": "(24,115): b2 centre y = 107+8 = 115; tone info bg #DBEAFE",
+      "b3": "(24,141): b3 centre y = 133+8 = 141; tone danger bg #DC2626",
+      "a1": "(44,163): avatar centre is (20+24,159+24) = (44,183), radius 48/2 = 24. The sample is 4px below the top of the circle (distance 20 < 24 => solid, no antialias) and above the centred initials. tone neutral bg #9CA3AF",
+      "a2": "(44,221): centre (44,241); 4px below the top; tone info bg #2563EB",
+      "card": "(250,390): well inside the card surface, clear of the title (top-left), the child (top-left) and the rounded corners (radius 8). card background #F5F5F5"
+    },
+    "tone_tables": "Badge: neutral bg #E5E7EB/fg #374151, info bg #DBEAFE/fg #1D4ED8, danger bg #DC2626/fg #FFFFFF (BadgeWidget.paint). Avatar: neutral #9CA3AF, info #2563EB, danger #DC2626 (AvatarWidget.paint).",
+    "program_asserts": "Widgets.has for all four kinds; card-child lies strictly inside the card rect; the card's internal title TextField carries text 'Card title' and sits at the content origin (border 1 + padding 12 = 13,13); a settled tree re-solves layout 0 times over >=2 later frames."
+  },
+  "w": 320,
+  "h": 460,
+  "rects": {
+    "d1": [20, 20, 280, 1],
+    "d2": [20, 31, 1, 40],
+    "b1": [20, 81, 40, 16],
+    "b2": [20, 107, 40, 16],
+    "b3": [20, 133, 40, 16],
+    "a1": [20, 159, 48, 48],
+    "a2": [20, 217, 48, 48],
+    "card": [20, 275, 280, 120],
+    "card-child": [33, 288, 100, 30]
+  },
+  "points": [
+    { "x": 4, "y": 4, "rgb": "#FFFFFF" },
+    { "x": 100, "y": 20, "rgb": "#112233" },
+    { "x": 20, "y": 50, "rgb": "#112233" },
+    { "x": 24, "y": 89, "rgb": "#E5E7EB" },
+    { "x": 24, "y": 115, "rgb": "#DBEAFE" },
+    { "x": 24, "y": 141, "rgb": "#DC2626" },
+    { "x": 44, "y": 163, "rgb": "#9CA3AF" },
+    { "x": 44, "y": 221, "rgb": "#2563EB" },
+    { "x": 250, "y": 390, "rgb": "#F5F5F5" }
+  ]
+}

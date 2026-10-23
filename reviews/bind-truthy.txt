@@ -1,0 +1,44 @@
+--- the binding object itself --- = 
+bindTo(...) is Binding = true
+Binding.of(...) is Binding = true
+--- a FALSE field: what does get() hand back? --- = 
+Object-typed: is Boolean = true
+Object-typed: == null = false
+Object-typed: Boolean(v) = true
+Object-typed: String(v) = false
+Boolean-typed (coerced) = false
+Any-typed: is Boolean = true
+Any-typed: Boolean(v) = false
+Any-typed: String(v) = false
+--- the same, for a TRUE field --- = 
+Boolean(tb.get()) = true
+String(tb.get()) = true
+--- a Binding inside an object literal (the opts path) --- = 
+opts.selected is Binding = true
+opts.selected == null = false
+Boolean(opts.selected) = true
+opts.another is Binding = true
+--- which branch would radio.as take? --- = 
+radio.as branch = is-Binding branch (correct)
+=> n.selected would become = the field value
+--- write-back: does set() reach the owner? --- = 
+after b.set(true), model.flagFalse = true
+after b.set(false), model.flagFalse = false
+--- blast radius: which spellings hit a boxed Object slot? --- = 
+1 typed field        m.flagFalse = false
+2 typed dyn index    m["flagFalse"] = false
+3 Object-typed recv  dyn.flagFalse = false
+4 *-typed recv       dynStar.flagFalse = false
+5 object literal     lit.flag = false
+6 literal dyn index  lit["flag"] = false
+7 literal via *      litStar.flag = false
+8 array element      arr[0] = false
+9 array elem via *   (as *) = false
+10 Number 0          num = false
+11 empty String      str = false
+12 option bag        opts2.visible = false
+13 option bag        opts2["password"] = false
+14 if(opts2.tabEnabled), value false -> = no
+15 if(*-typed copy), value false -> = no
+16 if(Object-declared local from *), value false -> = no
+17 if(Boolean-declared local), value false -> = no

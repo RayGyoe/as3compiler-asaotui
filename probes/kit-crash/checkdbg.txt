@@ -1,0 +1,96 @@
+START
+PASS initial solve ran once
+PASS initial describe ran once
+PASS a rect
+PASS b rect
+PASS steady reflow did not describe
+PASS steady reflow did not reconcile
+PASS steady reflow did not re-solve layout
+PASS reorder reused node 'a' by key
+PASS reorder reused node 'b' by key
+PASS reorder moved 'a' down
+PASS reorder moved 'b' up
+PASS kind change rebuilt node 'a'
+PASS kind change produced a button
+PASS kind change left 'b' untouched
+PASS duplicate key throws
+PASS duplicate key message names the key
+PASS hover painted
+PASS hover did NOT re-solve layout
+PASS root rect
+PASS header rect
+PASS body rect
+PASS left rect
+PASS right rect
+START
+PASS initial solve ran once
+PASS initial describe ran once
+PASS a rect
+PASS b rect
+PASS steady reflow did not describe
+PASS steady reflow did not reconcile
+PASS steady reflow did not re-solve layout
+PASS reorder reused node 'a' by key
+PASS reorder reused node 'b' by key
+PASS reorder moved 'a' down
+PASS reorder moved 'b' up
+PASS kind change rebuilt node 'a'
+PASS kind change produced a button
+PASS kind change left 'b' untouched
+PASS duplicate key throws
+PASS duplicate key message names the key
+PASS hover painted
+PASS hover did NOT re-solve layout
+PASS root rect
+PASS header rect
+PASS body rect
+PASS left rect
+PASS right rect
+START
+PASS initial solve ran once
+PASS initial describe ran once
+PASS a rect
+PASS b rect
+PASS steady reflow did not describe
+PASS steady reflow did not reconcile
+PASS steady reflow did not re-solve layout
+PASS reorder reused node 'a' by key
+PASS reorder reused node 'b' by key
+PASS reorder moved 'a' down
+PASS reorder moved 'b' up
+PASS kind change rebuilt node 'a'
+PASS kind change produced a button
+PASS kind change left 'b' untouched
+PASS duplicate key throws
+PASS duplicate key message names the key
+PASS hover painted
+PASS hover did NOT re-solve layout
+PASS root rect
+PASS header rect
+PASS body rect
+PASS left rect
+PASS right rect
+START
+PASS initial solve ran once
+PASS initial describe ran once
+PASS a rect
+PASS b rect
+PASS steady reflow did not describe
+PASS steady reflow did not reconcile
+PASS steady reflow did not re-solve layout
+PASS reorder reused node 'a' by key
+PASS reorder reused node 'b' by key
+PASS reorder moved 'a' down
+PASS reorder moved 'b' up
+PASS kind change rebuilt node 'a'
+PASS kind change produced a button
+PASS kind change left 'b' untouched
+PASS duplicate key throws
+PASS duplicate key message names the key
+PASS hover painted
+PASS hover did NOT re-solve layout
+PASS root rect
+PASS header rect
+PASS body rect
+PASS left rect
+PASS right rect

@@ -1,0 +1,5 @@
+[probe] building nav
+[probe] built probes\widgets\nav\Main.exe
+
+PROBE nav: 41 checks, 0 failures
+RESULT: PASS

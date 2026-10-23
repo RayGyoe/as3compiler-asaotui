@@ -1,0 +1,35 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/form/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "layout": "root = column, padding 10, gap 10, size [240,280], background #F3F4F6. Every child has an explicit size, so x=10 (left padding) for all. y is the running column cursor: r1=10, r2=10+24+10=44, s1=44+24+10=78, s2=78+24+10=112, sl=112+24+10=146, p0=146+40+10=196, p1=196+32+10=238. Heights: radios/switches 24, slider 40, progress 32.",
+    "radio": "indicator is a 16pt circle centred at local (8, (h-16)/2+8) = (8,12) for h=24. shapeA = white interior + 2pt ring (ring colour blue when selected, grey otherwise); shapeB = inner dot (radius 4) only when selected. r1 is selected (dot), r2 is bound to radioSel=false (no dot). Local sample (8,12):",
+    "switch": "track = 36x20 rounded rect at local y=(h-20)/2=2; knob = white circle radius 8 at local y=12, centre x=26 when on and x=10 when off. Track colour green #34D399 when on, grey #D1D5DB when off. s1 on: sample local (8,12) is left of the knob (18..34) -> green. s2 off: sample local (28,12) is right of the knob (2..18) -> grey.",
+    "slider": "sl = 200x40, value bound to sliderVal=0.5. track = 8pt rounded rect at local y = h-12 = 28, full width, colour #E5E7EB; filled portion width = w*value = 100, colour #2563EB; knob = white circle radius 7 at local (100, 32). Samples: (50,32) inside the fill -> blue; (100,32) knob centre -> white; (150,32) in the empty track -> grey.",
+    "progress": "p0 = 200x32 value 0, p1 = 200x32 value 1 (clamped). track at local y = h-12 = 20, colour #E5E7EB; fill width = w*value. Sample local (100,24): p0 (fill 0) -> grey track, p1 (fill 200) -> blue.",
+    "bg": "(4,4) is inside the root's 10pt padding, so it is the page background #F3F4F6.",
+    "absolute": "absX = 10 for every child (root padding-left). absY from layout. Local sample coordinates are added to absX/absY: r1 (8,12)->(18,22); r2 (8,12)->(18,56); s1 (8,12)->(18,90); s2 (28,12)->(38,124); slider (50,32)->(60,178), (100,32)->(110,178), (150,32)->(160,178); p0 (100,24)->(110,220); p1 (100,24)->(110,262)."
+  },
+  "w": 240,
+  "h": 280,
+  "rects": {
+    "r1": [10, 10, 200, 24],
+    "r2": [10, 44, 200, 24],
+    "s1": [10, 78, 200, 24],
+    "s2": [10, 112, 200, 24],
+    "sl": [10, 146, 200, 40],
+    "p0": [10, 196, 200, 32],
+    "p1": [10, 238, 200, 32]
+  },
+  "points": [
+    { "x": 18, "y": 22, "rgb": "#2563EB" },
+    { "x": 18, "y": 56, "rgb": "#FFFFFF" },
+    { "x": 18, "y": 90, "rgb": "#34D399" },
+    { "x": 38, "y": 124, "rgb": "#D1D5DB" },
+    { "x": 60, "y": 178, "rgb": "#2563EB" },
+    { "x": 110, "y": 178, "rgb": "#FFFFFF" },
+    { "x": 160, "y": 178, "rgb": "#E5E7EB" },
+    { "x": 110, "y": 220, "rgb": "#E5E7EB" },
+    { "x": 110, "y": 262, "rgb": "#2563EB" },
+    { "x": 4, "y": 4, "rgb": "#F3F4F6" }
+  ]
+}

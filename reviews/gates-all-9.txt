@@ -1,0 +1,21 @@
+[PASS] probe widgets/chip (19 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/form (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/display (48 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/nav (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/anim (14 checks, 0 failures)  (exit 0)
+[PASS] probe redraw (14 checks, 0 failures)  (exit 0)
+[PASS] layout-check text half (133 checks, 0 failures)  (exit 0)
+[PASS] ui-demo CheckUi (27 checks, 0 failures)  (exit 0)
+[PASS] layout-check visual half (12 checks, 0 failures)  (exit 0)
+[PASS] gallery tour: 4 pages, widget-driven switch, hand-computed rects (PASS)  (exit 0)
+[PASS] G13 air-app reach: closure keeps 5/5, both faces build+run (PASS)  (exit 0)
+[PASS] login demo: --air-app descriptor, hand-derived rects, HiDPI PNG (PASS)  (exit 0)
+[PASS] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (PASS)  (exit 0)
+[PASS] style scan: no Object-typed local is used as a condition (0 found)  (exit 0)
+[PASS] G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (1/5 hashes)  (exit 0)
+[PASS] G14 array-in-Object-slot identity (26 cases, AOT vs AIR) -- deviations 1, 3, 12, 15, 16, 19, 21, 26  (exit 0)
+[PASS] Vector vs Array throughput, both runtimes (AOT ratio 0.18x)  (exit 0)
+[PASS] fingerprint porcelain parsing: no dropped records (PASS)  (exit 0)
+
+==== 18/18 gates PASS ====
+RESULT: PASS

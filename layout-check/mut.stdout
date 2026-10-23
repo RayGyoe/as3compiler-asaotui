@@ -1,0 +1,27 @@
+== as-aot: AS3 subset -> C -> native ==
+[1/4] read        ../asaotui/layout-check/CheckMain.as, ../asaotui/seam/asaot/ui/LayoutConstants.as, ../asaotui/seam/asaot/ui/LayoutEngine.as, ../asaotui/seam/asaot/ui/as3/As3LayoutNode.as, ../asaotui/seam/asaot/ui/as3/As3LayoutEngine.as
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+[4/4] compile     clang -O2 -ffp-contract=off -o ../asaotui/layout-check/CheckMain.exe ../asaotui/layout-check/CheckMain.c -I ./vendor/curl/include -L ./vendor/curl/lib/windows-x64 -l zlib
+Build successful: ../asaotui/layout-check/CheckMain.exe
+Generated C kept at: ../asaotui/layout-check/CheckMain.c
+--- output ---
+=== a) root w=100 h=50 ===
+  OK   a.root  got (0.00,0.00,100.00,50.00)  want (0.00,0.00,100.00,50.00)
+=== b) column + padding(16) + row-gap(10), 3 children 100x40 ===
+  OK   b.root  got (0.00,0.00,200.00,300.00)  want (0.00,0.00,200.00,300.00)
+  OK   b.child0  got (16.00,16.00,100.00,40.00)  want (16.00,16.00,100.00,40.00)
+  FAIL b.child1  got (16.00,66.00,100.00,40.00)  want (16.00,67.00,100.00,40.00)
+  OK   b.child2  got (16.00,116.00,100.00,40.00)  want (16.00,116.00,100.00,40.00)
+=== c) row + grow 1:2:3, basis 0, root 300x100 ===
+  OK   c.child0  got (0.00,0.00,50.00,100.00)  want (0.00,0.00,50.00,100.00)
+  OK   c.child1  got (50.00,0.00,100.00,100.00)  want (50.00,0.00,100.00,100.00)
+  OK   c.child2  got (150.00,0.00,150.00,100.00)  want (150.00,0.00,150.00,100.00)
+=== d) percent vs parent padding(20)+border(10) ===
+  OK   d.root  got (0.00,0.00,200.00,100.00)  want (0.00,0.00,200.00,100.00)
+  OK   d.child  got (30.00,30.00,70.00,20.00)  want (30.00,30.00,70.00,20.00)
+=== e1) min-width wins over shrink ===
+  OK   e1.child  got (0.00,0.00,150.00,50.00)  want (0.00,0.00,150.00,50.00)
+=== e2) max-width wins over grow ===
+  OK   e2.child  got (0.00,0.00,150.00,50.00)  want (0.00,0.00,150.00,50.00)
+---- 12 checks, 1 failures ----

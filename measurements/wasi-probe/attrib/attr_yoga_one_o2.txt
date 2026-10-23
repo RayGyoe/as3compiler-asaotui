@@ -1,0 +1,45 @@
+wasm: matrix/yoga_one_o2.wasm
+sum(defined symbol sizes) = 30426 B (29.7 KiB)
+--- by archive ---
+  libc.a                                23304 B     22.8 KiB  76.6%
+  libyoga.a                              3812 B      3.7 KiB  12.5%
+  libc++abi.a                             275 B      0.3 KiB  0.9%
+  (unmatched: crt/wasm glue/data)        3035 B      3.0 KiB  10.0%
+--- top members ---
+  libc.a/vfprintf.c.obj                                 9945 B      9.7 KiB
+  libc.a/dlmalloc.c.obj                                 8159 B      8.0 KiB
+  libyoga.a/yoga_YGNode.cpp.o                           1679 B      1.6 KiB
+  libyoga.a/yoga_node_Node.cpp.o                        1573 B      1.5 KiB
+  libc.a/fwrite.c.obj                                    602 B      0.6 KiB
+  libc.a/exit.c.obj                                      524 B      0.5 KiB
+  libc.a/memchr.c.obj                                    376 B      0.4 KiB
+  libc.a/wcrtomb.c.obj                                   347 B      0.3 KiB
+  libc.a/__stdio_write.c.obj                             335 B      0.3 KiB
+  libc.a/__lockfile.c.obj                                324 B      0.3 KiB
+  libc.a/strlen.c.obj                                    209 B      0.2 KiB
+  libc.a/__wait.c.obj                                    194 B      0.2 KiB
+  libc.a/__init_tls.c.obj                                187 B      0.2 KiB
+  libc.a/puts.c.obj                                      185 B      0.2 KiB
+  libc.a/__overflow.c.obj                                181 B      0.2 KiB
+  libc.a/futex.c.obj                                     177 B      0.2 KiB
+  libc.a/scalbn.c.obj                                    176 B      0.2 KiB
+  libyoga.a/yoga_debug_Log.cpp.o                         152 B      0.1 KiB
+  libc.a/frexp.c.obj                                     145 B      0.1 KiB
+  libyoga.a/yoga_config_Config.cpp.o                     134 B      0.1 KiB
+  libc.a/clock_gettime.c.obj                             133 B      0.1 KiB
+  libc.a/writev.c.obj                                    121 B      0.1 KiB
+  libc++abi.a/stdlib_new_delete.cpp.o                    111 B      0.1 KiB
+  libc.a/__wasilibc_real.c.obj                           110 B      0.1 KiB
+  libyoga.a/yoga_YGConfig.cpp.o                          105 B      0.1 KiB
+  libc.a/isatty.c.obj                                    103 B      0.1 KiB
+  libc.a/lseek.c.obj                                     101 B      0.1 KiB
+  libc.a/sbrk.c.obj                                      100 B      0.1 KiB
+  libyoga.a/yoga_event_event.cpp.o                        99 B      0.1 KiB
+  libc++abi.a/abort_message.cpp.o                         95 B      0.1 KiB
+  libc.a/__towrite.c.obj                                  93 B      0.1 KiB
+  libc.a/strerror.c.obj                                   83 B      0.1 KiB
+  libyoga.a/yoga_debug_AssertFatal.cpp.o                  70 B      0.1 KiB
+  libc.a/fputc.c.obj                                      69 B      0.1 KiB
+--- unmatched total by prefix ---
+  linker data/rodata                 2853 B  2.8 KiB
+  other                               182 B  0.2 KiB

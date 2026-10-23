@@ -1,0 +1,51 @@
+== RAW (no strip) : from ../wasip1-size.log ==
+floor_c            65828     64.3
+floor_cpp          65830     64.3
+floor_printf      122243    119.4
+yoga_one          244457    238.7
+yoga_min          329018    321.3
+seam_test         351879    343.6
+
+== STRIPPED (-Wl,--strip-debug, project default) ==
+floor_c             5358      5.2
+floor_cpp           5360      5.2
+floor_printf       19966     19.5
+yoga_one_o2        33590     32.8
+yoga_min_o2       118865    116.1
+seam_test         140008    136.7
+
+== DELTA vs floor_cpp (5360 B) ==
+yoga_one_o2    raw_delta=   178627 (174.4)  strip_delta=    28230 (27.6)
+yoga_min_o2    raw_delta=   263188 (257.0)  strip_delta=   113505 (110.8)
+seam_test      raw_delta=   286049 (
+== ENGINE (yoga_min - yoga_one) ==
+raw      : 84561 (82.6 KiB)
+stripped : 85275 (83.3 KiB)
+LTO      : 51286 (50.1 KiB)
+
+== FLOORS (stripped) ==
+floor_c              5358      5.2
+floor_cpp            5360      5.2
+floor_printf        19966     19.5
+floor_vfprintf      19219     18.8
+floor_new           19179     18.7
+floor_terminate     28876     28.2
+floor_abort          9720      9.5
+floor_yoga_deps     29363     28.7
+
+== MITIGATION MATRIX (yoga_min, stripped) ==
+yoga_min_o2              118865    116.1 KiB   delta= 113505 (110.8)
+yoga_min_oz              115237    112.5 KiB   delta= 109877 (107.3)
+yoga_min_o2_nrtti        118871    116.1 KiB   delta= 113511 (110.9)
+yoga_min_oz_nrtti        115243    112.5 KiB   delta= 109883 (107.3)
+yoga_min_o2_nnd          116024    113.3 KiB   delta= 110664 (108.1)
+yoga_min_oz_nnd          116262    113.5 KiB   delta= 110902 (108.3)
+yoga_min_oz_lto           83464     81.5 KiB   delta=  78104 (76.3)
+yoga_min_o2_lto          112506    109.9 KiB   delta= 107146 (104.6)
+yoga_min_oz_nofs         115242    112.5 KiB   delta= 109882 (107.3)
+yoga_min_nolog_o2        117716    115.0 KiB   delta= 112356 (109.7)
+yoga_min_nolog_oz_lto     81922     80.0 KiB   delta=  76562 (74.8)
+
+== SEAM TEST ==
+o2 stripped    140008 (136.7 KiB)  delta=134648 (131.5)
+LTO             92209 (90.0 KiB)  delta=86849 (84.8)

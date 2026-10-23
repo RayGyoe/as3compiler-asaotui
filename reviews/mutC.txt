@@ -1,0 +1,6 @@
+[probe] building form
+[probe] built probes\widgets\form\Main.exe
+
+PROBE form: 41 checks, 1 failures
+  FAIL  pixel (110,262) want #2563EB got #2563ec
+RESULT: FAIL

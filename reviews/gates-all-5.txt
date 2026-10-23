@@ -1,0 +1,17 @@
+[PASS] probe widgets/chip (19 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/form (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/display (48 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/nav (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/anim (14 checks, 0 failures)  (exit 0)
+[PASS] probe redraw (14 checks, 0 failures)  (exit 0)
+[PASS] layout-check text half (133 checks, 0 failures)  (exit 0)
+[PASS] ui-demo CheckUi (23 checks, 0 failures)  (exit 0)
+[PASS] layout-check visual half (12 checks, 0 failures)  (exit 0)
+[PASS] gallery tour: 4 pages, widget-driven switch, hand-computed rects (PASS)  (exit 0)
+[PASS] G13 air-app reach: closure drops, --all-sources rescues (PASS)  (exit 0)
+[PASS] login demo: --air-app descriptor, hand-derived rects, HiDPI PNG (PASS)  (exit 0)
+[PASS] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (PASS)  (exit 0)
+[PASS] gap scan: no Boolean(<identifier>) call sites (0 found)  (exit 0)
+
+==== 14/14 gates PASS ====
+RESULT: PASS

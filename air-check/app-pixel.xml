@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  AIR descriptor for the pixel-dump probe (PixelDump.as -> pixeldump.swf).
+  Run with:  node run-adl.cjs app-pixel.xml
+  Same shape as app-air.xml on purpose: `content` names the SWF, not the class
+  (naming the class also works for a class-form root, but the SWF form is what
+  app-air.xml already proved on this machine).
+  AIRSDK_HOME points at the SDK root; no per-machine path is hardcoded here.
+-->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.aircheck.pixeldump</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>asaotui-pixeldump</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>pixeldump.swf</content>
+        <width>200</width>
+        <height>120</height>
+        <visible>true</visible>
+        <resizable>false</resizable>
+        
+        <renderMode>direct</renderMode>
+        <depthAndStencil>true</depthAndStencil>
+        <requestedDisplayResolution>high</requestedDisplayResolution> 
+    </initialWindow>
+</application>

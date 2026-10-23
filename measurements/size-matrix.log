@@ -1,0 +1,231 @@
+==== BUILD (.o totals + .a) ====
+config=o2-nofs
+objects=19
+obj_total_bytes=409551
+a_bytes=461086
+config=o2-fs
+objects=19
+obj_total_bytes=458226
+a_bytes=509762
+config=os-fs
+objects=19
+obj_total_bytes=444964
+a_bytes=511876
+config=oz-fs
+objects=19
+obj_total_bytes=562303
+a_bytes=667802
+config=o2-fs-noexc
+objects=19
+obj_total_bytes=367224
+a_bytes=415064
+config=oz-fs-noexc
+objects=19
+obj_total_bytes=499063
+a_bytes=603596
+
+config|opt|obj_total_B|archive_B|n_obj
+o2-nofs|-O2|409551|461086|19
+o2-fs|-O2|458226|509762|19
+os-fs|-Os|444964|511876|19
+oz-fs|-Oz|562303|667802|19
+o2-fs-noexc|-O2|367224|415064|19
+oz-fs-noexc|-Oz|499063|603596|19
+
+==== LINK (final .exe bytes; floor = printf program, no Yoga) ====
+floor_C_driver|120832
+floor_Cpp_driver|120832
+min_o2-nofs_gc|297984|delta=177152
+min_o2-fs_gc|263168|delta=142336
+min_os-fs_gc|227328|delta=106496
+min_oz-fs_gc|224768|delta=103936
+min_o2-fs-noexc_gc|247808|delta=126976
+min_oz-fs-noexc_gc|215040|delta=94208
+min_o2-fs_nogc|263168|delta=142336
+
+-- DCE linearity (cfg oz-fs-noexc, /OPT:REF) --
+yoga_one|164864|delta=44032
+yoga_min|215040|delta=94208
+yoga_many|217600|delta=96768
+
+==== ARTIFACT SIZE LIST (.o per config) ====
+-- o2-fs --
+  106461  yoga_algorithm_CalculateLayout.cpp.o
+   92046  yoga_YGNodeStyle.cpp.o
+   58136  yoga_node_Node.cpp.o
+   46844  yoga_YGNode.cpp.o
+   35621  yoga_algorithm_AbsoluteLayout.cpp.o
+   32453  yoga_algorithm_FlexLine.cpp.o
+   16471  yoga_YGEnums.cpp.o
+   13312  yoga_algorithm_Baseline.cpp.o
+   11854  yoga_debug_AssertFatal.cpp.o
+    7678  yoga_config_Config.cpp.o
+    6779  yoga_algorithm_PixelGrid.cpp.o
+    5898  yoga_YGConfig.cpp.o
+    5397  yoga_debug_Log.cpp.o
+    5279  yoga_event_event.cpp.o
+    4556  yoga_node_LayoutResults.cpp.o
+    3907  yoga_YGNodeLayout.cpp.o
+    2961  yoga_algorithm_Cache.cpp.o
+    1384  yoga_YGValue.cpp.o
+    1189  yoga_YGPixelGrid.cpp.o
+-- o2-fs-noexc --
+   86976  yoga_algorithm_CalculateLayout.cpp.o
+   78316  yoga_YGNodeStyle.cpp.o
+   45825  yoga_node_Node.cpp.o
+   32642  yoga_algorithm_AbsoluteLayout.cpp.o
+   29064  yoga_YGNode.cpp.o
+   22728  yoga_algorithm_FlexLine.cpp.o
+   16471  yoga_YGEnums.cpp.o
+   10072  yoga_algorithm_Baseline.cpp.o
+    7051  yoga_config_Config.cpp.o
+    6779  yoga_algorithm_PixelGrid.cpp.o
+    5412  yoga_YGConfig.cpp.o
+    5279  yoga_event_event.cpp.o
+    4556  yoga_node_LayoutResults.cpp.o
+    3907  yoga_YGNodeLayout.cpp.o
+    3664  yoga_debug_Log.cpp.o
+    2961  yoga_algorithm_Cache.cpp.o
+    2948  yoga_debug_AssertFatal.cpp.o
+    1384  yoga_YGValue.cpp.o
+    1189  yoga_YGPixelGrid.cpp.o
+-- o2-fs-noexc-noeh --
+   87460  yoga_algorithm_CalculateLayout.cpp.o
+   76790  yoga_YGNodeStyle.cpp.o
+   44299  yoga_node_Node.cpp.o
+   33126  yoga_algorithm_AbsoluteLayout.cpp.o
+   29548  yoga_YGNode.cpp.o
+   21201  yoga_algorithm_FlexLine.cpp.o
+   16471  yoga_YGEnums.cpp.o
+   10557  yoga_algorithm_Baseline.cpp.o
+    7051  yoga_config_Config.cpp.o
+    6779  yoga_algorithm_PixelGrid.cpp.o
+    5412  yoga_YGConfig.cpp.o
+    5279  yoga_event_event.cpp.o
+    4556  yoga_node_LayoutResults.cpp.o
+    3907  yoga_YGNodeLayout.cpp.o
+    3664  yoga_debug_Log.cpp.o
+    3276  yoga_debug_AssertFatal.cpp.o
+    2961  yoga_algorithm_Cache.cpp.o
+    1384  yoga_YGValue.cpp.o
+    1189  yoga_YGPixelGrid.cpp.o
+-- o2-nofs --
+  101290  yoga_algorithm_CalculateLayout.cpp.o
+   74162  yoga_YGNodeStyle.cpp.o
+   51192  yoga_node_Node.cpp.o
+   41878  yoga_YGNode.cpp.o
+   33444  yoga_algorithm_AbsoluteLayout.cpp.o
+   31855  yoga_algorithm_FlexLine.cpp.o
+   13651  yoga_YGEnums.cpp.o
+   12921  yoga_algorithm_Baseline.cpp.o
+   11044  yoga_debug_AssertFatal.cpp.o
+    6482  yoga_algorithm_PixelGrid.cpp.o
+    5649  yoga_config_Config.cpp.o
+    4597  yoga_YGConfig.cpp.o
+    4596  yoga_debug_Log.cpp.o
+    4480  yoga_node_LayoutResults.cpp.o
+    4445  yoga_event_event.cpp.o
+    2885  yoga_algorithm_Cache.cpp.o
+    2711  yoga_YGNodeLayout.cpp.o
+    1156  yoga_YGValue.cpp.o
+    1113  yoga_YGPixelGrid.cpp.o
+-- os-fs --
+   92606  yoga_algorithm_CalculateLayout.cpp.o
+   82819  yoga_YGNodeStyle.cpp.o
+   56481  yoga_node_Node.cpp.o
+   48679  yoga_YGNode.cpp.o
+   39933  yoga_algorithm_AbsoluteLayout.cpp.o
+   38760  yoga_algorithm_FlexLine.cpp.o
+   16369  yoga_YGEnums.cpp.o
+   14344  yoga_algorithm_Baseline.cpp.o
+   12155  yoga_debug_AssertFatal.cpp.o
+    7662  yoga_config_Config.cpp.o
+    6490  yoga_event_event.cpp.o
+    5881  yoga_YGConfig.cpp.o
+    5612  yoga_debug_Log.cpp.o
+    4789  yoga_algorithm_PixelGrid.cpp.o
+    3900  yoga_YGNodeLayout.cpp.o
+    3020  yoga_node_LayoutResults.cpp.o
+    2891  yoga_algorithm_Cache.cpp.o
+    1384  yoga_YGValue.cpp.o
+    1189  yoga_YGPixelGrid.cpp.o
+-- oz-fs --
+  112187  yoga_YGNodeStyle.cpp.o
+  111084  yoga_algorithm_CalculateLayout.cpp.o
+   67571  yoga_node_Node.cpp.o
+   61184  yoga_algorithm_AbsoluteLayout.cpp.o
+   58933  yoga_YGNode.cpp.o
+   52093  yoga_algorithm_FlexLine.cpp.o
+   26054  yoga_algorithm_Baseline.cpp.o
+   16364  yoga_YGEnums.cpp.o
+   10604  yoga_debug_AssertFatal.cpp.o
+    8525  yoga_config_Config.cpp.o
+    7322  yoga_event_event.cpp.o
+    6414  yoga_debug_Log.cpp.o
+    6076  yoga_YGConfig.cpp.o
+    4758  yoga_algorithm_PixelGrid.cpp.o
+    3900  yoga_YGNodeLayout.cpp.o
+    3430  yoga_algorithm_Cache.cpp.o
+    3231  yoga_node_LayoutResults.cpp.o
+    1384  yoga_YGValue.cpp.o
+    1189  yoga_YGPixelGrid.cpp.o
+-- oz-fs-noexc --
+  105085  yoga_YGNodeStyle.cpp.o
+   94806  yoga_algorithm_CalculateLayout.cpp.o
+   65272  yoga_node_Node.cpp.o
+   56597  yoga_algorithm_AbsoluteLayout.cpp.o
+   49064  yoga_YGNode.cpp.o
+   44267  yoga_algorithm_FlexLine.cpp.o
+   21216  yoga_algorithm_Baseline.cpp.o
+   16364  yoga_YGEnums.cpp.o
+    7900  yoga_config_Config.cpp.o
+    7322  yoga_event_event.cpp.o
+    5602  yoga_YGConfig.cpp.o
+    4758  yoga_algorithm_PixelGrid.cpp.o
+    4728  yoga_debug_Log.cpp.o
+    3900  yoga_YGNodeLayout.cpp.o
+    3430  yoga_algorithm_Cache.cpp.o
+    3231  yoga_node_LayoutResults.cpp.o
+    2948  yoga_debug_AssertFatal.cpp.o
+    1384  yoga_YGValue.cpp.o
+    1189  yoga_YGPixelGrid.cpp.o
+-- oz-fs-noexc-noeh --
+  103708  yoga_YGNodeStyle.cpp.o
+   93429  yoga_algorithm_CalculateLayout.cpp.o
+   63895  yoga_node_Node.cpp.o
+   55220  yoga_algorithm_AbsoluteLayout.cpp.o
+   47687  yoga_YGNode.cpp.o
+   42890  yoga_algorithm_FlexLine.cpp.o
+   19839  yoga_algorithm_Baseline.cpp.o
+   16364  yoga_YGEnums.cpp.o
+    7900  yoga_config_Config.cpp.o
+    7322  yoga_event_event.cpp.o
+    5602  yoga_YGConfig.cpp.o
+    4758  yoga_algorithm_PixelGrid.cpp.o
+    4728  yoga_debug_Log.cpp.o
+    3900  yoga_YGNodeLayout.cpp.o
+    3430  yoga_algorithm_Cache.cpp.o
+    3276  yoga_debug_AssertFatal.cpp.o
+    3231  yoga_node_LayoutResults.cpp.o
+    1384  yoga_YGValue.cpp.o
+    1189  yoga_YGPixelGrid.cpp.o
+-- wasm-obj --
+   62375  yoga_algorithm_CalculateLayout.cpp.o
+   47526  yoga_YGNodeStyle.cpp.o
+   22235  yoga_node_Node.cpp.o
+   20695  yoga_algorithm_AbsoluteLayout.cpp.o
+   16733  yoga_YGNode.cpp.o
+   10301  yoga_algorithm_FlexLine.cpp.o
+    7305  yoga_YGEnums.cpp.o
+    3938  yoga_algorithm_Baseline.cpp.o
+    3238  yoga_config_Config.cpp.o
+    2999  yoga_algorithm_PixelGrid.cpp.o
+    2784  yoga_node_LayoutResults.cpp.o
+    2487  yoga_event_event.cpp.o
+    2213  yoga_YGConfig.cpp.o
+    1446  yoga_YGNodeLayout.cpp.o
+    1392  yoga_algorithm_Cache.cpp.o
+    1321  yoga_debug_Log.cpp.o
+    1307  yoga_debug_AssertFatal.cpp.o
+     513  yoga_YGValue.cpp.o
+     420  yoga_YGPixelGrid.cpp.o

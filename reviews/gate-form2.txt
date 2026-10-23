@@ -1,0 +1,5 @@
+[probe] building form
+[probe] built probes\widgets\form\Main.exe
+
+PROBE form: 41 checks, 0 failures
+RESULT: PASS

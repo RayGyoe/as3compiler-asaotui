@@ -1,0 +1,26 @@
+id=1 Object slot <- [1,2,3]  (is Array)=true
+id=2 Object slot <- [1,2,3]  (is Object)=true
+id=3 Object slot <- [1,2,3]  (is Marker)=false
+id=4 Object slot <- 3        (is Number)=true
+id=5 Object slot <- 3        (is Marker)=false
+id=6 Object slot <- "x"      (is String)=true
+id=7 Object slot <- "x"      (is Marker)=false
+id=8 Object slot <- true     (is Boolean)=true
+id=9 Object slot <- true     (is Marker)=false
+id=10 Object slot <- Marker   (is Marker)=true
+id=11 * slot <- [1,2,3]       (is Array)=true
+id=12 * slot <- [1,2,3]       (is Marker)=false
+id=13 Array slot <- [1,2,3]   (is Array)=true
+id=14 Array slot <- [1,2,3]   (is Marker)=false
+id=15 Object slot <- [1,2,3]  (as Array != null)=true
+id=16 Object slot <- [1,2,3]  (length)=3
+id=17 Object slot <- 3        (String)=3
+id=18 Object slot <- [1,2,3]  (typeof)=object
+id=19 guard(Object slot <- [1,2,3])=array-guard
+id=20 (dyn read).size is Array=true
+id=21 guard(dyn read)= array-guard
+id=22 (dyn read) as Array -> length=2
+id=23 Object slot <- [1,2,3]  (is Number)=false
+id=24 Object slot <- [1,2,3]  (is String)=false
+id=25 Object slot <- [1,2,3]  (is Boolean)=false
+id=26 guard, array-check FIRST=array-guard

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- G14 minimal repro: the reference arm. Same two questions as ReproAot.as,
+     answered by real AIR 51.4.1. -->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.probe.g14minimal</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>g14-minimal</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>ReproAir.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>

@@ -1,0 +1,56 @@
+mutator: Main.as  ca52fdedf4ca2210 -> 307606db80b69d2b
+mutator: added `var leftover:Leaf;` to Main -- Leaf now enters via the MAIN loop
+
+== closure dump (tools/reach-dump.cjs) ==
+     main=p.Main  kept 5/5  edges 3
+     roots: p.Main
+     KEPT (5):
+       p/Base.as
+       p/Fac.as
+       p/Helper.as
+       p/Leaf.as
+       p/Main.as
+     DROPPED (0):
+  ok   closure dump exits 0
+  FAIL closure keeps 3/5 files (expect 3: Main, Fac, Leaf)
+  FAIL closure DROPS p/Base.as and p/Helper.as (the defect)
+== arm A skipped (ASC_NO_ARM_A=1) ==
+== arm B: --all-sources ==
+     exit 0  
+       368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+           |                                                       ^
+     C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+       358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+           |                                               ^
+     1 warning generated.
+  ok   arm B builds and links (exit 0)
+  ok   arm B emitted ReachFreeFn.exe
+     run: exit 0  ReachFreeFn rendered
+  ok   arm B runs to exit 0
+  ok   arm B printed its render line
+
+==== G13 PROBE: FAIL (2) ====
+  closure keeps 3/5 files (expect 3: Main, Fac, Leaf)
+main=p.Main  kept 5/5  edges 3
+roots: p.Main
+KEPT (5):
+  p/Base.as
+  p/Fac.as
+  p/Helper.as
+  p/Leaf.as
+  p/Main.as
+DROPPED (0):
+  closure DROPS p/Base.as and p/Helper.as (the defect)
+main=p.Main  kept 5/5  edges 3
+roots: p.Main
+KEPT (5):
+  p/Base.as
+  p/Fac.as
+  p/Helper.as
+  p/Leaf.as
+  p/Main.as
+DROPPED (0):
+
+
+==== MUTATION: PASS -- the mutant makes the probe go red (probe has teeth) ====
+mutator: Main.as restored  ca52fdedf4ca2210  (identical)

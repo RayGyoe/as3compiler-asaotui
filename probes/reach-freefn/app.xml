@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Minimal reproduction for compiler-gaps.md G13: the --air-app reachability
+     closure does not EXPAND a class that is first discovered by the forced-file
+     pass (files carrying free functions / module statements). Build it with:
+
+       node src/index.ts --air-app <this dir>/app.xml --main-class p.Main
+
+     See README.md in this directory for the full story. -->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+  <id>probe.reach.freefn</id>
+  <versionNumber>0.0.1</versionNumber>
+  <filename>ReachFreeFn</filename>
+  <architecture>64</architecture>
+  <initialWindow>
+    <content>ReachFreeFn.swf</content>
+    <title>reach free-fn probe</title>
+    <visible>false</visible>
+    <width>320</width>
+    <height>200</height>
+  </initialWindow>
+</application>

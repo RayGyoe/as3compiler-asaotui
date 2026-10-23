@@ -1,0 +1,3 @@
+is Array  = true     (AS3 rule: true)
+is Marker = false     (AS3 rule: false)
+REACHED THE END (no crash)

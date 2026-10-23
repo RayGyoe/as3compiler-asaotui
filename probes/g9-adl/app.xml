@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- G9 probe: does real AIR read a boxed false through an Object slot as false? -->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.probe.g9</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>g9-probe</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>g9air.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>

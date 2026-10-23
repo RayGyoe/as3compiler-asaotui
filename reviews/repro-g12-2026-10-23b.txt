@@ -1,0 +1,27 @@
+[repro] building array-scope (the whole kit is compiled in, as in a real app)
+[repro] built probes\array-scope\Main.exe
+---- program log ----
+boot: mounted
+boot: scheduled tick; handing the thread to the window loop now
+step 1 enter, frames=1 gcHeap?
+step 1 OK aInts.length=1
+step 2 enter, frames=3 gcHeap?
+step 2 OK aInts.length=2 [0]=11 [1]=22
+step 3 enter, frames=5 gcHeap?
+step 3 allocated Bag
+step 3 OK aObjs.length=1
+step 4 enter, frames=7 gcHeap?
+step 4 OK read back aObjs[0].v=7
+step 5 enter, frames=9 gcHeap?
+step 5 OK local array length=1
+step 6 enter, frames=11 gcHeap?
+step 6 OK aInts=2 aObjs=1
+step 7 enter, frames=13 gcHeap?
+churn 7 enter, frames=13
+churn 7 allocated a 134400-byte ByteArray
+step 8 enter, frames=15 gcHeap?
+churn 8 enter, frames=15
+---- verdict ----
+process alive when observed: true
+done file: (none)
+REPRODUCED (runtime): the log stops at "churn 8 enter, frames=15" -- whatever that step does in the source killed the process.

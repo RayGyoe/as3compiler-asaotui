@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Minimal AIR application descriptor for the air-check smoke test.
+  Point the AIR SDK at this with:  adl app.xml
+  AIRSDK_HOME (per AGENTS.md) points at the SDK root; nothing here hardcodes a
+  per-machine absolute path.
+-->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.aircheck</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>asaotui-aircheck</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>hello.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>

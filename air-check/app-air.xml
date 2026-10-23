@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  AIR descriptor for the library-on-AIR smoke test (AirMain.as -> aircheck.swf).
+  Run with:  node run-adl.cjs app-air.xml
+  AIRSDK_HOME points at the SDK root; no per-machine path is hardcoded here.
+-->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.aircheck.library</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>asaotui-aircheck</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>aircheck.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>

@@ -1,0 +1,63 @@
+MUTATION M1 -- UiNode.markLayoutDirty() sets the bits on THIS node only (no ancestor climb)
+
+Command : cd asaotui/ui-demo && ASC_NO_OPEN=1 node run-gallery.cjs
+Verdict : gallery.done = FAIL colA is at x=0 w=0, expected x=24 w=320; colB is at x=0 w=0, expected x=356 w=320;
+Expect  : FAIL -- the engine nodes exist (engineNodeNull=0) but were never solved,
+          because the root never carried M_MEASURE|M_ARRANGE. Exactly the defect report.
+
+--- ui-demo/gallery.txt (excerpt) ---
+
+== page 0 (Home) ==
+  nodes=14 engineNodeNull=0 zeroRect=8 detachedBacking=0
+    zeroRect loginCard (card) depth=2 rect=0,0,0,0
+    zeroRect loginTitle (text) depth=3 rect=0,0,0,0
+    zeroRect account (textInput) depth=3 rect=0,0,0,0
+    zeroRect password (textInput) depth=3 rect=0,0,0,0
+    zeroRect remember (checkbox) depth=3 rect=0,0,0,0
+    zeroRect signin (button) depth=3 rect=0,0,0,0
+    zeroRect homeNote (text) depth=2 rect=0,0,0,0
+    zeroRect homeNote2 (text) depth=2 rect=0,0,0,0
+  layout: solves=1 root.engineKids=5 body.engineKids=3 bodyParentIsRoot=true uiKidsBody=3
+== page 1 (Widgets) ==
+colA 0,0,0,0
+colB 0,0,0,0
+  nodes=43 engineNodeNull=0 zeroRect=37 detachedBacking=0
+    zeroRect colA (box) depth=2 rect=0,0,0,0
+    zeroRect cardChips (card) depth=3 rect=0,0,0,0
+    zeroRect chipsTitle (text) depth=4 rect=0,0,0,0
+    zeroRect chipRow (box) depth=4 rect=0,0,0,0
+    zeroRect c1 (chip) depth=5 rect=0,0,0,0
+    zeroRect c2 (chip) depth=5 rect=0,0,0,0
+    zeroRect c3 (chip) depth=5 rect=0,0,0,0
+    zeroRect badgeRow (box) depth=4 rect=0,0,0,0
+    zeroRect b1 (badge) depth=5 rect=0,0,0,0
+    zeroRect b2 (badge) depth=5 rect=0,0,0,0
+    zeroRect b3 (badge) depth=5 rect=0,0,0,0
+    zeroRect cardControls (card) depth=3 rect=0,0,0,0
+  layout: solves=1 root.engineKids=5 body.engineKids=2 bodyParentIsRoot=true uiKidsBody=2
+  body[0]=colA parentIsBody=true engineKids=2
+colA 0,0,0,0
+colB 0,0,0,0
+== page 2 (Data) ==
+  nodes=26 engineNodeNull=0 zeroRect=20 detachedBacking=0
+    zeroRect list (list) depth=2 rect=0,0,0,0
+    zeroRect row0 (box) depth=3 rect=0,0,0,0
+    zeroRect rowtext0 (text) depth=4 rect=0,0,0,0
+    zeroRect sep:0 (divider) depth=3 rect=0,0,0,0
+    zeroRect row1 (box) depth=3 rect=0,0,0,0
+    zeroRect rowtext1 (text) depth=4 rect=0,0,0,0
+    zeroRect sep:1 (divider) depth=3 rect=0,0,0,0
+    zeroRect row2 (box) depth=3 rect=0,0,0,0
+    zeroRect rowtext2 (text) depth=4 rect=0,0,0,0
+    zeroRect sep:2 (divider) depth=3 rect=0,0,0,0
+    zeroRect row3 (box) depth=3 rect=0,0,0,0
+    zeroRect rowtext3 (text) depth=4 rect=0,0,0,0
+  layout: solves=1 root.engineKids=5 body.engineKids=2 bodyParentIsRoot=true uiKidsBody=2
+== page 3 (Motion) ==
+  nodes=11 engineNodeNull=0 zeroRect=5 detachedBacking=0
+    zeroRect motionNote (text) depth=2 rect=0,0,0,0
+    zeroRect motionRow (box) depth=2 rect=0,0,0,0
+    zeroRect animated (box) depth=3 rect=0,0,0,0
+    zeroRect snapped (box) depth=3 rect=0,0,0,0
+    zeroRect motionNote2 (text) depth=2 rect=0,0,0,0
+  layout: solves=1 root.engineKids=5 body.engineKids=3 bodyParentIsRoot=true uiKidsBody=3

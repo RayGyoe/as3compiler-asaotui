@@ -1,0 +1,25 @@
+[probe] building display
+[probe] built probes\widgets\display\Main.exe
+
+PROBE display: 48 checks, 20 failures
+  FAIL  rect d1[x] want 20 got 21
+  FAIL  rect d1[y] want 20 got 21
+  FAIL  rect d2[x] want 20 got 21
+  FAIL  rect d2[y] want 31 got 32
+  FAIL  rect b1[x] want 20 got 21
+  FAIL  rect b1[y] want 81 got 82
+  FAIL  rect b2[x] want 20 got 21
+  FAIL  rect b2[y] want 107 got 108
+  FAIL  rect b3[x] want 20 got 21
+  FAIL  rect b3[y] want 133 got 134
+  FAIL  rect a1[x] want 20 got 21
+  FAIL  rect a1[y] want 159 got 160
+  FAIL  rect a2[x] want 20 got 21
+  FAIL  rect a2[y] want 217 got 218
+  FAIL  rect card[x] want 20 got 21
+  FAIL  rect card[y] want 275 got 276
+  FAIL  rect card-child[x] want 33 got 34
+  FAIL  rect card-child[y] want 288 got 289
+  FAIL  pixel (100,20) want #112233 got #ffffff
+  FAIL  pixel (20,50) want #112233 got #ffffff
+RESULT: FAIL

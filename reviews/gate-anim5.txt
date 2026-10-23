@@ -1,0 +1,5 @@
+[probe] building anim
+[probe] built probes\widgets\anim\Main.exe
+
+PROBE anim: 14 checks, 0 failures
+RESULT: PASS

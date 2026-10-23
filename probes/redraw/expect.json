@@ -1,0 +1,22 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/redraw/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "layout": "root: column, padding 20, gap 10, explicit [240,140], background #FFFFFF. b and c are both explicit [200,40], so x = 20 and neither shrinks: b y = 20 (padding-top), c y = 20 + 40 + 10 = 70. The frame buffer is written AFTER the change, so these expectations are the POST-change state.",
+    "b_point": "box rect (20,20,200,40); (120,40) is its middle. Hand-computed: 0x4455AA = (68,85,170).",
+    "c_point": "chip rect (20,70,200,40) with padding 8 and no border, so the painted pill is the content box: x = 20 + 8 = 28, y = 70 + 8 = 78, w = 200 - 16 = 184, h = 40 - 16 = 24. So the pill spans x 28..212, y 78..102 and (34,90) is 6px inside its left edge. The label is CENTRED, so the pill's middle would land on glyphs -- the sample stays left, per the probe protocol's 4px rule. Hand-computed: danger fill 0xFEE2E2 = (254,226,226).",
+    "why_not_exact_mid_run": "There is no transition in this probe at all, so every expectation here is a settled state and can be asserted exactly.",
+    "two_sided": "The probe also asserts that the change was PAINT-ONLY (app.layoutSolves must not move). A repaint bought with a layout re-solve is a different, rejected fix.",
+    "static_points": "b and c are sampled mid-run too (before the change: #112233 and #E5E7EB). Those are asserted by the program, not here, because the .bmp is only written once, at the end."
+  },
+  "w": 240,
+  "h": 140,
+  "rects": {
+    "b": [20, 20, 200, 40],
+    "c": [20, 70, 200, 40]
+  },
+  "points": [
+    { "x": 120, "y": 40, "rgb": "#4455AA" },
+    { "x": 34, "y": 90, "rgb": "#FEE2E2" },
+    { "x": 4, "y": 4, "rgb": "#FFFFFF" }
+  ]
+}

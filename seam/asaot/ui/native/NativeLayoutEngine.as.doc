@@ -1,0 +1,153 @@
+# `NativeLayoutEngine` — 内建类形态说明（**不是真源码**）
+
+> 本文件**不是可编译的 AS3**。它是 `asaot.ui.LayoutEngine` 这条接缝的
+> **native 实现**的形态说明：它注定**不能**是一份 `.as` 源库，只能由编译器
+> `src/emit.ts` 作为一个**内建类**发射。文件名以 `.as.doc` 结尾，就是提醒
+> 读者不要把它当源码编译。
+
+---
+
+## 1. 为什么它只能是内建类（不能是 `.as` 源文件）
+
+AS3 **目前没有 FFI**（`docs/zh-cn/enhancements.md` E11「FFI：声明并直调宿主 C 函数」**未排期**）。
+因此一份普通的 `asaot.ui.*.as` 源文件**无法**调到 `as_ui_yg_*` 这类宿主 C 函数——C 函数名对
+AS3 源是不可见的符号。从 AS3 触达原生代码的**唯一**路径，是**内建类**（与 `flash.*` 同层，
+由 `emit.ts` 发射、由 `symbols.ts` 注册）。
+
+这带来一个关键的架构后果（本方案成立的前提）：
+
+- **接缝的 AS3 一侧（`asaot.ui.LayoutEngine` 接口）是纯 `.as`** ⇒ 控件层只依赖接口 ⇒
+  整个库（含 `As3LayoutEngine`）都能被 `mxmlc` 编译、在 `adl` 上跑（双端对照杠杆）。
+- **接缝的 native 一侧（本文件描述的 `NativeLayoutEngine`）是内建类** ⇒ 只有它能碰到 C。
+
+也就是说：**接口是纯 `.as`，native 实现才是内建类**。二者通过 `implements` 关系接线。
+
+---
+
+## 2. 内建类形态
+
+### 2.1 名字与 `implements`
+
+| 项 | 值 | 说明 |
+|---|---|---|
+| AS3 FQN | `asaot.ui.native.NativeLayoutEngine` | 与 `asaot.ui` 同命名空间树，但落在 `.native` 子包，表明它是平台内建面 |
+| C 标识符（`classMap` key） | `asaot_ui_native_NativeLayoutEngine` | `qualifiedName('NativeLayoutEngine','asaot.ui.native')`（`symbols.ts:363` 起，`package.` → `package_`） |
+| 实现 | `implements: ['asaot_ui_LayoutEngine']` | 引用**用户 `.as` 接口** `asaot.ui.LayoutEngine` 的 classMap key。这是一条**此前无先例**的新模式（既有内建只 implements 内建接口，如 `implements:['IGraphicsData']`）——**已于 2026-10-22 实测通过** |
+| 注册 | `symbols.ts` 的 **pass 0.5**（内建类段，`symbols.ts:617` 起） | pass 0（`:580-616`）先注册用户接口，故内建类可以引用用户接口 FQN |
+
+> **关键点**：用户接口 `asaot.ui.LayoutEngine` 的 classMap key 是 `asaot_ui_LayoutEngine`
+> （`qualifiedName`，`symbols.ts:363`）；接口 vtable 发射（`emit.ts:3962` `emitInterfaceVtables`）与
+> 一致性检查（`symbols.ts:7383` 遍历整个 `classMap`，含内建类）**都遍历全部类**，所以在机制上
+> 内建类 implements 用户接口是可通的。**该模式已于 2026-10-22 实测通过**（正例 `x=120`/`is` 为真、
+> 反证报 `does not implement`，见
+> [`../../../../reviews/probe-builtin-implements-user-iface-2026-10-22.md`](../../../../reviews/probe-builtin-implements-user-iface-2026-10-22.md)）——
+> 它曾是 U1 的**前置依赖**，现**已关闭**（§4 的回退仅备查）。
+
+### 2.2 方法体：逐一转发到 `as_ui_yg_*`
+
+`NativeLayoutEngine` 的每个方法体只是**转发**：把 AS3 的 `Object` 句柄原样当作不透明
+`void*` 交给 C，返回值/出参原样退回。它**不做任何布局运算**（运算在 Yoga 里）。
+
+发射形态（伪代码，实际由 `emit.ts` 生成 C）：
+
+```c
+/* 内建类 NativeLayoutEngine 的实例方法；每个转发到 runtime 的 as_ui_* 内联层，
+   最终落到 as_ui_yg_*（不透明 C 接缝，见 vendor/yoga_glue.h）。 */
+
+void* asaot_ui_native_NativeLayoutEngine_createNode(void* _this, void* cfg) {
+    return as_ui_yg_node_new(cfg);            /* cfg 亦为不透明句柄 */
+}
+
+void asaot_ui_native_NativeLayoutEngine_setSize(void* _this, void* node, int axis, double value, int unit) {
+    as_ui_yg_set_size(node, axis, (float)value, unit);
+}
+
+void asaot_ui_native_NativeLayoutEngine_calculate(void* _this, void* node,
+                                                  double aw, double ah, int direction) {
+    as_ui_yg_calculate(node, (float)aw, (float)ah, direction);
+}
+
+void asaot_ui_native_NativeLayoutEngine_layoutGet(void* _this, void* node, Array* out) {
+    float r[4];
+    as_ui_yg_layout_get(node, r);             /* 相对父件的 left/top/width/height */
+    as_array_set_double(out, 0, (double)r[0]);
+    as_array_set_double(out, 1, (double)r[1]);
+    as_array_set_double(out, 2, (double)r[2]);
+    as_array_set_double(out, 3, (double)r[3]);
+}
+```
+
+- **`Number` → `float`**：C 接缝的标量是 `float`（Yoga 是 `float` 引擎）；AS3 的
+  `Number` 是 `double`，在转发点显式收窄，与 `yoga_glue.h` 的签名逐字一致。
+- **`Boolean` → `int`**：`is_max` / `use_web_defaults` 等按 `0/1` 传。
+- **`Object` 句柄 → `void*`**：节点/配置句柄是**不透明的**；内建体不解引用，
+  C 侧同样不解引用（见 `yoga_glue.h` 头注释）。`null` 句柄由 C 接缝自行容错。
+- **`measure:Function` → `as_ui_measure_fn` + `ctx`**：见下节。
+- **`layoutGet` 的出参**：C 接缝用 `float out[4]`；AS3 侧用 `out:Array`（`out[0..3]`）。
+  转发点做 `Array ← float[4]` 的逐项拷贝。
+
+### 2.3 measure 回调（唯一带函数指针的方法）
+
+C 接缝的 measure 是 `void (*fn)(void* ctx, float aw, int wm, float ah, int hm, float out_wh[2])`
+（`yoga_glue.h` 的 `as_ui_measure_fn`）。AS3 侧把它对到一个 `Function` + `ctx:Object`：
+
+- 内建类需要发射一个 **C trampoline**：把 C 回调参数打包，调用 AS3 的 `Function`，
+  再把 AS3 写回的两维尺寸转成 `out_wh[2]`。
+- 该 trampoline 与 AS3 `Function` 值的桥接属 U1 的**固定/空桩**范围；真正的文本 intrinsic
+  measure 归 U2/U4（见 `ui-toolkit-api-design.md` §10 未决 10）。
+
+### 2.4 发射位置与两态
+
+- 发射块：新增 `emitUiLayoutClasses()`（命名仿 `emitShellClasses`/`emitSqlClasses`），
+  在 `run()` 序列里**紧邻** `emitShellClasses()`（`emit.ts:629`）/`emitSqlClasses()`（`:640`）调用、
+  在 `emitMain`（`:643`）**之前**——这样 `-O2` 从 `main` 出发的调用图能把**未被引用**的内建方法体、
+  接口 vtable 当死代码剪掉（体积手段，见 `README-CN.md` 的体积说明与 `size-optimization.md`）。
+- 运行时两态：`RUNTIME_PREAMBLE` 里以 `ASC_HAVE_LAYOUT` 隔离——定义时真实现（转发到 `as_ui_yg_*`），
+  未定义时**全桩 + 一次性 stderr 告警**（对标文本引擎的 `ASC_HAVE_TEXT` 两态与
+  `as_text_engine_absent`）。**不静默假装布局可用**（AGENTS.md §1.5）。
+- 引用才链：`usesAsaotUi()` 决定是否把 Yoga 源与 `ASC_HAVE_LAYOUT` 放进构建；
+  不用 `asaot.ui` 的构建**零增量**（硬门 A）。
+
+---
+
+## 3. `symbols.ts` 注册形状（草案）
+
+```ts
+// pass 0.5（内建类段）——仅示意字段，落到实现时以 NativeWindow（symbols.ts:1783 起）为工法先例
+this.classMap.set('asaot_ui_native_NativeLayoutEngine', {
+  fields: new Map(),
+  methods: new Map([
+    ['createNode', { returnType: { kind:'object', className:'Object' }, params: [...], owner: 'asaot_ui_native_NativeLayoutEngine', visibility: 'public', isStatic: false, isFinal: false, isGetter: false, isSetter: false }],
+    /* … 其余 29 个方法同法 … */
+  ]),
+  implements: ['asaot_ui_LayoutEngine'],   // ← 引用用户 .as 接口（新模式）
+  // … extends/构造函数等按内建面工法补齐 …
+});
+```
+
+> 具体字段名与 `MethodInfo` 形状以 `symbols.ts` 的 `ClassInfo`/`MethodInfo` 定义与
+> `NativeWindow` 注册块为准；本文件不复制整段。**`implements` 的字符串必须是
+> `qualifiedName('LayoutEngine','asaot.ui')` 的结果 = `asaot_ui_LayoutEngine`**，
+> 因为 `emitInterfaceVtables`（`emit.ts:4005`）用同一个 key 去 `interfaces.get(iname)`。
+
+---
+
+## 4. 前置依赖（**已实测通过，2026-10-22**）与回退（仅备查）
+
+本内建类形态依赖的编译器能力 **内建类 implements 用户 `.as` 接口** **已于 2026-10-22 实测通过**
+（机制见 §2.1；确切命令与原文见
+[`../../../../reviews/probe-builtin-implements-user-iface-2026-10-22.md`](../../../../reviews/probe-builtin-implements-user-iface-2026-10-22.md)）。
+**下列回退方案不再需要，仅作备查**：
+
+1. **回退 1（优先，尽量保住 adl 杠杆）——适配器模块**
+   内建类**不再** implements 用户接口，改为发射一组**内建静态方法**（`layoutCreate/setSize/…`
+   转发到 `as_ui_yg_*`）；另写一份**纯 AS3 适配器**（`NativeLayoutEngineAdapter implements LayoutEngine`）
+   逐方法转发到内建静态方法。适配器**只在 AOT 构建里编译**（mxmlc/adl 构建不含它，故 adl 侧仍用
+   `As3LayoutEngine`）。控件层仍只依赖接口；`UiApp` 的工厂按「有 native 内建就用适配器，否则用
+   `As3LayoutEngine`」选择。**代价**：多一层转发、多一个只在 AOT 存在的模块。
+2. **回退 2（最后手段，回到原设计）——C 函数接缝 + 内建类直发**
+   放弃「纯 `.as` 接口」，回到题述之前的形态：`emit.ts` 直接发射 `asaot.ui.LayoutEngine`/
+   `LayoutNode` 内建类，控件层引用内建类而非接口。**代价**：整个库**不能**在 `adl` 上跑，
+   「mxmlc→adl 与 AOT→native 双端逐值对照」的杠杆只覆盖非布局层；布局层退回浏览器/W3C 基准。
+
+两条回退都**不静默降级**：回退本身是显式决定，并按 `u1-implementation-plan.md` §4 登记边界。

@@ -1,0 +1,22 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/anim/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "layout": "root: column, padding 20, gap 10, explicit [240,140], background #FFFFFF. Both boxes are explicit [200,40], so nothing shrinks or stretches: x = 20 for both, b1 y = 20 (padding-top), b2 y = 20 + 40 + 10 = 70.",
+    "points": "The frame buffer is written at the END of the run, after the 400ms transition has elapsed, so both boxes are at their TARGET colours and these expectations are deterministic despite the animation. Sample points are the middle of each box, clear of everything: b1 (120,40) with rect (20,20,200,40); b2 (120,90) with rect (20,70,200,40). (4,4) is inside the root's 20pt padding, so it is the page background.",
+    "resting": "b1 starts at 0x112233 and is asserted EXACTLY before the change (the probe reads the frame buffer). b2 starts at 0x445566.",
+    "transition": "b1 has transitionMs=400, transitionEase='linear', and moves 0x112233 -> 0x112299. ONLY the blue channel moves: 0x33 -> 0x99. Hand-computed midpoint: blue at t=0.5 is 0x33 + 0.5*(0x99-0x33) = 0x33 + 0x33 = 0x66. Red and green must stay 0x11/0x22 throughout.",
+    "mid_tween": "DELIBERATELY NOT an exact expected value. Which fraction of the tween a sample lands on is decided by the frame timing, which this test cannot pin to the millisecond. So the mid-tween assertion is: strictly between the endpoints component-wise, equal to neither endpoint, monotone toward the target, and never moving a channel that should be frozen. That still fails if the value JUMPS to the target (the mutation being tested) and it cannot flake on timing.",
+    "snap_default": "b2 has transitionMs UNSET, so the default behaviour must still SNAP. Asserted as: the first frame-buffer sample after the change is ALREADY exactly 0x4455AA."
+  },
+  "w": 240,
+  "h": 140,
+  "rects": {
+    "b1": [20, 20, 200, 40],
+    "b2": [20, 70, 200, 40]
+  },
+  "points": [
+    { "x": 120, "y": 40, "rgb": "#112299" },
+    { "x": 120, "y": 90, "rgb": "#4455AA" },
+    { "x": 4, "y": 4, "rgb": "#FFFFFF" }
+  ]
+}

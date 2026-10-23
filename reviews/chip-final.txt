@@ -1,0 +1,5 @@
+[probe] building chip
+[probe] built probes\widgets\chip\Main.exe
+
+PROBE chip: 19 checks, 0 failures
+RESULT: PASS

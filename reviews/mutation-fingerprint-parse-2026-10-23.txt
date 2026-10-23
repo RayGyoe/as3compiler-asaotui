@@ -1,0 +1,34 @@
+mutator: fingerprint parser -- per-record trim() before slicing (the original bug)
+mutator: compiler-fingerprint.cjs  d03c74836b732b67 -> bf2553487486b5ee
+
+  ok   worktree-modified first (the one that was dropped): every record survives
+  FAIL worktree-modified first (the one that was dropped): paths are not shifted
+  ok   worktree-modified first (the one that was dropped): nothing reported as unparsable
+  ok   staged-modified first (two spaces = the real `M  x` shape): every record survives
+  ok   staged-modified first (two spaces = the real `M  x` shape): paths are not shifted
+  ok   staged-modified first (two spaces = the real `M  x` shape): nothing reported as unparsable
+  ok   both staged and worktree (MM): every record survives
+  ok   both staged and worktree (MM): paths are not shifted
+  ok   both staged and worktree (MM): nothing reported as unparsable
+  ok   deleted + untracked (deleted path is gone, so it is skipped -- but must be SEEN): every record survives
+  FAIL deleted + untracked (deleted path is gone, so it is skipped -- but must be SEEN): paths are not shifted
+  ok   deleted + untracked (deleted path is gone, so it is skipped -- but must be SEEN): nothing reported as unparsable
+  ok   path with an interior space: every record survives
+  ok   path with an interior space: paths are not shifted
+  ok   path with an interior space: nothing reported as unparsable
+  ok   clean tree: no entries, no complaints
+  ok   rename: new path parsed
+  ok   rename: old path reported, not invented
+  FAIL regression guard: leading-space record keeps its full path
+  FAIL regression guard: XY keeps BOTH characters
+
+==== FINGERPRINT PARSE: FAIL (4) ====
+  worktree-modified first (the one that was dropped): paths are not shifted -- want [" M|src/reach.ts"," M|test/unit/reach.ts","??|icudtl.dat"] got ["M |rc/reach.ts","M |est/unit/reach.ts","??|icudtl.dat"]
+  deleted + untracked (deleted path is gone, so it is skipped -- but must be SEEN): paths are not shifted -- want [" D|src/gone.ts","??|new.txt"] got ["D |rc/gone.ts","??|new.txt"]
+  regression guard: leading-space record keeps its full path -- [{"code":"M ","f":"rc/reach.ts"}]
+  regression guard: XY keeps BOTH characters -- [{"code":"M ","f":"rc/reach.ts"}]
+
+mutator: parse check went RED (as required)
+mutator: compiler-fingerprint.cjs restored  d03c74836b732b67  (identical)
+
+==== MUTATION: PASS -- the bug the parser was fixed for makes the check go red ====

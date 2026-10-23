@@ -1,0 +1,9 @@
+[probe] seeded icudtl.dat
+[probe] building redraw
+[probe] built probes\redraw\Main.exe
+
+PROBE redraw: 11 checks, 3 failures
+  FAIL  program verdict: FAIL resting chip is =(255,255,255), want (229,231,235); chip did not repaint: =(255,255,255), want (254,226,226);
+  FAIL  rect c: not reported by the probe
+  FAIL  pixel (34,90) want #FEE2E2 got #ffffff
+RESULT: FAIL

@@ -1,0 +1,3 @@
+before class: statement ran
+after class: c.twice() = 14
+DONE

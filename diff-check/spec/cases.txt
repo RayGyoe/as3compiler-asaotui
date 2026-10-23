@@ -1,0 +1,1097 @@
+# Shared layout differential spec -- read by BOTH drivers:
+#   * yoga-driver   (C: as_ui_yg_* -> Yoga, via u1-prototype/yoga_glue)
+#   * as3-driver    (pure AS3: asaot.ui.as3.As3LayoutEngine, compiled by our AOT)
+#
+# WHY A SHARED FILE: seam/README.md section 3.2 makes "the two engines agree" a
+# HARD requirement. Two hand-written harnesses that merely assert the same
+# numbers can both be right about the numbers and still disagree about the
+# engine (that is exactly how the default-flex-direction bug survived cases
+# a-e: they all set a direction explicitly). Driving BOTH engines from one
+# frozen input and diffing their output is the only way to catch that class.
+#
+# FORMAT (frozen -- both drivers must parse exactly this)
+#   * one directive per line; '#' starts a comment; blank lines ignored
+#   * whitespace-separated tokens
+#   * IDs ARE GLOBALLY UNIQUE -- a `root` line triggers calculate() immediately,
+#     and checks are evaluated at end-of-file, so reusing an id would make a
+#     later block's calculate overwrite an earlier check's node
+#   * all lengths are POINTS unless a directive says otherwise
+#   * percentages are 0..100 (the seam's convention, yoga_glue.h)
+#
+#   engine <web|noweb>                      set the config for nodes created from here on
+#   node   <id> <parentId>                  parentId = -1 for a parentless root
+#   root   <id> <availW> <availH> [ltr|rtl] decl root + calculate(); dir defaults to ltr
+#   dir    <id> <row|column|row-reverse|column-reverse>
+#                                           omit to leave the direction UNSET (pins the default)
+#   size   <id> <w|h> <value> <point|percent>
+#   minmax <id> <w|h> <min|max> <value> <point|percent>
+#   pad    <id> <all|h|v|top|right|bottom|left|start|end> <value> [point|percent]
+#   border <id> <all|top|right|bottom|left|start|end> <value>
+#   gap    <id> <row|col|column|all> <value> [point|percent]
+#   flex   <id> <grow> <shrink> <basis> <point|undefined|percent>
+#   boxsizing <id> <border|content>
+#   wrap   <id> <nowrap|wrap|wrap-reverse>
+#   justify <id> <flex-start|center|flex-end|space-between|space-around|space-evenly>
+#   align  <id> <flex-start|center|flex-end|stretch>            (align-items)
+#   alignself <id> <auto|flex-start|center|flex-end|stretch>
+#   aligncontent <id> <flex-start|center|flex-end|stretch|space-between|space-around>
+#   margin <id> <all|h|v|top|right|bottom|left|start|end> <value> [point|percent]
+#   pos    <id> <relative|absolute>
+#   inset  <id> <all|h|v|top|right|bottom|left|start|end> <value> [point|percent]
+#   overflow <id> <visible|hidden|scroll>
+#   check  <name> <id> <l> <t> <w> <h>       expected rect, relative to the parent
+#
+# INCREMENTAL EXTENSION RULES (the format is frozen): every new directive above is
+# ADDITIVE -- a line written for the old grammar still parses unchanged. The only
+# grammar change is an OPTIONAL trailing unit token on pad/border/gap/margin/inset
+# (absent == point) and an OPTIONAL trailing direction token on root (absent == ltr).
+#
+# Output contract for both drivers (stdout, spec order):
+#   GOT <name> <l.toFixed(4)> <t> <w> <h>
+#   ... then a human-readable PASS/FAIL summary and a non-zero exit on failure.
+# The differential run diffs the GOT lines; the expectations inside `check` are
+# only a self-test for each driver on its own.
+#
+# The expectation values below are the SAME hand-computed rectangles as
+# u1-prototype/check-layout.md section 3 (EPS = 0.01). Do not "fix" a value to
+# make a driver pass: a mismatch means an engine disagrees, which is the finding.
+
+# ---- a) a single explicitly sized node -------------------------------------
+engine web
+node 100 -1
+size 100 w 100 point
+size 100 h 50 point
+root 100 100 50
+check a.root 100 0 0 100 50
+
+# ---- b) column + padding(all=16) + row-gap(10) ------------------------------
+# Also pins that a gap is added BETWEEN items only (never before the first or
+# after the last): 16, 16+40+10=66, 16+40+10+40+10=116.
+engine web
+node 200 -1
+dir 200 column
+size 200 w 200 point
+size 200 h 300 point
+pad 200 all 16
+gap 200 row 10
+node 201 200
+size 201 w 100 point
+size 201 h 40 point
+node 202 200
+size 202 w 100 point
+size 202 h 40 point
+node 203 200
+size 203 w 100 point
+size 203 h 40 point
+root 200 200 300
+check b.root 200 0 0 200 300
+check b.child0 201 16 16 100 40
+check b.child1 202 16 66 100 40
+check b.child2 203 16 116 100 40
+
+# ---- c) row + flexGrow 1:2:3 + basis 0 -------------------------------------
+engine web
+node 300 -1
+dir 300 row
+size 300 w 300 point
+size 300 h 100 point
+node 301 300
+flex 301 1 1 0 point
+node 302 300
+flex 302 2 1 0 point
+node 303 300
+flex 303 3 1 0 point
+root 300 300 100
+check c.child0 301 0 0 50 100
+check c.child1 302 50 0 100 100
+check c.child2 303 150 0 150 100
+
+# ---- d) percent basis is the PARENT CONTENT BOX; explicit size is border-box -
+# content box = 200 - 2*(padding 20 + border 10) = 140 wide, 100 - 2*30 = 40 high
+# child origin = border + padding = 30; 50% of 140 = 70, 50% of 40 = 20
+engine web
+node 400 -1
+dir 400 column
+size 400 w 200 point
+size 400 h 100 point
+pad 400 all 20
+border 400 all 10
+node 401 400
+size 401 w 50 percent
+size 401 h 50 percent
+root 400 200 100
+check d.root 400 0 0 200 100
+check d.child 401 30 30 70 20
+
+# ---- e1) min-width beats flex-shrink ---------------------------------------
+# basis 200 in a 100-wide row -> shrink 1 would need -100, but min-width 150 wins
+engine web
+node 500 -1
+dir 500 row
+size 500 w 100 point
+size 500 h 50 point
+node 501 500
+flex 501 0 1 200 point
+minmax 501 w min 150 point
+root 500 100 50
+check e1.child 501 0 0 150 50
+
+# ---- e2) max-width beats flex-grow -----------------------------------------
+# basis 100 in a 300-wide row -> grow 1 would give 300, but max-width 150 wins
+engine web
+node 600 -1
+dir 600 row
+size 600 w 300 point
+size 600 h 50 point
+node 601 600
+flex 601 1 1 100 point
+minmax 601 w max 150 point
+root 600 300 50
+check e2.child 601 0 0 150 50
+
+# ---- f) web defaults -> an UNSET direction defaults to row ------------------
+# Note the nodes deliberately never get a `dir` line. Cases a-e all set one, so
+# a wrong default hides behind them and only this block (and g) exposes it.
+engine web
+node 700 -1
+size 700 w 200 point
+size 700 h 100 point
+node 701 700
+size 701 w 50 point
+size 701 h 40 point
+node 702 700
+size 702 w 50 point
+size 702 h 40 point
+root 700 200 100
+check f.child0 701 0 0 50 40
+check f.child1 702 50 0 50 40
+
+# ---- g) without web defaults -> an UNSET direction defaults to column -------
+engine noweb
+node 800 -1
+size 800 w 200 point
+size 800 h 100 point
+node 801 800
+size 801 w 50 point
+size 801 h 40 point
+node 802 800
+size 802 w 50 point
+size 802 h 40 point
+root 800 200 100
+check g.child0 801 0 0 50 40
+check g.child1 802 0 40 50 40
+
+# ============================================================================
+# EXTENDED CASES (P1..P8). Same hand-computed discipline as a..g: every number
+# below was derived from the Yoga algorithm on paper (justifyMainAxis /
+# STEP 7-8 / AbsoluteLayout.cpp), then confirmed against Yoga by THIS driver's
+# own self-test. A mismatch here is a finding, never a value to "fix".
+# ============================================================================
+
+# ---- h1..h6) P1 justify-content, row 200x100 pad10, 3 kids 30x10 ------------
+# content = 180x80; sizeConsumed = 90; free = 90.
+#   flex-start : cursor 10 ->          10 / 40  / 70
+#   center     : lead 45 ->             55 / 85  / 115
+#   flex-end   : lead 90 ->            100 / 130 / 160
+#   space-btw  : between 45 ->          10 / 85  / 160
+#   space-arnd : lead 15, between 30 -> 25 / 85  / 145
+#   space-evly : lead 22.5, between 22.5 -> 32.5 / 85 / 137.5
+engine web
+node 1000 -1
+dir 1000 row
+size 1000 w 200 point
+size 1000 h 100 point
+pad 1000 all 10
+justify 1000 flex-start
+node 1001 1000
+size 1001 w 30 point
+size 1001 h 10 point
+node 1002 1000
+size 1002 w 30 point
+size 1002 h 10 point
+node 1003 1000
+size 1003 w 30 point
+size 1003 h 10 point
+root 1000 200 100
+check h1.justifyFlexStart  1001  10 10 30 10
+check h1.justifyFlexStart2 1003  70 10 30 10
+
+engine web
+node 1010 -1
+dir 1010 row
+size 1010 w 200 point
+size 1010 h 100 point
+pad 1010 all 10
+justify 1010 center
+node 1011 1010
+size 1011 w 30 point
+size 1011 h 10 point
+node 1012 1010
+size 1012 w 30 point
+size 1012 h 10 point
+node 1013 1010
+size 1013 w 30 point
+size 1013 h 10 point
+root 1010 200 100
+check h2.justifyCenter  1011  55 10 30 10
+check h2.justifyCenter2 1013 115 10 30 10
+
+engine web
+node 1020 -1
+dir 1020 row
+size 1020 w 200 point
+size 1020 h 100 point
+pad 1020 all 10
+justify 1020 flex-end
+node 1021 1020
+size 1021 w 30 point
+size 1021 h 10 point
+node 1022 1020
+size 1022 w 30 point
+size 1022 h 10 point
+node 1023 1020
+size 1023 w 30 point
+size 1023 h 10 point
+root 1020 200 100
+check h3.justifyFlexEnd  1021 100 10 30 10
+check h3.justifyFlexEnd2 1023 160 10 30 10
+
+engine web
+node 1030 -1
+dir 1030 row
+size 1030 w 200 point
+size 1030 h 100 point
+pad 1030 all 10
+justify 1030 space-between
+node 1031 1030
+size 1031 w 30 point
+size 1031 h 10 point
+node 1032 1030
+size 1032 w 30 point
+size 1032 h 10 point
+node 1033 1030
+size 1033 w 30 point
+size 1033 h 10 point
+root 1030 200 100
+check h4.justifySpaceBetween  1031  10 10 30 10
+check h4.justifySpaceBetween2 1033 160 10 30 10
+
+engine web
+node 1040 -1
+dir 1040 row
+size 1040 w 200 point
+size 1040 h 100 point
+pad 1040 all 10
+justify 1040 space-around
+node 1041 1040
+size 1041 w 30 point
+size 1041 h 10 point
+node 1042 1040
+size 1042 w 30 point
+size 1042 h 10 point
+node 1043 1040
+size 1043 w 30 point
+size 1043 h 10 point
+root 1040 200 100
+check h5.justifySpaceAround  1041  25 10 30 10
+check h5.justifySpaceAround2 1043 145 10 30 10
+
+engine web
+node 1050 -1
+dir 1050 row
+size 1050 w 200 point
+size 1050 h 100 point
+pad 1050 all 10
+justify 1050 space-evenly
+node 1051 1050
+size 1051 w 30 point
+size 1051 h 10 point
+node 1052 1050
+size 1052 w 30 point
+size 1052 h 10 point
+node 1053 1050
+size 1053 w 30 point
+size 1053 h 10 point
+root 1050 200 100
+check h6.justifySpaceEvenly  1051  32.5 10 30 10
+check h6.justifySpaceEvenly2 1053 137.5 10 30 10
+
+# ---- i) P1 justify + gap (proves the gap is folded INTO the distribution) ---
+# row 200x100 pad10 gap(col)=5, 3 kids 30x10: sizeConsumed = 90+10 = 100, free = 80.
+#   space-between : between 5+40=45 -> 10 / 85 / 160
+#   space-around  : lead 80/6, between 5+2*lead -> 23.3333 / 85 / 146.6667
+#   space-evenly  : lead 80/4=20, between 5+20 -> 30 / 85 / 140
+engine web
+node 1100 -1
+dir 1100 row
+size 1100 w 200 point
+size 1100 h 100 point
+pad 1100 all 10
+gap 1100 col 5
+justify 1100 space-between
+node 1101 1100
+size 1101 w 30 point
+size 1101 h 10 point
+node 1102 1100
+size 1102 w 30 point
+size 1102 h 10 point
+node 1103 1100
+size 1103 w 30 point
+size 1103 h 10 point
+root 1100 200 100
+check i1.justifyGapBetween  1101  10 10 30 10
+check i1.justifyGapBetween2 1103 160 10 30 10
+
+engine web
+node 1110 -1
+dir 1110 row
+size 1110 w 200 point
+size 1110 h 100 point
+pad 1110 all 10
+gap 1110 col 5
+justify 1110 space-around
+node 1111 1110
+size 1111 w 30 point
+size 1111 h 10 point
+node 1112 1110
+size 1112 w 30 point
+size 1112 h 10 point
+node 1113 1110
+size 1113 w 30 point
+size 1113 h 10 point
+root 1110 200 100
+check i2.justifyGapAround  1111  23.3333 10 30 10
+check i2.justifyGapAround2 1113 146.6667 10 30 10
+
+engine web
+node 1120 -1
+dir 1120 row
+size 1120 w 200 point
+size 1120 h 100 point
+pad 1120 all 10
+gap 1120 col 5
+justify 1120 space-evenly
+node 1121 1120
+size 1121 w 30 point
+size 1121 h 10 point
+node 1122 1120
+size 1122 w 30 point
+size 1122 h 10 point
+node 1123 1120
+size 1123 w 30 point
+size 1123 h 10 point
+root 1120 200 100
+check i3.justifyGapEvenly  1121 30 10 30 10
+check i3.justifyGapEvenly2 1123 140 10 30 10
+
+# ---- j) P2 align-items / align-self ----------------------------------------
+# row 200x100 pad10 -> content cross = 80; kids 30x10 -> outer cross 10.
+#   flex-start: t = 10 ; center: 10+(80-10)/2 = 45 ; flex-end: 10+70 = 80
+engine web
+node 1200 -1
+dir 1200 row
+size 1200 w 200 point
+size 1200 h 100 point
+pad 1200 all 10
+align 1200 flex-start
+node 1201 1200
+size 1201 w 30 point
+size 1201 h 10 point
+node 1202 1200
+size 1202 w 30 point
+size 1202 h 10 point
+root 1200 200 100
+check j1.alignStart  1201 10 10 30 10
+check j1.alignStart2 1202 40 10 30 10
+
+engine web
+node 1210 -1
+dir 1210 row
+size 1210 w 200 point
+size 1210 h 100 point
+pad 1210 all 10
+align 1210 center
+node 1211 1210
+size 1211 w 30 point
+size 1211 h 10 point
+node 1212 1210
+size 1212 w 30 point
+size 1212 h 10 point
+root 1210 200 100
+check j2.alignCenter  1211 10 45 30 10
+check j2.alignCenter2 1212 40 45 30 10
+
+engine web
+node 1220 -1
+dir 1220 row
+size 1220 w 200 point
+size 1220 h 100 point
+pad 1220 all 10
+align 1220 flex-end
+node 1221 1220
+size 1221 w 30 point
+size 1221 h 10 point
+node 1222 1220
+size 1222 w 30 point
+size 1222 h 10 point
+root 1220 200 100
+check j3.alignEnd  1221 10 80 30 10
+check j3.alignEnd2 1222 40 80 30 10
+
+# stretch (the align-items default) with auto-height kids -> h = line cross = 80.
+engine web
+node 1230 -1
+dir 1230 row
+size 1230 w 200 point
+size 1230 h 100 point
+pad 1230 all 10
+align 1230 stretch
+node 1231 1230
+size 1231 w 30 point
+node 1232 1230
+size 1232 w 30 point
+root 1230 200 100
+check j4.alignStretch  1231 10 10 30 80
+check j4.alignStretch2 1232 40 10 30 80
+
+# align-self overrides: container flex-start, c0 center, c1 flex-end.
+engine web
+node 1240 -1
+dir 1240 row
+size 1240 w 200 point
+size 1240 h 100 point
+pad 1240 all 10
+align 1240 flex-start
+node 1241 1240
+alignself 1241 center
+size 1241 w 30 point
+size 1241 h 10 point
+node 1242 1240
+alignself 1242 flex-end
+size 1242 w 30 point
+size 1242 h 10 point
+root 1240 200 100
+check j5.alignSelfCenter 1241 10 45 30 10
+check j5.alignSelfEnd    1242 40 80 30 10
+
+# auto align-self inherits stretch; a definite cross size wins over stretch.
+engine web
+node 1250 -1
+dir 1250 row
+size 1250 w 200 point
+size 1250 h 100 point
+pad 1250 all 10
+align 1250 flex-start
+node 1251 1250
+alignself 1251 stretch
+size 1251 w 30 point
+node 1252 1250
+size 1252 w 30 point
+size 1252 h 10 point
+root 1250 200 100
+check j6.alignSelfStretch 1251 10 10 30 80
+check j6.alignSelfInherit 1252 40 10 30 10
+
+# ---- k1) P4 wrap (row, explicit align-content flex-start) -------------------
+# row 200x200 pad10 gap(all) 5, 5 kids 60x40. content 180x180, item outer 60.
+# lines: [0,1] [2,3] [4]; lineCross = 40; total = 40*3 + 5*2 = 130.
+# align-content flex-start -> line tops 10, 10+40+5=55, 55+40+5=100.
+engine web
+node 1400 -1
+dir 1400 row
+size 1400 w 200 point
+size 1400 h 200 point
+pad 1400 all 10
+gap 1400 all 5
+wrap 1400 wrap
+aligncontent 1400 flex-start
+node 1401 1400
+size 1401 w 60 point
+size 1401 h 40 point
+node 1402 1400
+size 1402 w 60 point
+size 1402 h 40 point
+node 1403 1400
+size 1403 w 60 point
+size 1403 h 40 point
+node 1404 1400
+size 1404 w 60 point
+size 1404 h 40 point
+node 1405 1400
+size 1405 w 60 point
+size 1405 h 40 point
+root 1400 200 200
+check k1.wrapRow0  1401  10  10 60 40
+check k1.wrapRow1  1402  75  10 60 40
+check k1.wrapRow2  1403  10  55 60 40
+check k1.wrapRow3  1404  75  55 60 40
+check k1.wrapRow4  1405  10 100 60 40
+
+# ---- k2) P4 pins web default align-content = stretch ------------------------
+# row 100x200 pad10 wrap (NO aligncontent line), 4 kids 60x40 -> 1 per line.
+# content 80x180, 4 lines of 40, total 160, remaining 20 -> extra 20/4 = 5.
+# tops 10, 10+45=55, 100, 145. (strictly greater than the flex-start 10/50/90/130)
+engine web
+node 1500 -1
+dir 1500 row
+size 1500 w 100 point
+size 1500 h 200 point
+pad 1500 all 10
+wrap 1500 wrap
+node 1501 1500
+size 1501 w 60 point
+size 1501 h 40 point
+node 1502 1500
+size 1502 w 60 point
+size 1502 h 40 point
+node 1503 1500
+size 1503 w 60 point
+size 1503 h 40 point
+node 1504 1500
+size 1504 w 60 point
+size 1504 h 40 point
+root 1500 100 200
+check k2.alignContentDefaultStretch0 1501 10  10 60 40
+check k2.alignContentDefaultStretch1 1502 10  55 60 40
+check k2.alignContentDefaultStretch2 1503 10 100 60 40
+check k2.alignContentDefaultStretch3 1504 10 145 60 40
+
+# ---- k3) align-content space-between / center / flex-end / space-around -----
+# row 200x200 pad10 wrap, 6 kids 90x40 -> 3 lines of 2, lineCross 40, total 120,
+# remaining 60.
+#   space-between: leadPerLine 30 -> tops 10, 80, 150
+#   center       : currentLead += 30 -> 40, 80, 120
+#   flex-end     : currentLead += 60 -> 70, 110, 150
+#   space-around : leadPerLine 20, currentLead += 10 -> 20, 80, 140
+engine web
+node 1600 -1
+dir 1600 row
+size 1600 w 200 point
+size 1600 h 200 point
+pad 1600 all 10
+wrap 1600 wrap
+aligncontent 1600 space-between
+node 1601 1600
+size 1601 w 90 point
+size 1601 h 40 point
+node 1602 1600
+size 1602 w 90 point
+size 1602 h 40 point
+node 1603 1600
+size 1603 w 90 point
+size 1603 h 40 point
+node 1604 1600
+size 1604 w 90 point
+size 1604 h 40 point
+node 1605 1600
+size 1605 w 90 point
+size 1605 h 40 point
+node 1606 1600
+size 1606 w 90 point
+size 1606 h 40 point
+root 1600 200 200
+check k3.acBetween0 1601 10  10 90 40
+check k3.acBetween1 1603 10  80 90 40
+check k3.acBetween2 1605 10 150 90 40
+
+engine web
+node 1610 -1
+dir 1610 row
+size 1610 w 200 point
+size 1610 h 200 point
+pad 1610 all 10
+wrap 1610 wrap
+aligncontent 1610 center
+node 1611 1610
+size 1611 w 90 point
+size 1611 h 40 point
+node 1612 1610
+size 1612 w 90 point
+size 1612 h 40 point
+node 1613 1610
+size 1613 w 90 point
+size 1613 h 40 point
+node 1614 1610
+size 1614 w 90 point
+size 1614 h 40 point
+node 1615 1610
+size 1615 w 90 point
+size 1615 h 40 point
+node 1616 1610
+size 1616 w 90 point
+size 1616 h 40 point
+root 1610 200 200
+check k4.acCenter0 1611 10  40 90 40
+check k4.acCenter1 1613 10  80 90 40
+check k4.acCenter2 1615 10 120 90 40
+
+engine web
+node 1620 -1
+dir 1620 row
+size 1620 w 200 point
+size 1620 h 200 point
+pad 1620 all 10
+wrap 1620 wrap
+aligncontent 1620 flex-end
+node 1621 1620
+size 1621 w 90 point
+size 1621 h 40 point
+node 1622 1620
+size 1622 w 90 point
+size 1622 h 40 point
+node 1623 1620
+size 1623 w 90 point
+size 1623 h 40 point
+node 1624 1620
+size 1624 w 90 point
+size 1624 h 40 point
+node 1625 1620
+size 1625 w 90 point
+size 1625 h 40 point
+node 1626 1620
+size 1626 w 90 point
+size 1626 h 40 point
+root 1620 200 200
+check k5.acEnd0 1621 10  70 90 40
+check k5.acEnd1 1623 10 110 90 40
+check k5.acEnd2 1625 10 150 90 40
+
+engine web
+node 1630 -1
+dir 1630 row
+size 1630 w 200 point
+size 1630 h 200 point
+pad 1630 all 10
+wrap 1630 wrap
+aligncontent 1630 space-around
+node 1631 1630
+size 1631 w 90 point
+size 1631 h 40 point
+node 1632 1630
+size 1632 w 90 point
+size 1632 h 40 point
+node 1633 1630
+size 1633 w 90 point
+size 1633 h 40 point
+node 1634 1630
+size 1634 w 90 point
+size 1634 h 40 point
+node 1635 1630
+size 1635 w 90 point
+size 1635 h 40 point
+node 1636 1630
+size 1636 w 90 point
+size 1636 h 40 point
+root 1630 200 200
+check k6.acAround0 1631 10  20 90 40
+check k6.acAround1 1633 10  80 90 40
+check k6.acAround2 1635 10 140 90 40
+
+# ---- k7) wrap-reverse: layout normally, then mirror along the cross axis -----
+# Same tree as k1 but wrap-reverse: base tops 10/55/100 (gap folded in) ->
+# 200-40-t -> 150/105/60.
+engine web
+node 1700 -1
+dir 1700 row
+size 1700 w 200 point
+size 1700 h 200 point
+pad 1700 all 10
+gap 1700 all 5
+wrap 1700 wrap-reverse
+aligncontent 1700 flex-start
+node 1701 1700
+size 1701 w 60 point
+size 1701 h 40 point
+node 1702 1700
+size 1702 w 60 point
+size 1702 h 40 point
+node 1703 1700
+size 1703 w 60 point
+size 1703 h 40 point
+node 1704 1700
+size 1704 w 60 point
+size 1704 h 40 point
+node 1705 1700
+size 1705 w 60 point
+size 1705 h 40 point
+node 1706 1700
+size 1706 w 60 point
+size 1706 h 40 point
+root 1700 200 200
+check k7.wrapReverse0 1701 10 150 60 40
+check k7.wrapReverse2 1703 10 105 60 40
+check k7.wrapReverse4 1705 10  60 60 40
+
+# ---- k8) column wrap: the lines stack along the horizontal ------------------
+# column 100x200 pad10 gap(all)5 wrap, 5 kids 60x40. main = height, content 80x180.
+# main outer 40 -> line0 gets 4 items (175), item 5 wraps. cross = max width 60,
+# total = 60+5+60 = 125 > 80 -> overflow -> align-content falls back to flex-start.
+engine web
+node 1800 -1
+dir 1800 column
+size 1800 w 100 point
+size 1800 h 200 point
+pad 1800 all 10
+gap 1800 all 5
+wrap 1800 wrap
+aligncontent 1800 flex-start
+node 1801 1800
+size 1801 w 60 point
+size 1801 h 40 point
+node 1802 1800
+size 1802 w 60 point
+size 1802 h 40 point
+node 1803 1800
+size 1803 w 60 point
+size 1803 h 40 point
+node 1804 1800
+size 1804 w 60 point
+size 1804 h 40 point
+node 1805 1800
+size 1805 w 60 point
+size 1805 h 40 point
+root 1800 100 200
+check k8.columnWrap0 1801 10  10 60 40
+check k8.columnWrap1 1802 10  55 60 40
+check k8.columnWrap2 1803 10 100 60 40
+check k8.columnWrap3 1804 10 145 60 40
+check k8.columnWrap4 1805 75  10 60 40
+
+# ---- l) P3 margin: point, percent (all margins resolve on owner WIDTH), edges
+# row 200x100 pad10 (content 180x80), kids 30x10.
+engine web
+node 1900 -1
+dir 1900 row
+size 1900 w 200 point
+size 1900 h 100 point
+pad 1900 all 10
+node 1901 1900
+size 1901 w 30 point
+size 1901 h 10 point
+margin 1901 left 5
+margin 1901 right 7
+node 1902 1900
+size 1902 w 30 point
+size 1902 h 10 point
+margin 1902 right 3
+root 1900 200 100
+check l1.marginPoint  1901 15 10 30 10
+check l1.marginPoint2 1902 52 10 30 10
+
+# margin-left/top 10% of the owner width 180 = 18 -> left 10+18, top 10+18.
+engine web
+node 1910 -1
+dir 1910 row
+size 1910 w 200 point
+size 1910 h 100 point
+pad 1910 all 10
+node 1911 1910
+size 1911 w 30 point
+size 1911 h 10 point
+margin 1911 left 10 percent
+margin 1911 top 10 percent
+root 1910 200 100
+check l2.marginPercent 1911 28 28 30 10
+
+# EDGE_HORIZONTAL / EDGE_VERTICAL.
+engine web
+node 1920 -1
+dir 1920 row
+size 1920 w 200 point
+size 1920 h 100 point
+pad 1920 all 10
+node 1921 1920
+size 1921 w 30 point
+size 1921 h 10 point
+margin 1921 h 5
+margin 1921 top 4
+root 1920 200 100
+check l3.marginHV 1921 15 14 30 10
+
+# START / END in LTR map to LEFT / RIGHT; the trailing margin only eats space.
+engine web
+node 1930 -1
+dir 1930 row
+size 1930 w 200 point
+size 1930 h 100 point
+node 1931 1930
+size 1931 w 30 point
+size 1931 h 10 point
+margin 1931 start 8
+node 1932 1930
+size 1932 w 30 point
+size 1932 h 10 point
+margin 1932 end 6
+root 1930 200 100
+check l4.marginStart 1931  8 0 30 10
+check l4.marginEnd   1932 38 0 30 10
+
+# ---- m) P5 position-type relative + inset -----------------------------------
+# row 200x100 pad10, c0 30x10 at 10; c1 30x10 + relative left 20 top 5 -> 60/15.
+engine web
+node 2000 -1
+dir 2000 row
+size 2000 w 200 point
+size 2000 h 100 point
+pad 2000 all 10
+node 2001 2000
+size 2001 w 30 point
+size 2001 h 10 point
+node 2002 2000
+pos 2002 relative
+inset 2002 left 20
+inset 2002 top 5
+size 2002 w 30 point
+size 2002 h 10 point
+root 2000 200 100
+check m1.relativeInset 2002 60 15 30 10
+
+# right/bottom insets shift NEGATIVELY (relativePosition returns -end).
+engine web
+node 2010 -1
+dir 2010 row
+size 2010 w 200 point
+size 2010 h 100 point
+pad 2010 all 10
+node 2011 2010
+pos 2011 relative
+inset 2011 right 20
+inset 2011 bottom 5
+size 2011 w 30 point
+size 2011 h 10 point
+root 2010 200 100
+check m2.relativeNegative 2011 -10 5 30 10
+
+# ---- n) P5 position-type absolute + inset -----------------------------------
+# row 200x100 pad10 border5: the containing block is the PADDING box, 190x90.
+# absolute child: left = inset + parent border = 20+5 = 25; top = 30+5 = 35.
+engine web
+node 2100 -1
+dir 2100 row
+size 2100 w 200 point
+size 2100 h 100 point
+pad 2100 all 10
+border 2100 all 5
+node 2101 2100
+size 2101 w 30 point
+size 2101 h 10 point
+node 2102 2100
+pos 2102 absolute
+inset 2102 left 20
+inset 2102 top 30
+size 2102 w 50 point
+size 2102 h 20 point
+root 2100 200 100
+check n1.absoluteFlow    2101 15 15 30 10
+check n1.absoluteInset   2102 25 35 50 20
+
+# right/bottom insets: left = 200-50-10-20 = 120; top = 200-20-10-30 = 140.
+engine web
+node 2110 -1
+dir 2110 row
+size 2110 w 200 point
+size 2110 h 200 point
+border 2110 all 10
+node 2111 2110
+pos 2111 absolute
+inset 2111 right 20
+inset 2111 bottom 30
+size 2111 w 50 point
+size 2111 h 20 point
+root 2110 200 200
+check n2.absoluteRightBottom 2111 120 140 50 20
+
+# no insets -> the parent's justify/align place it (centre of the padding box).
+engine web
+node 2120 -1
+dir 2120 row
+size 2120 w 200 point
+size 2120 h 200 point
+pad 2120 all 10
+justify 2120 center
+align 2120 center
+node 2121 2120
+pos 2121 absolute
+size 2121 w 50 point
+size 2121 h 20 point
+root 2120 200 200
+check n3.absoluteCentred 2121 75 90 50 20
+
+# percent insets resolve against the containing block (180x80 here): 10% -> 18/8.
+engine web
+node 2130 -1
+dir 2130 row
+size 2130 w 200 point
+size 2130 h 100 point
+border 2130 all 10
+node 2131 2130
+pos 2131 absolute
+inset 2131 left 10 percent
+inset 2131 top 10 percent
+size 2131 w 50 point
+size 2131 h 20 point
+root 2130 200 100
+check n4.absolutePercent 2131 28 18 50 20
+
+# ---- o) P6 percent padding / percent gap ------------------------------------
+# percent padding on EVERY edge resolves on the owner WIDTH: 10% of 200 = 20.
+engine web
+node 2200 -1
+dir 2200 row
+size 2200 w 200 point
+size 2200 h 100 point
+pad 2200 all 10 percent
+node 2201 2200
+size 2201 w 30 point
+size 2201 h 20 point
+root 2200 200 100
+check o1.percentPadding 2201 20 20 30 20
+
+# main-axis percent gap: 10% of content width 180 = 18 -> 10 / 58 / 106.
+engine web
+node 2210 -1
+dir 2210 row
+size 2210 w 200 point
+size 2210 h 100 point
+pad 2210 all 10
+gap 2210 col 10 percent
+node 2211 2210
+size 2211 w 30 point
+size 2211 h 10 point
+node 2212 2210
+size 2212 w 30 point
+size 2212 h 10 point
+node 2213 2210
+size 2213 w 30 point
+size 2213 h 10 point
+root 2210 200 100
+check o2.percentGapRow1 2212  58 10 30 10
+check o2.percentGapRow2 2213 106 10 30 10
+
+# column main-axis percent gap: row-gap 10% of content height 180 = 18 -> 10 / 48.
+engine web
+node 2220 -1
+dir 2220 column
+size 2220 w 100 point
+size 2220 h 200 point
+pad 2220 all 10
+gap 2220 row 10 percent
+node 2221 2220
+size 2221 w 30 point
+size 2221 h 20 point
+node 2222 2220
+size 2222 w 30 point
+size 2222 h 20 point
+root 2220 100 200
+check o3.percentGapCol 2222 10 48 30 20
+
+# ---- p) P7 reverse directions and RTL ---------------------------------------
+# row-reverse 200x100 pad10 gap(all)5, 3 kids 30x10, c0 margin-left 4.
+# the layout starts at the RIGHT edge: c0.right=10 -> left 160; and c0's trailing
+# (LEFT, since the flex-start edge is RIGHT) margin of 4 adds to the advance.
+engine web
+node 2300 -1
+dir 2300 row-reverse
+size 2300 w 200 point
+size 2300 h 100 point
+pad 2300 all 10
+gap 2300 all 5
+node 2301 2300
+size 2301 w 30 point
+size 2301 h 10 point
+margin 2301 left 4
+node 2302 2300
+size 2302 w 30 point
+size 2302 h 10 point
+node 2303 2300
+size 2303 w 30 point
+size 2303 h 10 point
+root 2300 200 100
+check p1.rowReverse0 2301 160 10 30 10
+check p1.rowReverse1 2302 121 10 30 10
+check p1.rowReverse2 2303  86 10 30 10
+
+# column-reverse 100x200 pad10 gap(all)5, 3 kids 30x10 -> tops 180 / 165 / 150.
+engine web
+node 2310 -1
+dir 2310 column-reverse
+size 2310 w 100 point
+size 2310 h 200 point
+pad 2310 all 10
+gap 2310 all 5
+node 2311 2310
+size 2311 w 30 point
+size 2311 h 10 point
+node 2312 2310
+size 2312 w 30 point
+size 2312 h 10 point
+node 2313 2310
+size 2313 w 30 point
+size 2313 h 10 point
+root 2310 100 200
+check p2.columnReverse0 2311 10 180 30 10
+check p2.columnReverse1 2312 10 165 30 10
+check p2.columnReverse2 2313 10 150 30 10
+
+# RTL mirrors row -> row-reverse for the SAME style: 2 kids 30x10 -> 170 / 140.
+engine web
+node 2320 -1
+dir 2320 row
+size 2320 w 200 point
+size 2320 h 100 point
+node 2321 2320
+size 2321 w 30 point
+size 2321 h 10 point
+node 2322 2320
+size 2322 w 30 point
+size 2322 h 10 point
+root 2320 200 100 rtl
+check p3.rtlRow0 2321 170 0 30 10
+check p3.rtlRow1 2322 140 0 30 10
+
+# RTL: EDGE_START is the RIGHT edge -> c0 margin-start 8 lands on the right.
+engine web
+node 2330 -1
+dir 2330 row
+size 2330 w 200 point
+size 2330 h 100 point
+node 2331 2330
+size 2331 w 30 point
+size 2331 h 10 point
+margin 2331 start 8
+node 2332 2330
+size 2332 w 30 point
+size 2332 h 10 point
+root 2330 200 100 rtl
+check p4.rtlStart 2331 162 0 30 10
+check p4.rtlStart2 2332 132 0 30 10
+
+# LTR: EDGE_START is LEFT; padding-start 4 puts the origin at 4.
+engine web
+node 2340 -1
+dir 2340 row
+size 2340 w 200 point
+size 2340 h 100 point
+pad 2340 start 4
+node 2341 2340
+size 2341 w 30 point
+size 2341 h 10 point
+margin 2341 start 8
+root 2340 200 100
+check p5.ltrStart 2341 12 0 30 10
+
+# ---- q) P8 overflow is stored, never applied to the rectangle ---------------
+# row 200x100 pad10; c0 flex 0 0 basis 300 -> 300 wide, 80 tall (stretch), no
+# shrink; overflow:hidden changes NOTHING about the rect.
+engine web
+node 2400 -1
+dir 2400 row
+size 2400 w 200 point
+size 2400 h 100 point
+pad 2400 all 10
+overflow 2400 hidden
+node 2401 2400
+flex 2401 0 0 300 point
+root 2400 200 100
+check q1.overflowRoot 2400 0 0 200 100
+check q1.overflowChild 2401 10 10 300 80

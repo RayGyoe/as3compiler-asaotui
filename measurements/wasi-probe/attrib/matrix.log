@@ -1,0 +1,53 @@
+########## [A] floors (stripped) ##########
+floor_c               5358 B  (   5.2 KiB)
+floor_cpp             5360 B  (   5.2 KiB)
+floor_printf         19966 B  (  19.5 KiB)
+floor_vfprintf       19219 B  (  18.8 KiB)
+floor_new            19179 B  (  18.7 KiB)
+floor_terminate      28876 B  (  28.2 KiB)
+floor_abort           9720 B  (   9.5 KiB)
+
+########## [B] mitigation configs: build libyoga + link yoga_one/yoga_min ##########
+== build libyoga-o2 : -O2 -DNDEBUG ==
+   libyoga-o2.a = 216154 B
+== build libyoga-oz : -Oz -DNDEBUG ==
+   libyoga-oz.a = 309350 B
+== build libyoga-o2_nrtti : -O2 -DNDEBUG -fno-rtti ==
+   libyoga-o2_nrtti.a = 216142 B
+== build libyoga-oz_nrtti : -Oz -DNDEBUG -fno-rtti ==
+   libyoga-oz_nrtti.a = 309336 B
+== build libyoga-oz_nnd : -Oz ==
+   libyoga-oz_nnd.a = 315736 B
+== build libyoga-o2_nnd : -O2 ==
+   libyoga-o2_nnd.a = 219930 B
+== build libyoga-oz_lto : -Oz -DNDEBUG -flto ==
+   libyoga-oz_lto.a = 619652 B
+== build libyoga-oz_nofs : -Oz -DNDEBUG (NO -ffunction-sections) ==
+
+########## [C] yoga_one / yoga_min per config (stripped) ##########
+config           yoga_one          KiB     yoga_min          KiB
+o2                  33590         32.8       118865        116.1
+oz                  39331         38.4       115237        112.5
+o2_nrtti            33596         32.8       118871        116.1
+oz_nrtti            39337         38.4       115243        112.5
+oz_nnd              39335         38.4       116262        113.5
+o2_nnd              33594         32.8       116024        113.3
+oz_lto              32178         31.4        83464         81.5
+oz_nofs             39336         38.4       115242        112.5
+
+########## [D] strip vs no-strip, and --gc-sections explicit ##########
+yoga_min -O2   unstripped = 329029 B (321.3 KiB)
+yoga_min -O2   stripped   = 118865 B (116.1 KiB)
+yoga_min -O2 + explicit --gc-sections = 118868 B
+  (DIFFERS)
+
+########## [E] delta vs floor_cpp (stripped) ##########
+yoga_min(o2) - floor_cpp =  113505 B ( 110.8 KiB)
+yoga_min(oz) - floor_cpp =  109877 B ( 107.3 KiB)
+yoga_min(o2_nrtti) - floor_cpp =  113511 B ( 110.9 KiB)
+yoga_min(oz_nrtti) - floor_cpp =  109883 B ( 107.3 KiB)
+yoga_min(oz_nnd) - floor_cpp =  110902 B ( 108.3 KiB)
+yoga_min(oz_lto) - floor_cpp =   78104 B (  76.3 KiB)
+yoga_min(oz_nofs) - floor_cpp =  109882 B ( 107.3 KiB)
+
+done.

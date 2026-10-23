@@ -1,0 +1,7 @@
+T0 start
+T1 top-level StyleRefinement.from([520,60]) ok
+T2 new PlainHolder ok (its static const initializer has run by now)
+T3 read PlainHolder.SZ ok
+T4 new ViewHolder ok (View subclass w/ static const initializer)
+T5 read ViewHolder static const via accessor ok
+DONE static-init shapes all survived

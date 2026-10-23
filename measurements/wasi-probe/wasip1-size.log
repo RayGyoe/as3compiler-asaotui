@@ -1,0 +1,21 @@
+== wasip1 size matrix: wasm32-wasip1, -O2 -fno-exceptions, noeh libc++ ==
+
+floor_c   (C driver)          65828 B   (  64.3 KiB)
+floor_cpp (+static libc++)    65830 B   (  64.3 KiB)
+yoga_one  (new/free)         244457 B   ( 238.7 KiB)
+yoga_min  (real layout)      329018 B   ( 321.3 KiB)
+seam_test (30 fns, cases)    351879 B   ( 343.6 KiB)
+
+== split the big number: what is libc++ vs what is Yoga ==
+libc++ floor      = floor_cpp - floor_c    =        2 B  (   0.0 KiB)
+yoga_one          = yoga_one  - floor_cpp  =   178627 B  ( 174.4 KiB)
+yoga_min          = yoga_min  - floor_cpp  =   263188 B  ( 257.0 KiB)  <-- full flex engine
+seam_test         = seam_test - floor_cpp  =   286049 B  ( 279.3 KiB)
+
+== DCE check (does the unreached layout core drop?) ==
+yoga_min - yoga_one = 84561 B  (82.6 KiB)
+   both link the SAME libyoga.a; a modest positive gap means the layout core is
+   pulled in only when reached, i.e. wasm-ld's GC-sections is working.
+
+== budget (u1-yoga-precheck.md section 6.1, gate B) ==
+   wasm delta <= 192 KiB (196,608 B). Compare the yoga_min / seam_test rows.

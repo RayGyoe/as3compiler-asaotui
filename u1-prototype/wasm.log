@@ -1,0 +1,1047 @@
+== [1/4] build Yoga (emscripten) ==
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/AbsoluteLayout.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_AbsoluteLayout.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/AbsoluteLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/event/event.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/AbsoluteLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/event/event.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/AbsoluteLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/event/event.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/AbsoluteLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:10:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/event/event.h:52:8: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   52 | struct YG_EXPORT Event {
+      |        ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/AbsoluteLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:17:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/AbsoluteLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/AbsoluteLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:11:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+7 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Baseline.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_Baseline.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Baseline.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Baseline.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Baseline.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Baseline.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/Align.h:13:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:17:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Baseline.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/Align.h:13:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Baseline.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/Align.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Baseline.cpp:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/event/event.h:52:8: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   52 | struct YG_EXPORT Event {
+      |        ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+7 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Cache.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_Cache.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Cache.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/Cache.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/SizingMode.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/AssertFatal.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Cache.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/Cache.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/SizingMode.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/AssertFatal.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Cache.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/Cache.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/SizingMode.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/AssertFatal.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Cache.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/Cache.h:11:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Cache.cpp:9:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/PixelGrid.h:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/Cache.cpp:9:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/PixelGrid.h:11:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/CalculateLayout.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_CalculateLayout.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/CalculateLayout.cpp:16:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/CalculateLayout.cpp:16:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/CalculateLayout.cpp:16:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/CalculateLayout.cpp:18:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:10:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/event/event.h:52:8: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   52 | struct YG_EXPORT Event {
+      |        ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/CalculateLayout.cpp:18:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:17:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/CalculateLayout.cpp:18:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/CalculateLayout.cpp:18:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/AbsoluteLayout.h:11:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+7 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/FlexLine.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_FlexLine.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/FlexLine.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/FlexLine.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/FlexLine.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/FlexLine.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/BoundAxis.h:13:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:17:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/FlexLine.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/BoundAxis.h:13:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/FlexLine.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/BoundAxis.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/PixelGrid.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_PixelGrid.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/PixelGrid.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/PixelGrid.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/PixelGrid.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/PixelGrid.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/PixelGrid.h:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:17:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/PixelGrid.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/PixelGrid.h:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/algorithm/PixelGrid.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/PixelGrid.h:11:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/config/Config.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_config_Config.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/config/Config.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/config/Config.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/config/Config.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/config/Config.cpp:8:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/config/Config.cpp:9:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/config/Config.cpp:9:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/AssertFatal.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_debug_AssertFatal.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/AssertFatal.cpp:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/AssertFatal.cpp:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/AssertFatal.cpp:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/AssertFatal.cpp:11:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/AssertFatal.cpp:13:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/AssertFatal.cpp:13:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/Log.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_debug_Log.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/Log.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/Log.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/Log.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/Log.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:12:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/Log.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/debug/Log.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/event/event.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_event_event.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/event/event.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/event/event.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/event/event.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/event/event.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/event/event.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/event/event.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/event/event.cpp:8:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/event/event.h:52:8: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   52 | struct YG_EXPORT Event {
+      |        ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+4 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/LayoutResults.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_node_LayoutResults.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/LayoutResults.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/LayoutResults.h:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/AssertFatal.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/LayoutResults.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/LayoutResults.h:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/AssertFatal.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/LayoutResults.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/LayoutResults.h:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/AssertFatal.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+3 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/Node.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_node_Node.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/Node.cpp:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/FlexDirection.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/Node.cpp:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/FlexDirection.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/Node.cpp:12:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/FlexDirection.h:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/Node.cpp:14:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:12:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/Node.cpp:14:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/node/Node.cpp:14:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGConfig.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGConfig.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGConfig.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGConfig.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGConfig.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGConfig.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:12:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGConfig.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGConfig.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/debug/Log.h:14:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGEnums.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGEnums.cpp.o
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNode.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGNode.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNode.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNode.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNode.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNode.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/Cache.h:11:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNode.cpp:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/CalculateLayout.h:12:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/event/event.h:52:8: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   52 | struct YG_EXPORT Event {
+      |        ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNode.cpp:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/CalculateLayout.h:13:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNode.cpp:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/CalculateLayout.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+7 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeLayout.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGNodeLayout.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeLayout.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeLayout.cpp:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:17:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeLayout.cpp:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeLayout.cpp:11:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeStyle.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGNodeStyle.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeStyle.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeStyle.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeStyle.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeStyle.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:17:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeStyle.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGNodeStyle.cpp:10:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGPixelGrid.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGPixelGrid.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGPixelGrid.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGPixelGrid.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGPixelGrid.cpp:8:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGPixelGrid.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/PixelGrid.h:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:17:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/config/Config.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Config : public ::YGConfig {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGPixelGrid.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/PixelGrid.h:11:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:26:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/style/Style.h:42:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   42 | class YG_EXPORT Style {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGPixelGrid.cpp:10:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/algorithm/PixelGrid.h:11:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/node/Node.h:33:7: warning: 'used' attribute only applies to variables with non-local storage, functions, and Objective-C methods [-Wignored-attributes]
+   33 | class YG_EXPORT Node : public ::YGNode {
+      |       ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+6 warnings generated.
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGValue.cpp -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGValue.cpp.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGValue.cpp:8:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGValue.cpp:8:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src/yoga/YGValue.cpp:8:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+3 warnings generated.
++ /c/Program\ Files/LLVM/bin/llvm-ar.exe rcs /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/libyoga.a /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_AbsoluteLayout.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_Baseline.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_Cache.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_CalculateLayout.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_FlexLine.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_algorithm_PixelGrid.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_config_Config.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_debug_AssertFatal.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_debug_Log.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_event_event.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_node_LayoutResults.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_node_Node.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGConfig.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGEnums.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGNode.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGNodeLayout.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGNodeStyle.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGPixelGrid.cpp.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_YGValue.cpp.o
+   -> 234470 bytes : /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/libyoga.a
+== [2/4] compile the glue (wasm) ==
++ em++ -std=c++20 -O2 -DNDEBUG -ffunction-sections -fdata-sections -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/yoga_glue.cc -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_glue.o
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/yoga_glue.cc:23:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:39:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   39 | YG_EXPORT extern const YGValue YGValueAuto;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/yoga_glue.cc:23:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:44:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   44 | YG_EXPORT extern const YGValue YGValueUndefined;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/yoga_glue.cc:23:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/Yoga.h:19:
+In file included from C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGNodeStyle.h:13:
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGValue.h:49:1: warning: 'used' attribute ignored on a non-definition declaration [-Wignored-attributes]
+   49 | YG_EXPORT extern const YGValue YGValueZero;
+      | ^
+C:/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/../measurements/yoga-src\yoga/YGMacros.h:33:57: note: expanded from macro 'YG_EXPORT'
+   33 | #define YG_EXPORT __attribute__((visibility("default"), used))
+      |                                                         ^
+3 warnings generated.
+== [3/4] compile the acceptance test (wasm) ==
++ emcc -O2 -I /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype -c /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/test_layout.c -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/test_layout.o
+== [4/4] link to JS+wasm (runnable under node) ==
++ em++ -O2 /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/test_layout.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/yoga_glue.o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/libyoga.a -sEXIT_RUNTIME=1 -o /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/test_layout.js
+cache:INFO: generating system asset: symbol_lists/b3332eaa0b7607e83bdc094e7e3a3b6a51e73175.json... (this will be cached in "C:\Users\rayle\Desktop\as3compiler-aot\build-tools\skia-src\third_party\externals\emsdk\upstream\emscripten\cache\symbol_lists\b3332eaa0b7607e83bdc094e7e3a3b6a51e73175.json" for subsequent builds)
+cache:INFO:  - ok
+   -> 134149 bytes : /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/test_layout.wasm
+
+== run (node) ==
++ node /c/Users/rayle/Desktop/as3compiler-aot/asaotui/u1-prototype/build/wasm/test_layout.js
+U1 layout seam acceptance -- yoga_glue vs hand-computed rectangles
+tolerance EPS = 0.010, point_scale = 0 (no pixel snapping), web defaults
+
+=== a) single node, fixed width=100 height=50 ===
+  root       got (l=   0.000 t=   0.000 w= 100.000 h=  50.000)  want (l=   0.000 t=   0.000 w= 100.000 h=  50.000)  OK
+
+=== b) column + padding(16) + row-gap(10), 3 children 100x40 ===
+  root       got (l=   0.000 t=   0.000 w= 200.000 h= 300.000)  want (l=   0.000 t=   0.000 w= 200.000 h= 300.000)  OK
+  child0     got (l=  16.000 t=  16.000 w= 100.000 h=  40.000)  want (l=  16.000 t=  16.000 w= 100.000 h=  40.000)  OK
+  child1     got (l=  16.000 t=  66.000 w= 100.000 h=  40.000)  want (l=  16.000 t=  66.000 w= 100.000 h=  40.000)  OK
+  child2     got (l=  16.000 t= 116.000 w= 100.000 h=  40.000)  want (l=  16.000 t= 116.000 w= 100.000 h=  40.000)  OK
+
+=== c) row + grow 1:2:3, basis 0, root 300x100 ===
+  child0     got (l=   0.000 t=   0.000 w=  50.000 h= 100.000)  want (l=   0.000 t=   0.000 w=  50.000 h= 100.000)  OK
+  child1     got (l=  50.000 t=   0.000 w= 100.000 h= 100.000)  want (l=  50.000 t=   0.000 w= 100.000 h= 100.000)  OK
+  child2     got (l= 150.000 t=   0.000 w= 150.000 h= 100.000)  want (l= 150.000 t=   0.000 w= 150.000 h= 100.000)  OK
+
+=== d) percent width/height vs parent padding(20)+border(10) ===
+  root       got (l=   0.000 t=   0.000 w= 200.000 h= 100.000)  want (l=   0.000 t=   0.000 w= 200.000 h= 100.000)  OK
+  child      got (l=  30.000 t=  30.000 w=  70.000 h=  20.000)  want (l=  30.000 t=  30.000 w=  70.000 h=  20.000)  OK
+
+=== e) min/max width clamp flex-basis (e1 min, e2 max) ===
+  e1 child   got (l=   0.000 t=   0.000 w= 150.000 h=  50.000)  want (l=   0.000 t=   0.000 w= 150.000 h=  50.000)  OK
+  e2 child   got (l=   0.000 t=   0.000 w= 150.000 h=  50.000)  want (l=   0.000 t=   0.000 w= 150.000 h=  50.000)  OK
+
+=== f) measure callback: text wrap height (7pt/char, 16pt/line) ===
+  f1 root    got (l=   0.000 t=   0.000 w= 100.000 h=  16.000)  want (l=   0.000 t=   0.000 w= 100.000 h=  16.000)  OK
+  f1 text    got (l=   0.000 t=   0.000 w=  70.000 h=  16.000)  want (l=   0.000 t=   0.000 w=  70.000 h=  16.000)  OK
+  f2 root    got (l=   0.000 t=   0.000 w=  40.000 h=  32.000)  want (l=   0.000 t=   0.000 w=  40.000 h=  32.000)  OK
+  f2 text    got (l=   0.000 t=   0.000 w=  40.000 h=  32.000)  want (l=   0.000 t=   0.000 w=  40.000 h=  32.000)  OK
+
+=== g) NULL-handle tolerance (must not crash) ===
+  layout_get(NULL) -> (0.0,0.0,0.0,0.0)  want zeros  OK
+  survived all NULL calls  OK
+
+---- 17 checks, 0 failures ----
+RESULT: PASS
+(exit code 0)

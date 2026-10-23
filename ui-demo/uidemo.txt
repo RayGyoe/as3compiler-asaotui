@@ -1,0 +1,19 @@
+AOT-UIDEMO as-aot --air-app air-uidemo/app.xml (oss AOT -> native)
+stage=500x375
+root   = box (0,0,500,375)
+title  = text (28,28,98,23.574468085106382)
+card   = box (28,91.36170212765958,444,229.85106382978722)
+account= textInput (47,110.36170212765958,406,40.910904255319146)
+signin = button (47,257.405585106383,406,44.807180851063826)
+status = text (28,335.2127659574468,70,11.787234042553191)
+solves=1 describes=2
+PASS  root fills the stage
+PASS  title at page padding (28,28)
+PASS  card at page padding x=28
+PASS  card spans the page width
+PASS  account at card padding+border x=47
+PASS  signin below account
+PASS  status below signin
+PASS  redundant reflows add no solve (still 1)
+AOT-CHECK: PASS (0 failures)
+RESULT: PASS

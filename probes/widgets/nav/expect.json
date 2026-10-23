@@ -1,0 +1,38 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/nav/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "root": "column, padding 20, gap 16, size [360,300]. Root rect (0,0,360,300). Content starts at (20,20), content width 320.",
+    "tabs": "First child, explicit size [320,36] -> (20,20,320,36). Segment pitch: 4 segments, gap 8, content width 320 => segW = (320 - 8*3)/4 = 296/4 = 74. seg i x = 20 + i*(74+8): seg0=20, seg1=102, seg2=184, seg3=266.",
+    "list": "Second child, gap 16 below tabs: y = 20 + 36 + 16 = 72 -> (20,72,320,160). Column, gap 0, padding 0, so content box is the full rect.",
+    "rows": "3 builder rows, itemHeight 40 (style height patch). Separator true -> a 1px hairline between rows. Rows are laid out from y=72: row0 (20,72,320,40); sep:0 (20,112,320,1); row1 (20,113,320,40); sep:1 (20,153,320,1); row2 (20,154,320,40). Width 320 = stretched cross axis (align-items stretch) for the dividers; the rows pin width 320 explicitly.",
+    "points": {
+      "tab_unselected": "segment 0 fill is #E5E7EB. Sample 4px inside its top-left (20+4, 20+4) = (24,24): clear of the centred glyph and inside the radius-6 rounded corner (4^2+4^2=32 <= 6^2=36... actually (6-4)^2+(6-4)^2=8 <= 36).",
+      "tab_selected": "model.tabIndex starts at 1, so segment 1 is selected and filled #2563EB. Sample (102+4, 20+4) = (106,24).",
+      "list_row": "row0 is transparent, so its area shows the list background #F9FAFB. Sample near the right edge (20+320-4, 72+4) = (336,76) to be clear of the 'Alpha' glyphs at the left.",
+      "list_selected": "model.listIndex starts at 1, so row1 gets the #DBEAFE highlight drawn by the list behind its rows. Sample (336, 113+4=117).",
+      "separator": "sep:0 hairline colour is #D1D5DB. Sample (336, 112).",
+      "root_bg": "root background is #FFFFFF. Sample (4,4), outside the 20px padding."
+    },
+    "behaviour": "Steady-state layout solves do not increase after the settle capture; clicks dispatch a MouseEvent with localX/localY directly on the tabs/list backing (the same technique probes/widgets/form uses for the slider)."
+  },
+  "w": 360,
+  "h": 300,
+  "rects": {
+    "root": [0, 0, 360, 300],
+    "tabs": [20, 20, 320, 36],
+    "list": [20, 72, 320, 160],
+    "row0": [20, 72, 320, 40],
+    "sep:0": [20, 112, 320, 1],
+    "row1": [20, 113, 320, 40],
+    "sep:1": [20, 153, 320, 1],
+    "row2": [20, 154, 320, 40]
+  },
+  "points": [
+    { "x": 24, "y": 24, "rgb": "#E5E7EB" },
+    { "x": 106, "y": 24, "rgb": "#2563EB" },
+    { "x": 336, "y": 76, "rgb": "#F9FAFB" },
+    { "x": 336, "y": 117, "rgb": "#DBEAFE" },
+    { "x": 336, "y": 112, "rgb": "#D1D5DB" },
+    { "x": 4, "y": 4, "rgb": "#FFFFFF" }
+  ]
+}

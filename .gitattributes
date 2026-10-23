@@ -1,0 +1,8 @@
+# 仓库内一律 LF。
+#
+# 为什么需要显式钉住：本机 git 的 core.autocrlf=true，而本工作区的脚本混用 Windows
+# 与 Git-Bash —— 若 `.sh` 在某个克隆上被检成 CRLF，Git-Bash/WSL 的 shebang 会直接失效
+# （症状是 "bad interpreter"），而 `.bat` 反过来必须 CRLF。两边都靠机器默认值就是掷骰子，
+# 所以钉死。二进制（*.bmp/*.png/*.dat）由 `text=auto` 的内容探测自动放过。
+* text=auto eol=lf
+*.bat text eol=crlf

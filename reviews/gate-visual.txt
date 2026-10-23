@@ -1,0 +1,35 @@
+
+=== close any running VisualDemo ===
+
+=== build VisualDemo.exe with our AOT compiler ===
+Build successful: ../asaotui/layout-check/VisualDemo.exe
+ 27235 |   as_throw(TypeError_new(as_str_concat_n(3, parts), 1123));
+ok: C:\Users\rayle\Desktop\as3compiler-aot\asaotui\layout-check\VisualDemo.exe (9444864 bytes)
+
+=== run the window and wait for it to write its framebuffer ===
+pid 36796, waiting for visual-demo.bmp ...
+ok: 2534454 bytes
+
+=== read the picture back ===
+scanning C:\Users\rayle\Desktop\as3compiler-aot\asaotui\layout-check\visual-demo.bmp  (960x660, 2534454 bytes)
+canvas matches the demo design: yes
+
+PASS  page background at (478,657) = rgb(242,244,248), want rgb(242,244,248)
+PASS  p3 strip 0 justify=center      edges 744/788/832/876
+PASS  p3 strip 1 justify=space-between edges 672/716/788/832/904/948
+PASS  p3 strip 2 justify=space-evenly  edges 708/752/788/832/868/912
+PASS  p3 strip 3 justify=flex-end      edges 816/860/904/948
+PASS  p2 flex-grow 1:2:3 -> 46/92/138 wide (edges 352/398/490/628)
+PASS  p5 wrap line 0 -> 4 boxes (edges 352/412/422/482/492/552/562/622)
+PASS  p5 wrap line 1 -> 3 boxes (edges 352/412/422/482/492/552)
+PASS  p4 align-items=flex-start box#2 top/bottom
+PASS  p4 align-items=center     box#2 top/bottom
+PASS  p4 align-items=flex-end   box#2 top/bottom
+PASS  p4 align-items=stretch    box#2 keeps its explicit height 30
+
+12 checks, 0 failures
+RESULT: every scanned border matches the hand-computed rectangle -- the engine both COMPUTED and DREW them in the right place
+
+
+=== close the window ===
+closed

@@ -1,0 +1,30 @@
+{
+  "capturedAt": "2026-10-22T21:42:19.739Z",
+  "head": "6121b30b019b924ed30011ca096ce1907ca96ccf Fri Oct 23 04:53:42 2026 +0800",
+  "files": [
+    {
+      "code": " M",
+      "f": "src/reach.ts",
+      "size": 29098,
+      "sha256_16": "4e855c84951f9ecb",
+      "mtime": "2026-10-22T21:25:29.177Z"
+    },
+    {
+      "code": " M",
+      "f": "test/unit/reach.ts",
+      "size": 26069,
+      "sha256_16": "2e44c749bac8dd45",
+      "mtime": "2026-10-22T21:25:07.853Z"
+    },
+    {
+      "code": "??",
+      "f": "icudtl.dat",
+      "size": 10185008,
+      "sha256_16": "846942a316b4e38f",
+      "mtime": "2026-10-09T14:10:40.898Z"
+    }
+  ],
+  "treeFingerprint": "40048261434941b7f6b4",
+  "bad": [],
+  "skipped": []
+}

@@ -1,0 +1,8 @@
+=== strict wasm32-wasip1 probe (raw) ===
+$ clang --target=wasm32-wasip1 w.c -o w.wasm
+wasm-ld: error: cannot open crt1.o: no such file or directory
+wasm-ld: error: unable to find library -lc
+wasm-ld: error: cannot open C:\Program Files\LLVM\lib\clang\23\lib\wasm32-unknown-wasip1\libclang_rt.builtins.a: no such file or directory
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+exit=1
+WASI_SDK_HOME=<unset>

@@ -1,0 +1,38 @@
+== closure dump (tools/reach-dump.cjs) ==
+     main=p.Main  kept 3/5  edges 1
+     roots: p.Main
+     KEPT (3):
+       p/Fac.as
+       p/Leaf.as
+       p/Main.as
+     DROPPED (2):
+       p/Base.as
+       p/Helper.as
+  ok   closure dump exits 0
+  ok   closure keeps 3/5 files (expect 3: Main, Fac, Leaf)
+  ok   closure DROPS p/Base.as and p/Helper.as (the defect)
+== arm A: plain --air-app closure ==
+     exit 1  
+     == as-aot: AS3 subset -> C -> native ==
+     [1/4] read        C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\reach-freefn\app.xml (main p.Main, 3/5 sources reachable from p.Main)
+     [2/4] parse       tokenize + AST
+     [3/4] codegen     emit C source
+     [31mCodegen error at 8:5: unknown superclass 'Base' of 'p_Leaf'[0m
+  ok   arm A fails (no exe emitted)
+  ok   arm A emitted no exe
+  ok   arm A fails with `unknown superclass 'Base' of 'p_Leaf'`
+== arm B: --all-sources ==
+     exit 0  
+       368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+           |                                                       ^
+     C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+       358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+           |                                               ^
+     1 warning generated.
+  ok   arm B builds and links (exit 0)
+  ok   arm B emitted ReachFreeFn.exe
+     run: exit 0  ReachFreeFn rendered
+  ok   arm B runs to exit 0
+  ok   arm B printed its render line
+
+==== G13 PROBE: PASS -- closure still drops Base/Helper, --all-sources still rescues it ====

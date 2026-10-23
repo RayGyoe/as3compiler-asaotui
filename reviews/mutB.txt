@@ -1,0 +1,7 @@
+[probe] building form
+[probe] built probes\widgets\form\Main.exe
+
+PROBE form: 41 checks, 2 failures
+  FAIL  program verdict: FAIL r2.checked is true but the model says false (G9: boxed false read as truthy); radio binding not written: false;
+  FAIL  pixel (18,56) want #FFFFFF got #2563eb
+RESULT: FAIL

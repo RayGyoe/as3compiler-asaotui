@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- obj-array-identity probe: does real AIR keep an Array's identity in an
+     `Object`-typed slot, and does our AOT? -->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.probe.objarrayidentity</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>objarr-probe</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>CaseAir.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>

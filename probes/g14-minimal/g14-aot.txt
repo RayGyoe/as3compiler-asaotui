@@ -1,0 +1,3 @@
+is Array  = true     (AIR: true)
+is Marker = false     (AIR: false)
+REACHED THE END (no crash)

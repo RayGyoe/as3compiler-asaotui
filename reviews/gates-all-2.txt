@@ -1,0 +1,14 @@
+[PASS] probe chip (19 checks, 0 failures)  (exit 0)
+[PASS] probe form (41 checks, 0 failures)  (exit 0)
+[PASS] probe display (48 checks, 0 failures)  (exit 0)
+[FAIL] probe widgets/anim  (exit 2)
+[probe] no Main.as in C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\widgets\widgets\anim
+[FAIL] probe redraw  (exit 2)
+[probe] no Main.as in C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\widgets\redraw
+[PASS] layout-check text half (133 checks, 0 failures)  (exit 0)
+[PASS] ui-demo CheckUi (23 checks, 0 failures)  (exit 0)
+[PASS] layout-check visual half (12 checks, 0 failures)  (exit 0)
+[PASS] gap scan: no Boolean(<identifier>) call sites (0 found)  (exit 0)
+
+==== 7/9 gates PASS ====
+FAILED: probe widgets/anim | probe redraw

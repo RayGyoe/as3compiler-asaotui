@@ -1,0 +1,45 @@
+MUTATION M2 -- applyPayload() does NOT re-resolve when a widget override changes the direction
+
+The fix under test is one line in UiNode.applyPayload:
+
+    if (this.directionOverride != dirBefore) this.resolveStyle(true);
+
+Mutation: comment that line out (nothing else changes).
+
+Command : cd asaotui/ui-demo && ASC_NO_OPEN=1 node run-gallery.cjs
+Exit    : 1
+Verdict : gallery.done = FAIL colA is at x=24 w=652, expected x=24 w=320;
+                            colB is at x=24 w=652, expected x=356 w=320;
+
+Why this is the right redness: `payload()` runs AFTER `resolveStyle()` in a pass, and
+the style pointer does not change on a later render, so a direction override set by a
+widget would never reach Theme.resolve. The reused `body` slot then keeps laying out in
+the PREVIOUS page's direction. Every node still has a rect and every colour is right --
+only a hand-computed RECT assertion catches it (page 0's own loginCard is 209.33 wide
+instead of 652, because the body was still a row left over from the Widgets page).
+
+--- ui-demo/gallery.txt (excerpt, M2 build) ---
+
+== page 0 (Home) ==
+loginCard 24,132,209.33333333333331,250
+  nodes=14 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=2 root.engineKids=5 body.engineKids=3 bodyParentIsRoot=true uiKidsBody=3
+loginCard 24,132,209.33333333333331,250
+== page 1 (Widgets) ==
+colA 24,132,652,181
+colB 24,325,652,181
+  nodes=43 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=3 root.engineKids=5 body.engineKids=2 bodyParentIsRoot=true uiKidsBody=2
+colA 24,132,652,181
+colB 24,325,652,181
+== page 2 (Data) ==
+list 24,132,300,280
+  nodes=26 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=4 root.engineKids=5 body.engineKids=2 bodyParentIsRoot=true uiKidsBody=2
+list 24,132,300,280
+== page 3 (Motion) ==
+  nodes=11 engineNodeNull=0 zeroRect=0 detachedBacking=0
+  layout: solves=5 root.engineKids=5 body.engineKids=3 bodyParentIsRoot=true uiKidsBody=3
+
+(restored: the line is back and the same command reports RESULT: PASS -- see
+reviews/gates-all-4.txt for the green run of the whole gate suite.)

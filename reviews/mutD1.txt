@@ -1,0 +1,6 @@
+[probe] building display
+[probe] built probes\widgets\display\Main.exe
+
+PROBE display: 48 checks, 1 failures
+  FAIL  pixel (24,141) want #DC2626 got #dc2627
+RESULT: FAIL
