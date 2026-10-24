@@ -218,16 +218,37 @@ package asaot.ui
         // Reorder the retained backings to match the description order. We move
         // existing display objects (addChildAt semantics, which already carries the
         // gc write barrier in the compiler) instead of rebuilding them.
+        //
+        // THE INDEX IS A SLOT COUNTER, NOT `base + <description index>`. A LIFTED child
+        // (an open popup, see UiNode.lifted) has LEFT the backing -- it lives on the
+        // stage container so it can out-stack its owner's later siblings -- but it still
+        // holds its slot in the description. Counting description positions therefore
+        // overshoots by one per lifted sibling, and an index >= numChildren is a
+        // RangeError #2006 on AIR ("The supplied index is out of bounds."). That error
+        // took down the whole reconcile of the frame, once per frame, the moment a
+        // dropdown opened: select, combobox and datePicker showed a frozen page and a
+        // console stream. The counter below only advances for children that ARE in the
+        // backing, so the last one lands at most on numChildren-1 (one lower when
+        // `aboveContent` occupies the top).
+        //
+        // This is also why no AOT probe ever saw it: our runtime CLAMPS an out-of-range
+        // index instead of throwing (asaotui/compiler-gaps.md G24), and a clamped
+        // index happens to be the right place for the LAST child -- the visible result
+        // was identical while the reference runtime threw. tools/air-sweep.cjs is the
+        // gate that runs the real runtime and pins this.
         private function fixDisplayOrder(n:UiNode, next:Vector.<UiNode>):void
         {
-            var base:int = n.internalCount;
+            var slot:int = n.internalCount;
             for (var i:int = 0; i < next.length; i++)
             {
                 var c:UiNode = next[i];
+                // `lastIndex` stays the DESCRIPTION index: it is the identity token of
+                // an unkeyed sibling (`UiNode.token`), not a display position.
                 c.lastIndex = i;
                 if (c.backing != null && c.backing.parent == n.backing)
                 {
-                    n.backing.setChildIndex(c.backing, base + i);
+                    n.backing.setChildIndex(c.backing, slot);
+                    slot = slot + 1;
                 }
             }
         }

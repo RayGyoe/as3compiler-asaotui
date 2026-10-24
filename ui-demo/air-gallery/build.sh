@@ -3,6 +3,7 @@
 # window, on either backend.
 #
 #   ./build.sh           AIR reference arm: mxmlc the app, then `adl app.xml`
+#   ./build.sh air <page>  the same, landed straight on a catalog page (e.g. `select`)
 #   ./build.sh aot       our AOT arm: stage + compile it, then run the exe
 #   ./build.sh swf       compile the SWF and stop (no window, no exe)
 #   ./build.sh clean     delete what the two build arms produce
@@ -66,8 +67,9 @@ say() { printf '[build] %s\n' "$*"; }
 die() { printf 'build.sh: %s\n' "$*" >&2; exit 2; }
 
 usage() {
-  printf 'usage: %s [air|aot|swf|clean]\n\n' "$(basename -- "$0")"
+  printf 'usage: %s [air [page]|aot|swf|clean]\n\n' "$(basename -- "$0")"
   printf '  air    (default) mxmlc the app, then run it under adl\n'
+  printf '  air <page>     same, opened on that catalog page (select, combobox, ...)\n'
   printf '  aot    stage + compile with as-aot, then run the executable\n'
   printf '  swf    compile the SWF only\n'
   printf '  clean  remove the SWF / exe / generated C / tour evidence\n'
@@ -151,10 +153,23 @@ build_swf() {
 }
 
 run_air() {
-  local root adl
+  local root adl page
+  page=${1:-}
   root=$(sdk_root) || die 'no AIR SDK found: set AIRSDK_HOME to the SDK root (adl lives in $AIRSDK_HOME/bin)'
   adl=$(sdk_bin "$root" adl) || die "no adl under $root/bin -- is AIRSDK_HOME an AIR SDK root?"
   build_swf "$root"
+  # How the app is told which page to open: a sidecar file, because `NativeApplication
+  # .argv` does not compile for this class (measured) -- see ui-demo/demo/DocsAir.as.
+  # No page means delete the file: the app then lands on the first page, and a stale
+  # request from a previous run can never decide what this window shows.
+  if [ -n "$page" ]; then
+    ( cd "$HERE" && "$NODE" -e '
+      require("fs").writeFileSync("air-mode.txt", process.argv[1] + "\n");
+    ' "$page" )
+    say "page: $page (air-mode.txt)"
+  else
+    ( cd "$HERE" && "$NODE" -e 'try { require("fs").unlinkSync("air-mode.txt"); } catch (e) {}' )
+  fi
   say "adl: $adl"
   say 'the window is open -- close it (or Ctrl-C) to come back to the shell'
   # cwd = this directory: adl resolves <content> relative to the descriptor, and the
@@ -180,7 +195,10 @@ clean() {
     try { require("../air-run.cjs").killImage("GalleryApp.exe"); } catch (e) {}
     const names = ["GalleryApp.swf", "GalleryApp.exe", "GalleryApp.c",
                    "GalleryApp.build.json", "GalleryApp.exports.json",
-                   "gallery.done", "gallery.txt", "src"];
+                   "gallery.done", "gallery.txt", "src",
+                   // the AIR driver file and the log it writes (tools/air-sweep.cjs
+                   // reads that log; a stale one must not survive a clean)
+                   "air-mode.txt", "air-trace.txt"];
     for (const n of names) {
       const p = path.join(dir, n);
       if (!fs.existsSync(p)) continue;
@@ -193,7 +211,7 @@ clean() {
 }
 
 case "${1:-air}" in
-  air|adl)        run_air ;;
+  air|adl)        run_air "${2:-}" ;;
   aot|native)     run_aot ;;
   swf|compile)
     root=$(sdk_root) || die 'no AIR SDK found: set AIRSDK_HOME to the SDK root (mxmlc lives in $AIRSDK_HOME/bin)'

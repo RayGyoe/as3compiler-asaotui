@@ -464,6 +464,22 @@
 
 ---
 
+### G24 —— `DisplayObjectContainer.setChildIndex()`：**越界索引被夹紧，不抛 `#2006`**（AIR 抛）
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **遗留缺陷**（同一份 AS3，AIR 报错我们静默继续 ⇒ 运行时语义**比 AIR 宽松**，属 §2.4 红线「对齐 AIR 是底线」的违背；方向与 G1~G22 相反：不是「AIR 能跑我们跑不了」，而是「AIR 拦住了我们的错，我们放行」） |
+| **症状（用户报的）** | 文档站 `select` / `combobox` / `datePicker` 三页，**点一下下拉框**就每帧抛一次<br>`RangeError: Error #2006: The supplied index is out of bounds.`<br>`at flash.display::DisplayObjectContainer/setChildIndex()` → `asaot.ui::Reconciler/fixDisplayOrder()` → … → `UiApp/reflow()`；页面静止不动（reconcile 在那一帧被打断，后续节点（含代码块）从未排好序） |
+| **真因（库侧）** | `Reconciler.fixDisplayOrder` 曾用 `setChildIndex(c.backing, internalCount + <描述下标>)`。**弹出的下拉框会把 owner 节点 `lifted` 到 stage container**（`UiNode.lifted`，为了越过后续兄弟的 z 序），它**仍占描述树的一个槽位、但已不在父 backing 里** ⇒ 下标按描述位计数会**每有一个被抬起的兄弟就多算一**，`index == numChildren` 即越界 |
+| **为什么我们的 AOT 全绿** | `src/emit.ts` 的 `DisplayObjectContainer_setChildIndex`（约 `emit.ts:11635`）对越界做了 `if (index >= length) index = length - 1;`，且「不是孩子」时 `return` —— **夹紧而非抛错**。而夹紧到末尾恰好是最后一个孩子的正确落点 ⇒ 画面**逐像素相同**，41 页截图扫描、全部 AOT 探针、gate 套件都不可能看见；只有真 AIR 会抛 |
+| **真参考（AIR 51.4.1 / `adl` 实测）** | 越界 ⇒ `RangeError #2006`；`child` 不是调用者的孩子 ⇒ `ArgumentError #2025`（我们那边同样是 `return`，见 `getChildIndex` 已按 #2025 修、`setChildIndex` 未修） |
+| **修法（库侧，已落地）** | `fixDisplayOrder` 改成**「只数在用的孩子」的槽位计数器**：`slot = internalCount`，只有 `backing.parent == n.backing` 的孩子才 `setChildIndex(..., slot++)`。末位最多落在 `numChildren-1`（有 `aboveContent` 时少一），**结构性**不可能越界；`lastIndex` 仍是**描述下标**（那是未带 key 的兄弟的身份 token，不是显示位） |
+| **状态** | 库侧 ✅ 已修。编译器侧 ❌ **仍在**（未动 `as3compiler/`，按本工作区约定登记于此） |
+| **对编译器的主张** | 建议把 `setChildIndex` 对齐 AIR：越界 → `RangeError #2006`；非孩子 → `ArgumentError #2025`。这条**不只是洁癖**：它正是「库 bug 只能靠 AIR 才测得出来」的根因 —— 修好后，任何一个 AOT 探针只要碰到同样的错法就会**当场以具名错误**变红，而不必等 41 页扫描之后的人工复现 |
+| **证据落盘 / 复现** | 新门 `tools/air-sweep.cjs`（**唯一跑参考运行时**的门）：41 页 × `adl`、每页把 10 个可弹层开关打开再关掉，任何 AIR 报的错都算失败。变异 `tools/mutation-air-sweep.cjs` **3/3**：把槽位计数改回 `internalCount + i` ⇒ 立刻在 `select` / `combobox` / `datePicker` 上报 `#2006`；去掉「打开弹层」这一步 ⇒ `OPENED` 缺失（扫得全绿但已经瞎了）；少走一页 ⇒ 页数不足。见 [`reviews/air-sweep-2026-10-24.md`](reviews/air-sweep-2026-10-24.md) |
+
+---
+
 ## 2 不是缺口：已澄清 / 已关闭
 
 | 事项 | 结论 | 证据 |

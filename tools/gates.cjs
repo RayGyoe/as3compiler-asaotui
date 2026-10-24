@@ -199,6 +199,15 @@
 //                invisible to mxmlc), and `DocsAir` starts touching an AOT-ONLY test
 //                hook (`Stage.render`), which is exactly why the AIR entry class is
 //                separate from the touring `DocsMain` in the first place.
+//   air sweep -- tools/mutation-air-sweep.cjs: 3/3. The one gate that RUNS adl over
+//                all 41 pages with every popup open, because our AOT is more forgiving
+//                than AIR: `setChildIndex` past the end throws #2006 there and clamps
+//                here, so `fixDisplayOrder` throwing once per frame on the
+//                select/combobox/datePicker pages was invisible to every AOT probe and
+//                to a render-only 41-page screenshot sweep. The three mutations are the
+//                defect itself (the display slot computed from the description index),
+//                a sweep that stops OPENING the popups (41 pages, 0 errors, blind), and
+//                a sweep that stops one page early (a dead window must not look green).
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -394,6 +403,30 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /OK: compiled by AIR -- (\d+) bytes/.exec(out);
   record('AIR arm (build.sh default) compiles under mxmlc' + (m ? ' (' + m[1] + ' B SWF)' : ''), r.status, out);
+}
+
+// ---- 6b6: the docs app RUNS on the reference runtime, every page, popups open ----
+// The one gate that measures AIR at run time, and the reason it exists is the shape
+// of the last three user reports: our AOT is MORE FORGIVING than AIR, so a library
+// mistake AIR rejects can be invisible to the entire AOT suite. The case that forced
+// this gate: `setChildIndex` with an index >= numChildren throws RangeError #2006 on
+// AIR and CLAMPS on our runtime (compiler-gaps.md G24), so `Reconciler.fixDisplayOrder`
+// computing a display slot from a description index threw once per frame -- a frozen
+// select/combobox/datePicker page and a console stream -- while every AOT probe and a
+// 41-page screenshot sweep passed. The sweep visits all 41 pages of the catalog with
+// every openable popup flipped open (the lifted state), and fails on any error AIR
+// reports, on a short page list, and on a popup step that stopped taking effect.
+// ~20 s, one window. Exit 3 (no AIR SDK on this box) is reported as SKIP.
+//   mutation: tools/mutation-air-sweep.cjs (3/3: the defect itself; a sweep that stops
+//             opening popups; a sweep that stops one page early -- each restoring its
+//             file by hash).
+{
+  const r = sh(process.execPath, ['tools/air-sweep.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /\[air-sweep\] (\d+)\/(\d+) page\(s\) visited, (\S+)\/(\d+) popup\(s\) opened, (\d+) runtime error\(s\)/.exec(out);
+  record('docs app on AIR (adl): every page, popups open, no runtime error'
+    + (m ? ' (' + m[1] + '/' + m[2] + ' pages, ' + m[3] + '/' + m[4] + ' popups, ' + m[5] + ' errors)' : ''),
+    r.status, out);
 }
 
 // ---- 6c: the --air-app reachability probe (G13, fixed 阶段二百四十九) ----------

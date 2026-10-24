@@ -1,0 +1,22 @@
+baseline (unmutated): exit 0
+
+M1  CAUGHT  THE REPORTED BUG, re-introduced: the display slot is computed from the description index, so a lifted popup makes it overshoot -> RangeError #2006 on AIR
+     exit 1
+     [air-sweep] 41/41 page(s) visited, 10/10 popup(s) opened, 6 runtime error(s); log: ui-demo/air-gallery/air-trace.txt
+     [select] ERROR select Error: RangeError: Error #2006: The supplied index is out of bounds. |   at Error: RangeError: Error #2006: The supplied index is out of bounds. |   at 	at demo::DocsAir/selfReco
+     [combobox] ERROR combobox Error: RangeError: Error #2006: The supplied index is out of bounds. |   at Error: RangeError: Error #2006: The supplied index is out of bounds. |   at 	at demo::DocsAir/self
+     [datePicker] ERROR datePicker Error: RangeError: Error #2006: The supplied index is out of bounds. |   at Error: RangeError: Error #2006: The supplied index is out of bounds. |   at 	at demo::DocsAir/
+     restore: byte-identical (742a2c7572bcbcee)
+M2  CAUGHT  the sweep never opens a popup -- 41 pages visited, zero errors, and the lifted state it exists for is never reached (the gate must notice: OPENED)
+     exit 1
+     [air-sweep] 41/41 page(s) visited, ?/10 popup(s) opened, 0 runtime error(s); log: ui-demo/air-gallery/air-trace.txt
+     - no OPENED line: the popup-open step never reported
+     restore: byte-identical (8eecff487d232f85)
+M3  CAUGHT  the sweep stops one page early -- a window that dies mid-catalog must not pass
+     exit 1
+     [air-sweep] 40/41 page(s) visited, 10/10 popup(s) opened, 0 runtime error(s); log: ui-demo/air-gallery/air-trace.txt
+     - visited 40/41 pages
+     restore: byte-identical (8eecff487d232f85)
+
+MUTATION air-sweep: 3/3 caught, 0 problem(s)
+RESULT: PASS
