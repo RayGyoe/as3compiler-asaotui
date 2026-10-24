@@ -107,6 +107,12 @@ package asaot.ui
         // ---- backing internals ------------------------------------------
         public var shapeA:Shape;
         public var shapeB:Shape;
+        // A kind may build ONE display object that belongs ABOVE the UiNode
+        // children (scrollView's bars, today the only user). `build()` sets it;
+        // `internalCount` -- the base index display-order repairs start from --
+        // then leaves it out, so content is ordered BEFORE it and the chrome stays
+        // on top without needing a later repaint to raise it again.
+        public var aboveContent:DisplayObject;
         public var tf:TextField;
 
         // ---- last final rect (absolute, in the root's coordinate space) --
@@ -183,6 +189,7 @@ package asaot.ui
             this.tabEnabled = false;
             this.shapeA = null;
             this.shapeB = null;
+            this.aboveContent = null;
             this.tf = null;
             this.absX = 0; this.absY = 0; this.absW = 0; this.absH = 0;
             this.matched = false;
@@ -206,6 +213,16 @@ package asaot.ui
             this.widget.build(this);
 
             this.internalCount = this.backing.numChildren;
+            // Content children are ordered from `internalCount` upward (see
+            // Reconciler.fixDisplayOrder), i.e. ABOVE everything build() added --
+            // right for a background, wrong for chrome that has to sit on top.
+            // Counting such an object would put every content child over it, and
+            // the chrome would only reappear when some later repaint happened to
+            // raise it again (the scroll bars were buried exactly like that).
+            if (this.aboveContent != null && this.aboveContent.parent == this.backing)
+            {
+                this.internalCount = this.internalCount - 1;
+            }
             // Hover / press / click are handled on the backing object, so the
             // hit region is the control's drawn region -- the same region the
             // existing pick test (as_pick_hit_local) walks.
@@ -926,6 +943,7 @@ package asaot.ui
             this.tf = null;
             this.shapeA = null;
             this.shapeB = null;
+            this.aboveContent = null;
             this.app = null;
             this.parent = null;
         }

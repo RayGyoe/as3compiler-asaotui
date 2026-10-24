@@ -21,6 +21,14 @@
 //                reverting the `resolveStyle(true)` call in applyPayload leaves the
 //                reused body slot laying out in the PREVIOUS page's direction.
 //                Both are structural, so the tour's hand-computed rects go red.
+//                tools/mutation-docs-tour.cjs adds three more on the surfaces only a
+//                CLICK and a CHROME ORDER can reach (3/3, each restoring its file by
+//                hash): the toastHost demo asking toast() for the chip tone it
+//                THROWS on (the bug the user reported -- the frame guard hid it, so
+//                the page still rendered and 41 screenshots looked fine); the toast
+//                layer's gap 8 -> 0 (geometry only, nothing throws); and the scroll
+//                bar layer being counted as content base again, which buries the
+//                bars under every content child on a page switch.
 //   G13       -- probes/reach-freefn/mutation.cjs: two compiler mutations (mark
 //                without expanding; seeds drained after the loop) re-create the
 //                defect and the assertions go red (2/2, each restoring reach.ts
@@ -156,6 +164,13 @@
 //                demo; a NEW kind+factory that nothing calls -- the regression that
 //                happened twice; and the call surviving only in a `//` comment, which
 //                the scan's first version counted as code).
+//   demo opts -- tools/mutation-demo-options.cjs: 3/3 (a bogus key on a REAL call;
+//                progress() losing its `value` read, i.e. the kit moving out from
+//                under correct docs; and one style shorthand deleted from
+//                StyleRefinement.from, which proves the shorthand allowance is
+//                DERIVED from the source rather than a blanket amnesty -- the first
+//                version of that mutation only disabled the read behind `false &&`
+//                and the scan stayed green, so the anchor is now the whole line).
 //   array(x)  -- probes/array-coerce/: `Array(arg)` must wrap a non-number in ONE
 //                element on BOTH runtimes (SQL: Array([1,2]).length == 1 and [0] is
 //                Array). Found when `Array(opts.items)` in the overlay factories
@@ -248,14 +263,20 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // This is the only gate that exercises a WHOLE app: 41 component pages rendered from
 // one catalog into one content column, a widget-driven page switch (the sidebar),
 // a SECOND retained tree (the overlay root carries a popover anchored by key and a
-// window-centred dialog, both opened and torn down while the app keeps running), and
-// rects that were hand-computed before the run (see ui-demo/demo/DocsMain.as). It is
+// window-centred dialog, both opened and torn down while the app keeps running), the
+// toastHost demo's two-toast corner stack (which exists ONLY after a click -- see the
+// tour's stage 6d), and rects that were hand-computed before the run (see
+// ui-demo/demo/DocsMain.as). It is
 // the pin for the two layout fixes in UiNode (markLayoutDirty propagation out of a
 // subtree, and re-resolving when a widget override changes the direction) --
 // neither is visible to a single-page probe, because a single-page app never swaps
 // a subtree under an unchanged style -- and for the two teardown fixes (a destroyed
 // overlay's stage listener; the overlay root being left on the stage), which need a
 // page switch to be visible at all.
+// Stage 6d also asserts the ORDER of the display list: a scroll view's bars must be
+// the last child of its backing. That check has to run on a page switch -- a describe
+// with no paint -- because that is the only frame where nothing else would put a bar
+// back on top (see UiNode.aboveContent).
 {
   const r = sh(process.execPath, ['run-gallery.cjs'], path.join(UI, 'ui-demo'), { ASC_NO_OPEN: '1' });
   const out = (r.stdout || '') + (r.stderr || '');
@@ -280,6 +301,28 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /(\d+)\/(\d+) registered kinds/.exec(out);
   record('gallery kind coverage: all registered widgets are shown' + (m ? ' (' + m[1] + '/' + m[2] + ')' : ''), r.status, out);
+}
+
+// ---- 6b3: the docs demos only pass options the factories read --------------
+// A source scan, like kind-coverage above, and for the same reason: the docs app
+// prints the very literal that built the page, so a wrong key is a page teaching an
+// API that does not exist. Three such pages had shipped by 2026-10-24 -- progress
+// `tone` (progress() never read it), tooltip `tone: "info"` (a STRING where the
+// bubble wants a fill COLOUR, so the fill went NaN) and toast `tone: "info"` (a chip
+// tone the toast vocabulary does not have -- that one THREW, on every frame after the
+// click, which is how it was found).
+// What the scan accepts is what is really an option: the style shorthands
+// StyleRefinement.from reads (so box({gap}) is fine), the shared set
+// OptionSupport.applyOpts copies, and each factory's own `opts.x` reads.
+// It cannot see VALUES (`tone: "info"` is a known key with a bad value); that class
+// is covered behaviourally -- the tour's "6d toastHost" stage (gate 6b above) clicks
+// the demo and names the throw.
+//   mutation: tools/mutation-demo-options.cjs (3/3).
+{
+  const r = sh(process.execPath, ['tools/demo-options.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /unknown option key[s]?: (\d+)/.exec(out);
+  record('docs demos pass only options the factories read' + (m ? ' (' + m[1] + ' unknown)' : ''), r.status, out);
 }
 
 // ---- 6c: the --air-app reachability probe (G13, fixed 阶段二百四十九) ----------

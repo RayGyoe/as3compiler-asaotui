@@ -489,6 +489,109 @@ package demo
             this.problems = this.problems + this.rect("docScroll", docX, docY, docW, docH);
             this.problems = this.problems + this.rect("nav", 14, 68, 219, navH);
 
+            this.mark("6d toastHost");
+
+            // ---- 6d. the toastHost demo ---------------------------------------
+            // Every stage above checks a surface the page mounts BY ITSELF. The
+            // toastHost page is the opposite: its two toasts exist only once the
+            // model's `tsh.open` flips, so the 41-page sweep (which only renders)
+            // never built them -- and the demo had shipped asking for "tone: info", a
+            // CHIP tone that toast.as throws on. The frame guard recovers the throw and
+            // re-renders the same tree, so the symptom was a console stream, not a
+            // broken page: nothing but a real click could have found it.
+            //
+            // The reflow is wrapped because an uncaught throw here would stop the tour
+            // and leave no gallery.done at all (the reason the page sweep catches per
+            // page): a named failure beats an opaque timeout.
+            this.model.pick("toastHost");
+            this.app.invalidate(Dirty.ALL);
+            this.app.reflow();
+
+            // A page switch is a describe with no paint, which makes it the one frame
+            // where nothing else would put a bar back on top: if the ordering base is
+            // wrong (a chrome object counted as "before the children"), this is where
+            // it shows. Page 0's screenshot had exactly that -- a thumb painted over
+            // by the code block below it.
+            this.problems = this.problems + this.chromeOnTop("docScroll");
+            this.problems = this.problems + this.chromeOnTop("nav");
+            var tsh:UiNode = this.app.findByKey("tshBtn");
+            if (tsh == null)
+            {
+                this.problems = this.problems + "the toastHost page has no demo button; ";
+            }
+            else
+            {
+                var kidsT:int = this.stage.numChildren;
+                var threw:Boolean = false;
+                this.click(tsh);
+                try
+                {
+                    this.app.reflow();
+                }
+                catch (terr:Error)
+                {
+                    threw = true;
+                    this.problems = this.problems + "opening the toastHost demo threw: " + terr.message + "; ";
+                }
+                var tA:UiNode = this.app.findByKey("demoToast1");
+                var tB:UiNode = this.app.findByKey("demoToast2");
+                if (tA == null || tB == null)
+                {
+                    this.problems = this.problems + "clicking 'Show two toasts' mounted "
+                        + (tA == null ? "no" : "a") + " first toast and "
+                        + (tB == null ? "no" : "a") + " second one; ";
+                }
+                else
+                {
+                    // Both numbers are DERIVED, not measured: the corner is
+                    // OverlayChrome.TOAST_LAYER (padding 16, gap 8, flex-end on both
+                    // axes) and a toast is 220 wide unless the author passes `width`.
+                    var wantX:Number = winW - 16 - 220;
+                    var wantY:Number = winH - 16;
+                    this.report = this.report + "== toasts ==\n  t1 " + tA.absX + "," + tA.absY + ","
+                        + tA.absW + "," + tA.absH + "  t2 " + tB.absX + "," + tB.absY + ","
+                        + tB.absW + "," + tB.absH + "\n";
+                    if (tA.absX != wantX || tB.absX != wantX || tA.absW != 220 || tB.absW != 220)
+                    {
+                        this.problems = this.problems + "the toasts are not the 220-wide corner stack: t1 "
+                            + tA.absX + "," + tA.absW + " t2 " + tB.absX + "," + tB.absW
+                            + " expected x=" + wantX + " w=220; ";
+                    }
+                    if (tB.absY + tB.absH != wantY)
+                    {
+                        this.problems = this.problems + "the last toast's bottom is " + (tB.absY + tB.absH)
+                            + ", expected " + wantY + " (the window's bottom edge minus 16); ";
+                    }
+                    if (tA.absY + tA.absH + 8 != tB.absY)
+                    {
+                        this.problems = this.problems + "the toast gap is not 8 (" + (tA.absY + tA.absH)
+                            + " -> " + tB.absY + "); ";
+                    }
+                }
+                // ... and closing them from the MODEL must unmount both, leaving no
+                // stage child behind.
+                this.model.put("tsh.open", false);
+                this.app.invalidate(Dirty.ALL);
+                try
+                {
+                    this.app.reflow();
+                }
+                catch (terr2:Error)
+                {
+                    threw = true;
+                }
+                if (!threw && (this.app.findByKey("demoToast1") != null
+                    || this.app.findByKey("demoToast2") != null))
+                {
+                    this.problems = this.problems + "flipping tsh.open back left a toast mounted; ";
+                }
+                if (!threw && this.stage.numChildren != kidsT)
+                {
+                    this.problems = this.problems + "the toast layer left "
+                        + (this.stage.numChildren - kidsT) + " display object(s) on the stage; ";
+                }
+            }
+
             this.mark("7 screenshots");
 
             // ---- 7. screenshots ----------------------------------------------
@@ -518,6 +621,26 @@ package demo
         }
 
         // ---- helpers -----------------------------------------------------------
+
+        // Is the kind's above-content display object (scrollView's bars) the LAST
+        // child of its backing? Anything below the content is covered by it.
+        private function chromeOnTop(key:String):String
+        {
+            var n:UiNode = this.app.findByKey(key);
+            if (n == null) return "the '" + key + "' scroll view is not mounted; ";
+            if (n.shapeB == null) return "the '" + key + "' scroll view has no bar layer; ";
+            if (n.shapeB.parent != n.backing)
+            {
+                return "the '" + key + "' bar layer is not on its own backing; ";
+            }
+            if (n.backing.getChildIndex(n.shapeB) != n.backing.numChildren - 1)
+            {
+                return "the '" + key + "' bars sit at display index "
+                    + n.backing.getChildIndex(n.shapeB) + " of " + n.backing.numChildren
+                    + ", so the content below them paints over the bars; ";
+            }
+            return "";
+        }
 
         // Sum of the blocks DocSection.height() produces, in the same order and with
         // the same inter-block gap the view uses.

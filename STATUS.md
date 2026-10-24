@@ -16,6 +16,11 @@
 > 第七轮（2026-10-24）补上**滚动组件欠的那一半**：`scrollView` 有**真滚动条**（纵/横双轴、thumb 拖动、
 > 轨道翻页、`auto/always/never`、滚轮回落横向、与 `offsetY/offsetX` 双向同步），并且文档站的
 > **外壳改成流体**（`ROOT` 百分比、两列 `flex:1`）——当年窗口一放大，界面就定在 1000×700 不动。
+> 第八轮（2026-10-24）先是**绕行审计**（G16/G19/G20/G21/G22 在编译器侧全修好后，库内当时的绕行能撤则撤），
+> 随后顺手抓到一个**只有点击才会暴露**的缺陷：文档站有三页在**教错用**（`toast` 传 `tone: "info"` ⇒
+> 工厂当场抛错、每帧刷屏；`tooltip` 传 `tone: "info"` ⇒ `Number("info")` = NaN；`progress` 传
+> 一个它根本不读的 `tone`）。修了这 3 页，给 tour 加了「真点击 toastHost」判据，并新增扫描门
+> `tools/demo-options.cjs`（见 §3.9）。
 > 第五轮（2026-10-24）补的是**动画深度 + 三处控件空白**：`Anim` 现在分 **paint 字段**与 **layout 字段**
 > （`width/height/padding/gap` 动画每帧重解、`textColor/cornerRadius` 可 tween）、浮层加**退场动画**；
 > `virtualList`（千级列表只挂 9 个节点）、`tree`、`combobox`、`datePicker`（纯整数日历，无 `Date`）落地。
@@ -25,7 +30,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 
-生成日期：2026-10-24（第八轮） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**37 道门**）
+生成日期：2026-10-24（第八轮） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**38 道门**）
 
 ---
 
@@ -35,7 +40,7 @@
 |---|---|---|
 | L1 渲染（Skia + Stage3D） | ✅ 复用编译器运行时 | `layout-check/visual-check.cjs` 12 项像素断言；AOT ↔ AIR 两张 BMP **0 字节差异** |
 | L2 布局引擎（flexbox 子集） | ✅ **做透** | `layout-check` **133 项手算断言全绿**；Yoga == AOT == AIR **105 行 0 差异** |
-| L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 12 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
+| L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 25 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
 | L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表 |
 | L2 动画 | ✅ **样式 5 字段 + layout 字段 + 浮层入/退场** | 样式 `paint` 字段：`opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`；样式 **`layout` 字段**：`width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y)——写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停（`probes/widgets/anim` 14 项 + `probes/widgets/motion` 23 项）；显示对象级：`OverlayMotion`（入场 140ms ease-out / **退场 120ms ease-in**，墙钟，每帧从引擎读基准，不累加），见 §3.4 |
 | L3 控件库 | ✅ **40 个工厂 / 35 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**35 个 kind 全部上了画廊**（第七页 Advanced），由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 画廊是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
@@ -171,7 +176,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 37 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 38 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -204,6 +209,7 @@ cd asaotui && node tools/gates.cjs                           # 37 道门，含 l
 | 22 | **容器上的 `onClick` 永远不触发**（侧栏一行点了没反应，`model` 也不动；但 `button` 正常） | `UiNode.applyPayload` 老老实实从描述符镜像 `Element.onClick`，可**描述符上的那个字段从来没被写入** —— `OptionSupport.applyOpts` 只拷 key/role/ariaName/visible/disabled，`onClick` 只有 button/checkbox/radio/slider/toggle/textField 六个**控件**工厂自己拷。`box({ onClick: f })` 于是拿到一个 null | `OptionSupport.applyOpts` 加一行 `if (opts.onClick != null) n.onClick = (opts.onClick as Function);` —— 一处修好所有容器（box/row/column/card/overlay/…） | `ui-demo/run-gallery.cjs` 的 `index click` 段：真按 stage 坐标点侧栏行，断言 `model.doc=="box"` + `view.lastPick=="box"` + 标题变了 + 上一页的 demo 已卸载。**变异**：删掉那一行 ⇒ 四条断言同时红 |
 | 23 | **点了控件，数据变了，界面不变**（同一次运行里 `doc=box` 而标题仍写 "Getting started"、上一页的 demo 还挂着） | 模型 `DocsModel extends Observable`，控件回调里 `model.put/pick` 会 `notify()`，**但没有任何人 subscribe** ⇒ `notify` 空转，`UiApp._pending` 一直是 0，`reflow()` 不重新 describe。widget 只报告、作者重渲染的契约断在最后一步 | `DocsMain` 建好 app 之后 `model.subscribe(function (d:int):void { self.app.invalidate(d); })` | 同上门（`index click` 段先 `click` 再 `reflow`，不额外 `invalidate`：能不能刷新完全取决于订阅是否在） |
 | 24 | **侧栏整行只有文字本身可点**（行高 26、宽 219，但 Label 右侧的空白点下去什么都不发生） | 命中测试是**按绘制区域**而非布局盒（`as_pick_hit_local` → Graphics 的 fill/stroke ∪ 子件）：行的样式只有 padding 没有 `background`，于是行自己的 graphics 是空的，只有标签的 TextField 是目标。这是**Air 的真实语义**（透明的容器不是点击目标），但作为导航行是设计缺陷 | `DocsStyle.NAV_ITEM` 加 `background: 0xF8FAFC` —— 与 `SIDE` 同色，**屏幕上看不出差别**，但行从此有填充区域（选中态本来就是 `0xEFF6FF`） | 同上门：示例按**行中心**（x=123，远在标签右侧）派发，加这条背景之前断言必红（命中测试落在祖先容器上，行自己的 backing 不是 target）。注释写清「容器只在绘制处可点」这条 Flash 语义 |
+| 25 | **滚动条被内容盖住**（第 0 页截图里 thumb 只从没被盖住的缝隙里露一条：代码块、选中的导航行、demo 卡片背景全压在条上） | 不是条画错。`fixDisplayOrder` 从 `internalCount`（= `build()` 之后 `backing` 的子件数）开始给内容子件排序，于是内容一律排在 `build` 造出的**所有**对象之上 —— 对背景是对的，对 chrome 是错的。条只能靠 `paintBars` 里那句 `setChildIndex` 补救，所以它**取决于这一帧有没有重绘这个滚动节点**；而切页是「描述但不重绘」（`Dirty.ALL` 不含 `M_PAINT`）⇒ 条永久埋在下面 | `UiNode.aboveContent`：kind 在 `build()` 里声明「我这一个对象在内容之上」，`internalCount` 于是**不数它** ⇒ 内容排到它前面，每次 describe 都自动把它推到最后，不再依赖重绘（`paintBars` 那句保留，它是给 `applyLift` 把子件重新挂到末尾那条路的） | `docs tour` 的 6d 阶段新增 `chromeOnTop("docScroll"/"nav")`：在**切页那一帧**（只有 describe、没有 paint）断言条是 backing 的**最后一个子件**。变异见 `tools/mutation-docs-tour.cjs`：去掉 `n.aboveContent = n.shapeB` ⇒ `the 'docScroll' bars sit at display index 1 of 3, so the content below them paints over the bars` |
 
 **已知边界（登记，不修）**：`card({title: ...})` 的标题画在内容盒左上角、**不占布局位**，
 因此会压住第一个子节点（`kind/CardWidget.as:81` 的 `tf.x/tf.y = inset`）。
@@ -316,12 +322,53 @@ M2 = 拖拽用画出来的短 thumb、M3 = `offsetX` 不进 scrollRect（旧缺�
 文档站 tour 加了一段真实的**尺寸变化**：它写 stage 宽高 + 发 `Event.RESIZE`（= `ASC_window_on_resize`
 所做的那两件事，布局路径分辨不出差别），然后断言 `side/main/docScroll/nav` 四块手算矩形，再变回去。
 
+### 3.9 文档站有三页在**教错用**（第八轮补：只有点击才暴露）
+
+用户点了画廊 `toastHost` 页的 “Show two toasts”，控制台开始**每帧**刷
+`Uncaught exception: asaot.ui.toast: unknown tone 'info' (accepted: default | success | danger)`，
+而页面本身看起来正常（矩形都对、其它页都正常）。
+
+**根因不是编译器，也不是 `toast`**：`toast()` 按契约在未知 tone 上抛错（AGENTS.md §2.5 “不静默回落”），
+是**文档页示范了一个不存在的取值**——它把 chip 的语气词（`neutral/info/danger`）用到了 toast 上
+（toast 是 `default/success/danger`）。之所以一直没人发现：**41 页的扫描只渲染、不点击**，
+而这一页的两条 toast 只有 `tsh.open` 翻转后才存在。
+
+顺着这个形状做了一次源码扫描（`tools/demo-options.cjs`：把每个工厂**真的读**的键 ——
+`opts.x` / `OptionSupport.opt(opts,"x")` / `applyOpts` 的共享键 / `StyleRefinement.from` 的样式简写 ——
+与文档站每个调用点传入的顶层键求差），又抓到两页同类缺陷：
+
+| 页面 | 示范的写法 | 工厂实际行为 | 修法 |
+|---|---|---|---|
+| `toastHost` | `toast({ tone: "info" })` | **抛错**（`default/success/danger`），且抛在 build 里 ⇒ 帧守卫恢复后**每帧再抛一次**，屏幕停在上一棵树 | 改 `tone: "default"`；`toast` 页的代码块也补一句「`tone` 是**名字**不是颜色」 |
+| `tooltip` | `tooltip("…", { arrow: "bottom", tone: "info" })` | `arrow` 只认 `up/down/left/right/none` ⇒ `"bottom"` **不画箭头**但白占 6px；`tone` 是**填充色**（Number），`Number("info")` = **NaN** ⇒ 每帧重绘（`prev != NaN` 恒真），填充色 0 | 改 `arrow: "down"` + `tone: 0x2563EB`（info 蓝）；文案补「`arrow` 是 up/down/left/right/none，`tone` 是填充色」 |
+| `progress` | `progress("Indexing", { tone: "danger" })` | `progress()` **没有 `tone` 选项**（只读 `value`），传了等于没传 —— 静默的“红色进度条”从没红过 | 去掉 `tone`（第二根条靠 `value: 0.9` 区分） |
+
+**钉子（两道，都做过变异）**：
+
+- **行为面**：`docs tour` 新阶段 `6d toastHost` —— 选中该页 → **真按 stage 坐标点按钮** → 断言只开一帧就
+  出现两条 toast（`x = 1000-16-220 = 764`、下沿 `700-16 = 684`、间距 8，全部**先推导再断言**），
+  再把 `tsh.open` 翻回去断言两条都卸载、`stage.numChildren` 回基线。reflow 包在 `try/catch` 里：
+  帧守卫会**吞掉**异常继续跑（这正是它刷满一屏还不崩的原因），不包的话 tour 永远写不出 `gallery.done`。
+  变异 2/2：M1 = 把 `tone` 改回 `"info"` ⇒ `opening the toastHost demo threw: asaot.ui.toast: unknown tone 'info' …`；
+  M2 = `TOAST_LAYER` 的 `gap 8 → 0` ⇒ `the toast gap is not 8 (652 -> 652)`。
+- **静态面**：`tools/demo-options.cjs`（门）—— 文档站的**字符串代码块也一起扫**（那才是读者复制的东西），
+  变异 3/3：给真实调用加一个 `bogusOption`、让 `progress()` 不再读 `value`（= 工厂从对的文档下面搬走）、
+  以及从 `StyleRefinement.from` 删掉 `flexGrow` 这一条简写（证明“样式简写放行”是**从源码推导**的，
+  不是一句万能豁免；这条变异的第一版只加了 `false &&`，扫描照绿 ⇒ 锚点改成整行）。
+
+**这道门看不见什么（如实登记）**：它只比**键名**，不看**取值**——`tone: "info"` 的键是存在的，
+所以那一类只能靠**行为**（tour 的真点击）发现。
+
+**顺带的第二个发现**（同一轮，来自**证据文件自己**）：修完之后 `gallery-page0.png` 变了。追下去
+是**滚动条被内容盖住**（`internalCount` 把条层也算成了内容基点）——一个从第七轮就存在、
+41 页像素断言都没抓住的缺陷（条画对了，只是画在下面）。修法与钉子见 §3.3 第 25 条。
+
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **37** 道门：
+一条命令跑全部 **38** 道门：
 
 ```sh
-node tools/gates.cjs          # 37/37 PASS 才叫绿（定稿记录 reviews/gates-all-21.txt）
+node tools/gates.cjs          # 38/38 PASS 才叫绿（定稿记录 reviews/gates-all-22.txt）
 ```
 
 > 全量 **31 道门**在 **CLEAN** 编译器树上跑绿（定稿记录 `reviews/gates-all-16.txt`，HEAD `480b81c`）；

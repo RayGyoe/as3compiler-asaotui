@@ -34,13 +34,13 @@ package demo
                     "node you have to place and keep in sync."
                 ], [
                     "progress(\"Uploading\", { value: 0.45 }),",
-                    "progress(\"Indexing\",  { value: 0.9,  tone: \"danger\" })"
+                    "progress(\"Indexing\",  { value: 0.9 })"
                 ], 96, function ():Node
                 {
                     return column({ gap: 10, style: StyleRefinement.from({ size: [320, null] }) }, [
                         progress("Uploading " + int(m.num("pr.v", 0.45) * 100) + "%",
                             { key: "prA", value: m.num("pr.v", 0.45) }),
-                        progress("Indexing", { key: "prB", value: 0.9, tone: "danger" })
+                        progress("Indexing", { key: "prB", value: 0.9 })
                     ]);
                 }),
 
@@ -129,15 +129,16 @@ package demo
             if (id == "tooltip") return [
                 new DocSection("A bubble with an arrow", [
                     "A tooltip is a static leaf: place it, do not hover it. Hover behaviour is the",
-                    "author's (show it from a model flag), because the timing policy is not universal."
+                    "author's (show it from a model flag), because the timing policy is not universal.",
+                    "`arrow` is up | down | left | right | none, and `tone` is the bubble's FILL colour."
                 ], [
-                    "tooltip(\"Saves the document\", { arrow: \"bottom\" }),",
-                    "tooltip(\"Read-only\", { arrow: \"left\", tone: \"info\" })"
+                    "tooltip(\"Saves the document\", { arrow: \"down\" }),",
+                    "tooltip(\"Read-only\", { arrow: \"left\", tone: 0x2563EB })"
                 ], 104, function ():Node
                 {
                     return row({ gap: 16, alignItems: "center" }, [
-                        tooltip("Saves the document", { key: "tipA", arrow: "bottom" }),
-                        tooltip("Read-only", { key: "tipB", arrow: "left", tone: "info" })
+                        tooltip("Saves the document", { key: "tipA", arrow: "down" }),
+                        tooltip("Read-only", { key: "tipB", arrow: "left", tone: 0x2563EB })
                     ]);
                 }),
 

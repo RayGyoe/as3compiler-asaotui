@@ -290,9 +290,15 @@ package demo
             }
             if (m.doc == "toastHost" && m.bool("tsh.open", false))
             {
+                // `tone` is the TOAST vocabulary (default / success / danger) -- not the
+                // chip vocabulary this demo was first written with. "info" is a chip
+                // tone and toast.as THROWS on anything outside its three, which is what
+                // made this page print 'unknown tone' on every frame after the click
+                // (2026-10-24). The two toasts stay on DIFFERENT tones on purpose: that
+                // is what makes the stack readable in a screenshot.
                 nodes.push(toastHost({ key: "demoToasts" }, [
                     toast({ key: "demoToast1", open: true, message: "Two files moved",
-                            tone: "info", duration: 4000,
+                            tone: "default", duration: 4000,
                             onClose: function ():void { } }),
                     toast({ key: "demoToast2", open: true, message: "Draft saved",
                             tone: "success", duration: 4000,

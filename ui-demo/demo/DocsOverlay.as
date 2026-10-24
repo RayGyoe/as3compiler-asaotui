@@ -148,7 +148,8 @@ package demo
             if (id == "toast") return [
                 new DocSection("A transient corner message", [
                     "Toasts are self-expiring: `duration` decides when onClose fires, and the author's",
-                    "model removes it. The host stacks them bottom-right."
+                    "model removes it. The host stacks them bottom-right. `tone` is one of default |",
+                    "success | danger -- a NAME, not a colour (toast.as throws on anything else)."
                 ], [
                     "toastHost({ key: \"demoToasts\" }, [",
                     "    toast({ key: \"demoToast\", open: model.tstOpen, message: \"Draft saved\",",
@@ -179,10 +180,11 @@ package demo
             if (id == "toastHost") return [
                 new DocSection("The stack", [
                     "A host is a positioned container in the overlay tree: toasts drop into its bottom-",
-                    "right corner in the order they were described. Without a host, a toast has no corner."
+                    "right corner in the order they were described. Without a host, a toast has no corner.",
+                    "`tone` is a NAME, not a colour: default | success | danger, and anything else throws."
                 ], [
                     "toastHost({ key: \"demoToasts\" }, [",
-                    "    toast({ key: \"t1\", open: true, message: \"One\", tone: \"info\" }),",
+                    "    toast({ key: \"t1\", open: true, message: \"One\", tone: \"default\" }),",
                     "    toast({ key: \"t2\", open: true, message: \"Two\", tone: \"success\" })",
                     "])"
                 ], 96, function ():Node

@@ -110,6 +110,11 @@ package asaot.ui.kind
             n.backing.addChild(n.shapeA);
             n.shapeB = new Shape();   // the two scrollbars (kept at +offset, on TOP)
             n.backing.addChild(n.shapeB);
+            // The bars are the one display object of this kind that belongs ABOVE
+            // the content. Without this the reconciler orders every content child
+            // from index 2 upward, which buries the bars until some later repaint
+            // happens to raise them again (UiNode.aboveContent has the story).
+            n.aboveContent = n.shapeB;
             // Like Slider/Tabs/List: the widget owns the listeners, because only the
             // widget knows what a delta or a bar press means here.
             var self:ScrollViewWidget = this;
@@ -379,9 +384,12 @@ package asaot.ui.kind
                 bars[17] = t - BAR_INSET * 2;
             }
 
-            // Keep the bar shape LAST, so it paints (and picks) above the content. The
-            // reconciler adds content children after `build`, which would otherwise
-            // hide a bar that was created first.
+            // Keep the bar shape LAST, so it paints (and picks) above the content.
+            // UiNode.aboveContent already gives the reconciler the right base index,
+            // so this is only the belt for the OTHER way a sprite ends up on top: a
+            // lifted child returning to this backing is re-added at the END of the
+            // display list (UiNode.applyLift), and a paint-only frame in between
+            // never re-describes.
             if (n.backing != null && n.backing.numChildren > 0
                 && n.backing.getChildIndex(n.shapeB) != n.backing.numChildren - 1)
             {
