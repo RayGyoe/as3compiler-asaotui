@@ -1,0 +1,25 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE BARS ARE NEVER DRAWN (the shipped state): the "nothing to show" early return fires unconditionally, so both tracks and both thumbs are missing from the bitmap
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the vertical thumb after a notch is #ee1111 not #b9c2d0; dragging the thumb 15px left offsetY at 0 not 45 (15 * 160 / 53.333); the drag did not slide the content is #ee1111 not #11ee11; the thumb did not follow the drag is #ee1111 not #b9c2d0; the track under the old thumb position is #ee1111 not #e8edf5; a horizontal bar appeared on a viewport with no horizontal overflow is #ee1111 not #11ee11; the thumb at the clamp is #1111ee not #b9c2d0; the track at the clamp is #1111ee not #e8edf5; the horizontal thumb after a notch is #ee1111 not #b9c2d0; the horizontal track beyond the thumb is #11ee11 not #e8edf5;
+     FAIL  pixel (215,30) want #B9C2D0 got #ee1111
+     FAIL  pixel (215,90) want #E8EDF5 got #ee1111
+     FAIL  pixel (30,145) want #B9C2D0 got #ee1111
+     ... and 1 more
+     restore: byte-identical (ffb4fc436158b890)
+M2  CAUGHT  THE DRAG USES THE DRAWN THUMB LENGTH: the span becomes track minus the 4px-shortened rect, so a 15px pointer move yields 15*160/57.333 = 41.87 instead of 45 and the content leads the pointer
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL dragging the thumb 15px left offsetY at 41.86046511627907 not 45 (15 * 160 / 53.333);
+     restore: byte-identical (ffb4fc436158b890)
+M3  CAUGHT  A HORIZONTAL OFFSET NEVER REACHES THE SCROLLRECT (the old widget's bug): offsetX is clamped and published, and the rectangle left edge is pinned to 0, so the content does not slide sideways
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a horizontal offset did not slide the content is #ee1111 not #11ee11;
+     restore: byte-identical (ffb4fc436158b890)
+M4  CAUGHT  NO HORIZONTAL WHEEL FALLBACK: a viewport with no vertical range ignores the wheel, so a film strip is unreachable by the mouse
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the wheel over a horizontal-only viewport left offsetX at 0 not 20; a horizontal offset did not slide the content is #ee1111 not #11ee11; the horizontal thumb after a notch is #ee1111 not #b9c2d0; the horizontal track beyond the thumb is #11ee11 not #e8edf5;
+     restore: byte-identical (ffb4fc436158b890)
+
+MUTATION scrollbar: 4/4 caught, 0 problem(s)
+RESULT: PASS

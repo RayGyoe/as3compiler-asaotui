@@ -30,9 +30,11 @@ package demo
         public static const CODE_LINE_H:Number = 14;     // one monospace line
         public static const CODE_PAD_H:Number = 10;      // code box: 10 top + 10 bottom
         public static const SEC_GAP:Number = 18;         // between two sections
-        // The content pane's viewport height, named separately because a short page
-        // must still give its column a height (a scrollView refuses a container child
-        // of height 0, and a page with one section would otherwise have one).
+        // The FLOOR of the content column: a page whose blocks are shorter than
+        // this still gets a column this tall, so a one-section page does not report
+        // a zero-height content box. It is NOT the viewport's height -- the viewport
+        // is whatever the window leaves the pane (see DOC_SCROLL), and the tour
+        // reads `maxOffsetY` from the solved rect rather than assuming a number.
         public static const DOC_VIEW_H:Number = 580;
         // Inside a section: heading -> prose/demo -> code. These are the numbers
         // the block arithmetic adds up (gapY of the section's own column).
@@ -40,8 +42,13 @@ package demo
         public static const SEC_PROSE_GAP:Number = 4;
 
         // ---- chrome styles --------------------------------------------------
+        // The root is FLUID: the window's own size is the layout's size, so
+        // resizing the window resizes both panes (and the two scroll viewports,
+        // which take the height their column has left). Nothing here is pinned to
+        // 1000x700 -- those numbers are only what the descriptor asks for, and the
+        // tour derives every rect from the stage it actually got.
         public static const ROOT:StyleRefinement = StyleRefinement.from({
-            flexDirection: "row", size: [Length.px(W), Length.px(H)], background: 0xFFFFFF
+            flexDirection: "row", size: [Length.pct(1), Length.pct(1)], background: 0xFFFFFF
         });
         public static const BODY:StyleRefinement = StyleRefinement.from({
             flexDirection: "row", flexGrow: 1, size: [Length.pct(1), null]
@@ -59,7 +66,10 @@ package demo
             text: { fontSize: 11, color: 0x64748B }
         });
         public static const NAV:StyleRefinement = StyleRefinement.from({
-            size: [Length.pct(1), Length.px(560)]
+            // flexGrow + a ZERO basis is the CSS `flex: 1`: the index viewport takes
+            // whatever height the brand/tag/foot leave. A percentage height would
+            // instead be a percentage OF THE SIDEBAR and overflow it.
+            flexGrow: 1, flexBasis: 0, size: [Length.pct(1), null]
         });
         public static const NAV_COL:StyleRefinement = StyleRefinement.from({
             flexDirection: "column", size: [Length.pct(1), null], gap: 0
@@ -111,7 +121,9 @@ package demo
             text: { fontFamily: "Courier New", fontSize: 11, color: 0x94A3B8 }
         });
         public static const DOC_SCROLL:StyleRefinement = StyleRefinement.from({
-            size: [Length.pct(1), Length.px(DOC_VIEW_H)]
+            // Same `flex: 1` idiom as NAV: the content pane owns the rest of the
+            // window's height, so the whole app is fluid (see ROOT).
+            flexGrow: 1, flexBasis: 0, size: [Length.pct(1), null]
         });
         public static const DOC_COL:StyleRefinement = StyleRefinement.from({
             flexDirection: "column", size: [Length.pct(1), null], gap: SEC_GAP
@@ -145,13 +157,5 @@ package demo
             text: { fontFamily: "Courier New", fontSize: 11, color: 0xD7E1F0 }
         });
 
-        // Force this class's lazy static initializer (compiler-gaps G21: a static read
-        // emitted inside a CLOSURE skips the _cinit() guard, so a class read only from
-        // demo closures never initialises). DocsMain calls this before the first render,
-        // because these styles ARE the shell and the block arithmetic.
-        public static function warmUp():void
-        {
-            var probe:Object = ROOT;
-        }
     }
 }

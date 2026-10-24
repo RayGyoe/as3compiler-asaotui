@@ -19,18 +19,6 @@ package demo
     public final class DocsText
     {
         private static const AVATAR:StyleRefinement = StyleRefinement.from({ size: [36, 36] });
-        // Force this class's lazy static initializer. compiler-gaps G21: a static
-        // read emitted INSIDE a closure omits the class's _cinit() guard, so a field
-        // whose only readers are demo closures is still NULL when the closure first
-        // runs (measured: a static const Array came back null -> #1009). Reading one
-        // field from a plain method runs the guard, which initialises the WHOLE class
-        // in one go. DocsMain calls this before the first render. Remove when G21 is
-        // fixed.
-        public static function warmUp():void
-        {
-            var probe:Object = AVATAR;
-        }
-
         public static function sections(view:DocsView, id:String):Array
         {
             var m:DocsModel = view.model;

@@ -13,6 +13,9 @@
 > **键盘/焦点管线（Tab 环 / Esc / 方向键 / Enter / Space）**、浮层的**越界翻转 + 子菜单 + 入场动画**。
 > 第六轮（2026-10-24）把 demo 收成**一个组件文档站**：41 页，每页 2 节示例，示例与源码同源；
 > 删掉登录 demo 与旧 7 页画廊，`ui-demo/demo/` 现在只有文档站（17 个 `.as`）。
+> 第七轮（2026-10-24）补上**滚动组件欠的那一半**：`scrollView` 有**真滚动条**（纵/横双轴、thumb 拖动、
+> 轨道翻页、`auto/always/never`、滚轮回落横向、与 `offsetY/offsetX` 双向同步），并且文档站的
+> **外壳改成流体**（`ROOT` 百分比、两列 `flex:1`）——当年窗口一放大，界面就定在 1000×700 不动。
 > 第五轮（2026-10-24）补的是**动画深度 + 三处控件空白**：`Anim` 现在分 **paint 字段**与 **layout 字段**
 > （`width/height/padding/gap` 动画每帧重解、`textColor/cornerRadius` 可 tween）、浮层加**退场动画**；
 > `virtualList`（千级列表只挂 9 个节点）、`tree`、`combobox`、`datePicker`（纯整数日历，无 `Date`）落地。
@@ -22,7 +25,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 
-生成日期：2026-10-24（第六轮） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**34 道门**）
+生成日期：2026-10-24（第七轮） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**35 道门**）
 
 ---
 
@@ -141,7 +144,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 | 能力 | 现状 |
 |---|---|
 | **虚拟滚动** | ✅ `virtualList`（第五轮）：**只有窗口内的行是 UiNode**（1000 项、视口 150、行高 20 ⇒ **9 个**节点）；作者持有数据，控件只报 `onScroll(offset)`，作者写回模型后重渲染。⚠️ `list`/`table` 仍是「每行一个真实 UiNode」——要万级就用 `virtualList` |
-| **视口裁剪 / 滚动** | ⚠️ `scrollView` 用引擎 `scrollRect` 做**真裁剪**并接管竖向滚轮；`list` 本身仍不裁剪（超出自身高度的行会溢出），要滚动就套一层 `scrollView` |
+| **视口裁剪 / 滚动** | ✅ `scrollView` 用引擎 `scrollRect` 做**真裁剪**、接管滚轮，并**自绘滚动条**（第七轮）：纵/横双轴、thumb 拖动、轨道点击翻一屏、`scrollbarX/Y` 的 `auto`/`always`/`never`、没有竖向可滚时滚轮**回落横向**。条是**覆盖层**（画在内容之上、不参与布局，所以不改变任何矩形）。仍无：惯性/动量、弹性回弹、键盘翻页。`list` 本身仍不裁剪（超出自身高度的行会溢出），要滚动就套一层 `scrollView` |
 | **键盘 / 焦点** | ⚠️ 部分是：焦点环/`Enter`/`Space`/`Esc` 已通（见 §3.1），但 `tabs` 还没接**方向键**、`list` 还没接**上下键选中**（两者仍只看鼠标点击）；`list` 的行也没进 Tab 环 |
 | **tabs 分段的布局来源** | ⚠️ 分段是控件**自算**（`from n.absW` 的整数等分），**不是**引擎摆的子节点；`list` 的行**是**引擎摆的真实子节点 |
 | **tabs 的 gap 来源** | ⚠️ `TabsWidget.payload` 先读 `opts.gap`，回落到 `n.resolved.gapX`（已解算值）。若一次重排**恰好只改了 gap**，分段 pitch 会用上一帧的 gap 一帧（`Reconciler` 是「先 resolve 后 payload」，payload 改方向会在同帧重解，见 §3.3） |
@@ -287,12 +290,38 @@ cd asaotui && node tools/compiler-fingerprint.cjs
 收尾时用 `node tools/compiler-fingerprint.cjs --capture` 重拕快照（HEAD `480b81c`、**0 个脏文件**），
 之后再跑就是 `compiler tree UNCHANGED -- 0 dirty files, byte-for-byte`。
 
+### 3.8 滚动条："视口" 只做了一半（第七轮补齐）
+
+`scrollView` 从落地起就写着 "no scrollbars"：它只做了**裁剪 + 滚轮**。用户看到的那个现象
+（文档站右栏能滚但没有任何可视指示）不是多出来一个 bug，而是**设计没做完**。现在补齐的那一半：
+
+| 关注点 | 做法 | 为什么不那么做 |
+|---|---|---|
+| 条的归属 | **绘制在 `n.shapeB` 上的覆盖层**，paint 里按 viewport 坐标画（并做 `+offset` 补偿，否则会被 scrollRect 一起滑走） | 如果把条做成**布局子节点**，内容宽度就取决于「条此刻在不在」——经典的 scrollbar-gutter 反馈环，而且会让所有已钉的矩形失效 |
+| 何时画 | `scrollbarX/Y`: `auto`（该轴有溢出才画）/`always`/`never`；**非法字符串在工厂里直接抛**（不静默回落，AGENTS.md §2.5） | `always` 在无溢出轴上会白盖内容；但那是作者的显式选择 |
+| thumb 尺寸/位置 | `len = track * view/(view+max)`（比例），地板 24px 保证可拖，位置 = `off/max * (track-len)` | 拖拽必须 1:1 跟手，所以 span 用**完整 thumb 长度**，而不是画出来的（四周内缩 2px 的）矩形 |
+| 拖拽 | 按下 thumb 时在 **stage** 上挂临时 `MOUSE_MOVE`/`MOUSE_UP`（本运行时没有 pointer capture），`endDrag`/`teardown` 栈式摘除 | 只挂在自己身上：指针一离开 viewport，事件就发给了别的对象，拖拽会"粘"在原地 |
+| 轨道点击 | 向点击方向**翻一屏**（0.9 个 viewport），方向由 thumb 位置决定 | 直接跳到点击点会让长列表里误点一下跳走几千行 |
+| 与点击语义冲突 | 按在条上或拖过的那个 CLICK **被控件吃掉**（`click(n):Boolean` 的 consumed 位），不触发作者的 `onClick` | 不吞的话，一个给整个滚动区写了 `onClick` 的作者会在拖条时收到点击 |
+| 横向 | `offsetX` 现在**真的进 scrollRect**（旧控件算出 `offsetX` 却只把 `offsetY` 写进去，横向滚动是假的）；竖向无范围时滚轮**回落横向** | shift+滚轮做不到：运行时的 wheel 事件**不带 modifier**（`Stage_dispatchWheel`） |
+| 能力边界 | 无惯性/动量、无弹性回弹、无键盘翻页、无双击到底 | 写进注释与文档站（“the honest list”），不让用户以为没响应是 bug |
+
+**验证**：`probes/widgets/scrollbar`（新门）——手算 thumb/track 几何与颜色（*先写 expect.json，再跑*），
+拖 15px 必须得 `offsetY = 15*160/53.333 = 45`，横向滚动必须真的**换像素**（不是只改一个数字），
+并反证「无溢出的轴不出条」。变异 4/4（`probes/widgets/scrollbar/mutation.cjs`）：M1 = 不画条、
+M2 = 拖拽用画出来的短 thumb、M3 = `offsetX` 不进 scrollRect（旧缺陷）、M4 = 滚轮不回落横向。
+
+**外壳流体化**：`DocsStyle.ROOT` 从 `[px(1000), px(700)]` 改 `[pct(1), pct(1)]`，
+`SIDE` 高度、`NAV`/`DOC_SCROLL` 改成 `flexGrow:1 + flexBasis:0`（= CSS `flex:1`；**百分比高会按父容器算而溢出侧栏**）。
+文档站 tour 加了一段真实的**尺寸变化**：它写 stage 宽高 + 发 `Event.RESIZE`（= `ASC_window_on_resize`
+所做的那两件事，布局路径分辨不出差别），然后断言 `side/main/docScroll/nav` 四块手算矩形，再变回去。
+
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **31** 道门：
+一条命令跑全部 **35** 道门：
 
 ```sh
-node tools/gates.cjs          # 31/31 PASS 才叫绿（定稿记录 reviews/gates-all-16.txt）
+node tools/gates.cjs          # 35/35 PASS 才叫绿（定稿记录 reviews/gates-all-19.txt）
 ```
 
 > 全量 **31 道门**在 **CLEAN** 编译器树上跑绿（定稿记录 `reviews/gates-all-16.txt`，HEAD `480b81c`）；

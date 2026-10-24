@@ -64,19 +64,6 @@ package demo
         {
             removeEventListener(Event.ADDED_TO_STAGE, onAdded);
 
-            // compiler-gaps G21: a static read emitted inside a closure skips the class's
-            // lazy _cinit() guard, so a constants class whose only readers are demo
-            // closures never initialises (measured: a static const Array came back null).
-            // One read from a plain method per class runs the initializer; until the
-            // compiler emits the guard itself, every constants class is warmed here.
-            DocsStyle.warmUp();
-            DocsDemo.warmUp();
-            DocsStart.warmUp();
-            DocsLayout.warmUp();
-            DocsText.warmUp();
-            DocsPickers.warmUp();
-            DocsData.warmUp();
-
             this.model = new DocsModel();
             this.view = new DocsView(this.model);
             this.stage.scaleMode = StageScaleMode.NO_SCALE;
@@ -121,16 +108,24 @@ package demo
             this.mark("1 shell");
 
             // ---- 1. the shell ------------------------------------------------
-            this.problems = this.problems + this.rect("side", 0, 0, DocsStyle.NAV_W, DocsStyle.H);
+            // The layout is FLUID, so every number here is derived from the stage
+            // the window actually gave us, never from DocsStyle.W/H. Only the
+            // fixed metrics (the sidebar's width, the paddings, the header block)
+            // are constants.
+            var winW:Number = this.stage.stageWidth;
+            var winH:Number = this.stage.stageHeight;
+            var docX:Number = DocsStyle.NAV_W + DocsStyle.PAD_X;         // 280
+            var docW:Number = winW - DocsStyle.NAV_W - DocsStyle.PAD_X * 2;   // 688
+            var docY:Number = 100;   // 24 top pad + 30 title + 4 + 18 blurb + 4 + 16 meta + 4
+            var docH:Number = winH - docY - 16;                            // 584
+            var navH:Number = winH - 68 - 16 - 4 - 16;                       // 596: foot + gap + bottom pad
+            this.problems = this.problems + this.rect("side", 0, 0, DocsStyle.NAV_W, winH);
             this.problems = this.problems + this.rect("main", DocsStyle.NAV_W, 0,
-                DocsStyle.W - DocsStyle.NAV_W, DocsStyle.H);
-            // 1000 - 248 = 752 wide; its padding is [24, 32, 16, 32], so the content
-            // box starts at 248 + 32 = 280 and is 752 - 64 = 688 wide.
-            this.problems = this.problems + this.rect("docScroll", 280, 100, 688, 580);
-            // The sidebar pads 14 horizontally, so its index column is 248 - 28 = 220.
+                winW - DocsStyle.NAV_W, winH);
+            this.problems = this.problems + this.rect("docScroll", docX, docY, docW, docH);
             // The sidebar pads 14 horizontally and carries a 1px right border, so the
             // index column is 248 - 28 - 1 = 219 wide: the border sits INSIDE the box.
-            this.problems = this.problems + this.rect("nav", 14, 68, 219, 560);
+            this.problems = this.problems + this.rect("nav", 14, 68, 219, navH);
 
             this.mark("2 block arithmetic");
 
@@ -142,8 +137,8 @@ package demo
             // is a card with 14px padding around a 20px heading, an 8px gap and a
             // 44px button: 14+20+8+44+14 = 100. At 76 the button was drawn across
             // the surface's own border.
-            this.problems = this.problems + this.rect("b0", 280, 100, 688, 288);
-            this.problems = this.problems + this.rect("b0:code", 280, 284, 688, 104);
+            this.problems = this.problems + this.rect("b0", docX, docY, docW, 288);
+            this.problems = this.problems + this.rect("b0:code", docX, 284, docW, 104);
 
             var sv:UiNode = this.app.findByKey("docScroll");
             if (sv == null || sv.desc == null)
@@ -161,10 +156,10 @@ package demo
                     this.problems = this.problems + "the content pane is " + sn.contentH
                         + " tall but the blocks sum to " + want + "; ";
                 }
-                if (sn.maxOffsetY != want - 580)
+                if (sn.maxOffsetY != want - docH)
                 {
                     this.problems = this.problems + "maxOffsetY is " + sn.maxOffsetY
-                        + ", expected " + (want - 580) + " (content - viewport); ";
+                        + ", expected " + (want - docH) + " (content - viewport); ";
                 }
 
                 // ---- 3. a real wheel scroll ---------------------------------
@@ -392,12 +387,12 @@ package demo
                     this.report = this.report + "== overlay ==\n  dialog panel " + dlg.absX + "," + dlg.absY
                         + "," + dlg.absW + "," + dlg.absH + "\n";
                     // The panel is centred in the WINDOW, not in the page: 320 wide ->
-                    // x = (1000 - 320)/2 = 340. That is the whole point of the second
-                    // retained tree, and it is a number that comes from the window.
-                    if (dlg.absX != 340 || dlg.absW != 320)
+                    // x = (winW - 320)/2, which is 340 at the descriptor's 1000.
+                    if (dlg.absX != (winW - 320) / 2 || dlg.absW != 320)
                     {
                         this.problems = this.problems + "the dialog panel is at x=" + dlg.absX
-                            + " w=" + dlg.absW + ", expected x=340 w=320 (window-centred); ";
+                            + " w=" + dlg.absW + ", expected x=" + ((winW - 320) / 2)
+                            + " w=320 (window-centred); ";
                     }
                 }
                 var noBtn:UiNode = this.app.findByKey("demoDlgNo");
@@ -437,6 +432,62 @@ package demo
             {
                 this.problems = this.problems + "two redundant reflows re-solved layout " + extra + " time(s); ";
             }
+
+            this.mark("6c resize");
+
+            // ---- 6c. the shell is FLUID --------------------------------------
+            // The requirement this pins: resizing the WINDOW resizes the sidebar and
+            // the content pane. A window resize reaches the app as two writes plus an
+            // event -- stage_w/stage_h and Event.RESIZE (src/emit.ts:25381, ASC_window_
+            // on_resize) -- and that is exactly what is done here, so nothing in the
+            // layout path can tell this apart from a dragged window edge. The
+            // assertions are therefore RECTS, and any px() left in ROOT/SIDE/NAV/
+            // DOC_SCROLL (the old 1000x700 shell) would fail them.
+            var w0:Number = this.stage.stageWidth;
+            var h0:Number = this.stage.stageHeight;
+            var w2:Number = w0 + 180;
+            var h2:Number = h0 + 130;
+            this.stage.stageWidth = w2;
+            this.stage.stageHeight = h2;
+            this.stage.dispatchEvent(new Event(Event.RESIZE));
+            this.app.invalidate(Dirty.STRUCTURE);
+            this.app.reflow();
+            var docH2:Number = h2 - docY - 16;
+            this.problems = this.problems + this.rect("side", 0, 0, DocsStyle.NAV_W, h2);
+            this.problems = this.problems + this.rect("main", DocsStyle.NAV_W, 0,
+                w2 - DocsStyle.NAV_W, h2);
+            this.problems = this.problems + this.rect("docScroll", docX, docY,
+                w2 - DocsStyle.NAV_W - DocsStyle.PAD_X * 2, docH2);
+            // The index viewport is the sidebar's leftover height: top 68 (brand + tag),
+            // then the foot (16), its gap (4) and the bottom padding (16).
+            this.problems = this.problems + this.rect("nav", 14, 68, 219, h2 - 68 - 16 - 4 - 16);
+            this.report = this.report + "\n  resized to " + w2 + "x" + h2
+                + ": nav " + (h2 - 104) + " tall, content viewport " + docH2 + "\n";
+
+            var sv2:UiNode = this.app.findByKey("docScroll");
+            if (sv2 != null && sv2.desc != null)
+            {
+                // The page is the one stage 6 left selected (start), and its content
+                // height is whatever it is at THIS width -- compare the published
+                // range against it instead of a constant, because a wider pane can
+                // re-wrap a block and legitimately change the content height.
+                var sn2:ScrollViewNode = ScrollViewNode(sv2.desc);
+                if (sn2.maxOffsetY != sn2.contentH - docH2)
+                {
+                    this.problems = this.problems + "after the resize maxOffsetY is " + sn2.maxOffsetY
+                        + ", expected " + (sn2.contentH - docH2) + " (content " + sn2.contentH
+                        + " - viewport " + docH2 + "); ";
+                }
+            }
+
+            // ... and back, so the screenshots below are the published 1000x700 shape.
+            this.stage.stageWidth = w0;
+            this.stage.stageHeight = h0;
+            this.stage.dispatchEvent(new Event(Event.RESIZE));
+            this.app.invalidate(Dirty.STRUCTURE);
+            this.app.reflow();
+            this.problems = this.problems + this.rect("docScroll", docX, docY, docW, docH);
+            this.problems = this.problems + this.rect("nav", 14, 68, 219, navH);
 
             this.mark("7 screenshots");
 

@@ -21,7 +21,7 @@
 ```sh
 git clone https://github.com/RayGyoe/as3compiler.git ../as3compiler   # 必须同级目录
 cp ../as3compiler/vendor/skia/lib/windows-x64/icudtl.dat ui-demo/     # 文字引擎数据（已 ignore）
-node tools/gates.cjs     # 已增至 34 道门，34/34 PASS 才叫绿（最新落盘 reviews/gates-all-18.txt）
+node tools/gates.cjs     # 已增至 35 道门，35/35 PASS 才叫绿（最新落盘 reviews/gates-all-19.txt）
 ```
 
 两个第三方检出**故意不入库**（它们自带 `.git`，入库会退化成 gitlink 而丢内容），按需取回：
@@ -37,7 +37,7 @@ AIR SDK（`mxmlc` / `adl`，探针的**参考臂**要用）按 §「本机环境
 ## 交付（2026-10-24，第四轮：交互动线）—— 一条命令复核
 
 ```sh
-node tools/gates.cjs     # 已增至 34 道门，34/34 PASS 才叫绿（最新落盘 reviews/gates-all-18.txt）
+node tools/gates.cjs     # 已增至 35 道门，35/35 PASS 才叫绿（最新落盘 reviews/gates-all-19.txt）
 ```
 
 | 交付 | 内容 |
@@ -49,7 +49,8 @@ node tools/gates.cjs     # 已增至 34 道门，34/34 PASS 才叫绿（最新�
 | **动画** | `anim/`（`Ease`/`Tween`/`Anim`）+ `Style.transitionMs/Ease` + 每帧 `View.tick(nowMs)`（时钟用单调 `getTimer()`） |
 | **键盘 / 焦点 / 输入（第四轮，全新）** | `UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab / Shift+Tab 焦点环**（遍历保留树，不用运行时 `as_tab_scan`；浮层内是**焦点陷阱**）、`Esc`、方向键、`Enter`/`Space` 激活（`TextField` 除外）；控件通过**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`Widget` 契约不动）。`textField` 的 `Event.CHANGE` 回写 `Binding`/`onChange`，`Enter`/失焦提交 `onCommit`，`Esc` 回滚，占位符是**独立文本层**、重绘不擦字（`probes/widgets/interact` **25 项** / 变异 **8/8**） |
 | **修掉 18 个真框架缺陷** | 纯 paint 变更不上屏；子树布局变化永不解算；keyed 重排不重解；**auto 文本节点忘加自身内边距**；**浮层树永不再解**；**面板无 shapeA**；**`width` 选项撑坏 layer**；**`e.localY` 是 TARGET-relative**；**可见性翻转不上屏**；**销毁的弹层仍监听 stage（`#1009`）**；**浮层宿主留在 stage 上**；**旋转 spinner 只画一次**（被「每帧误判窗口尺寸」遮住）；**输入框一重绘就擦字且 `onCommit` 永不触发**；**翻转定位读到上一帧的 parent 尺寸**（缩窗后永久偏出 80px）；**入场动画在手泵帧的 tour 里永不落地**（整层 3% 透明，所有矩形断言却全绿）——**都带钉子与变异证据**，详情 [`STATUS.md`](STATUS.md) §3.3 |
-| **验收文化** | **34 道门每道都做过变异测试**（改 1 个单位必须变红）；探针协议与「会咬人的事实」见 [`CONTRIBUTING-widget.md`](CONTRIBUTING-widget.md) |
+| **验收文化** | **35 道门每道都做过变异测试**（改 1 个单位必须变红）；探针协议与「会咬人的事实」见 [`CONTRIBUTING-widget.md`](CONTRIBUTING-widget.md) |
+| **滚动条 + 流体外壳（第七轮）** | `scrollView` 现在自带**纵/横滚动条**：thumb 按比例算长（地板 24px）并 1:1 跟手拖拽；点轨道翻一屏；`scrollbarX/Y` 的 `auto`/`always`/`never`（非法值**抛**）；`offsetX` 现在**真的进 `scrollRect`**；无竖向可滚时滚轮**回落横向**。条是**覆盖层**（不参与布局 ⇒ 不改变任何矩形，也避免 scrollbar-gutter 反馈环）。新增门 `probes/widgets/scrollbar`（手算 thumb/track 几何与像素）与变异 4/4。文档站外壳改成**流体**（`ROOT` 百分比 + 两列 `flex:1`），tour 里加一段真实的**尺寸变化**（写 stage 宽高 + 发 `Event.RESIZE`，即窗口 glue 所做的两件事）并断言 `side/main/docScroll/nav` 四块矩形、再变回去 |
 
 **经验（比这些 bug 本身更值钱）**：前两个缺陷在**单页探针里永远看不见**——只有
 「多页共用槽位、换页时换掉整棵子树」这种形态才会暴露；最后两个（销毁的弹层还在监听 stage、
@@ -89,7 +90,7 @@ node tools/gates.cjs     # 已增至 34 道门，34/34 PASS 才叫绿（最新�
 | `reviews/probe-asmdef-and-name-collision-2026-10-22.md` | **同一输入两侧同编**：AIR 硬拒「一个文件里的异名 public 定义」而我们放行（**G7**）；`bind` 碰撞与 `stat` 被单宏吃掉（**G8**） | 已验 |
 | `reviews/compiler-tree-fingerprint.json` | 开工时 `as3compiler/` 工作树脏文件的**指纹**（sha256/16）——用于末次复核「我零改动」；复核器 `node tools/compiler-fingerprint.cjs` | 证据 |
 | `reviews/gates-all-9.txt` | **全量 18 道门一次跑绿**的落盘输出（2026-10-23；含新加的 **G14 身份矩阵**与 **Vector vs Array** 两道）；`gates-all-10.txt` 是**改完 G11 窗口钉之后的复跑**；`gates-all-8.txt` 是加门前的 16 道历史留档；`gates-all-11/12.txt` 是**第三轮（组件目录页 + auto 文本缺陷）之后的两次复跑**（**23 道门**）；**`gates-all-13.txt` 是上一轮（浮层六件 + 六页画廊）的定稿（**25 道门**，含 overlay 探针与 `Array(x)` 两臂门）**；**`gates-all-14.txt` 是第四轮（交互动线）的定稿（**27 道门**，新增 `widgets/interact` 与 `widgets/flip` 两道）**；
-**`gates-all-18.txt` 是第七轮（组件文档站：41 页、anchored 弹层段、真点击链路）的定稿（**34 道门**；上一版 `gates-all-17.txt` 是第六轮的 33 道门，新增 `widgets/popup`、`widgets/typing`）；`gates-all-15.txt` 是第五轮（动画深度 + 三个选择控件）的 30 道门留档**；另 `gates-skip-path.txt` = 强制走 `[SKIP]` 分支的集成钉子 | 证据 |
+**`gates-all-19.txt` 是第七轮后半（滚动条 + 流体外壳）的定稿（**35 道门**，新增 `widgets/scrollbar`；编译器 HEAD `07ed035`）；`gates-all-18.txt` 是第七轮前半（组件文档站：41 页、anchored 弹层段、真点击链路）的定稿（**34 道门**；上一版 `gates-all-17.txt` 是第六轮的 33 道门，新增 `widgets/popup`、`widgets/typing`）；`gates-all-15.txt` 是第五轮（动画深度 + 三个选择控件）的 30 道门留档**；另 `gates-skip-path.txt` = 强制走 `[SKIP]` 分支的集成钉子 | 证据 |
 | `reviews/probe-g11-nondeterminism-2026-10-23.md` | **G11 结案**：不是「生成器不确定」，而是**在另一个进程正改写的编译器树上测量**；三份历史产物 + 5 次构建同一哈希 + 变异 10/10 | 已验（非缺口） |
 | `reviews/g11-false-red-window-2026-10-23.md` | **G11 的一次假红**：端点哈希对看不见「写入→还原」窗口（并发会话的 mutation harness 恰好保证逐字节还原）⇒ 改为**逐次构建**采样 `src/`、把差异归因给「源码动过」（exit 3 `[SKIP]`），并把**归因本身**做成变异目标 **M6b** | 已修 |
 | `reviews/revisit-g8-g9-workarounds-2026-10-23.md` | **G8/G9 绕行复核（本轮）**：底层已修后，当初「为了通过」的决定能不能撤？→ 逐项给出**不能撤**的理由（装箱成本、G14、不把公开 API 名押在 C 名剪辑上），并列出**可改动点清单**；另含 **`Vector` vs `Array` 实测**（AOT 0.18x / AIR 0.92x）。本轮改动：7 处陈旧绕行注释、1 道「不可能变红」的门、2 道新门 | 已验 |

@@ -183,7 +183,7 @@ function record(name, code, detail) {
 for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim',
                  'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay',
                  'widgets/interact', 'widgets/flip', 'widgets/motion', 'widgets/vlist',
-                 'widgets/choice', 'redraw', 'widgets/popup', 'widgets/typing']) {
+                 'widgets/choice', 'redraw', 'widgets/popup', 'widgets/typing', 'widgets/scrollbar']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);
@@ -419,8 +419,8 @@ const G16_KNOWN = [];
 // straddling runs split in two, keeping it sorted by start.
 // Every case is RELATIONAL (two fields in the same process, then compared), because
 // AIR and this build use different text engines and their absolute widths legitimately
-// differ. Cases 10/11 are the registered G21 deviation (getTextFormat ignores the run
-// table) and are measured, not skipped.
+// differ. Cases 10/11 were the registered G21 deviation (getTextFormat ignored the run
+// table); stage 270 fixed that, so they now assert the value instead of an exemption.
 {
   const r = sh(process.execPath, ['probes/g20-settextformat/run.cjs'], UI);
   const out = (r.stdout || '') + (r.stderr || '');

@@ -1,0 +1,47 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/scrollbar/Main.as. Never regenerate these by running the probe -- in particular the two bar colours are the values the widget writes, not samples of its output.",
+  "_derivation": {
+    "root": "column, align-items flex-start, padding 20, gap 10, size [320,200] -> root (0,0,320,200), content starts at (20,20).",
+    "sv1": "First child, size [200,80] -> (20,20,200,80). Vertical by default (Style.flexDirection is null unless set, and the widget/engine read 'row' only when explicitly asked), three 80px bands -> content 240 tall, so maxOffsetY = 240 - 80 = 160.",
+    "bands": "b1/b2/b3 are each [200,80] in the viewport's column: y = 0, 80, 160 locally -> stage 20, 100, 180. Their LAYOUT rects do not move when the view scrolls (scrollRect slides pixels, it does not re-solve), which is why b2/b3 are asserted at y=100/180 even though only b1 is on screen at rest.",
+    "sv2": "Second child, y = 20 + 80 + 10 = 110, size [200,40] and flexDirection 'row' -> (20,110,200,40). Its content is the 600x40 strip -> maxOffsetX = 400, maxOffsetY = 0.",
+    "strip": "row child at the viewport origin -> (20,110,600,40); r1 is the first cell -> (20,110,100,40).",
+    "bars": "Thickness 10, inset 2. sv1 overflows vertically only, so the vertical track is the right 10px of the viewport, local x 190..200 (stage 210..220), and it spans the FULL 80px height because there is no horizontal bar to make room for. Thumb length = track * view/(view+max) = 80*80/240 = 26.667, drawn inset 2 on every side -> local (192,2,6,22.667) -> stage x 212..218, y 22..44.667. So (215,30) is the thumb and (215,90) is bare track (below 44.667).",
+    "sv2_bars": "sv2's horizontal track is the bottom 10px of the viewport, local y 30..40 (stage 140..150), 200 wide (no vertical bar to give up its corner). Thumb length = 200*200/600 = 66.667 -> drawn local (2,32,62.667,6) -> stage x 22..84.667, y 142..148. (30,145) is the thumb, (150,145) is track beyond it.",
+    "points": {
+      "root_bg": "(5,5) is inside the root's 20px padding -> #FFFFFF.",
+      "sv1_band1": "(120,30) is viewport-local (100,10); at offset 0 that is content row 10, inside b1 -> #EE1111.",
+      "sv1_thumb": "(215,30) is viewport-local (195,10): x is the middle of the 6px-wide thumb, y is inside 2..24.667 -> the resting thumb colour #B9C2D0.",
+      "sv1_track": "(215,90) is viewport-local (195,70): same bar, below the thumb and away from its rounded caps -> the track colour #E8EDF5.",
+      "sv1_no_hbar": "(170,95) is viewport-local (150,75) -- right where a horizontal track would be painted (local y 70..80) -- and it still shows b1 (#EE1111). A bar on an axis with maxOffset 0 is the lie this pins. x=150 rather than 190 because the vertical bar covers the right 10px.",
+      "sv2_cell1": "(30,115) is sv2-local (10,5), i.e. content x=10 -> r1 #EE1111.",
+      "sv2_thumb": "(30,145) is sv2-local (10,35): the horizontal thumb spans local x 2..64.667, y 32..38 -> #B9C2D0.",
+      "sv2_track": "(150,145) is sv2-local (130,35), past the thumb's 64.667 -> #E8EDF5.",
+      "sv2_no_vbar": "(215,115) is sv2-local (195,5), where a vertical track would be, and it still shows the content: content x=195 -> r2 #11EE11."
+    },
+    "behaviour": "Steady state first: contentH 240 / maxOffsetY 160 for sv1 and contentW 600 / maxOffsetX 400 / maxOffsetY 0 for sv2. Then one wheel notch (wheelStep 20) over sv1 moves offsetY to 20 and NOT offsetX, and slides b2 into the window at local y=70 (content row 90). Then dragging the vertical thumb 15px down must give offsetY = 15 * 160 / (80 - 26.667) = 45 -- the thumb tracks the pointer 1:1, so the free travel is the FULL thumb length, not the 4px-shorter drawn rect; the drag must also move the thumb on screen (it leaves y 2..24.667 and the old spot turns into track) and the content (local y=70 now shows content row 115 = b2). Clamps: 9999 -> 160 on sv1 (thumb at the track's end, local 53.333..80) and 9999 -> 400 on sv2. The horizontal fallback: a wheel over sv2 (maxOffsetY 0) moves offsetX to 20 and the pixels slide with it (stage x=110 is local 90, i.e. content x=110 = r2). No momentum, no elastic overscroll: those are absent on purpose."
+  },
+  "w": 320,
+  "h": 200,
+  "rects": {
+    "root": [0, 0, 320, 200],
+    "sv1": [20, 20, 200, 80],
+    "b1": [20, 20, 200, 80],
+    "b2": [20, 100, 200, 80],
+    "b3": [20, 180, 200, 80],
+    "sv2": [20, 110, 200, 40],
+    "strip": [20, 110, 600, 40],
+    "r1": [20, 110, 100, 40]
+  },
+  "points": [
+    { "x": 5, "y": 5, "rgb": "#FFFFFF" },
+    { "x": 120, "y": 30, "rgb": "#EE1111" },
+    { "x": 215, "y": 30, "rgb": "#B9C2D0" },
+    { "x": 215, "y": 90, "rgb": "#E8EDF5" },
+    { "x": 170, "y": 95, "rgb": "#EE1111" },
+    { "x": 30, "y": 115, "rgb": "#EE1111" },
+    { "x": 30, "y": 145, "rgb": "#B9C2D0" },
+    { "x": 150, "y": 145, "rgb": "#E8EDF5" },
+    { "x": 215, "y": 115, "rgb": "#11EE11" }
+  ]
+}

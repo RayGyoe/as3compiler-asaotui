@@ -31,18 +31,6 @@ package demo
             { key: "README", label: "README.md" }
         ];
         private static const ROW_H:Number = 26;
-        // Force this class's lazy static initializer. compiler-gaps G21: a static
-        // read emitted INSIDE a closure omits the class's _cinit() guard, so a field
-        // whose only readers are demo closures is still NULL when the closure first
-        // runs (measured: a static const Array came back null -> #1009). Reading one
-        // field from a plain method runs the guard, which initialises the WHOLE class
-        // in one go. DocsMain calls this before the first render. Remove when G21 is
-        // fixed.
-        public static function warmUp():void
-        {
-            var probe:Object = NAMES;
-        }
-
         public static function sections(view:DocsView, id:String):Array
         {
             var m:DocsModel = view.model;
@@ -185,7 +173,8 @@ package demo
                     "A scrollView clips and slides its child, which therefore needs an explicit height:",
                     "a container that measured itself would leave nothing to scroll."
                 ], [
-                    "scrollView({ key: \"sv\", size: [280, 96], wheelStep: 26 }, [",
+                    "scrollView({ key: \"sv\", wheelStep: 26,",
+                    "             style: { size: [280, 96] } }, [",
                     "    column({ size: [null, 260] }, rows)   // taller than the viewport",
                     "])"
                 ], 132, function ():Node
@@ -201,14 +190,48 @@ package demo
                     ]);
                 }),
 
-                new DocSection("No scrollbars", [
-                    "There is no scrollbar, no momentum and no elastic edge: the wheel and the keys are",
-                    "reported, and `offsetY` is the request. A scrollbar would be a widget on top of this."
+                // The 2-D case is the one that shows BOTH bars. `always` is used so the
+                // demo does not depend on the content having been measured before the
+                // first frame -- and this page is also where the MODE itself is
+                // documented, so the source under it has to be what produced it.
+                new DocSection("Scrollbars on both axes", [
+                    "A bar appears where the content overflows: drag the thumb, or click the track",
+                    "to page by one viewport. Bars are OVERLAY chrome -- they never change a rect."
                 ], [
-                    "// a scrollbar is a slider bound to the same offsetY"
+                    "scrollView({ key: \"sv2\", scrollbarX: \"always\",",
+                    "             scrollbarY: \"always\", barThickness: 10,",
+                    "             style: { size: [280, 120] } }, [",
+                    "    column({ size: [460, 300] }, rows)   // wider AND taller",
+                    "])"
+                ], 148, function ():Node
+                {
+                    var rows:Array = [];
+                    for (var i:int = 0; i < 6; i++)
+                    {
+                        rows.push(box({ key: "svb" + i, style: StyleRefinement.from({
+                            size: [Length.px(460), Length.px(50)],
+                            background: (i % 2 == 0) ? 0xE0F2FE : 0xDBEAFE }) }, [
+                            text("row " + (i + 1), { key: "svb" + i + "t", style: DocsDemo.LABEL,
+                                                   ariaName: "" })
+                        ]));
+                    }
+                    return scrollView({ key: "demoSv2", wheelStep: 26,
+                        scrollbarX: "always", scrollbarY: "always", barThickness: 10,
+                        style: StyleRefinement.from({ size: [280, 120], background: 0xF8FAFC }) }, [
+                        column({ key: "demoSv2Col", style: StyleRefinement.from({
+                            size: [Length.px(460), Length.px(300)] }) }, rows)
+                    ]);
+                }),
+
+                new DocSection("Wheel, thumb, track", [
+                    "One wheel notch is `wheelStep` px; with nothing to scroll vertically, the wheel",
+                    "falls back to the horizontal axis. There is no momentum and no elastic edge."
+                ], [
+                    "// wheel -> offsetY; dragging a thumb writes the same offset back",
+                    "// scrollbarX/scrollbarY: \"auto\" | \"always\" | \"never\""
                 ], 76, function ():Node
                 {
-                    return text("Wheel over the panel above; it clips, it does not grow.",
+                    return text("Drag the thumb in the panel above; its source stays in sync.",
                         { style: DocsDemo.LABEL, ariaName: "" });
                 })
             ];

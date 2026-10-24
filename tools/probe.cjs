@@ -52,7 +52,10 @@ if (!fs.existsSync(path.join(dir, 'Main.as'))) {
 }
 
 // ---- 1: clean previous evidence (a stale artifact has faked a pass before) ---
-const OUTS = [name + '.bmp', name + '.bmp.rects.txt', name + '.rects.txt', name + '.done', name + '.log'];
+const OUTS = [name + '.bmp', name + '.bmp.rects.txt', name + '.rects.txt', name + '.done', name + '.log',
+  // A probe may leave a stage breadcrumb here (see probes/widgets/scrollbar): the
+  // file is the probe's own, and printing it on TIMEOUT names the stage that died.
+  name + '.step'];
 for (const f of OUTS) {
   const p = path.join(dir, f);
   if (fs.existsSync(p)) fs.unlinkSync(p);
@@ -141,6 +144,8 @@ if (!keep) kill();
 
 if (verdict == null) {
   console.error('[probe] TIMEOUT: ' + name + ' never wrote ' + name + '.done (window never settled?)');
+  const stepP = path.join(dir, name + '.step');
+  if (fs.existsSync(stepP)) console.error('[probe] last stage: ' + fs.readFileSync(stepP, 'utf8').trim());
   const log = path.join(dir, name + '.log');
   if (fs.existsSync(log)) console.error(fs.readFileSync(log, 'utf8'));
   process.exit(1);

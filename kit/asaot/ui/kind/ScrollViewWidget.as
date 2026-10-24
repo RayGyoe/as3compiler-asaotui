@@ -1,17 +1,18 @@
-// asaot.ui.kind.ScrollViewWidget -- the viewport for ScrollViewNode.
+// asaot.ui.kind.ScrollViewWidget -- the viewport for ScrollViewNode: the clip,
+// the wheel, the TWO SCROLLBARS and their thumbs.
 //
 // THE CLIP IS `backing.scrollRect`, AND ITS SEMANTICS ARE NOT THE OBVIOUS ONES.
 // Measured against adl 51.4.1 (recorded in the compiler, emit.ts:22731): the object
 // is shown through a window of the SCROLL RECTANGLE'S SIZE that stays anchored on
 // the object's own box, and the CONTENT slides by -x/-y. So
 //
-//     backing.scrollRect = new Rectangle(0, offsetY, w, h)
+//     backing.scrollRect = new Rectangle(offsetX, offsetY, w, h)
 //
-// clips to the node's own rect AND slides the content up by offsetY -- the clip is
-// free. The one consequence is that the slide moves EVERY child of the backing,
-// including this widget's own background shape, so `paint` compensates by drawing
-// the background at +offsetY. Getting that backwards is how the app's old list
-// painted scrolled content over its fixed header (bug D29 in the compiler).
+// clips to the node's own rect AND slides the content up/left by the offsets -- the
+// clip is free. The one consequence is that the slide moves EVERY child of the
+// backing, including this widget's own background and scrollbar shapes, so `paint`
+// compensates by placing them at +offset. Getting that backwards is how the app's
+// old list painted scrolled content over its fixed header (bug D29).
 //
 // THE CONTENT MUST NOT BE SHRUNK BY THE VIEWPORT. `flex-shrink` defaults to 1 in
 // this engine (As3LayoutNode.as:44), so a 120px column inside a 60px viewport would
@@ -20,10 +21,18 @@
 // a viewport compressing its content is never what the author meant, and an
 // explicit `flexShrink` still wins because the check is `anyFlex`.
 //
-// WHAT A SCROLLVIEW DOES NOT DO: no scrollbars, no kinetic/drag scrolling, no
-// `overflow: hidden` on the LAYOUT (children still report their unscrolled rects --
-// that is the layout truth; only the pixels slide). Wrap it in a `card` or `box`
-// with a border if you want a frame around the viewport.
+// THE SCROLLBARS ARE PAINTED, NOT LAID OUT. They are overlay chrome: adding two
+// bars as layout children would make the viewport's content width depend on
+// whether a bar is showing (the classic scrollbar-gutter feedback loop), and the
+// engine's rects are what the rest of the kit (and the docs tour) reason about.
+// So they are two Graphics draws on `n.shapeB`, positioned in VIEWPORT space
+// (compensated for the scroll, like the background). They are real mouse targets
+// because a Graphics fill is a pick region (as_shape_region_hit).
+//
+// WHAT A SCROLLVIEW STILL DOES NOT DO: no momentum/inertia, no elastic overscroll,
+// no keyboard paging, no double-click-to-maximise. A wheel is `wheelStep` per
+// delta unit; the bars ARE draggable and a click on the track pages by one
+// viewport (this is the honest list; anything else would be a lie in the docs).
 package asaot.ui.kind
 {
     import asaot.ui.Dirty;
@@ -32,6 +41,7 @@ package asaot.ui.kind
     import asaot.ui.ScrollViewNode;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
+    import asaot.ui.WidgetTeardown;
     import asaot.ui.style.Size;
     import asaot.ui.style.Style;
     import asaot.ui.style.Length;
@@ -39,10 +49,11 @@ package asaot.ui.kind
     import asaot.ui.LayoutConstants;
 
     import flash.display.Shape;
+    import flash.display.Stage;
     import flash.events.MouseEvent;
     import flash.geom.Rectangle;
 
-    public class ScrollViewWidget implements Widget
+    public class ScrollViewWidget implements Widget, WidgetTeardown
     {
         // Scratch keys on the node (see Widget for why per-node state lives here and
         // not on the widget: one widget instance serves every node of its kind).
@@ -53,19 +64,74 @@ package asaot.ui.kind
         private static const STEP_KEY:String = "step";
         private static const APPLIED:String = "applied";
         private static const REPORTED:String = "reported";
+        // Outputs paint publishes for the input handlers: the effective scroll
+        // range and the last bar geometry. `bars` is one reused number array --
+        // paint must not allocate -- with this layout:
+        //   [0] hasVertical [1] hasHorizontal
+        //   [2..5]  vertical track x,y,w,h
+        //   [6..9]  horizontal track x,y,w,h
+        //   [10..13] vertical thumb x,y,w,h
+        //   [14..17] horizontal thumb x,y,w,h
+        private static const MAX_X:String = "maxx";
+        private static const MAX_Y:String = "maxy";
+        private static const BARS:String = "bars";
+        // Pointer interaction state. DRAG is the axis being dragged (0 none,
+        // 1 vertical, 2 horizontal); HOVER is the bar under the pointer, for the
+        // hover colour; DRAGGED records that the drag moved, so the CLICK the
+        // window synthesises after a release does not also fire the author's
+        // onClick; CONSUMED records that the press landed on a bar for the same
+        // reason.
+        private static const DRAG:String = "drag";
+        private static const DRAG_PTR:String = "dragp";
+        private static const DRAG_OFF:String = "drago";
+        private static const HOVER:String = "barhover";
+        private static const DRAGGED:String = "dragged";
+        private static const CONSUMED:String = "barpress";
+        // The bar OPTIONS last seen, kept in one reused array so a settings change
+        // (a colour, a mode) repaints even though it does not reflow. Comparing
+        // them element-wise avoids building a signature string every frame.
+        private static const OPTIONS:String = "baropts";
+        // The closures installed on the STAGE for the duration of a drag, kept so
+        // they can be removed by reference (and by teardown).
+        private static const MOVE_FN:String = "moveFn";
+        private static const UP_FN:String = "upFn";
 
         private static const DEFAULT_W:Number = 200;
         private static const DEFAULT_H:Number = 150;
+        // Bar metrics. 10px is the "classic" desktop thickness; the thumb needs a
+        // usable minimum or a viewport with a huge content stays undraggable.
+        private static const BAR_T:Number = 10;
+        private static const BAR_INSET:Number = 2;
+        private static const MIN_THUMB:Number = 24;
 
         public function build(n:UiNode):void
         {
             n.shapeA = new Shape();   // the viewport's own background (kept at +offset)
             n.backing.addChild(n.shapeA);
-            // Like Slider/Tabs/List: the widget owns the listener, because only the
-            // widget knows what a delta means here.
+            n.shapeB = new Shape();   // the two scrollbars (kept at +offset, on TOP)
+            n.backing.addChild(n.shapeB);
+            // Like Slider/Tabs/List: the widget owns the listeners, because only the
+            // widget knows what a delta or a bar press means here.
             var self:ScrollViewWidget = this;
             n.backing.addEventListener(MouseEvent.MOUSE_WHEEL,
                 function (e:MouseEvent):void { self.onWheel(n, e); });
+            // MOUSE_MOVE is also how the hover colour of a thumb is decided, and the
+            // press handlers are what start a drag or page the track. They all live
+            // on the backing, so a press on a child of the viewport (ordinary
+            // content) bubbles here too -- the geometry test then says "not a bar".
+            n.backing.addEventListener(MouseEvent.MOUSE_MOVE,
+                function (e:MouseEvent):void { self.onMove(n, e); });
+            n.backing.addEventListener(MouseEvent.MOUSE_DOWN,
+                function (e:MouseEvent):void { self.onDown(n, e); });
+            n.backing.addEventListener(MouseEvent.MOUSE_UP,
+                function (e:MouseEvent):void { self.endDrag(n); });
+            n.backing.addEventListener(MouseEvent.MOUSE_OUT,
+                function (e:MouseEvent):void { self.setHover(n, 0); });
+            n.extra[BARS] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            n.extra[HOVER] = 0;
+            n.extra[DRAG] = 0;
+            n.extra[DRAGGED] = 0;
+            n.extra[CONSUMED] = 0;
         }
 
         public function payload(n:UiNode, desc:Node):Boolean
@@ -77,7 +143,27 @@ package asaot.ui.kind
             // live position alone (see ScrollViewNode's header).
             if (requested(n, REQ_X, LIVE_X, sv.offsetX)) n.dirty |= Dirty.M_PAINT;
             if (requested(n, REQ_Y, LIVE_Y, sv.offsetY)) n.dirty |= Dirty.M_PAINT;
+            if (optionsChanged(n, sv)) n.dirty |= Dirty.M_PAINT;
             return false;   // the viewport's own size is the style's business
+        }
+
+        private function optionsChanged(n:UiNode, sv:ScrollViewNode):Boolean
+        {
+            var o:Array = n.extra[OPTIONS] as Array;
+            if (o == null)
+            {
+                o = [sv.scrollbarX, sv.scrollbarY, sv.barThickness, sv.barColor,
+                     sv.barHoverColor, sv.trackColor];
+                n.extra[OPTIONS] = o;
+                return true;
+            }
+            var diff:Boolean = String(o[0]) != sv.scrollbarX || String(o[1]) != sv.scrollbarY
+                || Number(o[2]) != sv.barThickness || uint(o[3]) != sv.barColor
+                || uint(o[4]) != sv.barHoverColor || uint(o[5]) != sv.trackColor;
+            if (!diff) return false;
+            o[0] = sv.scrollbarX; o[1] = sv.scrollbarY; o[2] = sv.barThickness;
+            o[3] = sv.barColor; o[4] = sv.barHoverColor; o[5] = sv.trackColor;
+            return true;
         }
 
         private function requested(n:UiNode, reqKey:String, liveKey:String, v:Number):Boolean
@@ -175,6 +261,8 @@ package asaot.ui.kind
             if (maxX < 0) maxX = 0;
             var maxY:Number = ch - h;
             if (maxY < 0) maxY = 0;
+            n.extra[MAX_X] = maxX;
+            n.extra[MAX_Y] = maxY;
 
             var ox:Number = clamp(Number(n.extra[LIVE_X]), maxX);
             var oy:Number = clamp(Number(n.extra[LIVE_Y]), maxY);
@@ -198,12 +286,14 @@ package asaot.ui.kind
             if (applied == null) { applied = [0, 0, 0, 0]; n.extra[APPLIED] = applied; }
             if (applied[0] != ox || applied[1] != oy || applied[2] != w || applied[3] != h)
             {
-                n.backing.scrollRect = new Rectangle(0, oy, w, h);
+                n.backing.scrollRect = new Rectangle(ox, oy, w, h);
                 applied[0] = ox;
                 applied[1] = oy;
                 applied[2] = w;
                 applied[3] = h;
             }
+
+            this.paintBars(n, w, h, maxX, maxY, ox, oy);
 
             // Publish the outputs, then report a real move. The CLAMPED position is
             // written back into the description so `offsetY` is always the effective
@@ -226,35 +316,367 @@ package asaot.ui.kind
             }
         }
 
+        // ---- the scrollbars ---------------------------------------------------
+        // Geometry + pixels in one place, because the hit tests must agree with what
+        // is on screen: the numbers written into `n.extra[BARS]` here are exactly
+        // what barIndexAt() tests against.
+        private function paintBars(n:UiNode, w:Number, h:Number, maxX:Number, maxY:Number,
+                                   ox:Number, oy:Number):void
+        {
+            var bars:Array = n.extra[BARS] as Array;
+            if (bars == null) { bars = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; n.extra[BARS] = bars; }
+            bars[0] = 0;
+            bars[1] = 0;
+            if (n.shapeB == null) return;
+
+            var sv:ScrollViewNode = ScrollViewNode(n.desc);
+            var t:Number = sv.barThickness;
+            if (isNaN(t) || t < 4) t = BAR_T;
+            if (t > 24) t = 24;
+            // An always-visible bar on an axis that cannot scroll would cover content
+            // for no reason; "always" is honoured as the author's explicit choice.
+            var wantY:Boolean = sv.scrollbarY == "always" || (sv.scrollbarY == "auto" && maxY > 0);
+            var wantX:Boolean = sv.scrollbarX == "always" || (sv.scrollbarX == "auto" && maxX > 0);
+            if (w < t * 2 || h < t * 2) { wantY = false; wantX = false; }
+            if (!wantY && !wantX)
+            {
+                var g0:Object = n.shapeB.graphics;
+                g0.clear();
+                return;
+            }
+
+            // A vertical bar gives up its bottom `t` to the horizontal one (the
+            // classic "corner square" rule), so the two never overlap.
+            var vTrackH:Number = h - (wantX ? t : 0);
+            var hTrackW:Number = w - (wantY ? t : 0);
+            bars[0] = wantY ? 1 : 0;
+            bars[1] = wantX ? 1 : 0;
+            if (wantY) { bars[2] = w - t; bars[3] = 0; bars[4] = t; bars[5] = vTrackH; }
+            if (wantX) { bars[6] = 0; bars[7] = h - t; bars[8] = hTrackW; bars[9] = t; }
+
+            // The thumb: proportional length (floored at MIN_THUMB) and a position
+            // that is the scroll offset's fraction of the free track.
+            var vLen:Number = 0;
+            var vPos:Number = 0;
+            if (wantY)
+            {
+                vLen = thumbLen(vTrackH, h, maxY);
+                vPos = thumbPos(vTrackH, vLen, oy, maxY);
+                bars[10] = w - t + BAR_INSET;
+                bars[11] = vPos + BAR_INSET;
+                bars[12] = t - BAR_INSET * 2;
+                bars[13] = vLen - BAR_INSET * 2;
+            }
+            var hLen:Number = 0;
+            var hPos:Number = 0;
+            if (wantX)
+            {
+                hLen = thumbLen(hTrackW, w, maxX);
+                hPos = thumbPos(hTrackW, hLen, ox, maxX);
+                bars[14] = hPos + BAR_INSET;
+                bars[15] = h - t + BAR_INSET;
+                bars[16] = hLen - BAR_INSET * 2;
+                bars[17] = t - BAR_INSET * 2;
+            }
+
+            // Keep the bar shape LAST, so it paints (and picks) above the content. The
+            // reconciler adds content children after `build`, which would otherwise
+            // hide a bar that was created first.
+            if (n.backing != null && n.backing.numChildren > 0
+                && n.backing.getChildIndex(n.shapeB) != n.backing.numChildren - 1)
+            {
+                n.backing.setChildIndex(n.shapeB, n.backing.numChildren - 1);
+            }
+            // The bars are chrome: they must not slide with the content.
+            n.shapeB.x = ox;
+            n.shapeB.y = oy;
+
+            var hover:int = int(n.extra[HOVER]);
+            var drag:int = int(n.extra[DRAG]);
+            var g:Object = n.shapeB.graphics;
+            g.clear();
+            var track:uint = sv.trackColor;
+            if (wantY)
+            {
+                g.beginFill(track, 1.0);
+                g.drawRoundRect(bars[2], bars[3], bars[4], bars[5],
+                    Math.min(bars[4], bars[5]) * 0.5, Math.min(bars[4], bars[5]) * 0.5);
+                g.endFill();
+                var litY:Boolean = hover == 1 || drag == 1;
+                g.beginFill(litY ? sv.barHoverColor : sv.barColor, 1.0);
+                var r1:Number = Math.min(bars[12], bars[13]) * 0.5;
+                g.drawRoundRect(bars[10], bars[11], bars[12], bars[13], r1, r1);
+                g.endFill();
+            }
+            if (wantX)
+            {
+                g.beginFill(track, 1.0);
+                g.drawRoundRect(bars[6], bars[7], bars[8], bars[9],
+                    Math.min(bars[8], bars[9]) * 0.5, Math.min(bars[8], bars[9]) * 0.5);
+                g.endFill();
+                var litX:Boolean = hover == 2 || drag == 2;
+                g.beginFill(litX ? sv.barHoverColor : sv.barColor, 1.0);
+                var r2:Number = Math.min(bars[16], bars[17]) * 0.5;
+                g.drawRoundRect(bars[14], bars[15], bars[16], bars[17], r2, r2);
+                g.endFill();
+            }
+        }
+
+        // Thumb length: the visible fraction of the content, floored so it stays
+        // grabbable, and never longer than the track.
+        private function thumbLen(track:Number, view:Number, maxOff:Number):Number
+        {
+            if (track <= 0) return 0;
+            var len:Number = view + maxOff > 0 ? track * view / (view + maxOff) : track;
+            if (maxOff <= 0) len = track;
+            if (len < MIN_THUMB) len = MIN_THUMB;
+            if (len > track) len = track;
+            return len;
+        }
+
+        private function thumbPos(track:Number, len:Number, off:Number, maxOff:Number):Number
+        {
+            var span:Number = track - len;
+            if (span <= 0 || maxOff <= 0) return 0;
+            return off / maxOff * span;
+        }
+
         private function clamp(v:Number, max:Number):Number
         {
             if (isNaN(v) || v < 0) return 0;
             return v > max ? max : v;
         }
 
-        // Only vertical: the widget has no horizontal affordance (no shift-wheel, no
-        // horizontal scrollbar), so a horizontal offset can only come from
-        // `offsetX`. A wheel in a nested viewport must not also move the outer one.
+        // ---- input ------------------------------------------------------------
+        // Which bar sits under a viewport-local point: 1/2 = the vertical /
+        // horizontal THUMB, 3/4 = the matching TRACK, 0 = neither. The geometry is
+        // the one paint wrote, so the target always matches the pixels.
+        private function barIndexAt(n:UiNode, lx:Number, ly:Number):int
+        {
+            var bars:Array = n.extra[BARS] as Array;
+            if (bars == null) return 0;
+            if (int(bars[0]) != 0
+                && lx >= bars[10] && lx <= bars[10] + bars[12]
+                && ly >= bars[11] && ly <= bars[11] + bars[13]) return 1;
+            if (int(bars[1]) != 0
+                && lx >= bars[14] && lx <= bars[14] + bars[16]
+                && ly >= bars[15] && ly <= bars[15] + bars[17]) return 2;
+            if (int(bars[0]) != 0
+                && lx >= bars[2] && lx <= bars[2] + bars[4]
+                && ly >= bars[3] && ly <= bars[3] + bars[5]) return 3;
+            if (int(bars[1]) != 0
+                && lx >= bars[6] && lx <= bars[6] + bars[8]
+                && ly >= bars[7] && ly <= bars[7] + bars[9]) return 4;
+            return 0;
+        }
+
+        private function setHover(n:UiNode, v:int):void
+        {
+            if (int(n.extra[HOVER]) == v) return;
+            n.extra[HOVER] = v;
+            n.app.markPaint(n);
+        }
+
+        private function onMove(n:UiNode, e:MouseEvent):void
+        {
+            if (int(n.extra[DRAG]) != 0) return;   // the stage listener owns a drag
+            this.setHover(n, barIndexAt(n, e.stageX - n.absX, e.stageY - n.absY));
+        }
+
+        private function onDown(n:UiNode, e:MouseEvent):void
+        {
+            // A fresh press clears both latches: a drag that ended outside never got
+            // its CLICK, so the flags can only be trusted within one press.
+            n.extra[DRAGGED] = 0;
+            n.extra[CONSUMED] = 0;
+            this.endDrag(n);
+            var bars:Array = n.extra[BARS] as Array;
+            if (bars == null) return;
+            var lx:Number = e.stageX - n.absX;
+            var ly:Number = e.stageY - n.absY;
+            var idx:int = this.barIndexAt(n, lx, ly);
+            if (idx == 1 || idx == 2)
+            {
+                n.extra[CONSUMED] = 1;
+                this.beginDrag(n, idx, e);
+                return;
+            }
+            if (idx == 3 || idx == 4)
+            {
+                // A click on the track pages by one viewport toward the click. The
+                // thumb's own position decides the direction (a click ABOVE the
+                // thumb goes back).
+                n.extra[CONSUMED] = 1;
+                if (idx == 3)
+                {
+                    var up:Boolean = ly < Number(bars[11]);
+                    this.pageY(n, up ? -1 : 1);
+                }
+                else
+                {
+                    var left:Boolean = lx < Number(bars[14]);
+                    this.pageX(n, left ? -1 : 1);
+                }
+            }
+        }
+
+        private function beginDrag(n:UiNode, axis:int, e:MouseEvent):void
+        {
+            n.extra[DRAG] = axis;
+            n.extra[DRAG_PTR] = (axis == 1) ? e.stageY : e.stageX;
+            n.extra[DRAG_OFF] = (axis == 1) ? Number(n.extra[LIVE_Y]) : Number(n.extra[LIVE_X]);
+            var st:Stage = n.app.stage;
+            if (st != null)
+            {
+                var self:ScrollViewWidget = this;
+                var mv:Function = function (ev:MouseEvent):void { self.onDragMove(n, ev); };
+                var upFn:Function = function (ev:MouseEvent):void { self.endDrag(n); };
+                n.extra[MOVE_FN] = mv;
+                n.extra[UP_FN] = upFn;
+                // The runtime dispatches motion to whatever is under the POINTER, so
+                // a drag that leaves the thumb (or the window's viewport) would stop
+                // receiving events. Listening on the STAGE for the duration of the
+                // drag is the capture layer this runtime does not have.
+                st.addEventListener(MouseEvent.MOUSE_MOVE, mv);
+                st.addEventListener(MouseEvent.MOUSE_UP, upFn);
+            }
+            this.setHover(n, axis);
+            n.app.markPaint(n);
+        }
+
+        private function onDragMove(n:UiNode, e:MouseEvent):void
+        {
+            var axis:int = int(n.extra[DRAG]);
+            if (axis == 0) return;
+            var bars:Array = n.extra[BARS] as Array;
+            if (bars == null) return;
+            var ptr:Number = (axis == 1) ? e.stageY : e.stageX;
+            var startPtr:Number = Number(n.extra[DRAG_PTR]);
+            var d:Number = ptr - startPtr;
+            if (d > 2 || d < -2) n.extra[DRAGGED] = 1;
+            var track:Number = (axis == 1) ? Number(bars[5]) : Number(bars[8]);
+            var thumb:Number = (axis == 1) ? Number(bars[13]) : Number(bars[17]);
+            // bars[] stores the DRAWN thumb, which is inset by BAR_INSET on both ends,
+            // so add the insets back: the pointer must move the thumb 1:1, and the
+            // thumb's travel is `track - fullLength`, not `track - drawnLength`
+            // (using the drawn length makes the content race ahead of the pointer by
+            // 2*BAR_INSET / free-travel, ~8% here).
+            var span:Number = track - thumb - BAR_INSET * 2;
+            var maxOff:Number = (axis == 1) ? Number(n.extra[MAX_Y]) : Number(n.extra[MAX_X]);
+            if (isNaN(span) || span <= 0 || isNaN(maxOff) || maxOff <= 0) return;
+            var off:Number = Number(n.extra[DRAG_OFF]) + d * maxOff / span;
+            if (off < 0) off = 0;
+            if (off > maxOff) off = maxOff;
+            if (axis == 1)
+            {
+                if (off == Number(n.extra[LIVE_Y])) return;
+                n.extra[LIVE_Y] = off;
+            }
+            else
+            {
+                if (off == Number(n.extra[LIVE_X])) return;
+                n.extra[LIVE_X] = off;
+            }
+            var sv:ScrollViewNode = ScrollViewNode(n.desc);
+            if (axis == 1) sv.offsetY = off; else sv.offsetX = off;
+            n.app.markPaint(n);
+        }
+
+        private function endDrag(n:UiNode):void
+        {
+            var st:Stage = n.app != null ? n.app.stage : null;
+            var mv:Function = n.extra[MOVE_FN] as Function;
+            var upFn:Function = n.extra[UP_FN] as Function;
+            if (st != null)
+            {
+                if (mv != null) st.removeEventListener(MouseEvent.MOUSE_MOVE, mv);
+                if (upFn != null) st.removeEventListener(MouseEvent.MOUSE_UP, upFn);
+            }
+            n.extra[MOVE_FN] = null;
+            n.extra[UP_FN] = null;
+            if (int(n.extra[DRAG]) != 0)
+            {
+                n.extra[DRAG] = 0;
+                if (n.app != null) n.app.markPaint(n);
+            }
+        }
+
+        // WidgetTeardown: a viewport destroyed mid-drag must not leave its stage
+        // listeners pointing at a nulled scratch bag (the bug the gallery's menus
+        // had). endDrag is idempotent.
+        public function teardown(n:UiNode):void
+        {
+            this.endDrag(n);
+        }
+
+        // One wheel notch scrolls the axis that can scroll. Vertical wins when both
+        // can: a horizontal-only viewport (a film strip) is the case that needs the
+        // fallback, and a shift-wheel would need a modifier the runtime's wheel event
+        // does not carry (Stage_dispatchWheel has no shiftKey).
         private function onWheel(n:UiNode, e:MouseEvent):void
         {
             var step:Number = Number(n.extra[STEP_KEY]);
             if (!(step > 0)) step = 24;
             var d:Number = e.delta;
             if (isNaN(d)) d = 0;
-            // The runtime's own convention (Stage.dispatchWheel, emit.ts:21504:
-            // `scrollV - delta`): a POSITIVE delta scrolls toward the START.
-            var oy:Number = Number(n.extra[LIVE_Y]) - d * step;
-            if (oy < 0) oy = 0;   // the upper clamp is applied by paint, which knows maxY
-            if (oy == Number(n.extra[LIVE_Y])) return;
-            n.extra[LIVE_Y] = oy;
-            // Keep the description in step, so an author who built it once and kept a
-            // reference can read the position back (authoring style B).
-            var sv:ScrollViewNode = ScrollViewNode(n.desc);
-            sv.offsetY = oy;
-            n.app.markPaint(n);
-            e.stopPropagation();
+            var maxY:Number = Number(n.extra[MAX_Y]);
+            if (maxY > 0)
+            {
+                if (this.scrollY(n, -d * step)) e.stopPropagation();
+                return;
+            }
+            var maxX:Number = Number(n.extra[MAX_X]);
+            if (maxX > 0 && this.scrollX(n, -d * step)) e.stopPropagation();
         }
 
-        public function click(n:UiNode):Boolean { return false; }
+        // The runtime's own convention (Stage.dispatchWheel, emit.ts:21504:
+        // `scrollV - delta`): a POSITIVE delta scrolls toward the START.
+        private function scrollY(n:UiNode, dx:Number):Boolean
+        {
+            var maxOff:Number = Number(n.extra[MAX_Y]);
+            var oy:Number = Number(n.extra[LIVE_Y]) + dx;
+            if (oy < 0) oy = 0;
+            if (oy > maxOff) oy = maxOff;
+            if (oy == Number(n.extra[LIVE_Y])) return false;
+            n.extra[LIVE_Y] = oy;
+            ScrollViewNode(n.desc).offsetY = oy;
+            n.app.markPaint(n);
+            return true;
+        }
+
+        private function scrollX(n:UiNode, dx:Number):Boolean
+        {
+            var maxOff:Number = Number(n.extra[MAX_X]);
+            var ox:Number = Number(n.extra[LIVE_X]) + dx;
+            if (ox < 0) ox = 0;
+            if (ox > maxOff) ox = maxOff;
+            if (ox == Number(n.extra[LIVE_X])) return false;
+            n.extra[LIVE_X] = ox;
+            ScrollViewNode(n.desc).offsetX = ox;
+            n.app.markPaint(n);
+            return true;
+        }
+
+        private function pageY(n:UiNode, dir:int):void
+        {
+            var view:Number = PaintKit.h1(n);
+            this.scrollY(n, dir * view * 0.9);
+        }
+
+        private function pageX(n:UiNode, dir:int):void
+        {
+            var view:Number = PaintKit.w1(n);
+            this.scrollX(n, dir * view * 0.9);
+        }
+
+        // The press landed on a bar, or the pointer moved during a drag: either way
+        // this is NOT the author's click, so it is consumed.
+        public function click(n:UiNode):Boolean
+        {
+            var consumed:Boolean = int(n.extra[CONSUMED]) != 0 || int(n.extra[DRAGGED]) != 0;
+            n.extra[CONSUMED] = 0;
+            n.extra[DRAGGED] = 0;
+            return consumed;
+        }
     }
 }

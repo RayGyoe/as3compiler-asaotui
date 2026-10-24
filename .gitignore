@@ -100,6 +100,9 @@ icudtl.dat
 *.exports.json
 # 探针/运行的完成标记
 *.done
+# 探针的 stage breadcrumb（`<name>.step`）：`tools/probe.cjs` 在 TIMEOUT 时打印它。
+# **必须单独忽略**——`*.done` 盖不住它，而每跑一次都会重写，留着会脏工作树。
+/probes/**/*.step
 /probes/**/*.bmp
 /probes/**/*.rects.txt
 # 2.4 MB 帧缓冲，verify-visual.cjs 每次重新生成

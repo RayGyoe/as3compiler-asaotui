@@ -7,6 +7,9 @@
 //       box({ style: { height: 40, background: 0x11EE11 } })
 //   ])
 //
+// Scrollbars are on by default (`scrollbarX`/`scrollbarY`: "auto"). They are drawn
+// over the viewport, so they do not change any rect this node is laid out in.
+//
 // Give it an explicit size: a viewport has no meaningful intrinsic size, so an
 // auto axis falls back to 200x150 (ScrollViewWidget.DEFAULT_W/H) rather than
 // collapsing to zero.
@@ -32,6 +35,16 @@ package asaot.ui
             if (opts.offsetY != null) n.offsetY = Number(opts.offsetY);
             if (opts.wheelStep != null) n.wheelStep = Number(opts.wheelStep);
             if (opts.onScroll != null) n.onScroll = opts.onScroll;
+            // The bar modes are validated HERE, at factory time: an unknown string
+            // that silently became "auto" is exactly the fallback AGENTS.md 2.5
+            // forbids, and the call site is the only place that can name the
+            // offending option.
+            if (opts.scrollbarX != null) n.scrollbarX = ScrollViewNode.barMode(opts.scrollbarX, "scrollbarX");
+            if (opts.scrollbarY != null) n.scrollbarY = ScrollViewNode.barMode(opts.scrollbarY, "scrollbarY");
+            if (opts.barThickness != null) n.barThickness = Number(opts.barThickness);
+            if (opts.barColor != null) n.barColor = uint(opts.barColor);
+            if (opts.barHoverColor != null) n.barHoverColor = uint(opts.barHoverColor);
+            if (opts.trackColor != null) n.trackColor = uint(opts.trackColor);
         }
         OptionSupport.addChildren(n, children);
         return n;
