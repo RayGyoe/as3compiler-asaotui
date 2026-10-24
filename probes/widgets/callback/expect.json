@@ -1,0 +1,26 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/callback/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "layout": "root = column, padding 10, gap 10, size [240,162], background #F3F4F6. Every child has an explicit width (200), so x=10 for all; y is the running column cursor: ck=10, tg=10+24+10=44, rd=44+24+10=78, sl=78+24+10=112. Heights: checkbox/toggle/radio 24, slider 40. Content total = 24*3+40 + 3 gaps*10 + 2 paddings*10 = 162, i.e. exactly the root height (no flex slack).",
+    "checkbox": "box = 16x16 at local (0,(24-16)/2=4), 1pt ring #BBBBBB + white fill when unchecked. Unchecked sample local (8,6) -> white; abs (18,16). (8,6) is inside the box and clear of both the 1pt border at y=4 and the corner arcs (radius 3 only reach x<3 / x>13).",
+    "switch": "track = 36x20 rounded rect at local y=(24-20)/2=2; knob = white circle radius 8 at local (10,12) when off. Track colour grey #D1D5DB when off. Sample local (28,12) is right of the knob's 2..18 span and inside the track -> grey; abs (38,56).",
+    "radio": "indicator = r=7 circle centred at local (8,(24-16)/2+8=12); white fill + 2pt #9CA3AF ring when off, blue #2563EB ring + 4px blue dot when on. Unchecked sample local (8,12) -> the white interior; abs (18,90).",
+    "slider": "sl = 200x40, value 0 at settle time (the model starts at 0). track = 8pt rounded rect at local y = h-12 = 28..36, full width, colour #E5E7EB; filled portion width = w*value = 0, so no blue; knob = white disc radius 7 with a 2pt #2563EB stroke centred at (fill, 32) = (0,32). Sample local (150,32) is the empty track -> grey; abs (160,144). The knob at local x=0 sits on the left edge, so (150,32) is far from it.",
+    "bg": "(4,4) is inside the root's 10pt padding, so it is the page background #F3F4F6."
+  },
+  "w": 240,
+  "h": 162,
+  "rects": {
+    "ck": [10, 10, 200, 24],
+    "tg": [10, 44, 200, 24],
+    "rd": [10, 78, 200, 24],
+    "sl": [10, 112, 200, 40]
+  },
+  "points": [
+    { "x": 4, "y": 4, "rgb": "#F3F4F6" },
+    { "x": 18, "y": 16, "rgb": "#FFFFFF" },
+    { "x": 38, "y": 56, "rgb": "#D1D5DB" },
+    { "x": 18, "y": 90, "rgb": "#FFFFFF" },
+    { "x": 160, "y": 144, "rgb": "#E5E7EB" }
+  ]
+}

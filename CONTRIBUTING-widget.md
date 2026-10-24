@@ -156,6 +156,33 @@ public interface WidgetFocus { function focusTarget(n:UiNode):DisplayObject; }  
 **不要**自己在控件里 `stage.addEventListener(KeyboardEvent.KEY_DOWN, …)`：那会绕过焦点环、
 在销毁时又漏拆监听（§2b）。库里已有 `WidgetKeys` 的地方一律走它。
 
+### 2d 回调契约：参数个数是**运行时语义**，不是代码风格
+
+AVM2 上**实参比形参少就是 `#1063 Argument count mismatch`**（不像 JS 那样补 `undefined`）。
+它不会 `throw` 到你的 `try` 里，而是被**帧守卫**接住：控制台一行流、这一帧回滚、
+**回调根本没跑**——屏幕保持上一棵树，看上去像「点了没反应」。
+
+这条库里已经踩过：四个开关类控件的 `n.onChange()` 少传了参数，而每个调用方都声明
+`function (v:Number)` ⇒ 所有开关与滑块的回调**全是死的**（`STATUS.md` §3.10）。
+
+**三条契约，写新控件时当硬约束（`UiNode.as` 顶部同名注释）**：
+
+| 回调 | 参数 | 例 |
+|---|---|---|
+| `n.onClick` | **0 个** | `onClick: function ():void { … }` |
+| `n.onChange(v)` | **恰好 1 个**：新值（`Boolean` / `0..1` 的 `Number` / 文本 / 索引） | `onChange: function (v:Number):void { slVal = v; }` |
+| `n.onCommit(v)` | **恰好 1 个**：提交值（失焦/Enter 时） | `onCommit: function (v:String):void { … }` |
+
+**两道门钉着它**（都得过）：`tools/callback-arity.cjs` 扫**源码两边**（kit 的调用点恰好 1 实参、
+`ui-demo` 与 `probes` 的声明恰好 1 形参，`onClick` 两边 0），变异 6/6；行为面是
+`probes/widgets/callback`（只点**未绑定**控件 —— 走 `Binding` 的控件**压根不经过 `onChange`**，
+所以 `probes/widgets/form` 比它先诞生却一直没发现这个缺陷）。
+
+**写拖拽类控件时顺带记住**：没有 pointer capture ⇒ 拖动期间在 **stage** 上临时挂
+`MOUSE_MOVE`/`MOUSE_UP`，闭包存 `n.extra` 里以便**按引用摘除**，`endDrag` 要**幂等**
+（松手、下一次按下、`teardown` 三条路都会走到），并且松手后要**清拖动标志**
+（即使监听已摘，标志是第二道防线——见 `kind/SliderWidget.as`）。
+
 ---
 
 ## 3 值类型与 unset 哨兵

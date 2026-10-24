@@ -21,6 +21,11 @@
 > 工厂当场抛错、每帧刷屏；`tooltip` 传 `tone: "info"` ⇒ `Number("info")` = NaN；`progress` 传
 > 一个它根本不读的 `tone`）。修了这 3 页，给 tour 加了「真点击 toastHost」判据，并新增扫描门
 > `tools/demo-options.cjs`（见 §3.9）。
+> 第九轮（2026-10-24）是同一种病症的第二个实例：**拖一下滑块就报 `#1063`、而且滑块不动** ——
+> 四个开关类控件的 `onChange()` **不传参**，而每个调用方都声明 `function (v:Number)`；
+> 另加滑块本身**没有拖动机制**。修了四个调用点 + 重写 `SliderWidget`（stage 临时监听 + 单写入点），
+> 并补上**两层钉子**：行为门 `probes/widgets/callback`（唯一会点**未绑定**控件的探针）与静态门
+> `tools/callback-arity.cjs`（双向参数个数扫描，见 §3.10）。
 > 第五轮（2026-10-24）补的是**动画深度 + 三处控件空白**：`Anim` 现在分 **paint 字段**与 **layout 字段**
 > （`width/height/padding/gap` 动画每帧重解、`textColor/cornerRadius` 可 tween）、浮层加**退场动画**；
 > `virtualList`（千级列表只挂 9 个节点）、`tree`、`combobox`、`datePicker`（纯整数日历，无 `Date`）落地。
@@ -30,7 +35,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 
-生成日期：2026-10-24（第八轮） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**38 道门**）
+生成日期：2026-10-24（第九轮补：滑动/回调参数） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**40 道门**）
 
 ---
 
@@ -40,7 +45,7 @@
 |---|---|---|
 | L1 渲染（Skia + Stage3D） | ✅ 复用编译器运行时 | `layout-check/visual-check.cjs` 12 项像素断言；AOT ↔ AIR 两张 BMP **0 字节差异** |
 | L2 布局引擎（flexbox 子集） | ✅ **做透** | `layout-check` **133 项手算断言全绿**；Yoga == AOT == AIR **105 行 0 差异** |
-| L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 25 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
+| L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 26 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
 | L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表 |
 | L2 动画 | ✅ **样式 5 字段 + layout 字段 + 浮层入/退场** | 样式 `paint` 字段：`opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`；样式 **`layout` 字段**：`width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y)——写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停（`probes/widgets/anim` 14 项 + `probes/widgets/motion` 23 项）；显示对象级：`OverlayMotion`（入场 140ms ease-out / **退场 120ms ease-in**，墙钟，每帧从引擎读基准，不累加），见 §3.4 |
 | L3 控件库 | ✅ **40 个工厂 / 35 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**35 个 kind 全部上了画廊**（第七页 Advanced），由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 画廊是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
@@ -176,7 +181,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 38 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 40 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -210,6 +215,7 @@ cd asaotui && node tools/gates.cjs                           # 38 道门，含 l
 | 23 | **点了控件，数据变了，界面不变**（同一次运行里 `doc=box` 而标题仍写 "Getting started"、上一页的 demo 还挂着） | 模型 `DocsModel extends Observable`，控件回调里 `model.put/pick` 会 `notify()`，**但没有任何人 subscribe** ⇒ `notify` 空转，`UiApp._pending` 一直是 0，`reflow()` 不重新 describe。widget 只报告、作者重渲染的契约断在最后一步 | `DocsMain` 建好 app 之后 `model.subscribe(function (d:int):void { self.app.invalidate(d); })` | 同上门（`index click` 段先 `click` 再 `reflow`，不额外 `invalidate`：能不能刷新完全取决于订阅是否在） |
 | 24 | **侧栏整行只有文字本身可点**（行高 26、宽 219，但 Label 右侧的空白点下去什么都不发生） | 命中测试是**按绘制区域**而非布局盒（`as_pick_hit_local` → Graphics 的 fill/stroke ∪ 子件）：行的样式只有 padding 没有 `background`，于是行自己的 graphics 是空的，只有标签的 TextField 是目标。这是**Air 的真实语义**（透明的容器不是点击目标），但作为导航行是设计缺陷 | `DocsStyle.NAV_ITEM` 加 `background: 0xF8FAFC` —— 与 `SIDE` 同色，**屏幕上看不出差别**，但行从此有填充区域（选中态本来就是 `0xEFF6FF`） | 同上门：示例按**行中心**（x=123，远在标签右侧）派发，加这条背景之前断言必红（命中测试落在祖先容器上，行自己的 backing 不是 target）。注释写清「容器只在绘制处可点」这条 Flash 语义 |
 | 25 | **滚动条被内容盖住**（第 0 页截图里 thumb 只从没被盖住的缝隙里露一条：代码块、选中的导航行、demo 卡片背景全压在条上） | 不是条画错。`fixDisplayOrder` 从 `internalCount`（= `build()` 之后 `backing` 的子件数）开始给内容子件排序，于是内容一律排在 `build` 造出的**所有**对象之上 —— 对背景是对的，对 chrome 是错的。条只能靠 `paintBars` 里那句 `setChildIndex` 补救，所以它**取决于这一帧有没有重绘这个滚动节点**；而切页是「描述但不重绘」（`Dirty.ALL` 不含 `M_PAINT`）⇒ 条永久埋在下面 | `UiNode.aboveContent`：kind 在 `build()` 里声明「我这一个对象在内容之上」，`internalCount` 于是**不数它** ⇒ 内容排到它前面，每次 describe 都自动把它推到最后，不再依赖重绘（`paintBars` 那句保留，它是给 `applyLift` 把子件重新挂到末尾那条路的） | `docs tour` 的 6d 阶段新增 `chromeOnTop("docScroll"/"nav")`：在**切页那一帧**（只有 describe、没有 paint）断言条是 backing 的**最后一个子件**。变异见 `tools/mutation-docs-tour.cjs`：去掉 `n.aboveContent = n.shapeB` ⇒ `the 'docScroll' bars sit at display index 1 of 3, so the content below them paints over the bars` |
+| 26 | **拖一下滑块就报错、而且滑块根本不动**（用户第二次报告：截图里一行 `#1063 Argument count mismatch`，点了/拖了没反应） | 两个独立缺陷叠在同一个控件上：①`SliderWidget`/`CheckboxWidget`/`SwitchWidget`/`RadioWidget` 调 `n.onChange()` **不传参**，而每个调用方（41 页文档站 + 探针）都声明 `function (v:Number)` / `(v:Boolean)` ⇒ AVM2 上**参数个数不符即抛 #1063**，帧守卫恢复该帧，于是**回调从未运行**、模型从未变、唯一痕迹是控制台一行；②就算参数对了，`SliderWidget` 也只有「按下就地设值」——**没有拖动**（按下后移动鼠标什么都不发生） | 四个控件的调用点补上参数（`onChange(next)` / `onChange(true)`）；`SliderWidget` **重写**：实现 `Widget, WidgetTeardown`，按下设值、拖动期间在 **stage** 上临时挂 `MOUSE_MOVE/MOUSE_UP`（闭包存 `n.extra["dragmv"]/["dragup"]` 以便按引用摘除），`endDrag` 幂等、`teardown` 调它；单一写入点 `commit()`（状态 → `Binding` → `onChange(v)` → `markPaint` → `invalidate(Dirty.VALUE)`），值没变不报 | **行为面**：新探针 `probes/widgets/callback`（24 项，**只点未绑定控件**，含按下→拖动→越界夹紧→回 0→松手→松手后移动无效→纯点击设值）+ 像素（拖动中帧必须跟着走）。变异 8/8（`probes/widgets/callback/mutation.cjs`），含「回调不传参」的四条与「松手什么都不结束」「去掉自抬重绘」。**静态面**：新门 `tools/callback-arity.cjs`（双向扫描：kit 的**调用点**恰好 1 参数、文档站/探针的**声明**恰好 1 参数，`onClick` 两边都是 0），变异 6/6。**为什么此前无人发现**：`probes/widgets/form` 只点**绑定了** `binding` 的控件（走 Binding 分支，不碰 `onChange`），而 41 页截图只渲染不点击 |
 
 **已知边界（登记，不修）**：`card({title: ...})` 的标题画在内容盒左上角、**不占布局位**，
 因此会压住第一个子节点（`kind/CardWidget.as:81` 的 `tf.x/tf.y = inset`）。
@@ -363,13 +369,53 @@ M2 = 拖拽用画出来的短 thumb、M3 = `offsetX` 不进 scrollRect（旧缺�
 是**滚动条被内容盖住**（`internalCount` 把条层也算成了内容基点）——一个从第七轮就存在、
 41 页像素断言都没抓住的缺陷（条画对了，只是画在下面）。修法与钉子见 §3.3 第 25 条。
 
+### 3.10 回调参数个数：一个只有「真点击」才暴露的类缺陷（第九轮补）
+
+用户第二次报告的形状和上一次（§3.9）**一模一样**：屏幕上只有一个报错，页面其它部分都正常。
+这次是滑块——点不动、拖不动，控制台一行 `#1063: Argument count mismatch`。
+
+**根因是两个独立的缺陷，叠在同一个控件上**：
+
+1. **调用传 0 个参数，声明要 1 个**。`SliderWidget` 里是 `n.onChange()`，而文档站每一页写的是
+   `function (v:Number):void { … }`。AVM2 上**参数个数不符就抛 #1063**（不是「少传的算 undefined」），
+   而帧守卫把它接住 ⇒ 回调**从未运行**、模型从未变、屏幕保持上一棵树，只有控制台有流。
+   同一种错在 `CheckboxWidget`/`SwitchWidget`/`RadioWidget` 里也有（`onChange()` / 少了 `true`）。
+2. **滑块没有拖动机制**。按下就地设值，之后移动鼠标什么都不发生——一个「看起来能拖」的控件。
+
+**修法**：四个调用点补参数（`onChange(next)` / `onChange(true)`）；`SliderWidget` 按
+`ScrollViewWidget` 的同一套写法重写（无 pointer capture ⇒ 拖动期间在 **stage** 上临时挂
+`MOUSE_MOVE`/`MOUSE_UP`，`endDrag` 幂等 + `teardown` 摘除；单一写入点 `commit()`，值没变不报）。
+
+**为什么两道旧门都漏了**：`probes/widgets/form` 的滑块用例**只点绑定了 `binding` 的控件**
+（走 Binding 分支，压根不经过 `onChange`），而 41 页画廊只**渲染**——不点击就永远看不到 #1063。
+所以这次补的是**两层**：
+
+- **行为面** `probes/widgets/callback`（24 项，门）：只点**未绑定**的控件；滑块走完整手势
+  （按下 → 拖到 0.75 → 越界夹到 1 → 拖回 0 → 松手 → 松手后再移动必须无效 → 纯点击设 0.5），
+  并且**在拖动中间那一帧**读像素（松手会翻转 pressed 态、那次重绘会掩盖「控件没自抬重绘」的缺陷）。
+  变异 **8/8**。
+- **静态面** `tools/callback-arity.cjs`（门，双向）：kit 里每个值回调**调用点**恰好 1 个实参、
+  `onClick` 恰好 0 个；文档站与探针里每个**声明**恰好 1 个形参（`onClick` 0 个）。
+  变异 **6/6**。**它看不见什么**：按引用传的回调（`onChange: this.tabChanged`）解析不到 ——
+  那一半只能靠行为门。
+
+**顺带的承诺写进代码**：`UiNode.as` 顶部登记了三条约定（`onClick()` 零参、`onCommit(v)` 一个
+提交值、`onChange(v)` 一个新值），`CONTRIBUTING-widget.md` §4 同步。
+
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **38** 道门：
+一条命令跑全部 **40** 道门：
 
 ```sh
-node tools/gates.cjs          # 38/38 PASS 才叫绿（定稿记录 reviews/gates-all-22.txt）
+node tools/gates.cjs          # 40/40 PASS 才叫绿（定稿记录 reviews/gates-all-23.txt）
 ```
+
+> 第九轮补那次全量：**39/40 PASS + 1 SKIPPED**（`reviews/gates-all-23.txt`，exit 0）。被跳过的是
+> **G11 determinism**，原因正是它该跳的那一种：**测量期间编译器源码真的在动** ——
+> 另一个会话正在改 `../as3compiler`（`M src/air-app.ts`、`M vendor/window_glue.cc`、`?? vendor/gl_glue.cc`），
+> 它在本门 5 次构建的窗口里写了一次（`afefbcd0… -> 28588474…`）。
+> 树稳定后单独重跑同一门 → **PASS**（内容哈希 `285884741a2ce350`，`reviews/gate-g11-rerun-2026-10-24.txt`）。
+> 新增的两道门（`probes/widgets/callback` 24 项、`author callbacks carry their documented argument`）都在那次全量里跑绿。
 
 > 全量 **31 道门**在 **CLEAN** 编译器树上跑绿（定稿记录 `reviews/gates-all-16.txt`，HEAD `480b81c`）；
 > 上一轮 25 道门那次是 `gates-all-13.txt`，当时树上还带两个本地补丁（见 §3.7）——
@@ -382,6 +428,7 @@ node tools/gates.cjs          # 38/38 PASS 才叫绿（定稿记录 reviews/gate
 
 | 验收 | 命令 | 期望 |
 |---|---|---|
+| **滑块拖拽 + 回调参数（第九轮补）** | `node tools/probe.cjs probes/widgets/callback` + `node tools/callback-arity.cjs` | **24 checks**，0 failures（只点**未绑定**控件：checkbox/toggle/radio + 滑块的按下→拖动→越界夹紧→松手→松手后移动无效→纯点击）；变异 `probes/widgets/callback/mutation.cjs` **8/8**；静态门 15 调用 / 81 声明 / **0 违规**，变异 `tools/mutation-callback-arity.cjs` **6/6** |
 | **多页 App（组件文档站，41 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **41 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
 | **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **35/35** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
 | **高分辨率（HiDPI）自证** | `cd asaotui/ui-demo && node check-dpi.cjs` | `standard` 700×560(1×) vs `high` 1050×840(1.5×)，且两次 tour 文本**逐字节相同** |

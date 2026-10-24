@@ -122,7 +122,12 @@ package asaot.ui.kind
             var next:Boolean = !n.checked;
             n.checked = next;
             if (n.binding != null) n.binding.set(next);
-            else if (n.onChange != null) n.onChange();
+            // The callback takes the NEW value. Calling it with no arguments is not a
+            // silent no-op on AVM2: a closure declared `function (v:Boolean)` throws
+            // #1063 "Argument count mismatch", the frame guard recovers, and the
+            // author's handler never runs -- the docs' checkbox (which declares the
+            // parameter) reported nothing and looked dead. See UiNode.onChange.
+            else if (n.onChange != null) n.onChange(next);
             n.app.invalidate(Dirty.VALUE);
             return true;
         }

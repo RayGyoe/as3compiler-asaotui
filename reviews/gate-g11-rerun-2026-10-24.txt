@@ -1,0 +1,53 @@
+G11 re-run alone, after the full suite skipped it (the compiler tree was being written
+by a second session during the suite). Same content hash 285884741a2ce350.
+
+== G11 closing measurement ==  2026-10-24T13:53:13.491Z
+
+A. compiler tree: HEAD d82d199, src/ content hash 285884741a2ce350
+   tracked modifications:  M src/air-app.ts |  M vendor/window_glue.cc
+   untracked: ?? vendor/gl_glue.cc
+   -> a modified tree is where "two builds of one program emit different C" came from
+      (another session here edits the compiler). It does NOT by itself invalidate this
+      run: what does is the src/ hash MOVING during it, which is checked after B.
+
+B. 5 builds of probes/array-scope/Main.as, same command, same tree
+   input: 160 .as files, sha256/16 7f8128040f92cedf (0 missing)
+   run 1: 4844447 B  sha256/16 08390e6dbde68814  (8.5s)  [src 28588474]
+   run 2: 4844447 B  sha256/16 08390e6dbde68814  (8.4s)  [src 28588474]
+   run 3: 4844447 B  sha256/16 08390e6dbde68814  (8.4s)  [src 28588474]
+   run 4: 4844447 B  sha256/16 08390e6dbde68814  (8.5s)  [src 28588474]
+   run 5: 4844447 B  sha256/16 08390e6dbde68814  (8.5s)  [src 28588474]
+   input hash after the runs: 7f8128040f92cedf (unchanged)
+   src/ content hash after the runs: 285884741a2ce350 (unchanged -> the generator revision was stable)
+   distinct hashes: 1 of 5  -> ONE output for one input
+
+C. spelling tripwire on the freshly generated C (struct / props table / body literal)
+   all 3 built-in fields agree in all three places
+
+D. the three surviving artifacts from the 84-second window that rewrote the naming
+   artifact-1-struct-time__.c  2026-10-23 04:00:10 +0800
+       2574303 B, sha256/16 710dab8769241f9b, clang errors 19 (want >=16 (capped)), clang summary 20, truncated true, first: 38434:37 no member named '_time' in 'struct Date'
+       kinds: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+       struct Date { double time__; } + offsetof(Date, time__) while the body literal is o->_time
+   artifact-2-struct-socket-1-error.c  2026-10-23 04:00:50 +0800
+       2574267 B, sha256/16 98cd3d4e6e259221, clang errors 1 (want 1), clang summary 1, truncated false, first: 41310:8 no member named 'socket' in 'struct ServerSocketConnectEvent'
+       kinds: ServerSocketConnectEvent.socket
+       Date repaired; the remaining break is ServerSocketConnectEvent.socket
+   artifact-3-consistent.c  2026-10-23 04:01:34 +0800
+       2574236 B, sha256/16 f63f256a66b64923, clang errors 0 (want 0), clang summary null, truncated false
+       kinds: (none)
+       all three spellings agree; this is the first state that links
+   -> same program, three different C files, errors decaying to zero in 84 s: the tree was mid-edit.
+
+E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04:00:19 +0800)
+   my build broke on:      Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   artifact-1 (04:00:10) broke on: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   -> identical hazard set, from two different programs, 9 seconds apart: one tree state.
+
+---- verdict ----
+PASS: 5 builds of one input on the generator revision 285884741a2ce350 produced ONE generated C;
+      the built-in spellings agree in all three places, and the only surviving failure
+      artifacts are from a compiler tree that was being edited.
+      NOTE: HEAD d82d199 has 2 modified source file(s) ( M src/air-app.ts,  M vendor/window_glue.cc). Determinism is certified for the CONTENT hash above,
+      i.e. for that tree state -- not for the commit.
+---- evidence appended to probes\g11-nondeterminism\run-2026-10-24.txt ----

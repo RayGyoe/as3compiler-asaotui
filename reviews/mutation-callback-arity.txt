@@ -1,0 +1,31 @@
+baseline (unmutated): exit 0
+
+M1  CAUGHT  THE REPORTED BUG, re-introduced: the slider calls onChange() with no argument while every handler declares `function (v:Number)` -> #1063, the handler never runs
+     exit 1
+     kit/asaot/ui/kind/SliderWidget.as:231: .onChange(...) must be called with exactly ONE argument (the new value -- a zero-argument call throws #1063 on `function (v:T)` handlers); got 0
+     restore: byte-identical (493276678600e863)
+M2  CAUGHT  the checkbox drops the new boolean from its report (the docs declare `function (v:Boolean)`)
+     exit 1
+     kit/asaot/ui/kind/CheckboxWidget.as:130: .onChange(...) must be called with exactly ONE argument (the new value -- a zero-argument call throws #1063 on `function (v:T)` handlers); got 0
+     restore: byte-identical (51a17d42dc54397d)
+M3  CAUGHT  the switch drops it too (same defect, different kind)
+     exit 1
+     kit/asaot/ui/kind/SwitchWidget.as:128: .onChange(...) must be called with exactly ONE argument (the new value -- a zero-argument call throws #1063 on `function (v:T)` handlers); got 0
+     restore: byte-identical (818dfb7ea54ceac8)
+M4  CAUGHT  the radio drops the constant `true` it still has to pass
+     exit 1
+     kit/asaot/ui/kind/RadioWidget.as:139: .onChange(...) must be called with exactly ONE argument (the new value -- a zero-argument call throws #1063 on `function (v:T)` handlers); got 0
+     restore: byte-identical (7239ce2ac007e0bd)
+M5  CAUGHT  AUTHOR SIDE: a docs handler drops its parameter, so the widget would call a 0-argument closure with 1 argument -- legal on AVM2 but it documents the wrong contract
+     exit 1
+     ui-demo/demo/DocsControls.as:207: a onChange handler must declare exactly ONE parameter (the new value), got 0
+     restore: byte-identical (dbc0de02b60be085)
+M6  CAUGHT  AUTHOR SIDE, the other direction: an onClick handler that expects an event -- onClick is invoked with NO arguments, so this declaration is a #1063 waiting for a click
+     exit 1
+     ui-demo/demo/DocsStart.as:51: an onClick handler must declare NO parameters (it is called as onClick()), got 1
+     ui-demo/demo/DocsStart.as:95: an onClick handler must declare NO parameters (it is called as onClick()), got 1
+     ui-demo/demo/DocsStart.as:105: an onClick handler must declare NO parameters (it is called as onClick()), got 1
+     restore: byte-identical (c6ea387855b05158)
+
+MUTATION callback-arity: 6/6 caught, 0 problem(s)
+RESULT: PASS

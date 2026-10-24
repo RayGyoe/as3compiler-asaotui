@@ -13,7 +13,9 @@
 //       slider    = blue fill / white knob / grey track, progress at 0 and 1;
 //   * TWO things a bitmap cannot show: that the four kinds registered with
 //     Widgets, and that clicking writes back through a Binding (a bound radio,
-//     a bound switch, and a click-to-set bound slider).
+//     a bound switch, and a press-to-set bound slider). The UNBOUND onChange
+//     branch -- and the slider's drag -- are probes/widgets/callback's business;
+//     this probe deliberately only ever touches bound controls.
 import asaot.ui.*;
 import asaot.ui.style.*;
 import flash.display.BitmapData;
@@ -155,13 +157,22 @@ function steady():void
         if (model.switchOn != true) problems = problems + "switch binding not written: " + model.switchOn + "; ";
     }
 
-    // (d) clicking the slider at localX=150 of 200 sets the value to 0.75.
+    // (d) PRESSING the slider on the track at local x=150 of 200 sets the value to
+    // 0.75. A PRESS, not a CLICK, and routed through the STAGE: a press is the whole
+    // gesture now (a slider sets its value on the way down and then follows the
+    // pointer -- see SliderWidget), and a MouseEvent dispatched straight at the
+    // backing carries stageX = 0, so the widget could not place it. The y is the
+    // track's 8pt band (local h-12..h-4 = 28..36), which is also the only part of a
+    // slider that is drawn and therefore pickable.
     var sl:UiNode = app.findByKey("sl");
     if (sl == null) problems = problems + "sl missing; ";
     else
     {
-        sl.backing.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false, 150, 20));
-        if (model.sliderVal < 0.7 || model.sliderVal > 0.8) problems = problems + "slider click did not set value: " + model.sliderVal + "; ";
+        var slx:Number = sl.absX + 150;
+        var sly:Number = sl.absY + 32;
+        stage.dispatchMouse(slx, sly, "mouseDown");
+        stage.dispatchMouse(slx, sly, "mouseUp");
+        if (model.sliderVal < 0.7 || model.sliderVal > 0.8) problems = problems + "slider press did not set value: " + model.sliderVal + "; ";
     }
 
     // (e) a settled tree never re-solves layout.

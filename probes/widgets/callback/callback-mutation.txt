@@ -1,0 +1,37 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  the slider reports with no argument (THE REPORTED BUG): the handler declares (v:Number), so it never runs and every later counter reads 0
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL slider onChange slider threw, or its handler did not run: calls=0 arg=-1 model=0 (press at local 50 of 200 = 0.25); the click after a press reported again (calls=0); pressing where the value a
+     restore: byte-identical (493276678600e863)
+M2  CAUGHT  the checkbox reports with no argument
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL checkbox onChange checkbox threw, or its handler did not run: calls=0 arg=false model=false; toggle onChange toggle threw, or its handler did not run: calls=1 arg=true model=true; radio onChan
+     restore: byte-identical (51a17d42dc54397d)
+M3  CAUGHT  the switch reports with no argument
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL toggle onChange toggle threw, or its handler did not run: calls=1 arg=true model=false; radio onChange radio threw, or its handler did not run: calls=2 arg=true model=true; a second click on t
+     restore: byte-identical (818dfb7ea54ceac8)
+M4  CAUGHT  the radio drops the constant `true` it still has to pass
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL radio onChange radio threw, or its handler did not run: calls=2 arg=true model=false; a second click on the selected radio reported again (calls=2); the selected radio's dot is #ffffff not #25
+     restore: byte-identical (7239ce2ac007e0bd)
+M5  CAUGHT  the widget stops raising its OWN paint request (invalidate alone): the value changes, the model agrees, and nothing ever repaints. Sampled MID-drag, because the release flips the pressed state and that repaint would hide this one
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the fill after a drag to 0.75 (the knob must follow the drag) is #ffffff not #2563eb at (60,144); the knob after a drag to 0.75 is #cacbcf not #ffffff at (160,144);
+     restore: byte-identical (493276678600e863)
+M6  CAUGHT  the release ENDS NOTHING: the stage listener stays attached and the drag flag stays set, so a later pointer move keeps dragging the value
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the stage listener survived the release (calls=5 model=0.5);
+     restore: byte-identical (493276678600e863)
+M7  CAUGHT  motion is ignored, so only the press sets the value (a slider that looks draggable and is not)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the drag did not follow to 0.75 (calls=1 arg=0.25); the fill after a drag to 0.75 (the knob must follow the drag) is #ffffff not #2563eb at (60,144); the knob after a drag to 0.75 is #cacbcf n
+     restore: byte-identical (493276678600e863)
+M8  CAUGHT  the "only report a CHANGE" gate is removed, so the press and the click the window glue sends afterwards both report -- one gesture, two model writes
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL pressing where the value already is reported a change (calls=2); the drag did not follow to 0.75 (calls=3 arg=0.75); a drag past the end did not clamp at 1 (calls=4 arg=1); a leftward drag did
+     restore: byte-identical (493276678600e863)
+
+MUTATION callback: 8/8 caught, 0 problem(s)
+RESULT: PASS

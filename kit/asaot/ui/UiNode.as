@@ -80,6 +80,24 @@ package asaot.ui
         public var password:Boolean;
         public var checked:Boolean;
         public var binding:Binding;
+        // ARITY IS PART OF THE CONTRACT, and getting it wrong is NOT a silent no-op.
+        //
+        //   onClick()        -- no arguments. Every kind and every container calls it
+        //                       like that, so an author closure must declare none.
+        //   onCommit(v)      -- exactly one: the committed value (text) or the row.
+        //   onChange(v)      -- exactly one: the NEW value (Boolean for
+        //                       checkbox/radio/switch, 0..1 Number for slider, the
+        //                       text for textField, the index/key for the selection
+        //                       kinds -- those factories reuse this slot).
+        //
+        // AVM2 throws #1063 "Argument count mismatch" when a closure is called with
+        // FEWER arguments than it declares (`function (v:Number)` called as `f()`),
+        // and the frame guard then swallows it: the handler never runs, the model
+        // never changes, and the only trace is a console line. That is exactly how
+        // the docs' slider shipped broken -- the widget called `onChange()` and every
+        // click on the page threw. Widgets therefore PASS the value even where it is
+        // constant (a radio only ever reports `true`). Pin: tools/callback-arity.cjs +
+        // probes/widgets/callback.
         public var onClick:Function;
         public var onCommit:Function;
         public var onChange:Function;

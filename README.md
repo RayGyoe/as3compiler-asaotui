@@ -21,7 +21,7 @@
 ```sh
 git clone https://github.com/RayGyoe/as3compiler.git ../as3compiler   # 必须同级目录
 cp ../as3compiler/vendor/skia/lib/windows-x64/icudtl.dat ui-demo/     # 文字引擎数据（已 ignore）
-node tools/gates.cjs     # 已增至 38 道门，38/38 PASS 才叫绿（最新落盘 reviews/gates-all-22.txt）
+node tools/gates.cjs     # 已增至 40 道门，40/40 PASS 才叫绿（最新落盘 reviews/gates-all-23.txt）
 ```
 
 两个第三方检出**故意不入库**（它们自带 `.git`，入库会退化成 gitlink 而丢内容），按需取回：
@@ -37,7 +37,7 @@ AIR SDK（`mxmlc` / `adl`，探针的**参考臂**要用）按 §「本机环境
 ## 交付（2026-10-24，第四轮：交互动线）—— 一条命令复核
 
 ```sh
-node tools/gates.cjs     # 已增至 38 道门，38/38 PASS 才叫绿（最新落盘 reviews/gates-all-22.txt）
+node tools/gates.cjs     # 已增至 40 道门，40/40 PASS 才叫绿（最新落盘 reviews/gates-all-23.txt）
 ```
 
 | 交付 | 内容 |
@@ -48,10 +48,11 @@ node tools/gates.cjs     # 已增至 38 道门，38/38 PASS 才叫绿（最新�
 | **样式面 18 → 31 字段** | `justifyContent`/`alignItems`/`alignSelf`/`alignContent`/`flexWrap`/`margin:LengthEdges`/`inset:LengthEdges`/`position`/`overflow`/`display`/`aspectRatio` + 动画两字段；非法字符串**抛错** |
 | **动画** | `anim/`（`Ease`/`Tween`/`Anim`）+ `Style.transitionMs/Ease` + 每帧 `View.tick(nowMs)`（时钟用单调 `getTimer()`） |
 | **键盘 / 焦点 / 输入（第四轮，全新）** | `UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab / Shift+Tab 焦点环**（遍历保留树，不用运行时 `as_tab_scan`；浮层内是**焦点陷阱**）、`Esc`、方向键、`Enter`/`Space` 激活（`TextField` 除外）；控件通过**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`Widget` 契约不动）。`textField` 的 `Event.CHANGE` 回写 `Binding`/`onChange`，`Enter`/失焦提交 `onCommit`，`Esc` 回滚，占位符是**独立文本层**、重绘不擦字（`probes/widgets/interact` **25 项** / 变异 **8/8**） |
-| **修掉 25 个真框架缺陷** | 纯 paint 变更不上屏；子树布局变化永不解算；keyed 重排不重解；**auto 文本节点忘加自身内边距**；**浮层树永不再解**；**面板无 shapeA**；**`width` 选项撑坏 layer**；**`e.localY` 是 TARGET-relative**；**可见性翻转不上屏**；**销毁的弹层仍监听 stage（`#1009`）**；**浮层宿主留在 stage 上**；**旋转 spinner 只画一次**（被「每帧误判窗口尺寸」遮住）；**输入框一重绘就擦字且 `onCommit` 永不触发**；**翻转定位读到上一帧的 parent 尺寸**（缩窗后永久偏出 80px）；**入场动画在手泵帧的 tour 里永不落地**（整层 3% 透明，所有矩形断言却全绿）；……**滚动条被内容盖住**（`internalCount` 把条层算成内容基点 ⇒ 条只在「这一帧恰好重绘」时才回到上面；改成 `UiNode.aboveContent` 后不再依赖重绘）——**都带钉子与变异证据**，详情 [`STATUS.md`](STATUS.md) §3.3 |
-| **验收文化** | **38 道门每道都做过变异测试**（改 1 个单位必须变红）；探针协议与「会咬人的事实」见 [`CONTRIBUTING-widget.md`](CONTRIBUTING-widget.md) |
+| **修掉 26 个真框架缺陷** | 纯 paint 变更不上屏；子树布局变化永不解算；keyed 重排不重解；**auto 文本节点忘加自身内边距**；**浮层树永不再解**；**面板无 shapeA**；**`width` 选项撑坏 layer**；**`e.localY` 是 TARGET-relative**；**可见性翻转不上屏**；**销毁的弹层仍监听 stage（`#1009`）**；**浮层宿主留在 stage 上**；**旋转 spinner 只画一次**（被「每帧误判窗口尺寸」遮住）；**输入框一重绘就擦字且 `onCommit` 永不触发**；**翻转定位读到上一帧的 parent 尺寸**（缩窗后永久偏出 80px）；**入场动画在手泵帧的 tour 里永不落地**（整层 3% 透明，所有矩形断言却全绿）；……**滚动条被内容盖住**（`internalCount` 把条层算成内容基点 ⇒ 条只在「这一帧恰好重绘」时才回到上面；改成 `UiNode.aboveContent` 后不再依赖重绘）——**都带钉子与变异证据**，详情 [`STATUS.md`](STATUS.md) §3.3 |
+| **验收文化** | **40 道门每道都做过变异测试**（改 1 个单位必须变红）；探针协议与「会咬人的事实」见 [`CONTRIBUTING-widget.md`](CONTRIBUTING-widget.md) |
 | **滚动条 + 流体外壳（第七轮）** | `scrollView` 现在自带**纵/横滚动条**：thumb 按比例算长（地板 24px）并 1:1 跟手拖拽；点轨道翻一屏；`scrollbarX/Y` 的 `auto`/`always`/`never`（非法值**抛**）；`offsetX` 现在**真的进 `scrollRect`**；无竖向可滚时滚轮**回落横向**。条是**覆盖层**（不参与布局 ⇒ 不改变任何矩形，也避免 scrollbar-gutter 反馈环）。新增门 `probes/widgets/scrollbar`（手算 thumb/track 几何与像素）与变异 4/4。文档站外壳改成**流体**（`ROOT` 百分比 + 两列 `flex:1`），tour 里加一段真实的**尺寸变化**（写 stage 宽高 + 发 `Event.RESIZE`，即窗口 glue 所做的两件事）并断言 `side/main/docScroll/nav` 四块矩形、再变回去 |
 | **文档站不再教错用（第八轮补）** | 点击 `toastHost` 页的 “Show two toasts” 会把控制台刷满 `asaot.ui.toast: unknown tone 'info'`：页面示范了 chip 的语气词，而 `toast` 只认 `default/success/danger` 且**按契约抛错**。顺着这条做了一次源码扫描（`tools/demo-options.cjs`：工厂**真的读**的键 vs 页面传入的键），又抓到两页同类：`tooltip` 把 `tone` 传成字符串（`Number("info")` = NaN ⇒ 每帧重绘、填充色 0）与 `arrow: "bottom"`（不在 up/down/left/right/none 里 ⇒ 不画箭头却白占 6px）；`progress` 传了它根本不读的 `tone`。三页已修；tour 新增 **`6d toastHost`** 阶段（真按 stage 坐标点按钮，断言两条 toast 的角栈矩形 x=764 / 下沿 684 / 间距 8，再翻回 `open` 断言全卸载）并加「切换页面那一帧条层必须是 backing 的最后一个子件」，变异 **3/3**（`tools/mutation-docs-tour.cjs`，含用户遇到的那个回植）；新门 `tools/demo-options.cjs`，变异 3/3。截图变化顺带揭出**滚动条被内容盖住**这个从第七轮就存在的老缺陷（§3.3 第 25 条，修法 `UiNode.aboveContent`） |
+| **滑块拖不动、一点就报错（第九轮补）** | 用户报告：拖一下滑块，控制台一行 `#1063 Argument count mismatch`，滑块不动。两个缺陷叠在同一个控件上：四个开关类控件（slider/checkbox/toggle/radio）调 `onChange()` **不传参**，而文档站每页都声明 `function (v:Number)` —— AVM2 上**参数个数不符就抛 #1063**，帧守卫接住 ⇒ 回调从未运行、模型未变；并且 `SliderWidget` 本身**没有拖动机制**（按下设值，移动无效）。修法：四个调用点补参数 + `SliderWidget` 重写（按下设值，拖动期间在 **stage** 上临时挂 `MOUSE_MOVE`/`MOUSE_UP`，`endDrag` 幂等 + `teardown` 摘除，单一写入点 `commit()` 且值没变不报）。**两层钉子**：行为门 `probes/widgets/callback`（24 项、变异 8/8，唯一会点**未绑定**控件的探针 —— 旧 `form` 探针只点绑定的，走 `Binding` 分支压根不经过 `onChange`；像素断言取在**拖动中间那一帧**，否则松手时 pressed 态的重绘会掩盖「没自抬重绘」）+ 静态门 `tools/callback-arity.cjs`（**双向**扫描：kit 调用点恰好 1 实参、文档站/探针声明恰好 1 形参，`onClick` 两边 0；变异 6/6） |
 
 **经验（比这些 bug 本身更值钱）**：前两个缺陷在**单页探针里永远看不见**——只有
 「多页共用槽位、换页时换掉整棵子树」这种形态才会暴露；最后两个（销毁的弹层还在监听 stage、
@@ -96,6 +97,7 @@ node tools/gates.cjs     # 已增至 38 道门，38/38 PASS 才叫绿（最新�
 | `reviews/g11-false-red-window-2026-10-23.md` | **G11 的一次假红**：端点哈希对看不见「写入→还原」窗口（并发会话的 mutation harness 恰好保证逐字节还原）⇒ 改为**逐次构建**采样 `src/`、把差异归因给「源码动过」（exit 3 `[SKIP]`），并把**归因本身**做成变异目标 **M6b** | 已修 |
 | `reviews/revisit-g8-g9-workarounds-2026-10-23.md` | **G8/G9 绕行复核（本轮）**：底层已修后，当初「为了通过」的决定能不能撤？→ 逐项给出**不能撤**的理由（装箱成本、G14、不把公开 API 名押在 C 名剪辑上），并列出**可改动点清单**；另含 **`Vector` vs `Array` 实测**（AOT 0.18x / AIR 0.92x）。本轮改动：7 处陈旧绕行注释、1 道「不可能变红」的门、2 道新门 | 已验 |
 | `reviews/docs-demo-option-drift-2026-10-24.md` | **文档站的示范与工厂不同步**（用户报告：点 `toastHost` 页的按钮就刷屏 `unknown tone 'info'`）：三页在教工厂不接受的取值/键 → 逐页修；tour 新增「真点击 toastHost」阶段（角栈矩形先推导再断言，变异 2/2）+ 新门 `tools/demo-options.cjs`（变异 3/3），并写明这道门**看不见取值**、那半边只能靠行为发现 | 已验 |
+| `reviews/slider-drag-and-callback-arity-2026-10-24.md` | **拖一下滑块就报错、滑块也不动**（用户第二次报告）：4 个开关类控件 `onChange()` **不传参**（AVM2 上实参少于形参 = `#1063`，帧守卫接住 ⇒ 回调从未运行）+ 滑块`没有拖动机制` → 逐项修；新探针 `probes/widgets/callback`（24 项 / 变异 8/8，唯一会点**未绑定**控件的探针）+ 新扫描门 `tools/callback-arity.cjs`（双向，变异 6/6）+ tour 新增「真拖拽滑块」阶段。另记下三个会把夹具做成假绿/假红的坑：手势必须包 `try/catch`（否则 #1063 掀掉派发 ⇒ 不透明 TIMEOUT）、文件作用域初始化按源码顺序发（写在 `showWindow` 之后就永不执行）、像素采样必须取在**单独一次 move 之后那一帧** | 已验 |
 | `reviews/probe-g14-object-slot-array-identity-2026-10-23.md` | **G14 实测**（**修前登记**，现已成为修复的绊线）：`Array` 进 `Object` 槽不装箱 ⇒ `is Array` 恒假、`as Array` null、`.length` undefined、`is <用户类>` **`0xC0000005`**（**26 条**×两臂；AIR 先自证 26/26 符合手写规则）；`Fill.fromAny` 的 `is Array` 守卫是**死代码** | ✅ **已修**（阶段二百五十三） |
 | `reviews/revisit-g14-unlocks-2026-10-23.md` | **G14 修好之后，UI 库能拿回什么（本轮）**：逐项复核 12 处受 G14/G9 影响的库内形状 → **style 层 `fromAny`/`fromArray` 拆分已回退**（`fromAny` 全能化）、**10 处 `*` 与 `bindTo` 不撤**（理由改窄）；含一条已变成假钉子的变异（`mutation-checkui-array-bg.cjs` 的 `M1`）的**重写**与两 runtime 19 格实测 | 已验 |
 | `reviews/handoff-g14-to-compiler-2026-10-23.md` | **G14 转交材料**（给编译器侧会话）：一条命令复现 + 期望/实际并排 + 三处根因（`emit.ts:32576` 的 `is Array` 少一个 `object` 分支【邻居 `is Class`/`is Vector` 都有】· `runtime.ts:1178` 的 `as_is` 只挡 `target_vt==NULL` · `runtime.ts:2026` 对 `tag==6` 放行）+ 两条修法路线 + 「修完我们的门会故意变红」的说明 | ✅ 已交付并被采纳 |

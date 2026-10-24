@@ -171,6 +171,21 @@
 //                DERIVED from the source rather than a blanket amnesty -- the first
 //                version of that mutation only disabled the read behind `false &&`
 //                and the scan stayed green, so the anchor is now the whole line).
+//   cb arity  -- tools/mutation-callback-arity.cjs: 6/6, three per direction. Re-arming
+//                each of the four zero-argument calls the REPORTED bug shipped, a
+//                handler in ui-demo that loses its parameter, and an onClick that
+//                declares a MouseEvent (the argument the glue never passes). This is
+//                the static half: a #1063 from a call/declaration mismatch is invisible
+//                in a screenshot -- the frame guard restores the frame, the handler
+//                simply never runs -- so the docs' slider shipped a dead callback.
+//   callback 24 -- probes/widgets/callback/mutation.cjs: 8/8. The behavioural half, on
+//                UNBOUND controls (probes/widgets/form only ever clicks BOUND ones, and
+//                that is exactly why the defect escaped): a handler that never runs, a
+//                drag that does not follow, a mouseMove the widget ignores (a slider
+//                that looks draggable and is not), a missing repaint request (sampled
+//                MID-drag -- the release flips the pressed state and that repaint would
+//                hide it), a release that ends nothing, and a de-duplication gate that
+//                turns one gesture into two model writes.
 //   array(x)  -- probes/array-coerce/: `Array(arg)` must wrap a non-number in ONE
 //                element on BOTH runtimes (SQL: Array([1,2]).length == 1 and [0] is
 //                Array). Found when `Array(opts.items)` in the overlay factories
@@ -213,7 +228,8 @@ function record(name, code, detail) {
 for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim',
                  'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay',
                  'widgets/interact', 'widgets/flip', 'widgets/motion', 'widgets/vlist',
-                 'widgets/choice', 'redraw', 'widgets/popup', 'widgets/typing', 'widgets/scrollbar']) {
+                 'widgets/choice', 'redraw', 'widgets/popup', 'widgets/typing', 'widgets/scrollbar',
+                 'widgets/callback']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);
@@ -323,6 +339,31 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /unknown option key[s]?: (\d+)/.exec(out);
   record('docs demos pass only options the factories read' + (m ? ' (' + m[1] + ' unknown)' : ''), r.status, out);
+}
+
+// ---- 6b4: author callbacks carry the argument their contract promises -----
+// A source scan in BOTH directions: the kit's INVOCATIONS (exactly one argument for
+// a value callback, none for onClick) and the demo/probes DECLARATIONS (exactly one
+// parameter for a value callback, none for onClick). Both directions are a #1063 on
+// AVM2 -- a call with FEWER arguments than the closure declares throws, and the frame
+// guard then hides it behind a console line.
+//
+// Why a gate: the docs' slider shipped calling `onChange()` while every page (and the
+// whole point of the callback) declares `function (v:Number)`. Every click threw
+// #1063, the handler never ran, the knob never moved -- and no gate saw it, because
+// probes/widgets/form only ever clicks BOUND controls, so the onChange branch was
+// never executed anywhere. The behavioural half is probes/widgets/callback (which
+// clicks unbound controls and drags an unbound slider); this is the half that catches
+// the NEXT widget doing it, in a scan that costs nothing.
+//   mutation: tools/mutation-callback-arity.cjs (6/6, both directions).
+{
+  const r = sh(process.execPath, ['tools/callback-arity.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /(\d+) invocation\(s\) in kit\/, (\d+) handler declaration/.exec(out);
+  const v = /(\d+) violations?/.exec(out);
+  record('author callbacks carry their documented argument'
+    + (m ? ' (' + m[1] + ' calls / ' + m[2] + ' handlers)' : '') + (v ? ' (' + v[1] + ' violations)' : ''),
+    r.status, out);
 }
 
 // ---- 6c: the --air-app reachability probe (G13, fixed 阶段二百四十九) ----------

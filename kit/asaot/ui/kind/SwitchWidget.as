@@ -123,7 +123,9 @@ package asaot.ui.kind
             var next:Boolean = !n.checked;
             n.checked = next;
             if (n.binding != null) n.binding.set(next);
-            else if (n.onChange != null) n.onChange();
+            // The NEW value is the argument -- a zero-argument call throws #1063 on a
+            // `function (v:Boolean)` handler (see UiNode.onChange).
+            else if (n.onChange != null) n.onChange(next);
             n.app.invalidate(Dirty.VALUE);
             return true;   // consumed
         }

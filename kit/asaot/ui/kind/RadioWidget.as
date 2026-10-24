@@ -133,7 +133,10 @@ package asaot.ui.kind
             {
                 n.checked = true;
                 if (n.binding != null) n.binding.set(true);
-                else if (n.onChange != null) n.onChange();
+                // A radio only ever reports `true` -- but it must still PASS it: a
+                // zero-argument call throws #1063 on a `function (v:Boolean)` handler
+                // (see UiNode.onChange).
+                else if (n.onChange != null) n.onChange(true);
                 n.app.invalidate(Dirty.VALUE);
             }
             return true;   // consumed: the author's onClick must not also fire

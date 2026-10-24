@@ -592,6 +592,99 @@ package demo
                 }
             }
 
+            this.mark("6e slider drag");
+
+            // ---- 6e. a real DRAG on the docs' own slider ----------------------
+            // This is the surface the user reported: press and drag on the slider page
+            // threw #1063 out of every callback (SliderWidget called `n.onChange()`
+            // with no argument while every page declares `function (v:Number)`), so the
+            // handler never ran -- and the widget had no drag mechanism either.
+            //
+            // The label is built by the DEMO from the model, so reading it after a
+            // reflow proves the WHOLE chain: gesture -> widget commit -> onChange(v) ->
+            // model.put -> notify -> invalidate -> describe -> new label text. A drag
+            // that only moved the knob would leave the label alone; a dead callback
+            // would leave both alone.
+            this.model.pick("slider");
+            this.app.invalidate(Dirty.ALL);
+            this.app.reflow();
+            var sl:UiNode = this.app.findByKey("slVol");
+            if (sl == null)
+            {
+                this.problems = this.problems + "the slider page has no demo slider; ";
+            }
+            else
+            {
+                // The track is the 8pt band at local h-12 .. h-4 (its middle is h-8):
+                // the pick region is the DRAWN region, so the box centre is empty.
+                var trackY:Number = sl.absY + sl.absH - 8;
+                // PAST the right edge, not "the last pixel inside" it: `valueAt` is
+                // localX / absW, so absW-1 is 99.4% and the label would read 99%.
+                // Clamped to the window so the point still lands on the stage.
+                var rightX:Number = sl.absX + sl.absW + 10;
+                if (rightX > DocsStyle.W - 1) rightX = DocsStyle.W - 1;
+                var beforeLabel:String = this.tf("slVol");
+                var dragThrew:Boolean = false;
+                try
+                {
+                    this.stage.dispatchMouse(sl.absX + 20, trackY, "mouseDown");
+                    this.stage.dispatchMouse(rightX, trackY, "mouseMove");
+                    // Past the LEFT edge: the stage listener owns the pointer during a
+                    // drag, so the value has to clamp at 0 rather than stop updating.
+                    this.stage.dispatchMouse(sl.absX - 24, trackY, "mouseMove");
+                    this.stage.dispatchMouse(sl.absX - 24, trackY, "mouseUp");
+                    this.app.reflow();
+                    // A move AFTER the release is not a drag any more.
+                    this.stage.dispatchMouse(rightX, trackY, "mouseMove");
+                    this.app.reflow();
+                }
+                catch (derrp:Error)
+                {
+                    dragThrew = true;
+                    this.problems = this.problems + "dragging the demo slider threw: "
+                        + derrp.message + "; ";
+                }
+                if (!dragThrew)
+                {
+                    var midLabel:String = this.tf("slVol");
+                    if (midLabel != "Volume 0%")
+                    {
+                        this.problems = this.problems + "a drag to the left edge left the label at '"
+                            + midLabel + "', expected 'Volume 0%' (it read '" + beforeLabel
+                            + "' before the drag; a stale 'Volume 100%' means the release did not"
+                            + " end the drag); ";
+                    }
+                    if (this.model.num("sl.vol", -1) != 0)
+                    {
+                        this.problems = this.problems + "the drag never reached the model (sl.vol="
+                            + this.model.num("sl.vol", -1) + "); ";
+                    }
+                    // ... and the other clamp, from a fresh press (the release must have
+                    // cleared the drag state, or this press would be ignored).
+                    try
+                    {
+                        this.stage.dispatchMouse(sl.absX + 20, trackY, "mouseDown");
+                        this.stage.dispatchMouse(rightX, trackY, "mouseMove");
+                        this.stage.dispatchMouse(rightX, trackY, "mouseUp");
+                        this.app.reflow();
+                        var endLabel:String = this.tf("slVol");
+                        if (endLabel != "Volume 100%")
+                        {
+                            this.problems = this.problems + "a second drag to the right edge left '"
+                                + endLabel + "', expected 'Volume 100%'; ";
+                        }
+                        this.report = this.report + "\n  slider drag: '" + beforeLabel + "' -> '"
+                            + midLabel + "' -> '" + endLabel + "', model "
+                            + this.model.num("sl.vol", -1) + "\n";
+                    }
+                    catch (derrp2:Error)
+                    {
+                        this.problems = this.problems + "the second slider drag threw: "
+                            + derrp2.message + "; ";
+                    }
+                }
+            }
+
             this.mark("7 screenshots");
 
             // ---- 7. screenshots ----------------------------------------------
