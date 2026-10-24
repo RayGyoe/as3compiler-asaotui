@@ -27,11 +27,10 @@ id  case                                                rule                  AI
 25  begin default, end given (-1,5)                     size=20 color=0       size=20 color=0       size=20 color=0
 26  begin given, end default (5,-1)                     size=20 color=0       size=20 color=0       size=20 color=0
 27  two runs with the SAME values                       size=30 color=16711680size=30 color=16711680size=30 color=16711680
-28  one run covering everything, no args                size=30 color=16711680size=31 color=16711680size=31 color=16711680
+28  one run covering everything, no args                size=30 color=16711680size=30 color=16711680size=30 color=16711680
 29  one run, empty range at its end (6,6)               size=null color=null  size=null color=null  size=null color=null
 30  one run, empty range before it (1,1)                size=null color=null  size=null color=null  size=null color=null
 
 AOT exit: 0
 source audit (AotMain.exe.c): getTextFormat consults _runs, compares formats and has both answers
-RESULT: FAIL (1 disagreement(s))
-  FAIL  id 28: AIR says "size=31 color=16711680" but the derived answer is "size=30 color=16711680" -- the REFERENCE disagrees; re-derive the rule
+RESULT: PASS (30 cases; both arms agree and the emitted getTextFormat is range-aware)

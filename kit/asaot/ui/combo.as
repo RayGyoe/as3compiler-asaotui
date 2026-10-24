@@ -34,7 +34,10 @@ package asaot.ui
         if (opts.placeholder != null) n.placeholder = String(opts.placeholder);
         if (opts.options != null) n.options = OptionSupport.list(opts.options);
         if (opts.width != null) n.width = Number(opts.width);
-        // The G16 rule again: never `cond ? null : value` for an object/Function.
+        // Option guards: an absent option leaves the node's own default in place.
+        // (`x == null ? null : f(x)` is an equally valid spelling. It was also the
+        // one compiler-gaps G16 broke until stage 266 fixed it; the guard stays
+        // because it says "the author supplied a Function" in one line.)
         if (opts.onSelect != null) n.onSelect = (opts.onSelect as Function);
         if (opts.onQuery != null) n.onQuery = (opts.onQuery as Function);
         if (opts.onOpenChange != null) n.onOpenChange = (opts.onOpenChange as Function);

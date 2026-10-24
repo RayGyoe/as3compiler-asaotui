@@ -79,16 +79,14 @@ package asaot.ui.kind
         private function bitmapOf(n:UiNode):Bitmap
         {
             var o:Object = n.extra[BMP_KEY];
-            // NOT `o == null ? null : Bitmap(o)`. That exact shape -- a null LITERAL in
-            // the THEN branch of a conditional -- evaluates to null even when the
-            // condition is false, on every runtime we generate, for every object-typed
-            // result (compiler-gaps.md G16; measured on both arms by
-            // probes/g16-ternary-null). It is what made this widget build a NEW Bitmap
+            // `o == null ? null : Bitmap(o)` -- a null LITERAL in the THEN branch of
+            // a conditional -- used to evaluate to null even when the condition was
+            // false (compiler-gaps.md G16). That made this widget build a NEW Bitmap
             // on every reconcile and never fit it: `bitmapOf` returned null, so the
-            // create branch ran again and `arrange` bailed out. The if/return form is
-            // the shape that works.
-            if (o == null) return null;
-            return Bitmap(o);
+            // create branch ran again and `arrange` bailed out. G16 is FIXED (compiler
+            // stage 266) and probes/g16-ternary-null keeps the AOT deviation set empty
+            // -- that empty set is the tripwire, so this is the ordinary shape again.
+            return o == null ? null : Bitmap(o);
         }
 
         public function wantsPress():Boolean { return false; }

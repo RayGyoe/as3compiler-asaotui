@@ -204,8 +204,10 @@ function darkCount(bd:BitmapData, n:UiNode):int
     return count;
 }
 
-// The animated corner radius lives on the resolved style, not on a display object
-// (G19: drawRoundRect ignores it, so there is no pixel to read).
+// The animated corner radius lives on the resolved style, not on a display object.
+// Since G19 was fixed (stage 267) the radius is ALSO readable as a pixel: the
+// sizer's own corner at radius 12 falls outside the arc and shows the background,
+// which is what the final assertion below checks.
 function radiusOf(n:UiNode):Number
 {
     if (n == null || n.resolved == null || n.resolved.cornerRadii == null) return -1;

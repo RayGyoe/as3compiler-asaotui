@@ -1,4 +1,4 @@
-id=1 betax
+id=1 beta
 id=2 14
 id=3 cases
 id=4 gamma
@@ -7,4 +7,4 @@ id=6 alpha
 id=7 cfg
 id=8 block-set
 id=9 3
-id=10 alpha-betax-gamma
+id=10 alpha-beta-gamma

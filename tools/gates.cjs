@@ -81,6 +81,17 @@
 //                lose the right remainder of a split / drop the trailing insert -- plus
 //                "the rule is checked against AIR" and "a build failure is never
 //                agreement"), every file restored byte-for-byte by hash.
+//   G21       -- probes/g21-gettextformat/: the gate is the 30-case range matrix run on
+//                both runtimes (no run / inside one run / straddling / reversed / empty
+//                span / equal neighbours / #2006 bounds / -1 meaning "not supplied"),
+//                plus a source audit of the emitted getTextFormat. Teeth:
+//                probes/g21-gettextformat/mutation.cjs 5/5.
+//   G22       -- probes/g22-closure-statics/: 10 cases on both runtimes AND a source
+//                audit of the emitted C -- every statically-initialised class read must
+//                be spelled `(Owner_cinit(), Owner_FIELD)` and the forward declaration
+//                must precede the first call. This is the gate on code that only reads
+//                its constants from inside factory closures (which is how UI pages are
+//                written). Teeth: probes/g22-closure-statics/mutation.cjs 4/4.
 //   G14       -- probes/obj-array-identity/mutation.cjs: 4/4 (flip an AS3 rule /
 //                drop a documented deviation / invent one / truncate the case list),
 //                every file restored byte-for-byte.
@@ -122,14 +133,18 @@
 //                owner's own offset), never re-attaching on close, and detaching only
 //                when the display parent happens to be `parent.backing` (a lifted
 //                node is NOT, so its sprite stays on screen forever).
-//   typing 18 -- probes/widgets/typing/mutation.cjs: 4/4. Both halves of the second
-//                report are here: forcing the ghost visible (the placeholder that
-//                stays while you type) and calling setTextFormat from paint again
-//                (the runtime APPENDS a run per call and paints the string once per
-//                run, so the text doubles). The other two are the focus gate on the
-//                ghost and a blur that never reports the commit. NOTE the probe's
-//                onChange deliberately does NOT invalidate: the field owes the screen
-//                its own repaint, and an author-side invalidate would hide that.
+//   typing 18 -- probes/widgets/typing/mutation.cjs: 4/4. The first report is here
+//                verbatim: forcing the ghost visible (the placeholder that stays
+//                while you type). The second was "the text doubles on repaint",
+//                whose COMPILER half (G20: the setter appended a run per call) was
+//                fixed in stage 268 -- so M3 was re-pointed, the way the G16
+//                mutations were, at the assertion it was never really about: paint
+//                now writes the string twice and the single-copy pin (live width vs
+//                a fresh field, ink extent) has to catch it. The other two are the
+//                focus gate on the ghost and a blur that never reports the commit.
+//                NOTE the probe's onChange deliberately does NOT invalidate: the
+//                field owes the screen its own repaint, and an author-side invalidate
+//                would hide that.
 //   gallery teardown -- ui-demo/mutation-gallery-teardown.cjs: 2/2, and both are
 //                defects the SIX-page tour found and no probe could (a probe never
 //                destroys an overlay tree): dropping the WidgetTeardown hook leaves
@@ -428,8 +443,40 @@ const G16_KNOWN = [];
   record('G20 setTextFormat replaces the range (AOT vs AIR)' + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
 }
 
-// ---- 10: Vector.<T> is really faster than Array in OUR AOT -------------------
-// The same benchmark body compiled by BOTH toolchains (so the only difference is
+// ---- 9e: G21 -- getTextFormat() answers from the RUN TABLE -------------------
+// The old one-liner (`return tf->defaultTextFormat;`) predated the run table, so a
+// field formatted with `setTextFormat(fmt(30, 0x0000FF))` still read back
+// `color=0 size=20` -- any "what I set is what I read" logic was silently wrong.
+// FIXED in the compiler (stage 270, v0.4.234): walk the runs, fill the gaps with
+// defaultTextFormat, compare with a STRICT as_v_eq, answer a CLONE of the format or an
+// empty one; (TextFormat fields are boxed so "unset" is expressible as null.)
+// The gate is the 30-case matrix on both runtimes; the interesting rows are not
+// "inside one run" but straddling/reversed/empty spans and the #2006 bounds.
+{
+  const r = sh(process.execPath, ['probes/g21-gettextformat/run.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /RESULT: (\S+.*)/.exec(out);
+  record('G21 getTextFormat reads the run table (AOT vs AIR)' + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
+}
+
+// ---- 9f: G22 -- a static read inside a CLOSURE carries its _cinit() guard ----
+// Static fields initialise lazily, gated by `(Owner_cinit(), Owner_FIELD)`. The set of
+// classes needing that gate was collected AFTER the closure bodies were emitted, so a
+// static read that only ever happened in a closure was emitted bare -- `NAMES` stayed
+// NULL and `NAMES[0]` threw #1009. Because _cinit() initialises a WHOLE class, one
+// ordinary-method read anywhere hid the bug; a page written entirely with factories
+// (which is exactly how this UI library is written) hit it. FIXED in stage 269:
+// collect first, then forward-declare every `<Cls>_cinit`, then emit closures.
+// The gate is two-sided: the 10 cases must agree on both runtimes AND the emitted C
+// must be audited (every guarded read spelled out, forward declaration first).
+{
+  const r = sh(process.execPath, ['probes/g22-closure-statics/run.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /RESULT: (\S+.*)/.exec(out);
+  record('G22 closure statics initialise (AOT vs AIR, emitted C audited)' + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
+}
+
+// ---- 10: Vector.<T> is really faster than Array in OUR AOT -------------------// The same benchmark body compiled by BOTH toolchains (so the only difference is
 // the runtime). The claim: our AOT lowers `Vector.<T>` to a MONOMORPHIZED C struct
 // (`int* data` / `double* data`) rather than an array of boxed `as_value` cells,
 // so `Vector.<int>` is >= 2x faster than `Array` on fill+sum. If that lowering is
@@ -487,7 +534,8 @@ const G16_KNOWN = [];
   record('Array(x) wraps on both runtimes (8 cases, AOT vs AIR)' + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
 }
 
-// ---- 8: the instrument that certifies "we did not touch the compiler" -------// Instant (pure string parsing, no build). It is a gate because every
+// ---- 8: the instrument that certifies "we did not touch the compiler" -------
+// Instant (pure string parsing, no build). It is a gate because every
 // "as3compiler/ is unchanged" claim in this workspace rests on this one tool, and
 // it silently under-reported once: it trimmed the whole `git status` buffer, which
 // ate the leading space of the common " M path" first line and dropped that entry.

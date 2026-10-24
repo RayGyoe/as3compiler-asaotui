@@ -65,12 +65,13 @@ package asaot.ui
         n.count = count;
         n.rowHeight = rh;
         n.renderRow = render;
-        // NO `cond ? null : value` HERE (or anywhere in this file). G16: a ternary
-        // whose false branch is an OBJECT loses it -- our AOT returns null for a
-        // Function value, which is how the very first version of this factory handed
-        // the widget a null `onScroll` and made the wheel silently do nothing. The
-        // probe caught it (`onScroll reported -1`); the fix is the plain `if` that
-        // every other factory in this kit already uses.
+        // The plain guard every factory in this kit uses for an optional Function.
+        // A `cond ? null : value` ternary was the compiler-gaps G16 shape: it lost
+        // the Function value, which is how the first version of this factory handed
+        // the widget a null `onScroll` and made the wheel do nothing (the probe
+        // caught it: "onScroll reported -1"). G16 is FIXED (compiler stage 266) and
+        // probes/g16-ternary-null keeps the AOT deviation set empty; the guard
+        // stays because "optional Function" is what it says.
         if (opts.onScroll != null) n.onScroll = (opts.onScroll as Function);
         if (opts.overscan != null) n.overscan = int(opts.overscan);
         if (n.overscan < 0) n.overscan = 0;

@@ -25,7 +25,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 
-生成日期：2026-10-24（第七轮） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**35 道门**）
+生成日期：2026-10-24（第八轮） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**37 道门**）
 
 ---
 
@@ -171,7 +171,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 31 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 37 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -199,8 +199,8 @@ cd asaotui && node tools/gates.cjs                           # 31 道门，含 l
 | 18 | **虚拟列表的每一行被 flexbox 压成 16.67px**（1000 项里只挂 9 行，其中最后一行被压扁、窗口行数也算错） | 行高开` height` 不够：窗口取 `fit+1` 行，九行 20px 溢出 150px 视口，flexbox 把九行等分；而 `flexShrink:0` 被引擎编码成「flex:1 zero basis」反而夹成 0 | 每行同时钉 `height` **和** `minSize.height`——**min 才是真正钉住的那一个**（solve 后生效，溢出行整体落在 clip 外） | `probes/widgets/vlist` 的逐行矩形 + 溢出行像素 `(30,175)=#ffffff`；变异 **M3** 去掉 `minSize` ⇒ 「a row must not be flexed into the viewport」 |
 
 | 19 | **弹层被下面的 UI 盖住**（下拉/日期面板一开，下层的卡片、按钮压在它上面；点了行没反应——点其实打在被盖住的位置） | **引擎没有 z-index**（`Style` 里刻意没有这个字段），**绘制顺序 = 兄弟顺序**。而 `select`/`combobox`/`datePicker` 的下拉是**属主的子节点**（`n.backing.addChild(drop)`）⇒ 在 display 列表里它夹在卡片中间，同一帧里后画的兄弟把它整块盖住。改 `visible`、改样式、上抬 1px 都不解决问题：位置对、矩形对、像素不对 | `UiNode.lifted`：控件在**打开翻转**时把**自己的 backing reparent 到 `app.stageContainer`**，放到 `overlayDisplay()` **之前**（= 主树全部之上、浮层树之下，所以 dialog 仍能盖住下拉），坐标改成 `absX/absY`（`stageContainer` 的原点就是窗口原点）；关闭时重新挂回 `parent.backing` 并用 `absX - parent.absX` 换算回来。layout / reconcile / keys / focus / 点击路径**一律不动**（它们走 `parent` 链，不看 display 树） | `probes/widgets/popup`（26 项，含「盖住卡片的那一行读像素」「lifted 时 `backing.parent == stageContainer` 且 x/y == abs」「关闭后像素回卡片色」「unmount 后 stage 子件数回基线」）。**变异 4/4**（`probes/widgets/popup/mutation.cjs`）：M1 = 不 lift（就是用户看到的那个缺陷）、M2 = 沿用 parent-relative x（整体左偏 20px）、M3 = 关闭不挂回、M4 = 只按 `parent.backing` 摘除（lifted 节点漏摘 ⇒ sprite 永久留在屏上） |
-| 20 | **提示文字（placeholder）输入时不消失**；焦点刚进入、还一个字都没输时，光标和 ghost 文字**叠在同一格** | ghost 是 `paint` 里算可见性的独立文本层，而可见性条件漏了「已聚焦」这一条；并且编辑走的是 `Event.CHANGE` 回调，回调只写模型 —— 屏幕是否重画取决于**作者**有没有 invalidate（不 invalidate 的作者就永远看不到变化） | ghost 条件收敛为 `model 为空 && state.focused == 0 && placeholder 非空`（聚焦即藏：光标就在那儿）；`onFieldChange`/`commit` 各自 `app.markPaint(n)`，**控件欠屏幕自己的重绘**，不指望作者 | `probes/widgets/typing`（18 项，含 ghost 扫描区渲染像素数、focus 后归零、失焦且空才回来）。**变异 4/4**（`probes/widgets/typing/mutation.cjs`）：M1 = 强制 ghost 常显（用户报告的原症状）、M2 = 去掉聚焦闸门、M3 = `setTextFormat` 回到 paint、M4 = 失焦不报 commit。探针的 `onChange` **刻意不 invalidate**（否则作者侧重绘会把第 20 条整个盖住） |
-| 21 | **输入过的字在失焦再聚焦后「复制一遍」**（`1111` 变 `11111111`，字形挤着往外长；`textWidth` 从 28.9 涨到 56.7） | `TextField.setTextFormat` 在本运行时是**追加 run**（`emit.ts:20417` 只 `_runs` 追加、`_runs_gen++`），不是替换范围；而排版器 `sk_textlayout_new_runs`（`vendor/skia_text_glue.cc:495`）对**每条 run** 都 `addText` 一遍模型里的字符串 ⇒ **重画 N 次就画 N 份**。`InputWidget.paint` 每次都调它 ⇒ 每帧多一条 run | 单格式字段**一律不调 `setTextFormat`**：`defaultTextFormat`（新建字段时生效）+ `textColor` 就够了；`paint` 只 `defaultTextFormat`/`textColor`，值没变**不重赋 `text`**（`text` setter 会清 run，但也会把 caret 甩到末尾） | 同上 `probes/widgets/typing`：`textWidth` 与**现场新建的干净字段**逐字对比（不抄字体度量）、字形列组只允许一串、`caretIndex` 跨 3 次重绘不动。变异 M3 ⇒ `textWidth is 56.7265625 ..., a fresh field measures 28.8828125 (runs accumulated)`。编译器侧登记在 `compiler-gaps.md` G20 |
+| 20 | **提示文字（placeholder）输入时不消失**；焦点刚进入、还一个字都没输时，光标和 ghost 文字**叠在同一格** | ghost 是 `paint` 里算可见性的独立文本层，而可见性条件漏了「已聚焦」这一条；并且编辑走的是 `Event.CHANGE` 回调，回调只写模型 —— 屏幕是否重画取决于**作者**有没有 invalidate（不 invalidate 的作者就永远看不到变化） | ghost 条件收敛为 `model 为空 && state.focused == 0 && placeholder 非空`（聚焦即藏：光标就在那儿）；`onFieldChange`/`commit` 各自 `app.markPaint(n)`，**控件欠屏幕自己的重绘**，不指望作者 | `probes/widgets/typing`（18 项，含 ghost 扫描区渲染像素数、focus 后归零、失焦且空才回来）。**变异 4/4**（`probes/widgets/typing/mutation.cjs`）：M1 = 强制 ghost 常显（用户报告的原症状）、M2 = 去掉聚焦闸门、M3 = paint 把字符串写两遍（原本是「setTextFormat 回到 paint」，G20 修好后它变成绿跑 ⇒ 已重指）、M4 = 失焦不报 commit。探针的 `onChange` **刻意不 invalidate**（否则作者侧重绘会把第 20 条整个盖住） |
+| 21 | **输入过的字在失焦再聚焦后「复制一遍」**（`1111` 变 `11111111`，字形挤着往外长；`textWidth` 从 28.9 涨到 56.7） | `TextField.setTextFormat` 当时是**追加 run**（`emit.ts:20417` 只 `_runs` 追加、`_runs_gen++`），不是替换范围（**G20，阶段二百六十八已修**：setter 现在重建 run 表）；而排版器 `sk_textlayout_new_runs`（`vendor/skia_text_glue.cc:495`）对**每条 run** 都 `addText` 一遍模型里的字符串 ⇒ **重画 N 次就画 N 份**。`InputWidget.paint` 每次都调它 ⇒ 每帧多一条 run | 单格式字段**仍不调 `setTextFormat`**（现在是**设计选择**而不是禁令：`defaultTextFormat` + `textColor` 就够，G20 修好后调它只是每帧多余工作量）；`paint` 只 `defaultTextFormat`/`textColor`，值没变**不重赋 `text`**（`text` setter 会清 run，但也会把 caret 甩到末尾） | 同上 `probes/widgets/typing`：`textWidth` 与**现场新建的干净字段**逐字对比（不抄字体度量）、字形列组只允许一串、`caretIndex` 跨 3 次重绘不动。变异 M3 **已重指**（原「setTextFormat 回到 paint」依赖 G20，修好后变绿；现为「paint 把字符串写两遍」，由最终文本断言抓获）；换行累积那条 `textWidth` 对照现在是**编译器 G20 的绊线**（主门是 `probes/g20-settextformat`）。登记见 `compiler-gaps.md` G20/G21 |
 | 22 | **容器上的 `onClick` 永远不触发**（侧栏一行点了没反应，`model` 也不动；但 `button` 正常） | `UiNode.applyPayload` 老老实实从描述符镜像 `Element.onClick`，可**描述符上的那个字段从来没被写入** —— `OptionSupport.applyOpts` 只拷 key/role/ariaName/visible/disabled，`onClick` 只有 button/checkbox/radio/slider/toggle/textField 六个**控件**工厂自己拷。`box({ onClick: f })` 于是拿到一个 null | `OptionSupport.applyOpts` 加一行 `if (opts.onClick != null) n.onClick = (opts.onClick as Function);` —— 一处修好所有容器（box/row/column/card/overlay/…） | `ui-demo/run-gallery.cjs` 的 `index click` 段：真按 stage 坐标点侧栏行，断言 `model.doc=="box"` + `view.lastPick=="box"` + 标题变了 + 上一页的 demo 已卸载。**变异**：删掉那一行 ⇒ 四条断言同时红 |
 | 23 | **点了控件，数据变了，界面不变**（同一次运行里 `doc=box` 而标题仍写 "Getting started"、上一页的 demo 还挂着） | 模型 `DocsModel extends Observable`，控件回调里 `model.put/pick` 会 `notify()`，**但没有任何人 subscribe** ⇒ `notify` 空转，`UiApp._pending` 一直是 0，`reflow()` 不重新 describe。widget 只报告、作者重渲染的契约断在最后一步 | `DocsMain` 建好 app 之后 `model.subscribe(function (d:int):void { self.app.invalidate(d); })` | 同上门（`index click` 段先 `click` 再 `reflow`，不额外 `invalidate`：能不能刷新完全取决于订阅是否在） |
 | 24 | **侧栏整行只有文字本身可点**（行高 26、宽 219，但 Label 右侧的空白点下去什么都不发生） | 命中测试是**按绘制区域**而非布局盒（`as_pick_hit_local` → Graphics 的 fill/stroke ∪ 子件）：行的样式只有 padding 没有 `background`，于是行自己的 graphics 是空的，只有标签的 TextField 是目标。这是**Air 的真实语义**（透明的容器不是点击目标），但作为导航行是设计缺陷 | `DocsStyle.NAV_ITEM` 加 `background: 0xF8FAFC` —— 与 `SIDE` 同色，**屏幕上看不出差别**，但行从此有填充区域（选中态本来就是 `0xEFF6FF`） | 同上门：示例按**行中心**（x=123，远在标签右侧）派发，加这条背景之前断言必红（命中测试落在祖先容器上，行自己的 backing 不是 target）。注释写清「容器只在绘制处可点」这条 Flash 语义 |
@@ -318,10 +318,10 @@ M2 = 拖拽用画出来的短 thumb、M3 = `offsetX` 不进 scrollRect（旧缺�
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **35** 道门：
+一条命令跑全部 **37** 道门：
 
 ```sh
-node tools/gates.cjs          # 35/35 PASS 才叫绿（定稿记录 reviews/gates-all-19.txt）
+node tools/gates.cjs          # 37/37 PASS 才叫绿（定稿记录 reviews/gates-all-21.txt）
 ```
 
 > 全量 **31 道门**在 **CLEAN** 编译器树上跑绿（定稿记录 `reviews/gates-all-16.txt`，HEAD `480b81c`）；
@@ -335,7 +335,7 @@ node tools/gates.cjs          # 35/35 PASS 才叫绿（定稿记录 reviews/gate
 
 | 验收 | 命令 | 期望 |
 |---|---|---|
-| **多页 App** | `cd asaotui/ui-demo && node run-gallery.cjs` | **7 页** tour 全绿（含组件目录页、浮层页与高级控件页）+ 7 张 `gallery-page*.png` + `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
+| **多页 App（组件文档站，41 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **41 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
 | **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **35/35** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
 | **高分辨率（HiDPI）自证** | `cd asaotui/ui-demo && node check-dpi.cjs` | `standard` 700×560(1×) vs `high` 1050×840(1.5×)，且两次 tour 文本**逐字节相同** |
 | **单页登录 App** | `cd asaotui/ui-demo && node build-and-run.cjs` | 8 项手算断言 + `750×563` 截图（1.5×）+ `RESULT: PASS` |
@@ -359,7 +359,11 @@ node tools/gates.cjs          # 35/35 PASS 才叫绿（定稿记录 reviews/gate
 | 「未碰编译器」的仪器自身 | `node tools/fingerprint-parse-check.cjs` | 20 项（含两条前导空格回归断言）；变异 `tools/mutation-parse.cjs`；另 `node tools/compiler-fingerprint.cjs` 现报 **0 个脏文件 / byte-for-byte** |
 | **G11 结案（生成器确定性）** | `node probes/g11-nondeterminism/run.cjs` | 同源 **5 次**构建 → **1** 份生成 C（`f0ac0ff461e604bf`）+ 拼写三处一致 + 三份历史产物误差 20→1→0；`src/` 内容哈希**逐次构建前后各采一次**（首尾各一次看不见「改完又还原」的窗口）；变异 `mutation.cjs` **10/10** |
 | **G14 `Array` 进 `Object` 槽的身份（已修，阶段二百五十三）** | `node probes/obj-array-identity/run.cjs` | 26 条×两臂：**AIR 26/26 符合手写 AS3 规则**，AOT 修后 **26/26 一致（0 偏离、0 崩溃）**；修前 AOT 偏离 8 条（含 5 条 **`0xC0000005`**）。变异 `mutation.cjs` **4/4** |
-| **G16（新）`cond ? null : X` 的条件为假** | `node probes/g16-ternary-null/run.cjs`（门 §9b） | 17 格：**AIR 17/17 一致**；AOT **12 格偏离**（1/3/4/5/7/8/9/10/14/15/16/17 塌成结果类型零值）。门要求 AOT 偏离集**恰好等于**已登记集（新增偏离、用例停跑、**偏离无声消失**都报警）；变异 `mutation.cjs` **4/4** |
+| **G16 `cond ? null : X` 的条件为假（已修，阶段二百六十六）** | `node probes/g16-ternary-null/run.cjs`（门 §9b） | **20 格**（新增 18-20 = `x != null ? null : 42/true/7`）：**AIR 20/20 符合手写规则，AOT 20/20 一致（0 偏离、0 崩溃）**；门要求 AOT 偏离集**恰好等于**已登记集（已清空 ⇒ 任何新增偏离、用例停跑、**偏离无声消失**都报警）；变异 `mutation.cjs` **4/4**。库内 if/else 绕行已于 2026-10-24 换成三元（4 处），3 处选项守卫保留 |
+| **G19 `drawRoundRect` 圆角（已修，阶段二百六十七）** | `node probes/g19-roundrect/run.cjs`（门） | 每行逐字节对照：**292 行相同 / 27 行在 AA 容差内 / 0 行分歧 / 40 行已登记**（负半径）；库侧无绕行可撤，只把 `probes/widgets/motion` 的 `(20,20)` 期望像素从直角色改成 `#ffffff` |
+| **G20 `setTextFormat` 追加 run（已修，阶段二百六十八）** | `node probes/g20-settextformat/run.cjs`（门） | 12 格关系式双 runtime 全绿（修前 7 格红：`46.66 → 91.53 → 136.41 px`）；变异 **5/5**；库侧唯一调用点 `PaintKit.measureField` 依赖替换语义，`InputWidget.paint` 仍不调（设计选择）；`typing` 的 M3 已从「setTextFormat 回到 paint」重指为「paint 把字符串写两遍」 |
+| **G21 `getTextFormat` 读回（已修，阶段二百七十）** | `node probes/g21-gettextformat/run.cjs`（门） | **30 格双 runtime 逐字相同（0 分歧）**：无 run 回 `defaultTextFormat`、跨界/反序/空区间回空格式（十字段全 null）、相邻等值 run 仍回格式、`(0,0)`/`(begin>=length)` 抛 `#2006`；变异 **5/5**；库内 `getTextFormat` 调用点 **0 处**（无绕行） |
+| **G22 闭包内静态读（已修，阶段二百六十九）** | `node probes/g22-closure-statics/run.cjs`（门） | **10 格双 runtime 逐字相同** + 对**生成的 C** 做源码审计（每个静态读都带 `(Owner_cinit(), …)`，前向声明先于首次调用）；变异 **4/4**；`warmUp()` 脚手架全仓 **0 命中** |
 | **`Vector.<T>` vs `Array`（两 runtime）** | `node probes/vec-vs-arr/run.cjs` | N=1M：AOT `Vector.<int>` fill+sum **2ms** vs `Array` **11ms**（**0.18x**）；AIR 同两项 33/36ms（0.92x）。门只钉 AOT **≤0.5x**；变异 `mutation.cjs` **2/2** |
 
 **每道门都做过变异测试**（改一个单位就让门变红并给出非 0 退出码），清单与每道门的
@@ -401,6 +405,8 @@ node tools/gates.cjs          # 35/35 PASS 才叫绿（定稿记录 reviews/gate
 > G1/G4/G8 上游已修；**G13 已修（阶段二四九）**；**G11/G12 已结案为非缺口**（G11 不是生成器随机，而是
 > **在另一个进程正改写的编译器树上测量**，见 `reviews/probe-g11-nondeterminism-2026-10-23.md`）；
 > **G9 已修（阶段二四八）但 10 处 `*` 保留**（`*` 现已是纯粹的性能默认：省一次装箱）；
-> **G14 已修（阶段二百五十三）**——`Array` 进 `Object` 槽不装箱；**G16 新登记、未修、库内已绕行**
-> （`cond ? null : X` 的条件为假时塌成结果类型零值；`probes/g16-ternary-null/`，门 §9b，AOT 现有 **12 格**偏离、AIR 17/17 一致）；
+> **G14 已修（阶段二百五十三）**——`Array` 进 `Object` 槽不装箱；**G16 已修（阶段二百六十六）**，
+> （`cond ? null : X` 的条件为假时塌成结果类型零值）；**G19/G20/G21/G22 均已修（阶段二六七~二七〇）**；
+> 对应的**库侧临时应对已在 2026-10-24 全量审计并回退**（4 处 if/else 换回三元、陈旧注释与失去牙的变异 M3 重指），
+> 逐条结论见 `reviews/revisit-g16-g22-workarounds-2026-10-24.md`；
 > **G3（Tab 环上限 64）仍是本库唯一的键盘能力上限**；G8/G9/G14 的复核见 `reviews/revisit-g8-g9-workarounds-2026-10-23.md`。

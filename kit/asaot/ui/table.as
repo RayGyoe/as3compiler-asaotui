@@ -118,14 +118,12 @@ package asaot.ui
             for (var cc:int = 0; cc < cols; cc++)
             {
                 var key:String = String(n.columns[cc].key);
-                // NOT `rowValue == null ? null : rowValue[key]`: a null LITERAL in the
-                // THEN slot makes the whole conditional collapse to a constant null
-                // (compiler-gaps G16) -- every cell would render empty. if/else is the
-                // workaround shape, and this exact line is one of the places that found
-                // the gap while this widget was being written.
-                var cv:Object;
-                if (rowValue == null) cv = null;
-                else cv = rowValue[key];
+                // `rowValue == null ? null : rowValue[key]` -- a null LITERAL in a
+                // ternary's THEN slot -- used to collapse the whole conditional to a
+                // constant null (compiler-gaps G16), so every cell rendered empty.
+                // G16 is FIXED (stage 266) and probes/g16-ternary-null keeps the AOT
+                // deviation set empty. This exact line is what found the gap.
+                var cv:Object = rowValue == null ? null : rowValue[key];
                 var s:String;
                 if (n.cellText != null) s = String(n.cellText(cv, r, cc));
                 else if (cv == null) s = "";

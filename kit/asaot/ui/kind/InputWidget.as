@@ -39,12 +39,16 @@
 //      caret exactly where the ghost text is, so an overlay ghost would cover it.
 //
 //   b. THE TEXT RENDERED TWICE. `paint` called `setTextFormat(fmt)` on EVERY
-//      repaint. The runtime APPENDS one (begin,end,format) run per call instead of
-//      replacing the formatting for that range (see compiler-gaps.md G20), and its
-//      run-to-paragraph builder emits every byte once per run -- so N repaints made
-//      the same string paint N times, which is what "lose focus, focus again and my
-//      text is duplicated" was. The default format is enough for a single-format
-//      field, so this file no longer calls setTextFormat at all.
+//      repaint. The runtime APPENDED one (begin,end,format) run per call instead
+//      of replacing the formatting for that range (see compiler-gaps.md G20), and
+//      its run-to-paragraph builder emits every byte once per run -- so N repaints
+//      made the same string paint N times, which is what "lose focus, focus again
+//      and my text is duplicated" was. G20 is FIXED (compiler stage 268: the setter
+//      now REBUILDS the run table), so the same call would only be redundant work
+//      today. This file paints through `defaultTextFormat` + `textColor` because a
+//      single-format field has nothing to say per range; the single-copy rule is
+//      pinned by probes/widgets/typing, the replace semantics by
+//      probes/g20-settextformat.
 package asaot.ui.kind
 {
     import asaot.ui.Dirty;
@@ -202,9 +206,12 @@ package asaot.ui.kind
             // the caret to the end of the inserted run, which shows up as a caret
             // that jumps to position 0 on every keystroke's repaint.
             if (n.tf.text != shown) n.tf.text = shown;
-            // NO setTextFormat HERE (defect b in the header): one format per field
-            // is fully described by defaultTextFormat + textColor, and a run table
-            // is only ever needed for RICH text (htmlText / a per-range format).
+            // NO setTextFormat HERE (defect b in the header). That is a design
+            // choice now, not a workaround: one format per field is fully described
+            // by defaultTextFormat + textColor, and a run table is only needed for
+            // RICH text (htmlText / a per-range format). Since G20 was fixed
+            // (stage 268) a call here would no longer duplicate the glyphs -- it
+            // would just be redundant work on every paint.
             n.tf.textColor = uint(color);
 
             var ph:TextField = TextField(n.extra[PH_KEY]);

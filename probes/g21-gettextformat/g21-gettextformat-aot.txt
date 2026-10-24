@@ -25,6 +25,6 @@ id=24 throw 2006
 id=25 size=20 color=0
 id=26 size=20 color=0
 id=27 size=30 color=16711680
-id=28 size=31 color=16711680
+id=28 size=30 color=16711680
 id=29 size=null color=null
 id=30 size=null color=null

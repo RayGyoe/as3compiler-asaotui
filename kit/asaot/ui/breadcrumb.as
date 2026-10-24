@@ -35,11 +35,12 @@ package asaot.ui
         // author set (the resolver's default is a column, which would stack the
         // crumbs). Patching, not replacing, keeps the author's size/padding.
         var dirRef:StyleRefinement = StyleRefinement.from({ flexDirection: "row" });
-        // NOT a ternary here: `n.style == null ? dirRef : ...` has a null LITERAL in
-        // the THEN slot, and that shape collapses to a constant null on this compiler
-        // (compiler-gaps G16) -- the container would lose its style altogether.
-        if (n.style == null) n.style = dirRef;
-        else n.style = n.style.withPatch(dirRef);
+        // This used to be an if/else: `cond ? null : X` has a null LITERAL in its
+        // THEN slot, and that shape collapsed to a constant null on this compiler
+        // (compiler-gaps G16) -- the container lost the author's style altogether.
+        // G16 is FIXED (compiler stage 266); the tripwire is the EMPTY AOT deviation
+        // set of probes/g16-ternary-null, so the ternary is the safe shape again.
+        n.style = n.style == null ? dirRef : n.style.withPatch(dirRef);
 
         var linkRef:StyleRefinement = StyleRefinement.from({ text: { color: BreadcrumbNode.LINK_TEXT } });
         var curRef:StyleRefinement = StyleRefinement.from({ text: { color: BreadcrumbNode.CURRENT_TEXT,

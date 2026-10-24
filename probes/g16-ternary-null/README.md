@@ -1,7 +1,9 @@
 # probes/g16-ternary-null — `cond ? null : X` loses the value
 
-Registered as **G16** in [`../../compiler-gaps.md`](../../compiler-gaps.md). Not fixed in the
-compiler; worked around in the kit. This directory is the measurement.
+Registered as **G16** in [`../../compiler-gaps.md`](../../compiler-gaps.md); **FIXED in the
+compiler at stage 266 (v0.4.230)**. This directory is the measurement that found it, and now the
+tripwire on the fix: the gate demands that the AOT deviation set be EXACTLY the registered set --
+which is empty -- so any case that starts collapsing again turns the gate red.
 
 ```bash
 cd asaotui
@@ -29,10 +31,11 @@ result type whenever the condition is false:
 | `int` | `7` | **`0`** |
 | `String` | `hi` | `hi` (immune) |
 
-12 of the 17 cases deviate. 11/12/13 are controls (they pass), and 2 shows the failure is tied to
-*which* branch holds the null literal, not to ternaries meeting null at all.
+Before the fix, 12 of the 17 cases deviated. 11/12/13 are controls (they pass), and 2 showed the
+failure was tied to *which* branch holds the null literal, not to ternaries meeting null at all.
+The table above is the REGISTERED (pre-fix) behaviour; all four result rows now agree.
 
-## Root cause (pinned, two lines, not fixed here)
+## Root cause (pinned 2026-10-23; fixed at stage 266)
 
 1. `src/emit.ts:28915-28937` `unifyType` — with `a` (the **THEN** branch) typed `null` and `b`
    typed `object`/`int`/`bool`, every rule misses (the numeric set at `:28932` does not contain
@@ -46,13 +49,11 @@ is `unifyType:28920`'s explicit string rule firing before the fallback). Suggest
 give `unifyType` a null-vs-reference/numeric/bool family rule, mirroring the string rule; fixing
 only `convert` would preserve the value but leave the conditional's static type wrong.
 
-## Workaround in the kit
+## The kit workaround, and its removal (2026-10-24)
 
-`kit/asaot/ui/kind/ImageWidget.as` — `o == null ? null : Bitmap(o)` became
-
-```as3
-if (o == null) return null;
-return Bitmap(o);
-```
-
-(if/return is case 13 here: both arms agree.) A library-wide sweep found no other site.
+While the gap was live, `kit/asaot/ui/kind/ImageWidget.as` spelled `o == null ? null : Bitmap(o)`
+as an if/return (case 13 here: both arms agree), and `table.as` / `breadcrumb.as` /
+`pagination.as` spelled the same shape as if/else. All four are back to the ternary now that the
+type rule is fixed; the three `if (opts.x != null)` OPTION guards in `combo` / `datePicker` /
+`virtualList` stayed, because they are idiomatic guards and not this shape. See
+[`reviews/revisit-g16-g22-workarounds-2026-10-24.md`](../../reviews/revisit-g16-g22-workarounds-2026-10-24.md).

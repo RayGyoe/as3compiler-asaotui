@@ -158,6 +158,9 @@ package asaot.ui
             field.multiline = false;
             field.wordWrap = false;
             field.text = content == null ? "" : content;
+            // A full-range replace, safe to repeat: G20 (compiler stage 268) made
+            // setTextFormat REBUILD the run table instead of appending a run per
+            // call, so re-measuring the same field cannot accumulate runs.
             field.setTextFormat(f);
             n.state.measuredW = field.textWidth;
             n.state.measuredH = field.textHeight;

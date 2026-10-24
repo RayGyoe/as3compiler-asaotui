@@ -8,9 +8,17 @@
 //   M1 the ghost never goes away          -> "the placeholder stays while I type"
 //                                            (the first reported defect, verbatim),
 //   M2 the ghost ignores the focus gate   -> ghost over the caret of an empty field,
-//   M3 paint calls setTextFormat again    -> the runtime APPENDS one run per call and
-//                                            paints the string once per run, so every
-//                                            repaint doubles the text (defect b),
+//   M3 paint writes the string TWICE       -> the single-copy pin must catch it.
+//                                            (Until stage 268 this slot held a
+//                                            different mutation: "paint calls
+//                                            setTextFormat again", which the runtime's
+//                                            run-APPEND defect turned into doubling.
+//                                            G20 fixed the setter, so that mutation
+//                                            now passes cleanly -- it measured the
+//                                            compiler, not this probe. Re-pointed at
+//                                            the assertion instead, the same way the
+//                                            G16 mutations were: a pin whose premise
+//                                            is gone must keep guarding the contract.)
 //   M4 blur never reports the commit      -> onCommit is lost.
 //
 // Every file is restored in `finally` and its sha256 compared byte-for-byte with the
@@ -52,12 +60,14 @@ const MUTATIONS = [
   },
   {
     id: 'M3',
-    why: 'setTextFormat IS CALLED FROM paint AGAIN (reported defect b): the runtime APPENDS one run per '
-      + 'call instead of replacing the range, and its run-to-paragraph builder emits the string once per '
-      + 'run -- so every repaint makes the same text wider and the screen shows it twice',
-    find: '            n.tf.textColor = uint(color);',
-    replace: '            n.tf.textColor = uint(color);\n            n.tf.setTextFormat(f);',
-    expect: '(runs accumulated)',
+    why: 'THE DOUBLING PIN STILL HAS TEETH (re-pointed after compiler-gaps G20 was fixed in '
+      + 'stage 268). paint writes TWO copies of the model into the field, so the field no '
+      + 'longer holds the model string and the probe must say so. The old mutation here -- '
+      + 'calling setTextFormat from paint -- relied on the setter APPENDING a run per call; '
+      + 'it now replaces, so that mutation went green and was measuring nothing',
+    find: '            if (n.tf.text != shown) n.tf.text = shown;',
+    replace: '            if (n.tf.text != shown) n.tf.text = shown + shown;',
+    expect: 'the final frame shows',
   },
   {
     id: 'M4',

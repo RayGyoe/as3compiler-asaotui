@@ -6,9 +6,12 @@
 //      model is empty AND the field is not focused. Both halves matter: a focused
 //      EMPTY field draws a caret exactly where the ghost text is.
 //   b. THE TEXT RENDERED TWICE after blur -> refocus. `paint` used to call
-//      setTextFormat on every repaint; the runtime APPENDS a run per call instead of
-//      replacing the range, and its run-to-paragraph builder emits the string once per
-//      run -- so N repaints painted the same text N times (the field visibly doubled).
+//      setTextFormat on every repaint; the runtime APPENDED a run per call instead
+//      of replacing the range, and its run-to-paragraph builder emits the string
+//      once per run -- so N repaints painted the same text N times (the field
+//      visibly doubled). That emitter defect is compiler-gaps G20, FIXED in stage
+//      268; this probe still pins the WIDGET side of the rule (time never holds
+//      more than one copy of a string), which is why it outlives the bug.
 //
 // WHY THE PIXELS, NOT JUST THE PROPERTIES. `textWidth` is compared against a FRESH
 // reference field carrying the same defaultTextFormat and the same string, so the
@@ -215,7 +218,7 @@ function checkSingleCopy(bd:BitmapData, tag:String):void
     var want:Number = cleanTw(n.tf.text);
     if (n.tf.textWidth != want)
         fail(tag + ": textWidth is " + n.tf.textWidth + " for '" + n.tf.text
-            + "', a fresh field measures " + want + " (runs accumulated)");
+            + "', a fresh field measures " + want + " (more than one copy of the string)");
     var left:Number = 20 + n.tf.x;
     var right:Number = inkRight(bd);
     if (right < 0)

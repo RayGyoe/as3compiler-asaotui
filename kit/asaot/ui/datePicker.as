@@ -37,7 +37,9 @@ package asaot.ui
         if (opts.width != null) n.width = Number(opts.width);
         if (opts.year != null) n.year = int(opts.year);
         if (opts.month != null) n.month = int(opts.month);
-        // G16: a `cond ? null : value` ternary would drop these Function values.
+        // Option guards, as in every factory: absent leaves the node's default. (A
+        // `cond ? null : value` ternary was the compiler-gaps G16 shape until stage
+        // 266 fixed it; the guard is kept because it is the shorter spelling.)
         if (opts.onSelect != null) n.onSelect = (opts.onSelect as Function);
         if (opts.onMonthChange != null) n.onMonthChange = (opts.onMonthChange as Function);
         if (opts.onOpenChange != null) n.onOpenChange = (opts.onOpenChange as Function);
