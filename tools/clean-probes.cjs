@@ -3,6 +3,12 @@
 //
 // Kept:   *.as (the probe), *.bmp / *.rects.txt / *.log (the measurements)
 // Dropped: *.c, *.exe, *.pdb (regenerable, and the .c files are 3 MB each)
+//
+// ONE EXCEPTION, learned the hard way (2026-10-25): `probes/g11-nondeterminism/artifact-*.c`
+// are .c FILES THAT ARE THE EVIDENCE -- three full generated files committed so that
+// "5 builds -> 1 C" can be checked by hash (see that probe's README). A blanket *.c sweep
+// deleted all three from the working tree; they came back from git byte-identical, and the
+// directory is now excluded here so the next sweep cannot eat them again.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -12,13 +18,17 @@ const probes = path.join(root, 'probes');
 let n = 0, bytes = 0;
 const killed = [];
 
+// Directories whose *.c files are checked-in evidence, not by-products.
+const KEEP_C = [path.join(probes, 'g11-nondeterminism')];
+
 function walk(dir) {
   for (const f of fs.readdirSync(dir)) {
     const q = path.join(dir, f);
     let st;
     try { st = fs.statSync(q); } catch (e) { continue; }
     if (st.isDirectory()) { walk(q); continue; }
-    if (/\.(c|exe|pdb)$/i.test(f)) { bytes += st.size; fs.unlinkSync(q); n++; killed.push(path.relative(root, q)); }
+    const keepC = /\.c$/i.test(f) && KEEP_C.indexOf(dir) >= 0;
+    if (!keepC && /\.(c|exe|pdb)$/i.test(f)) { bytes += st.size; fs.unlinkSync(q); n++; killed.push(path.relative(root, q)); }
   }
 }
 if (fs.existsSync(probes)) walk(probes);
