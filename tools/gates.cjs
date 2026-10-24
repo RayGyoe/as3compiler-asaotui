@@ -145,7 +145,8 @@ function record(name, code, detail) {
 // ---- 1..3: pure-AS3 probes (windowed; probe.cjs owns build+run+assert) -------
 for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim',
                  'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay',
-                 'widgets/interact', 'widgets/flip', 'redraw']) {
+                 'widgets/interact', 'widgets/flip', 'widgets/motion', 'widgets/vlist',
+                 'widgets/choice', 'redraw']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);

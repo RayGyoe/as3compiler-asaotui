@@ -1,0 +1,42 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  the tree indents by 0 instead of 18 per level -> a child row sits at its parent's x, so nesting is invisible
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a depth-1 label starts at x=42 not 60 (TREE_PAD 22 + TREE_INDENT 18); the child row's label is at 42,79 not 60,79 (the label is vertically centred in the 26pt row);
+     restore: byte-identical (737ba4aae739624d)
+M2  CAUGHT  the twisty hit zone disappears -> clicking a branch's arrow SELECTS the row instead of toggling it (the author never learns the branch should open)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL toggling src reported 0 times, not 1; after collapsing src the rows are tr:tsrc,tr:ta,tr:tb,tr:tlib,tr:treadme not tr:tsrc,tr:tlib,tr:treadme; after expanding lib the rows are tr:tsrc,tr:ta,tr:tb,tr:tlib,tr:treadme not tr:tsrc,tr:tlib,tr:tc,tr:treadme; the expanded child 
+     restore: byte-identical (b455f04654ed590d)
+M3  CAUGHT  the factory forgets to deepen the stack frame -> an expanded branch's children are all rendered at depth 0 (flat list, no indentation)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a depth-1 label starts at x=42 not 60 (TREE_PAD 22 + TREE_INDENT 18); the child row's label is at 42,79 not 60,79 (the label is vertically centred in the 26pt row);
+     restore: byte-identical (132d86c71951d90f)
+M4  CAUGHT  the selected row loses its declarative background -> the tree shows no selection at all (this one is caught by a PIXEL, not by a rect)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the selected row's background at (200,59) is #f9fafb not #dbeafe;
+     FAIL  pixel (200,59) want #dbeafe got #f9fafb
+     restore: byte-identical (132d86c71951d90f)
+M5  CAUGHT  the combobox dropdown loses its top inset -> it covers the trigger instead of hanging under it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the dropdown is at 20,162 w 220 not 20,196 w 220; dropdown row 1 is at y=193 not 227; clicking row 1 reported index 2 not 1;
+     restore: byte-identical (5742fca97859d705)
+M6  CAUGHT  the field stops reporting its edits -> type-to-filter silently does nothing (the author never receives onQuery)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL typing reported query '' not 'ber'; after typing 'ber' the dropdown rows are cb:i0,cb:i1,cb:i2,cb:i3 not cb:i0,cb:i1 (the factory must render the FILTERED options the author passes);
+     restore: byte-identical (3482c15f6c3ce774)
+M7  CAUGHT  the calendar forgets which weekday the 1st is on -> every month starts on Sunday and the dates land under the wrong column
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the day-1 cell is 25,273,28,26 not 137,273,28,26 (Thursday column); day 31 is at 81,377 not 193,377 (week 4, column 6); clicking the 15th reported '2026-10-19' not '2026-10-15'; September's day 1 is at x=25 not 81 (Tuesday column);
+     restore: byte-identical (b4ae88b7022acb71)
+M8  CAUGHT  the day click no longer walks up from the innermost hit -> clicking the NUMBER (a text child) does nothing, only the cell's margin works
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL clicking the 15th reported '2026-10-02' not '2026-10-15'; the previous-month arrow reported 2026-10 not 2026-9; after paging the title is '2026-10' not '2026-09'; September's day 1 is at x=137 not 81 (Tuesday column);
+     restore: byte-identical (bd4b369998923833)
+M9  CAUGHT  the two month arrows swap -> "<" pages forward, so the picker moves the wrong way
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the previous-month arrow reported 2026-11 not 2026-9; after paging the title is '2026-11' not '2026-09'; September's day 1 is at x=25 not 81 (Tuesday column);
+     restore: byte-identical (bd4b369998923833)
+
+MUTATION choice: 9/9 caught, 0 problem(s)
+RESULT: PASS

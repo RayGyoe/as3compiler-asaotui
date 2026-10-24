@@ -1,0 +1,35 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  the viewport stops clipping -> the mounted-but-invisible 9th row paints BELOW the viewport (the pixel at y=175 turns into row 8 instead of the page background)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL y=175 is #808080 -- row 8 painted outside the viewport (the clip is missing); y=175 is #b0b0b0 -- the clip was lost after scrolling;
+     FAIL  pixel (30,175) want #ffffff got #808080
+     restore: byte-identical (7371f51f0cd7abaf)
+M2  CAUGHT  the factory stops mounting the partial row (+1) -> a viewport whose height is not a multiple of rowHeight shows a white sliver at the bottom
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL first/last are 0/7 not 0/8; mounted 8 rows for 1000 items, not 9 (the window is 1000x smaller); the window is not r0..r8 (keys: vl:r0,vl:r1,vl:r2,vl:r3,vl:r4,vl:r5,vl:r6,vl:r7); after the wheel first/last are 3/10 not 3/11; the window is 8 rows after scrolling, not 9; the
+     FAIL  rect vl:r8: not reported by the probe
+     restore: byte-identical (861f40588b8ec79d)
+M3  CAUGHT  the rows lose their min-height -> the window is one row taller than the viewport, so flexbox correctly shrinks all nine rows to 16.67px and no row sits on a rowHeight boundary any more
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL row tops are 20/136.66666666666669/153.33333333333334 not 20/160/180; y=165 is #909090 not row 7's #808080; row vl:r0 is 16.666666666666668 tall, not 20 (a row must not be flexed into the viewport); row vl:r1 is 16.666666666666668 tall, not 20 (a row must not be flexed in
+     FAIL  rect vl:r0[h] want 20 got 16.666666666666668
+     FAIL  rect vl:r3[y] want 80 got 70
+     FAIL  rect vl:r3[h] want 20 got 16.666666666666668
+     ... and 3 more
+     restore: byte-identical (861f40588b8ec79d)
+M4  CAUGHT  the wheel sign flips -> a notch toward the end scrolls BACK toward the start (the probe reads the offset the callback reports, not the direction it "feels")
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL onScroll reported -1 not 60 (3 rows x 20); offsetY is 0 not 60; after the wheel first/last are 0/8 not 3/11; row r0 is still mounted after scrolling past it (stale rows are never unmounted); the window after the wheel is not r3..r11 (keys: vl:r0,vl:r1,vl:r2,vl:r3,vl:r4,vl
+     restore: byte-identical (7371f51f0cd7abaf)
+M5  CAUGHT  the widget stops clamping a request to the last full page -> End hands the author an offset of 1<<28 rows, which no author-side model can survive
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL End's onScroll reported 5368709120 not 19840 (992 rows x 20): the request was not clamped before it reached the author;
+     restore: byte-identical (7371f51f0cd7abaf)
+M6  CAUGHT  the widget stops reporting a scroll -> the author never learns the window moved, so nothing re-renders even though the offset was written back
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL onScroll reported -1 not 60 (3 rows x 20); after the wheel first/last are 0/8 not 3/11; row r0 is still mounted after scrolling past it (stale rows are never unmounted); the window after the wheel is not r3..r11 (keys: vl:r0,vl:r1,vl:r2,vl:r3,vl:r4,vl:r5,vl:r6,vl:r7,vl:r8
+     restore: byte-identical (7371f51f0cd7abaf)
+
+MUTATION vlist: 6/6 caught, 0 problem(s)
+RESULT: PASS

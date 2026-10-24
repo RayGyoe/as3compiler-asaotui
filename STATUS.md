@@ -3,18 +3,23 @@
 > 回答一个问题：**「UI 库写完了吗？」**
 >
 > 结论：**深水区做透了，表面层补齐了三批（控件集 + 多页 App + 组件目录页 + 浮层系统 + 交互动线），但还不是一个完整工具箱。**
-> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 31 个 kind / 37 个工厂**（第二批 media/feedback/data 九件、
-> 第三批**浮层六件 dialog/drawer/popover/menu/toast/select** 均已落地）；
+> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 34 个 kind / 40 个工厂**（第二批 media/feedback/data 九件、
+> 第三批**浮层六件 dialog/drawer/popover/menu/toast/select**、第五批**列表虚拟化 `virtualList` + 选择三件**
+> `tree`/`combobox`/`datePicker` 均已落地）；
 > **样式面从 18 字段补到 31 字段**；**多页可切换 App 已跑起来**（`ui-demo/demo/GalleryMain.as`，**6 页**、含组件目录页与浮层页）；
 > **浮层走第二棵保留树**（`View.renderOverlay()` + `UiApp.overlayRoot`），主树因此不再为弹层重解布局。
 > 第四轮（2026-10-24）补的是**交互动线**：`disabled` + `hover/pressed/focused` 四态绘制、`textField` 编辑回写、
 > **键盘/焦点管线（Tab 环 / Esc / 方向键 / Enter / Space）**、浮层的**越界翻转 + 子菜单 + 入场动画**。
+> 第五轮（2026-10-24）补的是**动画深度 + 三处控件空白**：`Anim` 现在分 **paint 字段**与 **layout 字段**
+> （`width/height/padding/gap` 动画每帧重解、`textColor/cornerRadius` 可 tween）、浮层加**退场动画**；
+> `virtualList`（千级列表只挂 9 个节点）、`tree`、`combobox`、`datePicker`（纯整数日历，无 `Date`）落地。
 > 两个 demo 现均用 **`--air-app`** 编译：窗口属性（含**高分辨率/HiDPI**）由 AIR 描述符当唯一真相源。
-> 仍然缺的是：列表虚拟化、日期/树选择、`combobox`，以及动画只覆盖 3 个样式字段（+ 浮层入场这一种显示对象级动画）。
+> 仍然缺的是：`icon`（图标字体/矢量集）、`accordion` 多开、`table` 排序/列宽拖拽、
+> 样式面的 `grid`/`boxShadow`/`cursor`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 
-生成日期：2026-10-24（第五轮） · 对应 `kit/` **141 个 .as** · 一次性验收：`node tools/gates.cjs`（**27 道门**）
+生成日期：2026-10-24（第五轮） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**30 道门**）
 
 ---
 
@@ -26,16 +31,16 @@
 | L2 布局引擎（flexbox 子集） | ✅ **做透** | `layout-check` **133 项手算断言全绿**；Yoga == AOT == AIR **105 行 0 差异** |
 | L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 12 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
 | L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表 |
-| L2 动画 | ⚠️ 样式只覆盖 3 个字段 + 浮层入场 | 样式：`opacity`/`background`/`borderColor` + `transitionMs/Ease`（`probes/widgets/anim` 14 项）；显示对象级：`OverlayMotion`（140ms 墙钟 ease-out，浮层开启时淡入+位移，落地即停），见 §3.4 |
-| L3 控件库 | ⚠️ **37 个工厂 / 31 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）已落地；仍缺日期/树选择、列表虚拟化 |
+| L2 动画 | ✅ **样式 5 字段 + layout 字段 + 浮层入/退场** | 样式 `paint` 字段：`opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`；样式 **`layout` 字段**：`width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y)——写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停（`probes/widgets/anim` 14 项 + `probes/widgets/motion` 23 项）；显示对象级：`OverlayMotion`（入场 140ms ease-out / **退场 120ms ease-in**，墙钟，每帧从引擎读基准，不累加），见 §3.4 |
+| L3 控件库 | ✅ **40 个工厂 / 34 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地 |
 | L3 样式面 | ✅ **31 字段** | 见 §3.2；仅剩 `grid`/`boxShadow`/`cursor` 刻意缺席 |
-| L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、入场动画；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**） |
+| L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入退场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、**入场 140ms / 退场 120ms**；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**）+ `probes/widgets/motion` **23 项**（变异 **7/7**） |
 | L3 组合能力 | ✅ **多页可切换 App** | `ui-demo/run-gallery.cjs`：**6 页**共用 body 槽位（含组件目录页、浮层页）、控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 700×560 / high 1050×840） |
 | L3 可访问性 | ⚠️ 半成品 | `role`/`ariaName` **仍只是字段**（无消费者）；但 `Control.tabEnabled` 现在真被 Tab 环读（`UiApp.collectFocus`）、`Element.disabled` 真阻断点击与导航 |
 
 ---
 
-## 2 作者可见 API 全清单（141 个文件里**只有这些**）
+## 2 作者可见 API 全清单（155 个文件里**只有这些**）
 
 复核命令：
 
@@ -63,7 +68,7 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | `avatar(name, opts)` | `AvatarNode` | 首字母圆形头像 |
 | `divider(opts)` | `DividerNode` | 1px 分隔线（`orientation`） |
 | `tabs(labels, opts)` | `TabsNode` | 横向分段；**分段是控件自算**，见 §3.1.1 |
-| `list(items, builder, opts)` | `ListNode` | 真容器（每行一个真实 UiNode）；无虚拟滚动 |
+| `list(items, builder, opts)` | `ListNode` | 真容器（每行一个真实 UiNode）；**无虚拟滚动——万级用 `virtualList`** |
 | `image(opts)` | `ImageNode` | 位图控件，**源是 `BitmapData`（不是 URL）**；`scaleMode`: `fit`/`stretch`/`none`；`payload` 懒建 `Bitmap` |
 | `scrollView(opts, children)` | `ScrollViewNode` | **真裁剪**滚动容器（引擎 `scrollRect`）；竖向滚轮；视口用 `setMinMax(min)` 阻断子收缩 |
 | `spinner(opts)` | `SpinnerNode` | 不定进度圆环；`diameter`/`thickness`/`tone`/`spin`/`phase`；**环画成填充带（描边宽度不被遵守）** |
@@ -93,14 +98,13 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 
 | 类别 | 缺什么 | 影响的界面 |
 |---|---|---|
-| 选择 | `datePicker`、`tree`、`combobox`（可输入的下拉） | 表单、设置树 |
-| 虚拟化 | `list`/`table` 的虚拟滚动（当前每个 item/行都是一个真实 UiNode） | 万级列表 |
+| 选择 | `accordion` 多开、`table` 排序/列宽拖拽（树/日期/可输入下拉已落地） | 仪表盘、可编辑表格 |
 | 图形 | `icon`（`image` 已有，但没有图标字体/矢量图标集） | 工具条、按钮图标 |
-| 其它 | `accordion` 的多开模式、`table` 的排序/列宽拖拽 | 仪表盘 |
+| 无障碍 | `role`/`ariaName` 仍只是字段（无消费者） | 屏幕阅读器 |
 
-**⇒ 现在能舒适写出的是「多页表单 / 设置页 / 列表详表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互」，
-写不出「万级滚动列表 + 图标字体 + 日期选择器」类界面。**（浮层六件落地后，`dialog`/`drawer`/`popover`/
-`menu`/`select`/`toast` 都已可用，手算断言探针：`probes/widgets/overlay`，**65 项**。）
+**⇒ 现在能舒适写出的是「多页表单 / 设置页 / 列表详表 / 万级滚动列表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互 /
+树形设置 / 日期选择 / 可输入下拉」，写不出「图标字体 + 可排序表格 + 内建无障碍」类界面。**
+（浮层六件落地后，`dialog`/`drawer`/`popover`/`menu`/`select`/`toast` 都已可用，手算断言探针：`probes/widgets/overlay`，**65 项**。）
 
 ---
 
@@ -133,7 +137,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 | 能力 | 现状 |
 |---|---|
-| **虚拟滚动** | ❌ `list`（与 `table` 的行）对**每个 item 都建一个真实 UiNode** 并参与布局；万级列表会建万级节点。`scrollView` 只裁可视区，不省节点 |
+| **虚拟滚动** | ✅ `virtualList`（第五轮）：**只有窗口内的行是 UiNode**（1000 项、视口 150、行高 20 ⇒ **9 个**节点）；作者持有数据，控件只报 `onScroll(offset)`，作者写回模型后重渲染。⚠️ `list`/`table` 仍是「每行一个真实 UiNode」——要万级就用 `virtualList` |
 | **视口裁剪 / 滚动** | ⚠️ `scrollView` 用引擎 `scrollRect` 做**真裁剪**并接管竖向滚轮；`list` 本身仍不裁剪（超出自身高度的行会溢出），要滚动就套一层 `scrollView` |
 | **键盘 / 焦点** | ⚠️ 部分是：焦点环/`Enter`/`Space`/`Esc` 已通（见 §3.1），但 `tabs` 还没接**方向键**、`list` 还没接**上下键选中**（两者仍只看鼠标点击）；`list` 的行也没进 Tab 环 |
 | **tabs 分段的布局来源** | ⚠️ 分段是控件**自算**（`from n.absW` 的整数等分），**不是**引擎摆的子节点；`list` 的行**是**引擎摆的真实子节点 |
@@ -161,7 +165,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 27 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 30 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -185,6 +189,8 @@ cd asaotui && node tools/gates.cjs                           # 27 道门，含 l
 | 14 | **窗口变小后靠边定位的浮层永久错位**（flip 探针实测 `y=-80`，面板挂在锚点上方 200px） | 上一版用**尾随边**（`EDGE_BOTTOM`/`EDGE_RIGHT` + inset）定位，inset 由 parent 的 `absW/absH` 算 —— 而 `abs*` 是 **arrange 才写**的，measure 阶段读到的是**上一帧（旧窗口）**的尺寸；之后没人再测它，就永久偏了 | `measure` 只用**起始边**：位置 = 锚点矩形 ± `offset` ∓ 面板自身尺寸，**一个 parent 尺寸都不读**（只减 parent 原点做坐标换算） | `probes/widgets/flip` 54 项。变异 **M1/M2/M3/M5** 各去掉一半（不翻/少算自身高/不横翻/不夹回）⇒ 手算坐标红 |
 | 15 | **入场动画在手泵帧的程序里永不落地**（画廊第 5 页整层弹层只有 3% 不透明，可所有矩形都完美） | `OverlayMotion` 是**墙钟**的，而 tour 用 `app.reflow()` 连拉，两帧之间 ~0 ms ⇒ 截图时 `t≈0`。更强的事实：一个**第一帧就开着**的浮层本来就没有「从哪来」 | `OverlayMotion.start()` 在 `enterFrameTicks == 0`（还没有帧时钟）时**不开动画**；同时画廊 tour 加两条像素判据（scrim `#999999`、面板 `#ffffff`） | `ui-demo/run-gallery.cjs` 的 `page5 pixels` 行；变异：把 skip 去掉 ⇒ scrim 不再是 `#999999` |
 | 16 | **悬停/按下状态字段一直没人读**（`state.hover` 有维护、绘制不看） | `PaintKit.paintBox` 只读背景色，`Element.disabled` 甚至不存在 | `drawBoxFor` 派生四态；**且只对「可交互节点」派生**（`tabEnabled` 或带 `onClick`）——否则每个布局容器都会变成 CSS `:hover`，页面根节点在鼠下会亮 8% | `probes/widgets/interact` 相位 B/C 的手算像素。变异 **M1/M2/M3** 把三个常量归零 ⇒ 各自点名 |
+| 17 | **浮层退场动画被` visible` 镜像当场擦掉**（开场 120ms 里面板直接消失，只剩背景色闪一下） | 作者的模型里 `open=false` 是**立即**的：下一次 reconcile 就把 `visible:false` 写到 `n.backing` | `UiNode.visibleHold`：退场期间**按住**镜像，只有拥有退场的 `PanelShellWidget` 写它；落地帧才放开 | `probes/widgets/motion` 的「**退场中强制重渲染**」相位（描述符全程 `visible:false`，中间态必须仍有 `alpha>0` 且 `backing.y != absY`）；变异 **M4/M5** |
+| 18 | **虚拟列表的每一行被 flexbox 压成 16.67px**（1000 项里只挂 9 行，其中最后一行被压扁、窗口行数也算错） | 行高开` height` 不够：窗口取 `fit+1` 行，九行 20px 溢出 150px 视口，flexbox 把九行等分；而 `flexShrink:0` 被引擎编码成「flex:1 zero basis」反而夹成 0 | 每行同时钉 `height` **和** `minSize.height`——**min 才是真正钉住的那一个**（solve 后生效，溢出行整体落在 clip 外） | `probes/widgets/vlist` 的逐行矩形 + 溢出行像素 `(30,175)=#ffffff`；变异 **M3** 去掉 `minSize` ⇒ 「a row must not be flexed into the viewport」 |
 
 **已知边界（登记，不修）**：`card({title: ...})` 的标题画在内容盒左上角、**不占布局位**，
 因此会压住第一个子节点（`kind/CardWidget.as:81` 的 `tf.x/tf.y = inset`）。
@@ -192,14 +198,25 @@ cd asaotui && node tools/gates.cjs                           # 27 道门，含 l
 同理，`progress`/`slider` 的标签画在节点**顶部**、轨道在 `height-12` ⇒ 控件高度需 ≥ ~28 才不自我重叠
 （这不是 bug，是「控件自绘 + 高度由作者给」的约定）。
 
-### 3.4 动画：样式 3 个字段 + 浮层入场（两种机制，刻意不合并）
+### 3.4 动画：样式 5 字段 + **layout 字段** + 浮层**入/退场**（两种机制，刻意不合并）
 
-`UiNode.applyAnim()` 只拦截 `opacity`/`background`/`borderColor`（`n.resolved` 是单一拦截点）。
-`size`/`margin`/`padding`/`inset` 等**布局字段的过渡尚未接**——它们会触发重解布局，
-与「纯 paint 变更不得重解布局」（`probes/redraw` 钉的）冲突，需先设计「布局动画」的语义。
+`UiNode.applyAnim()` 拦截两类字段（`n.resolved` 是单一拦截点）：
 
-浮层入场是**第二种机制** `OverlayMotion`：不重瞄样式字段，只在显示对象层做 140ms 墙钟淡入 + 位移，
-位置每帧从引擎读（**不累加、不缓存基准**——缓存过一次，toast 就永久高 100px），落地即清 `T0` 不再重画。
+| 类别 | 字段 | 落地方式 |
+|---|---|---|
+| **paint** | `opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`（仅均匀半径可动） | 写回 `resolved` + `markPaint`，**不碰布局** |
+| **layout** | `width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y) | 写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停 |
+
+layout 动画的代价是明说的：它每帧触发一次 solve（`motion` 探针的 `solves 4→9→20`），所以
+**只有真会动的长度才该 tween**；点长度（`margin`/`inset`）与非均匀圆角故意不支持，拼错字段名由
+`Anim.isLayoutField()` 守成 **no-op**（不静默改错字段）。这也不违反「纯 paint 变更不得重解布局」——
+那里钉的是 **paint** 变更，这里是**声明为 layout 的字段**在动。
+
+浮层动效是**第二种机制** `OverlayMotion`：不重瞄样式字段，只在显示对象层做墙钟淡入 + 位移，
+位置每帧从引擎读（**不累加、不缓存基准**——缓存过一次，toast 就永久高 100px）。入场 140ms ease-out；
+**退场 120ms ease-in**（`startExit`/`applyExit`），落地才真正 `visible=false`——为此
+`UiNode.visibleHold` 在退场期间**按住**镜像的 `visible`（描述符一直 `visible:false`，探针的
+「退场中重渲染」相位专门盖这个）。
 两者刻意不合并：样式动画的「from」是 `previous` 的差分量，而入场动画开始前后样式**一模一样**，
 硬塞进 `resolveStyle` 只会让下一次真解析去跟一个假 `previous` 打架。
 
@@ -262,13 +279,13 @@ cd asaotui && node tools/compiler-fingerprint.cjs
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **27** 道门：
+一条命令跑全部 **30** 道门：
 
 ```sh
-node tools/gates.cjs          # 27/27 PASS 才叫绿（定稿记录 reviews/gates-all-14.txt）
+node tools/gates.cjs          # 30/30 PASS 才叫绿（定稿记录 reviews/gates-all-15.txt）
 ```
 
-> 全量 **27 道门**在 **CLEAN** 编译器树上跑绿（定稿记录 `reviews/gates-all-14.txt`，HEAD `480b81c`）；
+> 全量 **30 道门**在 **CLEAN** 编译器树上跑绿（定稿记录 `reviews/gates-all-15.txt`，HEAD `480b81c`）；
 > 上一轮 25 道门那次是 `gates-all-13.txt`，当时树上还带两个本地补丁（见 §3.7）——
 > 那道 G11 门当时会据实报「modifications: M src/runtime.ts | M vendor/window_glue.cc」但**不会**因此变红，
 > 它只对「测量期间又动了」敏感。
@@ -289,6 +306,9 @@ node tools/gates.cjs          # 27/27 PASS 才叫绿（定稿记录 reviews/gate
 | **浮层探针（第三批）** | `node tools/probe.cjs probes/widgets/overlay` | **65 checks**，0 failures（A 段全场景矩形 + 像素、B 段真事件路点击、C 段抽屉、D 段菜单高亮带、E 段**子菜单**、F 段**入场动画**：中间态 `alpha<1` 且 `backing.y != absY`，落地后 `isRunning==false` / `alpha==1` / 不再重画）；变异 `probes/widgets/overlay/mutation.cjs` **9/9**（其中 5 例是把真缺陷重新植入，1 例是子菜单的 parent-local 换算） |
 | **越界翻转探针（第四轮）** | `node tools/probe.cjs probes/widgets/flip` | **54 checks**，0 failures：竖向翻转（`popB` 到锚点上方、底边 156）、横向翻转（`popR` 的 `x=134`）、夹回窗口（`popR` 底边 256 = `H-4`）三件一起验；变异 `mutation.cjs` **5/5**（翻 / 自身高 / 横翻 / parent-local / 夹紧，各去一半） |
 | **交互探针（第四轮）** | `node tools/probe.cjs probes/widgets/interact` | **25 checks**，0 failures：7 个相位（disabled 惰性 / hover / press / 焦点环 / Tab+Shift+Tab / 文本回写+Enter 提交 / 运行时 disabled 翻转），像素全部手算（`#e0e7ff` → hover `#e2e9ff` → press `#c5cbe0`，焦点环 `#2563eb` 画在填充上）；变异 `mutation.cjs` **8/8** |
+| **动效探针（第五轮）** | `node tools/probe.cjs probes/widgets/motion` | **23 checks**，0 failures：pin 住 layout 字段动画（`sizer` 20→200 宽、`solves 4→9→20` 证明**每帧重解**）+ 浮层**退场**（入场 140 / 退场 120，落地才 `visible=false`），并含「**退场中强制重渲染**」相位（描述符一直 `visible:false` 也不能把表面提前藏起来）；变异 `mutation.cjs` **7/7** |
+| **虚拟列表探针（第五轮）** | `node tools/probe.cjs probes/widgets/vlist` | **26 checks**，0 failures：1000 项只挂 **9 个**节点、`clip` 真的裁掉了溢出行（像素 `(30,175)=#ffffff`）、滚轮/`End`/`Home` 三个入口都汇到同一个 `onScroll`（`19840 = 992 × 20`）；变异 `mutation.cjs` **6/6** |
+| **选择三件探针（第五轮）** | `node tools/probe.cjs probes/widgets/choice` | **44 checks**，0 failures：树（展开/折存/选中 + 三层缩进 x=42/60/42 + twisty 像素）、可输入下拉（开/选/输入过滤）、日历（`2026-10-01` 落在**周四**列 x=137、翻月后 `2026-09-01` 落在**周二**列 x=81）；变异 `mutation.cjs` **9/9** |
 | **`Array(x)` 两臂一致** | `node probes/array-coerce/run.cjs` | 8 格 AOT ↔ AIR **AGREE**（`Array([1,2]).length==1`、`[0] is Array`、`Array(a)===a` false …）。这是「`OptionSupport.list()` 不能用 `Array()` 代替」的测量，不是编译器缺口 |
 | 重绘钉子 | `node tools/probe.cjs probes/redraw` | 14 checks，0 failures |
 | 布局文本半边 | `tools/gates.cjs` 里的 layout-check 门 | `133 checks, 0 failures` |
@@ -318,7 +338,7 @@ node tools/gates.cjs          # 27/27 PASS 才叫绿（定稿记录 reviews/gate
   第 14 个（翻转定位读到上一帧的 parent 尺寸）要靠**先开窗再缩窗**才看得见；
   第 15 个（入场动画在手泵帧的 tour 里永不落地）要靠**截图**才看得见——而它把所有矩形断言全部躲过去了。
   这条经验比这些 bug 本身更值钱：**探针要配一个真实应用，而且要真的看图。**
-- **表面层（控件集 / 组件目录页 / 浮层系统）**：三批共 31 kind / 37 工厂已落地并有手算探针；
+- **表面层（控件集 / 组件目录页 / 浮层系统）**：五批共 34 kind / 40 工厂已落地并有手算探针；
   仍缺的见 §2.1。当前可交付上限约「多页表单 / 设置页 / 列表详表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互」。
 
 ### 补齐优先级建议
@@ -334,7 +354,7 @@ node tools/gates.cjs          # 27/27 PASS 才叫绿（定稿记录 reviews/gate
 > 已随上游提交消失，见 §3.7）：
 > 复核 `node tools/compiler-fingerprint.cjs`（快照 `reviews/compiler-tree-fingerprint.json`）现报
 > **`0 files` / tree CLEAN**，HEAD **`480b81c`**（开工时 `6121b30`，期间并发会话连续提交，含 G17/G18 的修）。
-> **本轮 27 道门就是在这个 CLEAN 树上重跑出来的**（`reviews/gates-all-14.txt`）。
+> **本轮 30 道门就是在这个 CLEAN 树上重跑出来的**（`reviews/gates-all-15.txt`）。
 > 期间的编译器侧提交全部是并发会话的，**没有一个是我的**；我在本工作区只做只读复核、测量与
 > `asaotui/` 内的代码（见 §3.5）。另有一份强制走 `[SKIP]` 分支的运行做钉子（`reviews/gates-skip-path.txt`）。
 > 编译器侧缺口登记处仍是 `asaotui/compiler-gaps.md`：**G17/G18 上游已修（2026-10-24，`480b81c`）**，本地补丁已撤；

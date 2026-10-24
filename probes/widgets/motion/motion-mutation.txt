@@ -1,0 +1,41 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  a layout tween writes the engine but forgets the dirty bit -> reflow never re-solves, so the sizer stays at its old width for the whole 600ms (the one semantic difference between a layout field and a paint field)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL mid sizer width is 100, not strictly between 100 and 240 (it JUMPED); mid padc.x is 30, not strictly between 30 and 40 (the padding did not animate); mid label has 1336 dark pixel(s); want strictly between 0 and 1336; layout was solved only 1 time(s) during the tween; a layout animation must re-solve every frame; final sizer is 20,20,100,40 not 20,20,240,40; final padc is at 30,80 not 40,90 (padding 20); final (35,95) is #22cc88 not the padding's #ff9900; final label has 1336 dark pixel(s): the text colour did not reach white;
+     FAIL  rect sizer[w] want 240 got 100
+     FAIL  rect padc[x] want 40 got 30
+     FAIL  rect padc[y] want 90 got 80
+     ... and 2 more
+     restore: byte-identical (dbca03e4025f0096)
+M2  CAUGHT  paddingLeft stops being a layout field -> the left padding tween becomes a no-op, so the child never moves even though the style says it should
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL mid padc.x is 40, not strictly between 30 and 40 (the padding did not animate);
+     restore: byte-identical (dbca03e4025f0096)
+M3  CAUGHT  the text colour is no longer retargeted (it just adopts the new value) -> it SNAPS white on the toggle frame instead of ramping, so the mid sample has no dark pixels left
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL mid label has 0 dark pixel(s); want strictly between 0 and 1336;
+     restore: byte-identical (e72dad0a7f8c3d4a)
+M4  CAUGHT  the exit does not HOLD the node on screen -> the next re-render (description says `visible: false`) hides the surface in the middle of its own exit, which is the one-frame vanish the motion exists to remove
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the closing dialog disappeared mid-exit when the tree re-rendered: the exit was cancelled by the description's `visible: false`; the surface is already gone after the re-render: the fade was cut short;
+     restore: byte-identical (d46475f7343fd6ad)
+M5  CAUGHT  the close path no longer re-shows the node it just hid via the description's `visible: false` -> the surface is hidden on the SAME frame it closed and the whole motion is invisible
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the closing dialog is already invisible 55ms in: it vanished instead of leaving; the frame buffer is already empty mid-exit: nothing was painted while leaving;
+     restore: byte-identical (d46475f7343fd6ad)
+M6  CAUGHT  the exit never lands -> the surface stays visible (and keeps painting) forever
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the scrim is still at full strength after the re-render: the fade was reset; the dialog is still visible after the exit landed; the dialog's backing is still on screen after the exit landed; the exit motion never finished; the frame buffer still shows #9d9d9d where the scrim was;
+     FAIL  pixel (120,40) want #3366cc got #1f3e7d
+     FAIL  pixel (20,20) want #3366cc got #1f3e7d
+     FAIL  pixel (35,95) want #ff9900 got #9d5e00
+     ... and 1 more
+     restore: byte-identical (e8bae66a3853e2df)
+M7  CAUGHT  the landing frame forgets to hide the surface -> the motion completes but the dialog is left on screen (an "invisible" node that still paints)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the dialog is still visible after the exit landed;
+     restore: byte-identical (d46475f7343fd6ad)
+
+MUTATION motion: 7/7 caught, 0 problem(s)
+RESULT: PASS

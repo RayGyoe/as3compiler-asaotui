@@ -18,7 +18,7 @@
 | 事实 | 证据 |
 |---|---|
 | 库是**纯 AS3**，**零 `flash.*` 导入**（只有内部 `asaot.ui.*`） | `grep -rn "import" seam/asaot/` 只有 `asaot.ui.LayoutEngine` / `asaot.ui.LayoutConstants` |
-| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十二组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/14 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **27/27** |
+| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十五组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/23/26/44/14 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **30/30** |
 | **AIR**（`mxmlc`→`adl`）也能编能跑，且数值逐字符一致 | [`air-check/`](air-check/README.md)、[`diff-check/`](diff-check/README.md) |
 
 ⇒ 布局（U1）**一个编译器改动都不需要**。下面这些缺口是「用自家编译器 dogfood 自家库」时
@@ -389,6 +389,21 @@
 > 上游并发会话把两条都修好并提交，本地补丁随即撤除，`node tools/compiler-fingerprint.cjs` 在
 > HEAD `480b81c` 报 `0 files`——**这句话现在重新成立（零个文件）**。
 > 修之前本机无法构建任何窗口程序（浮层与六页画廊的验收全都跑不了），所以这不是排版洁癖。
+
+---
+
+### G19 —— `Graphics.drawRoundRect` **静默丢弃两个椭圆半径**，只画直角矩形（AIR 画圆角）
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **遗留缺陷**（AIR 能跑对我们跑不对，符合 AGENTS.md §1.5 的硬判据）——而且是**静默**的：不报错、不提示后端不支持，圆角就这么消失 |
+| **症状** | 任何带 `cornerRadii` 的样式（`asaot.ui` 的按钮、卡片、对话框面板、输入框……**几乎每一个控件**）在 AOT 产出的原生窗口里都是**直角**；同一份 `.as` 用 `mxmlc`+`adl` 跑出来是圆角。探针侧的具体表现：`probes/widgets/motion` 把 `cornerRadii` 从 0 动画到 12，帧缓冲里 `(20,20)` 全程是 `#3366cc`（方角），而样式侧 `resolved.cornerRadii.topLeft` 确实是 `12` |
+| **根因** | 生成的内建方法是个**桩**（`as3compiler/src/emit.ts:18186`）：`void Graphics_drawRoundRect(void* _this, double x, double y, double w, double h, double ew, double eh) { (void)ew; (void)eh; Graphics_drawRect(_this, x, y, w, h); }` |
+| **为何是「静默」而不是「未支持」** | 相邻的 `drawCircle`/`drawEllipse` 都走 `as_skia_path_add_*`（真几何），只有圆角矩形是直角回退；调用方（我们的 `PaintKit`）**无从得知**，它按 AIR 语义传了半径 |
+| **证据** | ① 代码：上一行 `drawRect` 用 `as_skia_path_add_rect`、下一行 `drawEllipse` 用 `as_skia_path_add_oval`，本该有 `as_skia_path_add_round_rect` 的位置是空的；② 实测：`probes/widgets/motion`（`(20,20)` 恒为 `#3366cc`，半径 0→12 像素无变化），`motion.samples.txt` 的 `rest radius=0` / `final radius=12` 与像素对照即为反证 |
+| **本地怎么办** | **不改编译器**（本工作区边界）。库侧只做两件事：① 本文件登记；② 探针把这件事**钉成可见事实**——`probes/widgets/motion` 的 `(20,20)` 期望值写 `#3366cc` 并注明「若此像素变白说明 G19 已修」，于是上游修好那天这道门会**当场变红**并指出该改期望值，而不是让圆角静默复活 |
+| **影响面** | 纯视觉。布局、命中、事件均不受影响（圆角从不参与 flexbox 与拾取）。若将来要做像素级 AIR 对齐，这是第一优先 |
+| **状态** | ❌ **未修**（2026-10-24 发现于 `probes/widgets/motion` 的编写过程） |
 
 ---
 

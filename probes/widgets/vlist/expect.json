@@ -1,0 +1,28 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/vlist/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "320x260 window, root column with padding 20 and gap 10. The vlist is the first (and only) child, so it sits at (20,20) and its style size [200,150] IS its rect (border-box).",
+    "window": "rowHeight 20 and a 150px viewport => ceil(150/20) = 8 rows fit, and the factory mounts 8+1 = 9 so the partial row a non-multiple viewport shows is real. firstIndex 0, lastIndex 8.",
+    "rows": "row i sits at y = 20 + i*20 and is exactly 20 tall (the factory pins height + flexShrink:0, so the engine cannot squeeze 180px of rows into 150). The frame buffer is written AFTER the probe's End/Home tour, so it shows the ORIGINAL window again: r0 at y=20, r3 at y=80, r8 at y=180.",
+    "points": [
+      "(30,25) is 5px inside row 0 -> #101010 (0x101010 * 1).",
+      "(30,165) is inside row 7 (y 160..180) and inside the viewport (20..170) -> #808080 (0x101010 * 8).",
+      "(30,175) is below the viewport's bottom edge (170). Row 8 IS mounted and spans 180..200, so without the scrollRect clip this pixel would be #909090; with it the root's white shows through."
+    ],
+    "not_pinned": "The in-program assertions that need a mid-run state (the wheel window r3..r11, End at 992, Home back to 0) are asserted in Main.as and reported through <OUT>.done; expect.json can only describe the final frame."
+  },
+  "w": 320,
+  "h": 260,
+  "rects": {
+    "root": [0, 0, 320, 260],
+    "vl": [20, 20, 200, 150],
+    "vl:r0": [20, 20, 200, 20],
+    "vl:r3": [20, 80, 200, 20],
+    "vl:r8": [20, 180, 200, 20]
+  },
+  "points": [
+    { "x": 30, "y": 25, "rgb": "#101010" },
+    { "x": 30, "y": 165, "rgb": "#808080" },
+    { "x": 30, "y": 175, "rgb": "#ffffff" }
+  ]
+}

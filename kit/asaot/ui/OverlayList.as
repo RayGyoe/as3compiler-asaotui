@@ -102,6 +102,44 @@ package asaot.ui
             if (t == null) return Number.NaN;
             return y;
         }
+
+        // The X twin of localYIn, same reasoning: a click that lands on a row reports
+        // ROW-local x, and the tree's twisty-vs-label test needs the point in the
+        // tree's own space.
+        public static function localXIn(n:UiNode, e:MouseEvent):Number
+        {
+            var x:Number = e.localX;
+            var t:DisplayObject = e.target as DisplayObject;
+            while (t != null && t != n.backing)
+            {
+                x += t.x;
+                t = t.parent;
+            }
+            if (t == null) return Number.NaN;
+            return x;
+        }
+
+        // The DEEPEST node under a point given in `n`'s own space (n itself when the
+        // point is on padding). Children are tested last-to-first because that is
+        // display order, i.e. what is actually on top. `rowAt` cannot serve a nested
+        // grid (a date picker's day cell lives three levels down); this can, and it
+        // still reads solved rects only.
+        public static function atPoint(n:UiNode, lx:Number, ly:Number):UiNode
+        {
+            if (n == null) return null;
+            for (var i:int = n.children.length - 1; i >= 0; i--)
+            {
+                var c:UiNode = n.children[i];
+                if (c.backing == null) continue;
+                var cx:Number = lx - (c.absX - n.absX);
+                var cy:Number = ly - (c.absY - n.absY);
+                if (cx >= 0 && cy >= 0 && cx < c.absW && cy < c.absH)
+                {
+                    return atPoint(c, cx, cy);
+                }
+            }
+            return n;
+        }
         // Paint a highlight band behind row `row` (0-based child index), in the
         // container's local coordinates. A negative index paints nothing, which is
         // how "no hover" is spelled.

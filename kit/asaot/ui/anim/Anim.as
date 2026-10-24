@@ -4,9 +4,30 @@
 // ------------------------
 // Every widget paints from `n.resolved` (a Style). UiNode.resolveStyle computes
 // `resolved` and then calls the animator, which re-aims the animatable fields
-// (`opacity`, `background`, `borderColor`) while a tween is in flight. So EVERY
-// widget animates with ZERO changes to any widget file -- the interception point
-// is `resolved`, and `resolved` is the single source every paint reads.
+// while a tween is in flight. So EVERY widget animates with ZERO changes to any
+// widget file -- the interception point is `resolved`, and `resolved` is the
+// single source every paint reads.
+//
+// TWO FIELD CLASSES, ONE MECHANISM, DIFFERENT CONSEQUENCES
+// -------------------------------------------------------
+//   PAINT fields  (opacity / background / borderColor / textColor / cornerRadius)
+//       Writing one changes pixels only. This is the default and stays
+//       zero-reflow: the redraw probe pins that a paint-only change never
+//       re-solves layout, and a paint tween honours it.
+//   LAYOUT fields (width / height / padding x4 / gapX / gapY)
+//       Writing one changes what FLEXBOX must compute, so every animated frame
+//       re-solves the tree (`applyEngineStyle` + `markLayoutDirty`). That is not
+//       a violation of the redraw rule -- the rule is about DECORATION never
+//       reflowing; an author who animates `width` is explicitly asking the layout
+//       to move each frame. The cost is honest and bounded by the tween's
+//       duration, and it is why layout fields are opt-in per node: they only
+//       animate when an author set `transitionMs` AND the field actually changes.
+// Only POINT lengths animate. A percent/auto size has no meaningful interpolation
+// (what is half of `auto`?), so those fields snap -- reported, not silently
+// approximated. Uniform corner radii only: the box drawer honours `topLeft` and
+// the toolkit always authors radii through `Corners.all(r)` (see
+// PaintKit.drawBox); animating four divergent corners would animate a value this
+// backend does not draw.
 //
 // WALL TIME, NOT FRAME COUNT
 // --------------------------
@@ -28,18 +49,42 @@
 // "zero describe/reflow work" invariant (pinned by CheckUi) is untouched.
 package asaot.ui.anim
 {
+    import asaot.ui.Dirty;
     import asaot.ui.UiNode;
+    import asaot.ui.style.Corners;
+    import asaot.ui.style.Edges;
     import asaot.ui.style.Fill;
+    import asaot.ui.style.Length;
+    import asaot.ui.style.Size;
 
     import flash.utils.getTimer;
 
     public final class Anim
     {
-        // The three fields the toolkit animates. The API is generic (any field
-        // string), but only these have an apply/write-back path in applyField.
+        // The fields the toolkit animates. The API is generic (any field string),
+        // but only these have an apply/write-back path in applyField.
         public static const FIELD_OPACITY:String = "opacity";
         public static const FIELD_BACKGROUND:String = "background";
         public static const FIELD_BORDER:String = "borderColor";
+        public static const FIELD_TEXT:String = "textColor";
+        public static const FIELD_RADIUS:String = "cornerRadius";
+        public static const FIELD_WIDTH:String = "width";
+        public static const FIELD_HEIGHT:String = "height";
+        public static const FIELD_PAD_T:String = "paddingTop";
+        public static const FIELD_PAD_R:String = "paddingRight";
+        public static const FIELD_PAD_B:String = "paddingBottom";
+        public static const FIELD_PAD_L:String = "paddingLeft";
+        public static const FIELD_GAP_X:String = "gapX";
+        public static const FIELD_GAP_Y:String = "gapY";
+
+        // Is this a field flexbox consumes (see the header)?
+        public static function isLayoutField(field:String):Boolean
+        {
+            return field == FIELD_WIDTH || field == FIELD_HEIGHT
+                || field == FIELD_PAD_T || field == FIELD_PAD_R
+                || field == FIELD_PAD_B || field == FIELD_PAD_L
+                || field == FIELD_GAP_X || field == FIELD_GAP_Y;
+        }
 
         private static const ST_KEY:String = "__anim";
 
@@ -225,6 +270,10 @@ package asaot.ui.anim
             }
             st.list.length = 0;
             st.tweens = {};
+            st.bgFill = null;
+            st.corners = null;
+            st.sizeOwned = null;
+            st.padOwned = null;
             if (node.extra != null) node.extra[ST_KEY] = null;
         }
 
@@ -287,7 +336,7 @@ package asaot.ui.anim
 
         private static function isColorField(field:String):Boolean
         {
-            return field == FIELD_BACKGROUND || field == FIELD_BORDER;
+            return field == FIELD_BACKGROUND || field == FIELD_BORDER || field == FIELD_TEXT;
         }
 
         private static function interpolate(field:String, from:Number, to:Number, e:Number):Number
@@ -341,6 +390,75 @@ package asaot.ui.anim
                 node.resolved.borderColor = v;
                 return;
             }
+            if (field == FIELD_TEXT)
+            {
+                // `resolved.text` is the node's OWN TextStyle (Style.copyInto and
+                // Theme.resolve both copy INTO it), so this needs no owned copy.
+                node.resolved.text.color = v;
+                return;
+            }
+            if (field == FIELD_RADIUS)
+            {
+                var c:Corners = st.corners;
+                if (c == null)
+                {
+                    var rc:Corners = node.resolved.cornerRadii;
+                    c = new Corners(rc != null ? rc.topLeft : NaN, rc != null ? rc.topRight : NaN,
+                                    rc != null ? rc.bottomRight : NaN, rc != null ? rc.bottomLeft : NaN);
+                    st.corners = c;
+                }
+                c.topLeft = v; c.topRight = v; c.bottomRight = v; c.bottomLeft = v;
+                node.resolved.cornerRadii = c;
+                return;
+            }
+
+            // ---- layout fields (see the header) -------------------------
+            // Guarded: a typo'd field name must be a no-op, not a silent engine write.
+            if (!isLayoutField(field)) return;
+            if (field == FIELD_WIDTH || field == FIELD_HEIGHT)
+            {
+                var sz:Size = st.sizeOwned;
+                if (sz == null)
+                {
+                    var cur:Size = node.resolved.size;
+                    sz = new Size(cur != null ? cur.width : null, cur != null ? cur.height : null);
+                    st.sizeOwned = sz;
+                }
+                if (field == FIELD_WIDTH) sz.width = Length.px(v);
+                else sz.height = Length.px(v);
+                node.resolved.size = sz;
+            }
+            else if (field == FIELD_GAP_X)
+            {
+                node.resolved.gapX = v;
+            }
+            else if (field == FIELD_GAP_Y)
+            {
+                node.resolved.gapY = v;
+            }
+            else
+            {
+                var e:Edges = st.padOwned;
+                if (e == null)
+                {
+                    var cp:Edges = node.resolved.padding;
+                    e = new Edges(cp != null ? cp.top : NaN, cp != null ? cp.right : NaN,
+                                  cp != null ? cp.bottom : NaN, cp != null ? cp.left : NaN);
+                    st.padOwned = e;
+                }
+                if (field == FIELD_PAD_T) e.top = v;
+                else if (field == FIELD_PAD_R) e.right = v;
+                else if (field == FIELD_PAD_B) e.bottom = v;
+                else e.left = v;
+                node.resolved.padding = e;
+            }
+            // THE LAYOUT HALF OF THE SEAM. Push the new numbers into the engine and
+            // raise the bits reflow reads, in the same call: the animation frame may
+            // land outside any resolve (the author changed nothing), so nothing else
+            // would ever tell the engine or the dirty gate about it.
+            node.applyEngineStyle();
+            node.markLayoutDirty();
+            node.dirty = node.dirty | Dirty.M_PAINT;
         }
     }
 }

@@ -23,6 +23,7 @@ package asaot.ui
     import asaot.ui.style.LengthEdges;
     import asaot.ui.style.Corners;
     import asaot.ui.style.Fill;
+    import asaot.ui.style.Size;
     import asaot.ui.style.TextStyle;
 
     import asaot.ui.LayoutConstants;
@@ -85,6 +86,13 @@ package asaot.ui
         public var ariaName:String;
         public var directionOverride:String;
         public var visible:Boolean;
+        // 1 while a widget is HOLDING this node on screen for an exit animation.
+        // It exists because `visible` is normally a MIRROR of `Element.visible`
+        // (see applyPayload): a dialog that closes sets `visible: false` in the
+        // description, and without this flag that mirror would hide the surface in
+        // the same frame it closed -- which is the one-frame vanish the exit motion
+        // exists to remove. Only the shell that owns an exit writes it.
+        public var visibleHold:int;
         public var action:String;
         // Mirrored from Control.tabEnabled. The TAB RING IS BUILT IN UiApp, not by
         // the runtime's own `as_tab_scan`: that walk is display-list order over
@@ -148,6 +156,7 @@ package asaot.ui
             this.ariaName = null;
             this.directionOverride = null;
             this.visible = true;
+            this.visibleHold = 0;
             this.action = null;
             this.tabEnabled = false;
             this.shapeA = null;
@@ -272,6 +281,7 @@ package asaot.ui
             // and forced a relayout); reopening did nothing. Raising the arrange bit
             // is the honest fix: it is also what makes a hidden subtree stop picking.
             var vis:Boolean = Element(desc).visible;
+            if (this.visibleHold != 0) vis = true;
             if (vis != this.visible)
             {
                 this.visible = vis;
@@ -432,6 +442,84 @@ package asaot.ui
             {
                 Anim.retarget(this, Anim.FIELD_BORDER, curBc, toBc, ms, ease);
             }
+
+            // textColor: the inherited text colour. A kind whose theme sets none
+            // (a bare box) has NaN here, and retargeting to NaN DROPS any tween --
+            // which is the honest reading of "there is no target".
+            var toTc:Number = this.resolved.text.color;
+            var curTc:Number = Anim.value(this, Anim.FIELD_TEXT, this.previous.text.color);
+            if (active || curTc != toTc)
+            {
+                Anim.retarget(this, Anim.FIELD_TEXT, curTc, toTc, ms, ease);
+            }
+
+            // cornerRadius: UNIFORM radii only (Anim's header explains why a
+            // non-uniform set does not animate: the box drawer honours topLeft).
+            var toR:Number = uniformRadius(this.resolved.cornerRadii);
+            var curR:Number = Anim.value(this, Anim.FIELD_RADIUS, uniformRadius(this.previous.cornerRadii));
+            if (active || curR != toR)
+            {
+                Anim.retarget(this, Anim.FIELD_RADIUS, curR, toR, ms, ease);
+            }
+
+            // ---- layout fields (see Anim's header) ---------------------
+            // Sizes animate only as POINT lengths; padding and gap animate as
+            // numbers. An unset side / a percent length resolves to NaN, which
+            // retarget() reads as "drop the tween and snap" -- never a made-up
+            // interpolation between `auto` and a number.
+            retargetLen(Anim.FIELD_WIDTH, true, ms, ease, active);
+            retargetLen(Anim.FIELD_HEIGHT, false, ms, ease, active);
+            retargetPad(Anim.FIELD_PAD_T, 0, ms, ease, active);
+            retargetPad(Anim.FIELD_PAD_R, 1, ms, ease, active);
+            retargetPad(Anim.FIELD_PAD_B, 2, ms, ease, active);
+            retargetPad(Anim.FIELD_PAD_L, 3, ms, ease, active);
+            retargetNum(Anim.FIELD_GAP_X, this.resolved.gapX, this.previous.gapX, ms, ease, active);
+            retargetNum(Anim.FIELD_GAP_Y, this.resolved.gapY, this.previous.gapY, ms, ease, active);
+        }
+
+        // Uniform radius, or NaN when the corners differ (= "not animatable").
+        private function uniformRadius(c:Corners):Number
+        {
+            if (c == null) return NaN;
+            if (isNaN(c.topLeft)) return NaN;
+            if (c.topLeft == c.topRight && c.topLeft == c.bottomRight && c.topLeft == c.bottomLeft)
+            {
+                return c.topLeft;
+            }
+            return NaN;
+        }
+
+        private function retargetLen(field:String, width:Boolean, ms:Number, ease:String,
+                                     active:Boolean):void
+        {
+            retargetNum(field, pointValue(this.resolved.size, width),
+                pointValue(this.previous.size, width), ms, ease, active);
+        }
+
+        private function pointValue(sz:Size, width:Boolean):Number
+        {
+            if (sz == null) return NaN;
+            var l:Length = width ? sz.width : sz.height;
+            if (l == null || l.unit != Length.UNIT_POINT) return NaN;
+            return l.value;
+        }
+
+        private function retargetPad(field:String, side:int, ms:Number, ease:String, active:Boolean):void
+        {
+            var e:Edges = this.resolved.padding;
+            var p:Edges = this.previous.padding;
+            var to:Number = NaN;
+            var prev:Number = NaN;
+            if (e != null) to = side == 0 ? e.top : (side == 1 ? e.right : (side == 2 ? e.bottom : e.left));
+            if (p != null) prev = side == 0 ? p.top : (side == 1 ? p.right : (side == 2 ? p.bottom : p.left));
+            retargetNum(field, to, prev, ms, ease, active);
+        }
+
+        private function retargetNum(field:String, to:Number, prev:Number, ms:Number,
+                                     ease:String, active:Boolean):void
+        {
+            var cur:Number = Anim.value(this, field, prev);
+            if (active || cur != to) Anim.retarget(this, field, cur, to, ms, ease);
         }
 
         private function inheritedChanged(a:Style, b:Style):Boolean

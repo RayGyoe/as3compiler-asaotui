@@ -183,6 +183,50 @@ package asaot.ui
             text: { fontSize: 13, color: BODY_COLOR }
         });
 
+        // ---- tree ---------------------------------------------------------
+        // A row is the ordinary 26pt item with a left padding the FACTORY derives
+        // from the depth (see tree.as). The twisty is PAINTED by TreeWidget inside
+        // that padding, so a row's own style never has to know whether its branch is
+        // open -- the widget reads `rows[i].open` and draws the right triangle.
+        //
+        // The two numbers that must agree are here: TREE_INDENT (the step per depth)
+        // and TREE_HIT (how far into a row a click counts as "on the twisty" rather
+        // than "on the label"). TreeWidget owns the drawing and the hit test.
+        public static const TREE_INDENT:Number = 18;
+        public static const TREE_PAD:Number = 22;
+        public static const TREE_HIT:Number = 22;
+        public static const TREE_ROW_H:Number = 26;
+        public static const TREE_TWISTY:uint = 0x6B7280;
+        public static const TREE_ROW:StyleRefinement = StyleRefinement.from({
+            flexDirection: "row", alignItems: "center", height: TREE_ROW_H
+        });
+        public static const TREE_TEXT:StyleRefinement = StyleRefinement.from({
+            text: { fontSize: 13, color: ITEM_TEXT }
+        });
+
+        // ---- date picker --------------------------------------------------
+        // 7 columns of 28pt cells and 6 week rows: the numbers the factory pins so the
+        // grid is exactly DAY_W * 7 wide (a day cell must not stretch, or the click
+        // column would depend on the panel width).
+        public static const DAY_W:Number = 28;
+        public static const DAY_H:Number = 26;
+        public static const DAY_TEXT:StyleRefinement = StyleRefinement.from({
+            text: { fontSize: 12, color: ITEM_TEXT }
+        });
+        public static const DAY_MUTED:StyleRefinement = StyleRefinement.from({
+            text: { fontSize: 12, color: ITEM_DISABLED }
+        });
+        public static const DAY_NAV:StyleRefinement = StyleRefinement.from({
+            flexDirection: "row", alignItems: "center", justifyContent: "center",
+            width: DAY_W, height: DAY_H, background: 0xFFFFFF
+        });
+        public static const DAY_NAV_TEXT:StyleRefinement = StyleRefinement.from({
+            text: { fontSize: 13, color: 0x111827 }
+        });
+        public static const DP_TITLE:StyleRefinement = StyleRefinement.from({
+            text: { fontSize: 13, color: 0x111827 }, flexGrow: 1
+        });
+
         public function OverlayChrome() { }
     }
 }

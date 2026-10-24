@@ -1,0 +1,36 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/choice/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "Window 420x560; root column, padding 20, gap 12, alignItems flex-start. Children in order: tree (size [240, null]), combobox (width 220), datePicker (width 200). tree height = 5 rows x 26 = 130, so the stack is tr y=20, cb y=20+130+12=162, dp y=162+34+12=208.",
+    "rows": "expanded = ['src'] and items = src[ a, b ], lib[ c ], readme, so the visible rows are src(depth 0), a(1), b(1), lib(0), readme(0) at y = 20, 46, 72, 98, 124 (rowHeight 26).",
+    "twisty": "TreeWidget draws a 10x9 triangle whose centre x is (row left + TREE_PAD 22 + depth*18) - 13. Depth 0 -> cx = 20+22-13 = 29. src is OPEN (down triangle, spans y 30..37 at cx) and lib is CLOSED (right triangle, widest at cy = 98+13 = 111). readme is a LEAF and must draw nothing, so that pixel is the tree's own background.",
+    "points": [
+      "(29,31) is inside the OPEN triangle of row src -> #6b7280 (OverlayChrome.TREE_TWISTY).",
+      "(29,111) is the widest point of the CLOSED triangle of row lib -> #6b7280.",
+      "(29,137) is on row readme (a leaf): no twisty, so the tree's background #f9fafb.",
+      "(200,59) is inside row a, which is the selected row -> ITEM_SELECTED #dbeafe.",
+      "(250,30) is inside row src, which paints no background of its own, so the TREE background #f9fafb shows through -- x=300 would be outside the 240-wide tree."
+    ],
+    "final_frame": "After the interaction phases the model is restored to expanded ['src'], selectedKey 'a', combobox closed with an empty query, datePicker closed with the value the probe picked (2026-10-15) -- exactly the state these rects describe. The mid-run states (3 rows after collapsing src, 4 after expanding lib, the filtered dropdown, the September grid) are asserted inside Main.as and reported through <OUT>.done; expect.json can only describe the final frame."
+  },
+  "w": 420,
+  "h": 560,
+  "rects": {
+    "root": [0, 0, 420, 560],
+    "tr": [20, 20, 240, 130],
+    "tr:tsrc": [20, 20, 240, 26],
+    "tr:ta": [20, 46, 240, 26],
+    "tr:tb": [20, 72, 240, 26],
+    "tr:tlib": [20, 98, 240, 26],
+    "tr:treadme": [20, 124, 240, 26],
+    "cb": [20, 162, 220, 34],
+    "dp": [20, 208, 200, 34]
+  },
+  "points": [
+    { "x": 29, "y": 31, "rgb": "#6b7280" },
+    { "x": 29, "y": 111, "rgb": "#6b7280" },
+    { "x": 29, "y": 137, "rgb": "#f9fafb" },
+    { "x": 200, "y": 59, "rgb": "#dbeafe" },
+    { "x": 250, "y": 30, "rgb": "#f9fafb" }
+  ]
+}

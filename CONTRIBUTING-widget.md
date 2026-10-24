@@ -212,6 +212,12 @@ cornerRadii, opacity, visibility, text`
 > **A6** **只改 `visible` 的 payload 也要抬 arrange**：`visible` 是 `arrangeSelf` 写给 `backing` 的，不抬位就“树上是 true、屏上是旧值”。模式：`if (vis != n.visible) { n.dirty |= Dirty.M_ARRANGE | Dirty.M_PAINT; n.markLayoutDirty(); }`。
 > **A7** **`Function(opts.fn)` 是 AOT 解析错**（写成 `(opts.fn as Function)`）；**`tabEnabled` 只在 `Control`**（`Element` 子类写了会报未定义属性）；**`Edges.fromArray` 的二元形式是 `[水平, 垂直]`（h,v）**，**不是** CSS 的 v,h。
 > **A8** **`node -e` 里别写 `\n`**：经 bash 传递后变成**字面换行**，生成的 `.as` 里字符串字面量变成真换行 ⇒ `Lex error: unterminated string literal`（本轮踩中两次）。长脚本写 `.cjs` 文件；实在要在字符串里换行就写 `String.fromCharCode(10)`。
+> **A9** **`box()` 的 `direction` 字段覆盖样式里的 `flexDirection`，且默认 `"column"`**：给 `box({style:{flexDirection:"row"}})` 也不行，它仍按 column 排（子项按 `alignItems` 居中，症状是「行内部的标签跑到 x=142」）。⇒ **行布局一律用 `row({...})`**（`row`/`column` 都会显式写 `n.direction`）。**第五轮 tree 探针就因为这一点把标签排到了 x=142**。
+> **A10** **`OverlayList.atPoint` 回答的是「最深」节点，不是「命中控件」**：点日历上的「15」命中的是 `dp:d15:t`（日格的文本子件），点「<」命中的是 `dp:prev:t`。⇒ 点击路由必须**沿 `parent` 上溯**逐级试 key（`DatePickerWidget.onClickAt` 的 walk-up），否则只有点到单元格空白边缘才生效。同理：**任何「命中子件但归属父件」的控件都适用**。
+> **A11** **钉死行高要同时钉 `minSize.height`，只写 `height` 会被 flexbox 压**：`virtualList` 的窗口是 `fit+1` 行（九行 20px 溢出 150px 视口）⇒ 九行被均分成 16.67px；而 `flexShrink:0` 会被编码成「flex:1 zero basis」反而夹成 **0**。**真正钉住的是 min**（solve 后生效，溢出行整体落在 clip 外）。
+> **A12** **退场动画必须自己「按住」`visible`**：作者的 `open=false` 是**立即**的，下一次 reconcile 就把 `visible:false` 写到 `backing`，动画当场被抹掉。⇒ `UiNode.visibleHold`（退场开始置 1、落地帧置 0，**只有拥有退场的 shell 写**）。探针必须包含「**退场中强制重渲染**」相位（描述符全程 `visible:false`，中间态仍要有 `alpha>0`）。
+> **A13** **探针的初值不要等于它要验的结果**：`datePicker` 探针的初值曾是 `2026-10-15`，而「点 15 号」的断言是 `value == "2026-10-15"` ⇒ **点击完全没生效也照样绿**（变异 M8 掘出来的假绿）。⇒ 初值必须与目标值**可区分**（改成 `2026-10-02`），或者断言「**变化**」而非「等于某值」。
+> **A14** **探针里凡是「按窗口行数取 `children[i]`」之前，必须先守行数**：窗口行数不对时 `children[i]` 读越界会让 AS3 侧**直接无 verdict**（既不 PASS 也不 FAIL），变异机把它归为 `BUILD FAILED` ⇒ 一个真变异被当成“编译不过”而漏计。守一句 `if (rows.length != want) { fail("..."); return; }` 就能保住判定。
 
 ### 4b `--air-app` 专用（demo 一律走这条路，见 `ui-demo/README.md`）
 

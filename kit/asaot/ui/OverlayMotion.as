@@ -37,8 +37,12 @@ package asaot.ui
     public final class OverlayMotion
     {
         public static const MS:int = 140;
+        // Exit is FASTER than entrance: something leaving should not make the
+        // author wait for it (browsers use ~120ms for a fade-out at this size).
+        public static const EXIT_MS:int = 120;
 
         private static const T0:String = "mt0";
+        private static const X0:String = "mx0";
 
         // Arm the entrance. Called from `payload` on the frame `open` flips true.
         //
@@ -60,6 +64,77 @@ package asaot.ui
         public static function isRunning(n:UiNode):Boolean
         {
             return n != null && n.extra != null && n.extra[T0] != null;
+        }
+
+        // ---- EXIT ---------------------------------------------------------
+        // A surface that vanishes in one frame reads as a glitch, so closing runs the
+        // SAME motion backwards: fade `e -> 0` and slide back toward where the
+        // surface came from. The node stays VISIBLE for the duration (that is the
+        // only way it can be painted), and the shell hides it on the landing frame --
+        // which is why this returns Boolean: the caller must know when to hide.
+        //
+        // Returns false when there is nothing to animate (no frame clock yet, the
+        // node is already hidden, or an exit is already in flight), so the caller
+        // can hide IMMEDIATELY. A missing exit must never leave a closed dialog on
+        // screen -- "animate if we can, hide if we cannot" is the order.
+        public static function startExit(n:UiNode):Boolean
+        {
+            if (n == null || n.extra == null) return false;
+            if (n.app == null || n.app.enterFrameTicks <= 0) return false;
+            if (n.extra[X0] != null) return true;
+            n.extra[X0] = getTimer();
+            return true;
+        }
+
+        public static function exitRunning(n:UiNode):Boolean
+        {
+            return n != null && n.extra != null && n.extra[X0] != null;
+        }
+
+        public static function cancelExit(n:UiNode):void
+        {
+            if (n != null && n.extra != null) n.extra[X0] = null;
+        }
+
+        // Returns TRUE while the exit still has frames to draw, FALSE on the frame it
+        // lands (the caller hides the surface then). Leaves alpha at 0 and the offset
+        // at its final value, so the last painted frame is the fully-gone pose.
+        public static function applyExit(n:UiNode, fade:UiNode, move:UiNode,
+                                        dx:Number, dy:Number):Boolean
+        {
+            if (n == null || n.extra == null) return false;
+            var x0:Object = n.extra[X0];
+            if (x0 == null) return false;
+            if (n.app == null) { n.extra[X0] = null; return false; }
+
+            var t:Number = (getTimer() - Number(x0)) / EXIT_MS;
+            if (t < 0) t = 0;
+            if (t > 1) t = 1;
+            // Ease-IN on the way out (the mirror of the entrance's ease-out): the
+            // surface starts moving slowly and accelerates away.
+            var e:Number = t * t;
+            var gone:Number = 1 - e;
+
+            if (move != null && move.backing != null && move.engineNode != null)
+            {
+                var out:Array = n.app.rectScratch;
+                n.app.engine.layoutGet(move.engineNode, out);
+                move.backing.x = out[0] + dx * e;
+                move.backing.y = out[1] + dy * e;
+            }
+            if (fade != null && fade.backing != null)
+            {
+                var base:Number = isNaN(fade.resolved.opacity) ? 1.0 : fade.resolved.opacity;
+                fade.backing.alpha = base * gone;
+            }
+
+            if (t >= 1)
+            {
+                n.extra[X0] = null;
+                return false;
+            }
+            n.app.markPaint(n);
+            return true;
         }
 
         // Called from `arrange` of the opening kind, AFTER the node's own children
