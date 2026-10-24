@@ -80,6 +80,12 @@ icudtl.dat
 # …但 6 页画廊截图（两种 DPI 各 6 张，是 DPI A/B 的证据）与单页截图是成品，留下
 !/ui-demo/air-*/gallery-page*.png
 !/ui-demo/air-*/uidemo-shot.png
+# …而两个 AIR 应用的**源码**也必须留下：描述符是窗口（尺寸/标题/renderMode/
+# requestedDisplayResolution）的唯一真源，`stage-air.cjs` 没有它直接拒绝运行，
+# `build.sh` 的两个臂都从它读窗口；`build.sh` 是默认跑法（mxmlc→adl）的入口。
+# 它们曾经被上面那条一刀切规则静默吞掉：干净克隆里没有 app.xml，演示根本建不起来。
+!/ui-demo/air-*/app.xml
+!/ui-demo/air-*/build.sh
 # 早期 junction 试验的残骸：`_jtest/asaot` 是指向本机的符号链接，入库无意义
 /ui-demo/_jtest/
 /measurements/build/

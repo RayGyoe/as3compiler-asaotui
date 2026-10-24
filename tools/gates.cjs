@@ -190,6 +190,15 @@
 //                element on BOTH runtimes (SQL: Array([1,2]).length == 1 and [0] is
 //                Array). Found when `Array(opts.items)` in the overlay factories
 //                threw #1034 in the AOT; OptionSupport.list() is the replacement.
+//   air arm   -- tools/mutation-air-arm.cjs: 2/2, and both are ways the AIR arm of the
+//                docs app stops COMPILING (AIR is the reference runtime, so "it does
+//                not build on the reference compiler" is a portability defect, not a
+//                wish): one demo page loses an `import` the AOT resolves for free
+//                (the command this was found with -- `box` is a package-level
+//                function, so an unimported call is legal to OUR compiler and
+//                invisible to mxmlc), and `DocsAir` starts touching an AOT-ONLY test
+//                hook (`Stage.render`), which is exactly why the AIR entry class is
+//                separate from the touring `DocsMain` in the first place.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -364,6 +373,27 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   record('author callbacks carry their documented argument'
     + (m ? ' (' + m[1] + ' calls / ' + m[2] + ' handlers)' : '') + (v ? ' (' + v[1] + ' violations)' : ''),
     r.status, out);
+}
+
+// ---- 6b5: the AIR arm actually compiles under the reference compiler ----------
+// `ui-demo/air-gallery/build.sh` runs the docs app on AIR by DEFAULT (mxmlc -> adl),
+// and `aot` to run it on our AOT. The default arm is only worth having if the tree
+// still builds on mxmlc, and "our compiler accepted it" is no evidence of that: the
+// AOT resolves names mxmlc will not (an unimported package-level function, a
+// definition whose .as file is not named after it) and accepts anything AIR does not
+// even have. Both halves of that claim were measured today: `demo/DocsStart.as` used
+// `box()` without importing it, and `kit/asaot/ui/combo.as` held a public function
+// named `combobox` -- mxmlc rejects both, the AOT accepted both, and no gate ran the
+// 81 KB compile that the default arm depends on.
+//   mutation: tools/mutation-air-arm.cjs (2/2, restoring each file by hash).
+{
+  const r = sh(process.execPath, ['tools/mxmlc-check.cjs',
+    '--root', 'ui-demo/demo/DocsAir.as',
+    '--src', 'ui-demo', '--src', 'kit', '--src', 'seam',
+    '--out', 'ui-demo/air-gallery/GalleryApp.swf'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /OK: compiled by AIR -- (\d+) bytes/.exec(out);
+  record('AIR arm (build.sh default) compiles under mxmlc' + (m ? ' (' + m[1] + ' B SWF)' : ''), r.status, out);
 }
 
 // ---- 6c: the --air-app reachability probe (G13, fixed 阶段二百四十九) ----------

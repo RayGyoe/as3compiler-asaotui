@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  AIR application descriptor for the multi-page asaot.ui gallery.
+
+  This file is the SOURCE OF TRUTH for how the demo's window is created, and it
+  is why the demo is built with `as-aot --air-app` instead of a hand-written
+  build manifest:
+
+    * <requestedDisplayResolution>high</requestedDisplayResolution>  -> the build
+      gets ASC_DISPLAY_HIGH=1, the window asks SDL for a native-resolution
+      drawable and the Skia surface is allocated in PHYSICAL pixels (measured on
+      this box: 150% scaling -> a 700x560 logical window owns 1050x840 pixels).
+      AIR's default "standard" renders at 1x and lets the compositor stretch the
+      result, which is exactly what makes text look blurry at 150%.
+    * <renderMode> picks the window's composition backend (cpu = software raster
+      + blit; direct/gpu = Ganesh on the GPU). AIR's documented default is "auto"
+      which falls back to CPU mode.
+    * <width>/<height>/<title>/<resizable> describe the initial window, so the
+      demo code never calls Stage.showWindow itself -- --air-app's generated
+      bootstrap does it, after the app class is constructed and added.
+
+  Everything the tutorial calls "高分辨率" is therefore a ONE-LINE descriptor
+  setting rather than a build-flag incantation.
+
+  The generated build manifest lands next to this file as GalleryApp.build.json
+  and is rewritten on every build (so hand edits do not survive -- change this
+  descriptor instead). See asaotui/CONTRIBUTING-widget.md section 4 for the
+  --air-app recipes and gotchas.
+-->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+  <id>asaotui.docs</id>
+  <versionNumber>0.1.0</versionNumber>
+  <filename>GalleryApp</filename>
+  <!-- 64 = the vendored Skia/SDL2/curl archives under vendor/*/windows-x64. -->
+  <architecture>64</architecture>
+  <initialWindow>
+    <content>GalleryApp.swf</content>
+    <title>asaot.ui - component documentation</title>
+    <visible>true</visible>
+    <width>1000</width>
+    <height>700</height>
+    <resizable>true</resizable>
+    <renderMode>cpu</renderMode>
+    <requestedDisplayResolution>high</requestedDisplayResolution>
+  </initialWindow>
+</application>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  The CONTROL ARM of the high-resolution A/B: the same descriptor as
+  ../air-gallery/app.xml in every WINDOW setting except ONE line --
+  requestedDisplayResolution is `standard` instead of `high`.
+
+  check-dpi.cjs enforces that claim mechanically: it compares the two
+  <initialWindow> blocks with the resolution value normalised away and refuses to run
+  the experiment unless they are then byte-identical. So no `<title>`, no size, no
+  renderMode may drift here -- the window settings must stay one-variable, or the A/B
+  stops being an A/B. (The application <id> above is deliberately different, so the two
+  builds are distinguishable in any tooling that keys on the id; it is outside
+  <initialWindow>.)
+
+  AIR's documented default is "standard": the stage renders at 1x and the
+  compositor stretches the result, which is what makes text blurry on a 150%
+  display. Measuring the screenshot is what turns "the descriptor enables HiDPI"
+  from a claim into a number: standard -> 1000x700 PNG, high -> 1500x1050 PNG, same
+  AS3 code, same logical rects. See ../check-dpi.cjs.
+
+  Kept as a permanently committed file rather than generated on the fly, because a
+  generated twin could drift from the real descriptor; the diff between the two is
+  the whole experiment.
+-->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+  <id>asaotui.gallery.standard</id>
+  <versionNumber>0.1.0</versionNumber>
+  <filename>GalleryApp</filename>
+  <architecture>64</architecture>
+  <initialWindow>
+    <content>GalleryApp.swf</content>
+    <title>asaot.ui - component documentation</title>
+    <visible>true</visible>
+    <width>1000</width>
+    <height>700</height>
+    <resizable>true</resizable>
+    <renderMode>cpu</renderMode>
+    <requestedDisplayResolution>standard</requestedDisplayResolution>
+  </initialWindow>
+</application>

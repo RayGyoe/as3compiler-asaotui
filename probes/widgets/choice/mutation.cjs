@@ -74,7 +74,7 @@ const MUTATIONS = [
     id: 'M6',
     why: 'the field stops reporting its edits -> type-to-filter silently does nothing (the author '
       + 'never receives onQuery)',
-    file: 'kit/asaot/ui/combo.as',
+    file: 'kit/asaot/ui/combobox.as',
     find: '                               onChange: n.onQuery }));',
     replace: '                               onChange: null }));',
     expect: 'typing reported query',

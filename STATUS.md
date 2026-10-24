@@ -26,6 +26,12 @@
 > 另加滑块本身**没有拖动机制**。修了四个调用点 + 重写 `SliderWidget`（stage 临时监听 + 单写入点），
 > 并补上**两层钉子**：行为门 `probes/widgets/callback`（唯一会点**未绑定**控件的探针）与静态门
 > `tools/callback-arity.cjs`（双向参数个数扫描，见 §3.10）。
+> 第十轮（2026-10-24）把**AIR 参考臂**变成一条命令：`ui-demo/air-gallery/build.sh`（默认走
+> `mxmlc → adl`，`build.sh aot` 走我们的 AOT）。**默认臂此前根本不存在**：文档站的 tour 用
+> `Stage.dispatchMouse/dispatchWheel/render` 这三个**只有我们有**的测试钩子，mxmlc 直接拒收该文件。
+> 于是新增 `demo/DocsAir.as`（同一个 model/view/UiApp，不跑 tour），并顺手修好 mxmlc 才看得见的两处
+> 可移植性缺陷（`DocsStart.as` 漏 `import asaot.ui.box`、`combo.as` 里放着 `public function combobox`
+> —— 文件名规则的违反）。新增门 `6b5` + 变异工具（见 §3.11）。
 > 第五轮（2026-10-24）补的是**动画深度 + 三处控件空白**：`Anim` 现在分 **paint 字段**与 **layout 字段**
 > （`width/height/padding/gap` 动画每帧重解、`textColor/cornerRadius` 可 tween）、浮层加**退场动画**；
 > `virtualList`（千级列表只挂 9 个节点）、`tree`、`combobox`、`datePicker`（纯整数日历，无 `Date`）落地。
@@ -35,7 +41,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 
-生成日期：2026-10-24（第九轮补：滑动/回调参数） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**40 道门**）
+生成日期：2026-10-24（第十轮补：AIR 参考臂 `build.sh`） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**41 道门**）
 
 ---
 
@@ -181,7 +187,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 40 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 41 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -402,12 +408,56 @@ M2 = 拖拽用画出来的短 thumb、M3 = `offsetX` 不进 scrollRect（旧缺�
 **顺带的承诺写进代码**：`UiNode.as` 顶部登记了三条约定（`onClick()` 零参、`onCommit(v)` 一个
 提交值、`onChange(v)` 一个新值），`CONTRIBUTING-widget.md` §4 同步。
 
-## 4 已完成且**可复现**的部分（不是意图，是跑过的）
+### 3.11 AIR 参考臂：默认跑法的入口，以及它顺手抓到的两个可移植性缺陷（第十轮补）
 
-一条命令跑全部 **40** 道门：
+`ui-demo/air-gallery/build.sh` 现在把「看这个界面」变成一条命令：
 
 ```sh
-node tools/gates.cjs          # 40/40 PASS 才叫绿（定稿记录 reviews/gates-all-23.txt）
+cd asaotui/ui-demo/air-gallery
+./build.sh          # AIR 参考臂：mxmlc 编出 GalleryApp.swf，再 adl app.xml
+./build.sh aot      # 我们的 AOT 臂：stage → as-aot --air-app → tour → 跑起来
+./build.sh swf      # 只编译（不弹窗、不出 exe）
+./build.sh clean    # 删两个臂的产物（**不删** gallery-page*.png，那是入库证据）
+```
+
+两个臂读的是**同一个** `app.xml`（窗口尺寸/标题/`renderMode`/`requestedDisplayResolution` 的唯一真源）：
+`--air-app` 在建期读它，`adl` 在运行期读它，脚本本身不重复任何一个窗口参数。AOT 臂刻意**不重写构建配方**
+——它就是 `run-gallery.cjs`（stage/编译/tour/量截图都在那儿），脚本只负责选臂。
+
+**默认臂此前根本不存在，原因是 tour**：`DocsMain.as` 同时是 AOT 文档类**和**无头验收 tour，而 tour 需要
+`Stage.dispatchMouse` / `Stage.dispatchWheel` / `Stage.render` 三个钩子——AIR 里没有这种东西（AIR 的窗口由
+操作系统驱动，不由程序驱动），所以 mxmlc 对那个文件直接报「通过静态类型为 Stage 的引用来调用的方法
+`dispatchMouse` 可能未定义」（14 处）。新增 **`demo/DocsAir.as`**：同一个 `DocsModel` + `DocsView` + `UiApp`、
+同一套订阅接线（少了那一行，首帧正常而点一下永远不响应）、落在同一页，**不跑 tour**。
+
+**「我们的编译器收下了」不是可移植性的证据**（`tools/mxmlc-check.cjs` 存在的理由）。这次两处被抓出来：
+
+| 位置 | 形态 | 为什么两边不一致 | 修法 |
+|---|---|---|---|
+| `ui-demo/demo/DocsStart.as` | 调 `box(...)` 而没有 `import asaot.ui.box` | 我们按名解析（同一包里当成可见）；mxmlc 要求显式 import | 补 import |
+| `kit/asaot/ui/combo.as` | 文件里放着 `public function combobox` | AS3 硬规则：**一个对外可见的定义必须在同名文件里**。我们不看文件名；mxmlc 于是「找不到定义 `asaot.ui.combobox`」⇒ 调用处报未定义 | `git mv` 成 `combobox.as`（也是本库一直的命名约定：工厂 `xxx.as`，类 `XxxNode.as`） |
+
+**钉子**：新门 `6b5` 直接跑一遍 81 KB 的 mxmlc 编译（约 1 s）；`tools/mutation-air-arm.cjs` **2/2 抓获**
+（M1 = 删掉那条 import，M2 = 让 `DocsAir` 摸 `Stage.render`），每个文件按 sha256 逐字节还原，
+还原后**再跑一次基线**确认文件真被放回去了。**它看不见什么**：编译通过不等于画面对——那一半靠
+AOT 臂的 tour（手算矩形 + 像素）和人工看一眼 AIR 窗口（本轮实测：`requestedDisplayResolution=high`
+在 AIR 上同样给 1000×700 逻辑窗口 / 1500×1050 物理像素，与我们的 AOT 一致）。
+
+`build.sh` 的另一件事是**路径拼写**：本工作区同时从 Git-Bash 与 WSL 里驱动，而 Windows 的 node 读不了
+`/mnt/d/...`、bash 又 exec 不了 `D:/...`，所以脚本把 SDK 根**两种拼写都算一遍**、各取能用的那一种；
+`adl` 与 `adl.exe` **同名都在 SDK 的 bin/ 里**（无扩展名那个是 Unix shell 包装），选错就是
+`Exec format error`——这些都写进了脚本注释，而不是靠“机器上恰好能用”。
+
+> 顺带修掉一处**仓库级**缺陷：`.gitignore` 的 `/ui-demo/air-*/*` 把 `app.xml` 一起吞了 ⇒
+> **干净克隆里没有描述符**，`stage-air.cjs` 会直接拒绝运行。现在显式放行 `air-*/app.xml` 与
+> `air-*/build.sh`。
+
+## 4 已完成且**可复现**的部分（不是意图，是跑过的）
+
+一条命令跑全部 **41** 道门：
+
+```sh
+node tools/gates.cjs          # 41/41 PASS 才叫绿（定稿记录 reviews/gates-all-24.txt）
 ```
 
 > 第九轮补那次全量：**39/40 PASS + 1 SKIPPED**（`reviews/gates-all-23.txt`，exit 0）。被跳过的是
