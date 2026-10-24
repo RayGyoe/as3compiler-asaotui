@@ -39,6 +39,25 @@ package demo
         public var compOpen:Number = 0;   // accordion open section
         public var compPage:Number = 3;   // pagination page (1-based)
 
+        // Advanced page (page 6) -- the five pickers/scrollers the other pages never
+        // showed. Every one of them is a "report it, the author re-renders" control,
+        // so their state lives here and nowhere else: a widget that kept its own
+        // `open` would survive a re-render and then disagree with the descriptor.
+        public var advPick:String = "Normal";      // select: the chosen option VALUE
+        public var advSel:Boolean = false;          // select: dropdown open
+        public var advCity:String = "";             // combobox: the query text
+        public var advCityOpen:Boolean = false;     // combobox: dropdown open
+        public var advCityPick:String = "";         // combobox: the chosen option
+        public var advDate:String = "2026-10-24";   // datePicker: the chosen day (ISO)
+        public var advCal:Boolean = false;          // datePicker: panel open
+        public var advCalY:int = 2026;              // datePicker: month being shown
+        public var advCalM:int = 10;
+        public var advOffset:Number = 0;            // virtualList: row-granular offset
+        public var advPop:Boolean = false;          // popover: open (the tour opens it)
+        public var advDrawer:Boolean = true;        // drawer: open on arrival
+        public var advExpanded:Array;               // tree: the OPEN branch keys
+        public var advNode:String = "src/a.as";     // tree: the selected row key
+
         // Overlay page (page 5) -- the floating layer's author-owned visibility.
         // The dialog is OPEN on arrival so the page shows its scrim and its centred
         // panel without anyone clicking; the menu starts closed so the tour can
@@ -51,6 +70,7 @@ package demo
         {
             super();
             this.items = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon"];
+            this.advExpanded = ["src", "kit"];
         }
     }
 }

@@ -104,6 +104,10 @@
 //                (#1009 on the next click -> the tour never finishes), and dropping
 //                the root detach leaves the empty host Sprite on the stage (the
 //                tour's stage.numChildren verdict names it).
+//   kind cov. -- tools/mutation-kind-coverage.cjs: 3/3 (the tree call renamed in the
+//                demo; a NEW kind+factory that nothing calls -- the regression that
+//                happened twice; and the call surviving only in a `//` comment, which
+//                the scan's first version counted as code).
 //   array(x)  -- probes/array-coerce/: `Array(arg)` must wrap a non-number in ONE
 //                element on BOTH runtimes (SQL: Array([1,2]).length == 1 and [0] is
 //                Array). Found when `Array(opts.items)` in the overlay factories
@@ -193,9 +197,10 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 }
 
 // ---- 6b: the multi-page demo tour -------------------------------------------
-// This is the only gate that exercises a WHOLE app: six pages sharing one body
+// This is the only gate that exercises a WHOLE app: seven pages sharing one body
 // slot, a widget-driven page switch, a SECOND retained tree (page 5 floats a
-// dialog + menu + toast on the overlay root and tears it down again), and rects
+// dialog + menu + toast on the overlay root and tears it down again; page 6 keeps a
+// popover + bottom-sheet drawer open across reflows), and rects
 // that were hand-computed before the run (see ui-demo/demo/GalleryMain.as). It is
 // the pin for the two layout fixes in UiNode (markLayoutDirty propagation out of a
 // subtree, and re-resolving when a widget override changes the direction) --
@@ -207,7 +212,26 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const r = sh(process.execPath, ['run-gallery.cjs'], path.join(UI, 'ui-demo'), { ASC_NO_OPEN: '1' });
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /\[gallery\] RESULT: (\S+)/.exec(out);
-  record('gallery tour: 6 pages (incl. the overlay tree), hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
+  record('gallery tour: 7 pages (incl. the overlay tree), hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
+}
+
+// ---- 6b2: every registered widget kind is SHOWN by the demo ------------------
+// A source scan, not a run: tools/kind-coverage.cjs resolves each
+// `register("<kind>", ...)` to its node class, then to the factory functions that
+// construct that class, then asks whether the demo CALLS one of them. Why a gate:
+// the gallery is the only place a widget can be looked at, and six kinds
+// (virtualList, tree, combobox, datePicker, select, drawer, popover) had shipped
+// without one -- STATUS.md meanwhile claimed "scrollView is the only kind not in
+// the gallery". A checklist cannot stay true; a scan can.
+// Its teeth: tools/mutation-kind-coverage.cjs 3/3 (the tree call renamed; a new
+// kind+factory that nothing shows -- the regression that actually happened; the
+// call surviving only in a `//` comment, which the tool's first version counted as
+// code and thereby certified prose).
+{
+  const r = sh(process.execPath, ['tools/kind-coverage.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /(\d+)\/(\d+) registered kinds/.exec(out);
+  record('gallery kind coverage: all registered widgets are shown' + (m ? ' (' + m[1] + '/' + m[2] + ')' : ''), r.status, out);
 }
 
 // ---- 6c: the --air-app reachability probe (G13, fixed 阶段二百四十九) ----------

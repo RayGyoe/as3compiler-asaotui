@@ -133,3 +133,93 @@ E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04
 PASS: 5 builds of one input on the generator revision 29f5021259154bd2 produced ONE generated C;
       the built-in spellings agree in all three places, and the only surviving failure
       artifacts are from a compiler tree that was being edited.
+
+== G11 closing measurement ==  2026-10-24T05:21:19.928Z
+
+A. compiler tree: HEAD 480b81c, src/ content hash 29f5021259154bd2
+   tracked modifications: (none)
+   untracked: (none)
+
+B. 5 builds of probes/array-scope/Main.as, same command, same tree
+   input: 160 .as files, sha256/16 5fe1237f264a6102 (0 missing)
+   run 1: 4730944 B  sha256/16 c29cafdb1635e770  (8.3s)  [src 29f50212]
+   run 2: 4730944 B  sha256/16 c29cafdb1635e770  (8.2s)  [src 29f50212]
+   run 3: 4730944 B  sha256/16 c29cafdb1635e770  (8.3s)  [src 29f50212]
+   run 4: 4730944 B  sha256/16 c29cafdb1635e770  (8.3s)  [src 29f50212]
+   run 5: 4730944 B  sha256/16 c29cafdb1635e770  (8.3s)  [src 29f50212]
+   input hash after the runs: 5fe1237f264a6102 (unchanged)
+   src/ content hash after the runs: 29f5021259154bd2 (unchanged -> the generator revision was stable)
+   distinct hashes: 1 of 5  -> ONE output for one input
+
+C. spelling tripwire on the freshly generated C (struct / props table / body literal)
+   all 3 built-in fields agree in all three places
+
+D. the three surviving artifacts from the 84-second window that rewrote the naming
+   artifact-1-struct-time__.c  2026-10-23 04:00:10 +0800
+       2574303 B, sha256/16 710dab8769241f9b, clang errors 19 (want >=16 (capped)), clang summary 20, truncated true, first: 38434:37 no member named '_time' in 'struct Date'
+       kinds: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+       struct Date { double time__; } + offsetof(Date, time__) while the body literal is o->_time
+   artifact-2-struct-socket-1-error.c  2026-10-23 04:00:50 +0800
+       2574267 B, sha256/16 98cd3d4e6e259221, clang errors 1 (want 1), clang summary 1, truncated false, first: 41310:8 no member named 'socket' in 'struct ServerSocketConnectEvent'
+       kinds: ServerSocketConnectEvent.socket
+       Date repaired; the remaining break is ServerSocketConnectEvent.socket
+   artifact-3-consistent.c  2026-10-23 04:01:34 +0800
+       2574236 B, sha256/16 f63f256a66b64923, clang errors 0 (want 0), clang summary null, truncated false
+       kinds: (none)
+       all three spellings agree; this is the first state that links
+   -> same program, three different C files, errors decaying to zero in 84 s: the tree was mid-edit.
+
+E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04:00:19 +0800)
+   my build broke on:      Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   artifact-1 (04:00:10) broke on: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   -> identical hazard set, from two different programs, 9 seconds apart: one tree state.
+
+---- verdict ----
+PASS: 5 builds of one input on the generator revision 29f5021259154bd2 produced ONE generated C;
+      the built-in spellings agree in all three places, and the only surviving failure
+      artifacts are from a compiler tree that was being edited.
+
+== G11 closing measurement ==  2026-10-24T05:35:17.405Z
+
+A. compiler tree: HEAD 480b81c, src/ content hash 29f5021259154bd2
+   tracked modifications: (none)
+   untracked: (none)
+
+B. 5 builds of probes/array-scope/Main.as, same command, same tree
+   input: 160 .as files, sha256/16 5fe1237f264a6102 (0 missing)
+   run 1: 4730944 B  sha256/16 c29cafdb1635e770  (8.2s)  [src 29f50212]
+   run 2: 4730944 B  sha256/16 c29cafdb1635e770  (8.3s)  [src 29f50212]
+   run 3: 4730944 B  sha256/16 c29cafdb1635e770  (8.3s)  [src 29f50212]
+   run 4: 4730944 B  sha256/16 c29cafdb1635e770  (8.3s)  [src 29f50212]
+   run 5: 4730944 B  sha256/16 c29cafdb1635e770  (8.3s)  [src 29f50212]
+   input hash after the runs: 5fe1237f264a6102 (unchanged)
+   src/ content hash after the runs: 29f5021259154bd2 (unchanged -> the generator revision was stable)
+   distinct hashes: 1 of 5  -> ONE output for one input
+
+C. spelling tripwire on the freshly generated C (struct / props table / body literal)
+   all 3 built-in fields agree in all three places
+
+D. the three surviving artifacts from the 84-second window that rewrote the naming
+   artifact-1-struct-time__.c  2026-10-23 04:00:10 +0800
+       2574303 B, sha256/16 710dab8769241f9b, clang errors 19 (want >=16 (capped)), clang summary 20, truncated true, first: 38434:37 no member named '_time' in 'struct Date'
+       kinds: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+       struct Date { double time__; } + offsetof(Date, time__) while the body literal is o->_time
+   artifact-2-struct-socket-1-error.c  2026-10-23 04:00:50 +0800
+       2574267 B, sha256/16 98cd3d4e6e259221, clang errors 1 (want 1), clang summary 1, truncated false, first: 41310:8 no member named 'socket' in 'struct ServerSocketConnectEvent'
+       kinds: ServerSocketConnectEvent.socket
+       Date repaired; the remaining break is ServerSocketConnectEvent.socket
+   artifact-3-consistent.c  2026-10-23 04:01:34 +0800
+       2574236 B, sha256/16 f63f256a66b64923, clang errors 0 (want 0), clang summary null, truncated false
+       kinds: (none)
+       all three spellings agree; this is the first state that links
+   -> same program, three different C files, errors decaying to zero in 84 s: the tree was mid-edit.
+
+E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04:00:19 +0800)
+   my build broke on:      Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   artifact-1 (04:00:10) broke on: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   -> identical hazard set, from two different programs, 9 seconds apart: one tree state.
+
+---- verdict ----
+PASS: 5 builds of one input on the generator revision 29f5021259154bd2 produced ONE generated C;
+      the built-in spellings agree in all three places, and the only surviving failure
+      artifacts are from a compiler tree that was being edited.

@@ -191,7 +191,7 @@ if (done === null) {
   process.exit(1);
 }
 
-// ---- 6) measure the screenshots (one per page, six pages) -----------------
+// ---- 6) measure the screenshots (one per page, SEVEN pages) ----------------
 // WHAT THIS PROVES: <requestedDisplayResolution>high makes Stage.render allocate
 // its surface in PHYSICAL pixels and scale the canvas to match, so the PNG of a
 // 700x560 stage comes out 1050x840 on a 150% display while the AS3 code keeps
@@ -199,7 +199,7 @@ if (done === null) {
 // reached the build -- a blurry window that every rect assertion in the tour
 // would still call perfect. That is why this is measured, not assumed.
 const shots = [];
-for (let k = 0; k < 6; k++) {
+for (let k = 0; k < 7; k++) {
   const f = path.join(outDir, OUT + '-page' + k + '.png');
   const c = checkShot(f, size, OUT + '-page' + k + '.png');
   shots.push({ name: OUT + '-page' + k + '.png', bytes: fs.existsSync(f) ? fs.statSync(f).size : 0, size: c.size, scale: c.scale, problems: c.problems });
@@ -209,7 +209,7 @@ for (const s of shots) console.log('  ' + s.name + '  ' + (s.size ? s.size.w + '
 if (shots.length === 0) console.log('  (none written)');
 
 const problems = [];
-if (shots.length !== 6) problems.push('expected 6 screenshots, got ' + shots.length);
+if (shots.length !== 7) problems.push('expected 7 screenshots, got ' + shots.length);
 for (const s of shots) {
   for (const p of s.problems) problems.push(p);
   if (shots[0].size && s.size && (s.size.w !== shots[0].size.w || s.size.h !== shots[0].size.h)) problems.push(s.name + ' differs in size from the other pages');

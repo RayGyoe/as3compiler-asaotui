@@ -218,6 +218,7 @@ cornerRadii, opacity, visibility, text`
 > **A12** **退场动画必须自己「按住」`visible`**：作者的 `open=false` 是**立即**的，下一次 reconcile 就把 `visible:false` 写到 `backing`，动画当场被抹掉。⇒ `UiNode.visibleHold`（退场开始置 1、落地帧置 0，**只有拥有退场的 shell 写**）。探针必须包含「**退场中强制重渲染**」相位（描述符全程 `visible:false`，中间态仍要有 `alpha>0`）。
 > **A13** **探针的初值不要等于它要验的结果**：`datePicker` 探针的初值曾是 `2026-10-15`，而「点 15 号」的断言是 `value == "2026-10-15"` ⇒ **点击完全没生效也照样绿**（变异 M8 掘出来的假绿）。⇒ 初值必须与目标值**可区分**（改成 `2026-10-02`），或者断言「**变化**」而非「等于某值」。
 > **A14** **探针里凡是「按窗口行数取 `children[i]`」之前，必须先守行数**：窗口行数不对时 `children[i]` 读越界会让 AS3 侧**直接无 verdict**（既不 PASS 也不 FAIL），变异机把它归为 `BUILD FAILED` ⇒ 一个真变异被当成“编译不过”而漏计。守一句 `if (rows.length != want) { fail("..."); return; }` 就能保住判定。
+> **A15** **新增 kind 必须同时进画廊 `ui-demo/demo/GalleryView.as`，否则门会红**：`tools/kind-coverage.cjs` 把每个 `register("<kind>", …)` 解到节点类、再解到 factory 函数，然后问**画廊有没有调用**其中之一（扫描 `ui-demo/demo/`，不是被 `stage-air.cjs` 重新生成的 `air-gallery/src/`）。这条门是被现实逼出来的：`virtualList`/`tree`/`combobox`/`datePicker`/`select`/`drawer`/`popover` **七个控件发出去了却没人能看见**，而 `STATUS.md` 当时还写着「只有 `scrollView` 没进画廊」。⇒ 写 kind 的最后一个动作是「让它上第七页 Advanced」，并把它加进 `GalleryMain.pageKeys(6)`（切页后仍在/已不在都要断言）。**扫描器必须剥掉注释**：把 `//` 当成代码会得到「`tree` 已展示」的假绿（注释里有 `the second tree (the …`）。
 
 ### 4b `--air-app` 专用（demo 一律走这条路，见 `ui-demo/README.md`）
 

@@ -5,7 +5,7 @@ self-checks that pin the toolkit's core invariants. Two apps, three backends:
 
 | App | What it is | Native (our AOT) | AIR (`mxmlc` → `adl`) |
 |---|---|---|---|
-| gallery | 5 pages (Home / Widgets / Data / Motion / Catalog) in one window, switched by the `tabs` widget | `node run-gallery.cjs` | — (AOT only, for now) |
+| gallery | 7 pages (Home / Widgets / Data / Motion / Catalog / Overlay / Advanced) in one window, switched by the `tabs` widget | `node run-gallery.cjs` | — (AOT only, for now) |
 | login | the login card from the API design's §8, with a bound model | `node build-and-run.cjs` | `node build-air.cjs` + `node run-adl.cjs` |
 
 Both native apps are built the same way: **`as-aot --air-app <descriptor>`**, so the
@@ -56,9 +56,9 @@ and `probes/widgets/*` + this demo are the end-to-end half.
 
 | File | Role |
 |---|---|
-| `demo/GalleryMain.as` | Gallery **AIR document class** (`Sprite`): mounts `demo/GalleryView.as` and runs the headless tour — pages 0..4, hand-computed rect assertions, a synthetic `MouseEvent.CLICK` on `tabs` to prove a WIDGET drives the switch, two redundant `reflow()`s to prove they cost nothing, and 5 `gallery-page*.png` screenshots. Writes `gallery.txt` + `gallery.done` (`PASS` / `FAIL <problems>`). |
+| `demo/GalleryMain.as` | Gallery **AIR document class** (`Sprite`): mounts `demo/GalleryView.as` and runs the headless tour — pages 0..6, hand-computed rect assertions, a synthetic `MouseEvent.CLICK` on `tabs` to prove a WIDGET drives the switch, two redundant `reflow()`s to prove they cost nothing, and 5 `gallery-page*.png` screenshots. Writes `gallery.txt` + `gallery.done` (`PASS` / `FAIL <problems>`). |
 | `demo/GalleryModel.as` | Observable model for the gallery: `page`, login fields, `listIndex`/`items`, control values, and an animation `phase` flipped by `View.tick` (no timers). |
-| `demo/GalleryView.as` | **One `render()` for five pages.** All pages render into the same `body` slot, so switching a page swaps a whole subtree — that is what exposes layout-dirty propagation bugs. |
+| `demo/GalleryView.as` | **One `render()` for seven pages.** All pages render into the same `body` slot, so switching a page swaps a whole subtree — that is what exposes layout-dirty propagation bugs. |
 | `demo/UiDemoMain.as` | Login demo **AIR document class**: mounts `demo/DemoView.as`, asserts the same hand-derived rects the AIR arm asserts (both stages are 500×375, so `uidemo.txt` and `ui-demo-air.txt` can be diffed), renders `uidemo-shot.png`, writes `uidemo.txt` + `uidemo.done`. |
 | `demo/DemoModel.as` | Observable model (account / password / remember / status), shared by both login drivers. |
 | `demo/DemoView.as` | The login page: title, tagline, card (2 fields + checkbox + button), status line. Pure `render()`. |
@@ -85,9 +85,10 @@ the dev box it is `C:\Program Files\LLVM\bin`.
 # (a) correctness self-check -- the CI-gateable one
 node run-check.cjs                       # -> CHECKUI: 23 checks, 0 failures, exit 0
 
-# (a2) the multi-page gallery tour (5 pages, widget-driven switch, 5 screenshots)
+# (a2) the multi-page gallery tour (7 pages, widget-driven switch, 7 screenshots)
 ASC_NO_OPEN=1 node run-gallery.cjs       # -> [gallery] RESULT: PASS
-                                         #    air-gallery/gallery{,-page0..4}.{txt,png}
+                                         #    air-gallery/gallery{,-page0..6}.{txt,png}
+                                         #    (7 pages; every registered kind is on some page)
 
 # (a3) prove the descriptor causes the high-resolution pixels (2 builds, ~2.5 min)
 node check-dpi.cjs                       # -> standard 700x560 (1x) vs high 750x563+ ... here 1050x840 (1.5x)
@@ -119,7 +120,7 @@ checked blue checkbox **Keep me signed in**, a full-width solid-blue **Sign in**
 and a blue **status: ready** line the button rewrites through the model
 (`notify(Dirty.VALUE)` → one repaint).
 
-The **fifth page (Catalog)** is where the widgets that had no page of their own
+The **Catalog page (index 4)** is where the widgets that had no page of their own
 live: `image` (fit), `spinner`, `skeleton`, `tooltip` on the left column and
 `table` (2 columns, header + 2 rows, selected row), `accordion` (section 0 open),
 `breadcrumb` and `pagination` (page 3 of 20) on the right. Every size is explicit so the
@@ -132,9 +133,24 @@ attached) into **failures**, not log lines: `mutation-gallery-zerorect.cjs` resi
 catalog image to 0×0 and requires the tour to go red naming `page 4` (baseline green,
 restore byte-identical).
 
-`air-gallery/gallery-page{0..4}.png` are the gallery's five pages; the tour's
+`air-gallery/gallery-page{0..6}.png` are the gallery's seven pages; the tour's
 hand-computed columns (`colA 24,132,320,374` / `colB 356,132,320,374`) are derived from
 700 − 2×24 = 652 content width, two `flexGrow:1` columns and a 12 gap.
+
+The **Advanced page (index 6)** is the last seven widgets that had no page: `select`,
+`combobox`, `datePicker`, a `scrollView` of colour bands, a `virtualList` (500 rows, 9
+mounted), a `tree` (two open branches, one selected row) and the two floating surfaces
+those widgets open — a `popover` (opened by the tour, sampled at the body pixel) and a
+`drawer` anchored to the bottom edge, **open on arrival**. The page stops at y = 470
+because the drawer starts there: an edge drawer covered the tab strip and there was no
+way back out of the page.
+
+That list is no longer maintained by hand: `tools/kind-coverage.cjs` resolves every
+`register("<kind>", ...)` to its node class, then to the factory functions that construct
+that class, then asks whether this demo CALLS one. It is gate #20 and
+`tools/mutation-kind-coverage.cjs` (3/3) proves it goes red — for a renamed call, for a
+new kind+factory nothing shows, and for a call that survives only inside a `//` comment
+(the scan's first version counted prose as code).
 
 `adl` shows the identical login page in an AIR window; `ui-demo-air.txt` records the
 settled rectangles and `AIR-CHECK: 7 checks, 0 failures`.

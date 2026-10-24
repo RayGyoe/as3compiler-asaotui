@@ -31,13 +31,19 @@ package demo
     import asaot.ui.checkbox;
     import asaot.ui.chip;
     import asaot.ui.column;
+    import asaot.ui.combobox;
+    import asaot.ui.datePicker;
     import asaot.ui.divider;
+    import asaot.ui.drawer;
     import asaot.ui.image;
     import asaot.ui.list;
     import asaot.ui.pagination;
+    import asaot.ui.popover;
     import asaot.ui.progress;
     import asaot.ui.radio;
     import asaot.ui.row;
+    import asaot.ui.scrollView;
+    import asaot.ui.select;
     import asaot.ui.skeleton;
     import asaot.ui.slider;
     import asaot.ui.spinner;
@@ -47,6 +53,7 @@ package demo
     import asaot.ui.textField;
     import asaot.ui.toggle;
     import asaot.ui.tooltip;
+    import asaot.ui.virtualList;
     import asaot.ui.style.Length;
     import asaot.ui.style.StyleRefinement;
 
@@ -199,6 +206,77 @@ package demo
             text: { fontSize: 13, fontWeight: "bold", color: 0xFFFFFF }
         });
 
+        // ---- page 6: the advanced widgets -------------------------------------
+        // The six controls the other pages never showed, plus the two floating
+        // surfaces they open. Two columns: 440 for the pickers and the scrollers, 200
+        // for the tree. The page stops at y = 470 because the drawer is a BOTTOM sheet
+        // (y = 560 - 90 = 470) -- an edge drawer would cover the tab strip or the
+        // title, and a gallery page whose own navigator is behind an overlay cannot be
+        // left.
+        private static const ADV_COL_A:StyleRefinement = StyleRefinement.from({
+            flexDirection: "column", gap: 12, size: [Length.px(440), Length.px(374)]
+        });
+        // 1+14+18+10+36+10+36+14+1 = 140
+        private static const ADV_CARD_A:StyleRefinement = StyleRefinement.from({
+            flexDirection: "column", padding: 14, gap: 10, size: [Length.pct(1), Length.px(140)],
+            background: 0xF9FAFB, border: 1, borderColor: 0xE5E7EB, cornerRadii: 10
+        });
+        // 1+14+18+10+128+14+1 = 186, so the card ends at 284+186 = 470.
+        private static const ADV_CARD_B:StyleRefinement = StyleRefinement.from({
+            flexDirection: "column", padding: 14, gap: 10, size: [Length.pct(1), Length.px(186)],
+            background: 0xF9FAFB, border: 1, borderColor: 0xE5E7EB, cornerRadii: 10
+        });
+        // 338 tall, so the card ends at 132 + 338 = 470 like everything else on the
+        // page (the drawer starts there). 200 wide: the page is 440 + 12 + 200 = 652.
+        private static const ADV_CARD_T:StyleRefinement = StyleRefinement.from({
+            flexDirection: "column", padding: 14, gap: 10, size: [Length.px(200), Length.px(338)],
+            background: 0xF9FAFB, border: 1, borderColor: 0xE5E7EB, cornerRadii: 10
+        });
+        private static const ADV_TREE_S:StyleRefinement = StyleRefinement.from({ width: 170 });
+        private static const ADV_TREE_NOTE:StyleRefinement = StyleRefinement.from({
+            width: 170, text: { fontSize: 11, color: 0x9CA3AF }
+        });
+        private static const ADV_ROW:StyleRefinement = StyleRefinement.from({
+            flexDirection: "row", gap: 10, size: [Length.pct(1), Length.px(36)]
+        });
+        private static const ADV_DATA_ROW:StyleRefinement = StyleRefinement.from({
+            flexDirection: "row", gap: 10, size: [Length.pct(1), Length.px(128)]
+        });
+        private static const ADV_PICK_S:StyleRefinement = StyleRefinement.from({ width: 200 });
+        // 95 wide: datePicker (200) + gap 10 + 95 + gap 10 + 95 = 410, the pickers
+        // card's whole content box on a 440-wide column.
+        private static const ADV_BTN_S:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(95), Length.px(34)], background: 0xFFFFFF, border: 1,
+            borderColor: 0xD1D5DB, cornerRadii: 8, text: { fontSize: 12, color: 0x374151 }
+        });
+        private static const ADV_SV_S:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(200), Length.px(128)], background: 0xFFFFFF, border: 1, borderColor: 0xE5E7EB
+        });
+        private static const ADV_VL_S:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(200), Length.px(128)], background: 0xFFFFFF, border: 1, borderColor: 0xE5E7EB
+        });
+        // The popover's CONTENT, and the point the tour samples: a popover whose panel
+        // is white on white is a screenshot nobody can assert, so the body carries its
+        // own colour and the tour reads the pixel the body itself reports.
+        // 120 wide, not 180: the panel drops below its anchor and its right edge then
+        // only grazes the tree card (476) instead of covering the tree.
+        private static const ADV_POP_BODY:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(100), Length.px(50)], background: 0xDBEAFE
+        });
+        private static const ADV_DRW_BTN_S:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(140), Length.px(28)], background: 0xFFFFFF, border: 1,
+            borderColor: 0xD1D5DB, cornerRadii: 6, text: { fontSize: 13, color: 0x374151 }
+        });
+        private static const ADV_DRW_ROW:StyleRefinement = StyleRefinement.from({
+            flexDirection: "row", gap: 10, alignItems: "center", size: [Length.pct(1), Length.px(28)]
+        });
+        private static const ADV_DRW_NOTE:StyleRefinement = StyleRefinement.from({
+            width: 360, text: { fontSize: 11, color: 0x9CA3AF }
+        });
+        private static const ADV_VROW_S:StyleRefinement = StyleRefinement.from({
+            width: 200, background: 0xEEF2FF
+        });
+
         public var model:GalleryModel;
         // Evidence that page switching is driven by the widget, not by the tour
         // poking the model: every onChange callback lands here.
@@ -235,7 +313,7 @@ package demo
         // while there were four tabs, and no assertion noticed).
         private function tabNames():Array
         {
-            return ["Home", "Widgets", "Data", "Motion", "Catalog", "Overlay"];
+            return ["Home", "Widgets", "Data", "Motion", "Catalog", "Overlay", "Advanced"];
         }
 
         // The per-frame hook. The Motion page's two boxes change colour on a wall
@@ -258,6 +336,7 @@ package demo
             if (p == 3) return this.motionPage();
             if (p == 4) return this.catalogPage();
             if (p == 5) return this.overlayPage();
+            if (p == 6) return this.advancedPage();
             return this.widgetsPage();
         }
 
@@ -400,7 +479,9 @@ package demo
         // rather than merely hidden (the tour checks the keys are GONE).
         override public function renderOverlay():Node
         {
-            if (int(this.model.page) != 5) return null;
+            var p:int = int(this.model.page);
+            if (p == 6) return this.advancedOverlay();
+            if (p != 5) return null;
             var m:GalleryModel = this.model;
             // Method references, not closures: an anonymous function is supported,
             // but a named handler keeps the wiring readable and is what every other
@@ -437,6 +518,256 @@ package demo
                 ]),
                 note("The dialog, the menu and the toast are author-owned: `open` lives in the model.", "ovlNote2")
             ]);
+        }
+
+        // The second retained tree, page 6: the popover and the drawer. Both are
+        // floating SURFACES, so they belong here rather than in the page body -- the
+        // page never re-lays out when one of them opens. The drawer is open on
+        // arrival (it occupies the 200px gutter the page reserved for it); the popover
+        // starts CLOSED so page 6's own controls are unobstructed, and the tour clicks
+        // the button to photograph it open.
+        private function advancedOverlay():Node
+        {
+            var m:GalleryModel = this.model;
+            var po:Node = popover({
+                key: "advPop", open: m.advPop, anchorKey: "advPopBtn",
+                placement: "bottom", offset: 6, width: 120, onClose: this.advPopClosed
+            }, [ box({ key: "advPopBody", style: ADV_POP_BODY }) ]);
+            // A BOTTOM sheet: an edge drawer spans the whole window and would sit on
+            // top of the tab strip, which is the page's own way out. 90 tall means it
+            // starts at 560 - 90 = 470 -- one pixel below the page content.
+            var dr:Node = drawer({
+                key: "advDrawer", open: m.advDrawer, side: "bottom", size: 90,
+                title: "Drawer", scrim: false, onClose: this.advDrawerClosed
+            }, [ row({ key: "advDrwRow", style: ADV_DRW_ROW }, [
+                     text("A bottom sheet: the page behind it never re-lays out.",
+                          { key: "advDrwText", style: ADV_DRW_NOTE }),
+                     button({ key: "advDrawerClose", style: ADV_DRW_BTN_S, label: "Close",
+                              onClick: this.advDrawerClosed })
+                 ]) ]);
+            return overlay([po, dr]);
+        }
+
+        // ---- page 6: the advanced widgets -------------------------------------
+        // Every control here REPORTS and expects the author to re-render: `open`,
+        // `value`, `offsetY` all live in the model, and the callbacks below write
+        // them back through the single invalidate entry point. That is why every
+        // trigger is wired instead of being decorative -- a dead-looking picker in a
+        // gallery reads as "this does not work".
+        private function advancedPage():Node
+        {
+            return row({ key: "body", style: ROWBODY, ariaName: "Advanced page" }, [
+                column({ key: "advCol", style: ADV_COL_A, ariaName: "Pickers and scrollers" }, [
+                    card({ key: "advPickCard", style: ADV_CARD_A }, [
+                        text("Pickers", { key: "advPickTitle", style: CARD_TITLE }),
+                        row({ key: "advPickRow1", style: ADV_ROW }, [
+                            select({
+                                key: "advSel", style: ADV_PICK_S, width: 200,
+                                options: ["Low", "Normal", "High"], value: this.model.advPick,
+                                open: this.model.advSel,
+                                onSelect: this.advPicked, onOpenChange: this.advSelOpen
+                            }),
+                            combobox({
+                                key: "advCity", style: ADV_PICK_S, width: 200,
+                                options: this.cityOptions(), query: this.model.advCity,
+                                placeholder: "Type a city", open: this.model.advCityOpen,
+                                onQuery: this.advQueried, onSelect: this.advCityPicked,
+                                onOpenChange: this.advCityOpenChanged
+                            })
+                        ]),
+                        row({ key: "advPickRow2", style: ADV_ROW }, [
+                            datePicker({
+                                key: "advDate", style: ADV_PICK_S, width: 200, open: this.model.advCal,
+                                value: this.model.advDate, year: this.model.advCalY, month: this.model.advCalM,
+                                placeholder: "Pick a date", onSelect: this.advDatePicked,
+                                onMonthChange: this.advMonthChanged, onOpenChange: this.advCalOpen
+                            }),
+                            // The popover's anchor is the LAST cell on purpose: its panel
+                            // drops BELOW the anchor and hangs over the empty half of the
+                            // scrolling card instead of over the grid that card exists to
+                            // show.
+                            button({ key: "advDrawerBtn", style: ADV_BTN_S, label: "Drawer",
+                                     onClick: this.advDrawerOpened }),
+                            button({ key: "advPopBtn", style: ADV_BTN_S, label: "Popover",
+                                     onClick: this.advPopClicked })
+                        ])
+                    ]),
+                    card({ key: "advDataCard", style: ADV_CARD_B }, [
+                        text("Scrolling", { key: "advDataTitle", style: CARD_TITLE }),
+                        row({ key: "advDataRow", style: ADV_DATA_ROW }, [
+                            scrollView({ key: "advScroll", style: ADV_SV_S, offset: [0, 0] }, [
+                                box({ key: "advSv0", style: this.svBand(0xDBEAFE) }),
+                                box({ key: "advSv1", style: this.svBand(0xBFDBFE) }),
+                                box({ key: "advSv2", style: this.svBand(0x93C5FD) }),
+                                box({ key: "advSv3", style: this.svBand(0x60A5FA) })
+                            ]),
+                            virtualList({
+                                key: "advVList", style: ADV_VL_S, size: [200, 128],
+                                rowHeight: 20, count: 500, overscan: 1,
+                                offsetY: this.model.advOffset,
+                                renderRow: this.buildVRow, onScroll: this.advScrolled
+                            })
+                        ])
+                    ])
+                ]),
+                card({ key: "advTreeCard", style: ADV_CARD_T }, [
+                    text("Tree", { key: "advTreeTitle", style: CARD_TITLE }),
+                    tree([
+                        { key: "src", label: "src", children: [
+                            { key: "src/a.as", label: "a.as" },
+                            { key: "src/b.as", label: "b.as" } ] },
+                        { key: "kit", label: "kit", children: [
+                            { key: "kit/ui", label: "ui.as" } ] },
+                        { key: "README", label: "README" }
+                    ], {
+                        key: "advTree", style: ADV_TREE_S, rowHeight: 26,
+                        expanded: this.model.advExpanded, selectedKey: this.model.advNode,
+                        onToggle: this.advToggled, onSelect: this.advNodePicked
+                    }),
+                    text("Click a row; the twisty toggles.", { key: "advTreeNote", style: ADV_TREE_NOTE })
+                ])
+            ]);
+        }
+
+        // A fresh refinement per render, like motionStyle: the scroll view's children
+        // are four identical bands and only their colour differs.
+        private function svBand(color:uint):StyleRefinement
+        {
+            return StyleRefinement.from({ size: [200, 40], background: color });
+        }
+
+        // The combobox does NOT filter -- that would mean the library guessing the
+        // matching rule (see combo.as). The author filters, here, from the query.
+        private function cityOptions():Array
+        {
+            var all:Array = ["Amsterdam", "Berlin", "Lisbon", "Madrid", "Oslo", "Paris", "Rome"];
+            var q:String = this.model.advCity;
+            if (q == null || q == "") return all;
+            var out:Array = [];
+            var lower:String = q.toLowerCase();
+            for (var i:int = 0; i < all.length; i++)
+            {
+                var s:String = String(all[i]);
+                if (s.toLowerCase().indexOf(lower) == 0) out.push(s);
+            }
+            return out;
+        }
+
+        public function buildVRow(i:int):Node
+        {
+            return row({ key: "vr" + i, style: ADV_VROW_S, ariaName: "Row " + i }, [
+                text("row " + i, { key: "vrt" + i, style: NOTE })
+            ]);
+        }
+
+        private function advPicked(i:int):void
+        {
+            var vals:Array = ["Low", "Normal", "High"];
+            if (i >= 0 && i < vals.length) this.model.advPick = String(vals[i]);
+            this.model.advSel = false;
+            this.model.status = "select -> " + this.model.advPick;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advSelOpen(open:Boolean):void
+        {
+            this.model.advSel = open;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advQueried(t:String):void
+        {
+            this.model.advCity = t;
+            this.model.advCityOpen = true;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advCityPicked(i:int):void
+        {
+            var opts:Array = this.cityOptions();
+            if (i >= 0 && i < opts.length) this.model.advCityPick = String(opts[i]);
+            this.model.status = "combobox -> " + this.model.advCityPick;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advCityOpenChanged(open:Boolean):void
+        {
+            this.model.advCityOpen = open;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advDatePicked(iso:String):void
+        {
+            this.model.advDate = iso;
+            this.model.advCal = false;
+            this.model.status = "date -> " + iso;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advMonthChanged(y:int, m:int):void
+        {
+            this.model.advCalY = y;
+            this.model.advCalM = m;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advCalOpen(open:Boolean):void
+        {
+            this.model.advCal = open;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advScrolled(y:Number):void
+        {
+            this.model.advOffset = y;
+            this.model.status = "vlist offset " + int(y);
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advPopClicked():void
+        {
+            this.model.advPop = !this.model.advPop;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advPopClosed():void
+        {
+            this.model.advPop = false;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advDrawerOpened():void
+        {
+            this.model.advDrawer = true;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advToggled(key:String):void
+        {
+            var out:Array = [];
+            var on:Boolean = false;
+            for (var i:int = 0; i < this.model.advExpanded.length; i++)
+            {
+                var s:String = String(this.model.advExpanded[i]);
+                if (s == key) { on = true; continue; }
+                out.push(s);
+            }
+            if (!on) out.push(key);
+            this.model.advExpanded = out;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advNodePicked(key:String):void
+        {
+            this.model.advNode = key;
+            this.model.status = "tree -> " + key;
+            this.invalidate(Dirty.ALL);
+        }
+
+        private function advDrawerClosed():void
+        {
+            this.model.advDrawer = false;
+            this.invalidate(Dirty.ALL);
         }
 
         private function ovlDlgClosed():void

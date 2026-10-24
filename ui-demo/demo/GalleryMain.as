@@ -15,8 +15,8 @@
 // showWindow: air-gallery/app.xml decides the size, title, renderMode and
 // requestedDisplayResolution.
 //
-// WHAT IT IS: one window, five pages (Home / Widgets / Data / Motion / Catalog),
-// the kit's `tabs` widget. The page index is a model field, the tabs write their
+// WHAT IT IS: one window, SEVEN pages (Home / Widgets / Data / Motion / Catalog /
+// Overlay / Advanced), the kit's `tabs` widget. The page index is a model field, the tabs write their
 // selection back through a Binding, and the view re-describes the one `body` slot
 // the page occupies -- so a page switch is an ordinary notify -> invalidate ->
 // re-render, with no page-specific state kept in the view.
@@ -112,7 +112,7 @@ package demo
             }
 
             var k:int;
-            for (k = 0; k < 6; k++)
+            for (k = 0; k < 7; k++)
             {
                 this.model.page = k;
                 this.app.invalidate(Dirty.ALL);
@@ -199,6 +199,48 @@ package demo
                     this.problems = this.problems + inside("colA", 24, 320) + inside("colB", 356, 320);
                 }
 
+                // PAGE 6: the drawer's panel is the hand-computable part of that page
+                // -- a bottom sheet is 90 tall, so it occupies y = 560 - 90 = 470..560
+                // across the full width, one pixel below the page content.
+                if (k == 6) this.problems = this.problems + rect("advDrawer:panel", 0, 470, 700, 90);
+
+                // PAGE 6 ALSO PINS THAT THE POPOVER PAINTS. Its `open` is the author's,
+                // so the tour clicks the anchor and re-renders exactly like a user
+                // would -- and then reads a pixel from INSIDE the popover's own body
+                // rect. A popover that reconciled but never painted (or one that opened
+                // without its panel being laid out) leaves the card's beige behind, and
+                // this is what says so.
+                if (k == 6)
+                {
+                    var pb:UiNode = this.app.findByKey("advPopBtn");
+                    if (pb == null || pb.backing == null)
+                    {
+                        this.problems = this.problems + "page 6 has no popover anchor to click; ";
+                    }
+                    else
+                    {
+                        pb.backing.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false, 90, 17));
+                        this.app.reflow();
+                        if (!this.model.advPop) this.problems = this.problems + "clicking the anchor did not open the popover; ";
+                        var pbody:UiNode = this.app.findByKey("advPopBody");
+                        if (pbody == null)
+                        {
+                            this.problems = this.problems + "page 6's popover body is missing after the click; ";
+                        }
+                        else
+                        {
+                            var pbd2:BitmapData = new BitmapData(GW, GH, true, 0xFF000000);
+                            pbd2.draw(this.stage);
+                            var px2:uint = pbd2.getPixel(int(pbody.absX) + 4, int(pbody.absY) + 4) & 0xFFFFFF;
+                            this.report = this.report + "  page6 popover: body rect=" + pbody.absX + "," + pbody.absY
+                                + "," + pbody.absW + "," + pbody.absH + " pixel=#" + px2.toString(16)
+                                + String.fromCharCode(10);
+                            if (px2 != 0xDBEAFE) this.problems = this.problems + "page 6's popover body painted #"
+                                + px2.toString(16) + " at its own centre, not #dbeafe; ";
+                        }
+                    }
+                }
+
                 // A PNG of this page, so the screenshots can be compared side by
                 // side. Stage.render allocates at PHYSICAL size -- the device scale
                 // is what <requestedDisplayResolution>high turns on -- so the file's
@@ -253,9 +295,10 @@ package demo
             if (!dlgGone) this.problems = this.problems + "the overlay tree survived the page switch; ";
 
                 this.report = this.report + "== widget-driven switch ==\n";
-            // Six segments across 652 px with gap 8: segment width (652 - 5*8)/6 = 102,
-            // pitch 110, so index 2 spans local x 220..330 -- click its centre (326),
-            // like a user would. (Five segments used to give pitch 132 and x=408 did.)
+            // SEVEN segments across 652 px with gap 8: segment width
+            // (652 - 6*8)/7 = 604/7 = 86.2857, pitch 94.2857, so index 2 spans local
+            // 188.57..274.86 -- click x=230, comfortably inside, like a user would.
+            // (Six segments used to give pitch 110 and x=326 did.)
             var tn:UiNode = this.app.findByKey("tabs");
             if (tn == null)
             {
@@ -266,7 +309,7 @@ package demo
                 this.model.page = 0;
                 this.app.invalidate(Dirty.ALL);
                 this.app.reflow();
-                tn.backing.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false, 326, 19));
+                tn.backing.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false, 230, 19));
                 // The widget invalidated; a real frame would reflow next, so do it here.
                 this.app.reflow();
                 if (int(this.model.page) != 2) this.problems = this.problems + "clicking tab 2 left model.page at " + this.model.page + "; ";
@@ -320,6 +363,20 @@ package demo
             return "";
         }
 
+        // Four numbers, not two: a bottom sheet's hand-computable identity is its
+        // y and height (it spans the width, so x/w alone would pass on anything).
+        private function rect(key:String, x:Number, y:Number, w:Number, h:Number):String
+        {
+            var n:UiNode = this.app.findByKey(key);
+            if (n == null) return key + " missing (expected " + x + "," + y + "," + w + "," + h + "); ";
+            if (n.absX != x || n.absY != y || n.absW != w || n.absH != h)
+            {
+                return key + " is at " + n.absX + "," + n.absY + "," + n.absW + "," + n.absH
+                    + ", expected " + x + "," + y + "," + w + "," + h + "; ";
+            }
+            return "";
+        }
+
         private function out(p:String, txt:String):void
         {
             var f:File = new File(p);
@@ -343,7 +400,8 @@ function pageName(k:int):String
     if (k == 2) return "Data";
     if (k == 3) return "Motion";
     if (k == 4) return "Catalog";
-    return "Overlay";
+    if (k == 5) return "Overlay";
+    return "Advanced";
 }
 
 // The keys that MUST exist on each page, including the widgets that page is the
@@ -357,6 +415,10 @@ function pageKeys(k:int):Array
     if (k == 3) return ["root", "tabs", "body", "animated", "snapped", "motionNote"];
     // Page 4 -- the component catalog: one key per widget group, plus the table's
     // rows/cells and the accordion's OPEN panel (section 0 is open in the model).
+    if (k == 4) return ["root", "tabs", "body", "colM", "colD", "catImg", "catSpin", "catSk", "catTip",
+                        "catTable", "hdr", "r0", "r1", "r0c0", "r0c1", "r1c0", "r1c1",
+                        "catAcc", "h0", "h1", "catP0", "catCrumb", "c0", "s0", "c1", "s1", "c2", "catPage",
+                        "pg3", "prev", "next"];
     if (k == 5) return ["root", "tabs", "body", "ovlNote", "ovlBtn",
                         // ... and the FLOATING tree. findByKey searches both roots, so these
                         // prove the overlay was reconciled and laid out against the window,
@@ -367,9 +429,16 @@ function pageKeys(k:int):Array
                         // the tree, and its stage listener is what the teardown check
                         // below is about.
                         "ovlMenu", "ovlMenu:i0"];
-    return ["root", "tabs", "body", "colM", "colD", "catImg", "catSpin", "catSk", "catTip",
-            "catTable", "hdr", "r0", "r1", "r0c0", "r0c1", "r1c0", "r1c1",
-            "catAcc", "h0", "h1", "catP0", "catCrumb", "c0", "s0", "c1", "s1", "c2", "catPage", "pg3", "prev", "next"];
+    // Page 6 -- the advanced controls, the tree, and the DRAWER from the second tree
+    // (the popover starts closed, so it is asserted after the tour clicks its anchor).
+    // `vr0` is the first mounted virtual-list row: offset 0 puts the window at row 0.
+    return ["root", "tabs", "body", "advCol", "advPickCard", "advPickTitle", "advPickRow1",
+            "advSel", "advSel:label", "advCity", "advCity:q", "advPickRow2", "advDate", "advDate:label",
+            "advPopBtn", "advDrawerBtn", "advDataCard", "advDataTitle", "advDataRow", "advScroll",
+            "advVList", "vr0",
+            "advTreeCard", "advTreeTitle", "advTree", "advTree:tsrc", "advTree:tsrc/a.as",
+            "advTree:tkit", "advTree:tREADME",
+            "advDrawer", "advDrawer:panel", "advDrawerClose"];
 }
 
 // Keys that BELONG TO ANOTHER PAGE. A page switch must remove them: "still
@@ -377,12 +446,36 @@ function pageKeys(k:int):Array
 // prevent, and a bitmap could never tell the two apart.
 function otherKeys(k:int):Array
 {
-    if (k == 0) return ["colA", "colB", "list", "animated", "snapped", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
-    if (k == 1) return ["loginCard", "signin", "list", "animated", "snapped", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
-    if (k == 2) return ["loginCard", "colA", "colB", "animated", "snapped", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
-    if (k == 3) return ["loginCard", "colA", "colB", "list", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
-    if (k == 4) return ["loginCard", "colA", "colB", "list", "animated", "snapped", "ovlDlg", "ovlBtn"];
-    return ["loginCard", "colA", "colB", "list", "animated", "snapped", "catTable", "catAcc"];
+    var base:Array;
+    if (k == 0) base = ["colA", "colB", "list", "animated", "snapped", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
+    else if (k == 1) base = ["loginCard", "signin", "list", "animated", "snapped", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
+    else if (k == 2) base = ["loginCard", "colA", "colB", "animated", "snapped", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
+    else if (k == 3) base = ["loginCard", "colA", "colB", "list", "catTable", "catAcc", "catImg", "ovlDlg", "ovlBtn"];
+    else if (k == 4) base = ["loginCard", "colA", "colB", "list", "animated", "snapped", "ovlDlg", "ovlBtn"];
+    else if (k == 5) base = ["loginCard", "colA", "colB", "list", "animated", "snapped", "catTable", "catAcc"];
+    else base = ["loginCard", "colA", "colB", "list", "animated", "snapped", "catTable", "catAcc", "ovlDlg", "ovlBtn"];
+    // The advanced page's controls belong to page 6 ONLY. Its floating surfaces are in
+    // the SECOND tree, so they are checked the same way: a drawer key is absent from
+    // every other page because renderOverlay() describes that page's own tree, not
+    // because a sprite was hidden.
+    if (k != 6)
+    {
+        base.push("advCol");
+        base.push("advPickCard");
+        base.push("advSel");
+        base.push("advSel:label");
+        base.push("advCity");
+        base.push("advDate");
+        base.push("advPopBtn");
+        base.push("advDrawerBtn");
+        base.push("advScroll");
+        base.push("advVList");
+        base.push("advTree");
+        base.push("advTree:tsrc");
+        base.push("advDrawer");
+        base.push("advDrawerClose");
+    }
+    return base;
 }
 
 // Walks the RETAINED tree (not the description) and counts the conditions that
