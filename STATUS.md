@@ -433,6 +433,7 @@ cd asaotui/ui-demo/air-gallery
 ./build.sh          # AIR 参考臂：mxmlc 编出 GalleryApp.swf，再 adl app.xml
 ./build.sh aot      # 我们的 AOT 臂：stage → as-aot --air-app → tour → 跑起来
 ./build.sh swf      # 只编译（不弹窗、不出 exe）
+./build.sh desc     # 不建：只报 --gpu 会用哪份描述符、带什么后端
 ./build.sh clean    # 删两个臂的产物（**不删** gallery-page*.png，那是入库证据）
 ```
 
@@ -467,6 +468,33 @@ AOT 臂的 tour（手算矩形 + 像素）和人工看一眼 AIR 窗口（本轮
 > 顺带修掉一处**仓库级**缺陷：`.gitignore` 的 `/ui-demo/air-*/*` 把 `app.xml` 一起吞了 ⇒
 > **干净克隆里没有描述符**，`stage-air.cjs` 会直接拒绝运行。现在显式放行 `air-*/app.xml` 与
 > `air-*/build.sh`。
+
+#### 3.11.1 选择窗口合成模式：`--gpu cpu|gpu|d3d12|gl|direct`（第十三轮补）
+
+「能不能用 GPU 跑？」是拿到这套 demo 的人第一个会问的问题，而它在这个仓库里是**两个变量、两个通道**：
+
+| 通道 | 谁读它 | 合法值 | 备注 |
+|---|---|---|---|
+| `app.xml` 的 `<renderMode>` | `adl`（运行期）与 `--air-app`（建期） | `auto`/`cpu`/`gpu`/`direct` | AIR 的 XSD 语义 |
+| 构建清单的 `gpu-backend` | 我们的构建 | `auto`/`d3d12`/`gl` | **AIR 的 XSD 里没有槽位**（`adt` 直接把 `<windows><gpuBackend>` 当错 103 拒掉）⇒ 只能走 `as-aot --gpu-backend` |
+
+所以 `--gpu <mode>` 把两半**一起**决定并一起送达：`gl`/`d3d12` = `<renderMode>gpu</renderMode>` **加**具名后端，
+`gpu` = gpu + 平台自选（Windows 上是 D3D12），`cpu`/`direct` = 各自的 renderMode、不提后端。
+
+**不写进 `app.xml`**，原因不是洁癖：`check-dpi.cjs` 要求 `air-gallery/app.xml` 与它的 `air-gallery-standard`
+孪生**只差一行**（`requestedDisplayResolution`）。手改 `<renderMode>` 会让那道 A/B 变成双变量、因为与
+HiDPI 无关的原因变红——本轮开工时工作树里正好躺着这样一处未提交改动。改成按需**派生**
+`app.<mode>.xml`（相对 `app.xml` 只差 renderMode 那一行、被 `.gitignore` 覆盖、`clean` 会删），两个臂各自读它。
+
+**这五档全都画同样的 41 页**——也就是说「我看了一眼，没问题」在这件事上是零信息：一个被解析后丢掉的模式
+与真正生效的模式像素完全一致。能观测的只有描述符与 argv，于是新门 `6b5b`（`tools/buildsh-gpu.cjs`，29 项）
+用 `desc` 臂把两者打出来（`desc` 走的就是 `aot` 臂 exec 的那个 `aot_args()`，不是另写一遍配方），2 秒、不需要编译器；
+`tools/mutation-buildsh-gpu.cjs` **5/5 抓获**：后端只在文案里提过却没传、`cpu` 接成了 `gpu`、未知模式被吞掉、
+派生描述符只打印不传、派生描述符**多漂一行**（最后这条正是会打红 DPI A/B 的那种）。运行时那一半由
+`run-gallery.cjs` 每次构建自己断言：gpu 模式下清单里必须出现 `ASC_RENDER_WINGPU=1` 与对应后端宏，否则报错。
+
+两个消费臂本轮真跑过：`aot --gpu gl`（清单 `ASC_RENDER_GL=1`、41/41 页 PASS、源里带 `gl_glue.cc`）、
+`aot --gpu gpu`（`ASC_RENDER_D3D=1`、带 `d3d_glue.cc`）、`air --gpu gl`（`adl` 真开窗）。
 
 ### 3.12 参考运行时门：为什么必须有一道门真跑 AIR（第十一轮补）
 

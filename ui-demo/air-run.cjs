@@ -40,8 +40,16 @@ function descriptorWindow(descriptor) {
   const w = /<width>\s*(\d+)\s*<\/width>/.exec(body);
   const h = /<height>\s*(\d+)\s*<\/height>/.exec(body);
   const r = /<requestedDisplayResolution>\s*(\w+)\s*<\/requestedDisplayResolution>/.exec(body);
+  // <renderMode> is read for the same reason: it decides whether the build links a
+  // GPU window backend at all, and a runner that assumed "cpu" could not tell a
+  // mode that reached the build from one that was ignored.
+  const m = /<renderMode>\s*(\w+)\s*<\/renderMode>/.exec(body);
   if (!w || !h) return null;
-  return { w: Number(w[1]), h: Number(h[1]), resolution: r ? r[1].toLowerCase() : 'standard' };
+  return {
+    w: Number(w[1]), h: Number(h[1]),
+    resolution: r ? r[1].toLowerCase() : 'standard',
+    renderMode: m ? m[1].toLowerCase() : 'auto',
+  };
 }
 
 // The raw <initialWindow>...</initialWindow> span, comments ignored, with offsets

@@ -35,6 +35,34 @@
 # `app.xml` is the source of truth for the window (size, title, renderMode,
 # <requestedDisplayResolution>) on BOTH arms -- `--air-app` reads it for the AOT
 # build and `adl` reads it at run time. Nothing about the window is repeated here.
+#
+# WINDOW COMPOSITION MODE (--gpu)
+# ------------------------------
+# `--gpu <mode>` picks what draws the window, on either arm:
+#
+#   ./build.sh --gpu cpu        software raster (what app.xml says today)
+#   ./build.sh --gpu gpu        GPU composition, platform backend (D3D12 on Windows)
+#   ./build.sh --gpu d3d12      GPU composition, D3D12 forced
+#   ./build.sh --gpu gl         GPU composition over WGL/OpenGL (Windows only)
+#   ./build.sh --gpu direct     AIR's "direct" (CPU composition + GPU blit)
+#   ./build.sh aot --gpu gl     the same mode on our AOT arm
+#
+# The mode is NOT written into app.xml. That file is the tracked source of truth,
+# and `check-dpi.cjs` requires it to differ from its `air-gallery-standard` twin in
+# exactly one line (`requestedDisplayResolution`) -- a hand-flipped <renderMode>
+# makes that A/B two-variable and turns the DPI gate red for a reason that has
+# nothing to do with the experiment (it did, once). Instead a DERIVED descriptor
+# `app.<mode>.xml` is written next to it on demand: gitignored (`.gitignore`:
+# `/ui-demo/air-*/*`), removed by `clean`, and handed to BOTH arms -- `adl
+# <descriptor>` for AIR, `--air-app` for the AOT. `run-gallery.cjs` then asserts
+# the mode reached the generated manifest (ASC_RENDER_WINGPU + the backend's own
+# define), because a mode that never reached the build renders IDENTICALLY to the
+# software one and would look honoured.
+#
+# `gl` exists because D3D12 needs Windows 10 1507+ (WDDM 2.0 + feature level 11_0
+# are hard requirements of device creation), while opengl32.dll has shipped with
+# Windows since XP. The compiler's own notes are in as3compiler's
+# docs/zh-cn/compile.md section 3.4.6.
 set -eu
 
 # `node` is the one tool neither arm can avoid, and the shells this workspace is
@@ -67,12 +95,82 @@ say() { printf '[build] %s\n' "$*"; }
 die() { printf 'build.sh: %s\n' "$*" >&2; exit 2; }
 
 usage() {
-  printf 'usage: %s [air [page]|aot|swf|clean]\n\n' "$(basename -- "$0")"
+  printf 'usage: %s [air [page]|aot|swf|desc|clean] [--gpu <mode>]\n\n' "$(basename -- "$0")"
   printf '  air    (default) mxmlc the app, then run it under adl\n'
   printf '  air <page>     same, opened on that catalog page (select, combobox, ...)\n'
   printf '  aot    stage + compile with as-aot, then run the executable\n'
   printf '  swf    compile the SWF only\n'
-  printf '  clean  remove the SWF / exe / generated C / tour evidence\n'
+  printf '  desc   derive/show the descriptor this --gpu would build from, build nothing\n'
+  printf '  clean  remove the SWF / exe / generated C / tour evidence\n\n'
+  printf '  --gpu <mode>   what draws the window: cpu (default) | gpu | d3d12 | gl | direct\n'
+  printf '                 Derives app.<mode>.xml from app.xml (never edits app.xml)\n'
+  printf '                 and applies to the air and aot arms. gpu/direct use the\n'
+  printf '                 platform backend (D3D12 on Windows); gl forces WGL/OpenGL.\n'
+}
+
+# ---- the window's composition mode ---------------------------------------
+# `app.xml` stays the single source of truth for the window, so `--gpu` never
+# rewrites it: it derives `app.<mode>.xml` instead (see the header). Both arms are
+# pointed at that file, and the generated build manifest lands where it always
+# did, so nothing downstream has to know.
+DESC=app.xml    # descriptor NAME inside $HERE -- read by both arms
+RENDER=         # the <renderMode> written into a derived descriptor
+BACKEND=        # empty = the platform's own GPU backend (D3D12 on Windows)
+
+gpu_mode() {  # $1 = --gpu value -> DESC / RENDER / BACKEND, or a plain refusal
+  case "$1" in
+    cpu)    DESC=app.cpu.xml;    RENDER=cpu;    BACKEND= ;;
+    gpu)    DESC=app.gpu.xml;    RENDER=gpu;    BACKEND= ;;
+    d3d12)  DESC=app.d3d12.xml;  RENDER=gpu;    BACKEND=d3d12 ;;
+    gl)     DESC=app.gl.xml;     RENDER=gpu;    BACKEND=gl ;;
+    direct) DESC=app.direct.xml; RENDER=direct; BACKEND= ;;
+    *)      die "unknown --gpu '$1' (known: cpu, gpu, d3d12, gl, direct)" ;;
+  esac
+  # The backend flag is Windows-only (macOS has Metal, its one window backend).
+  # Refusing here names the reason; the compiler would refuse too, but only after
+  # the SWF compile and the staging pass.
+  if [ "$BACKEND" = gl ] && [ "$WIN" != 1 ]; then
+    die '--gpu gl selects the WGL/OpenGL window backend, which is Windows-only (macOS composites on Metal: drop --gpu, or use --gpu gpu)'
+  fi
+}
+
+# What the two building arms would be told, without building anything. Exists because
+# "which descriptor, which backend" is the whole of `--gpu`, and checking it should
+# not cost a 90-second compile -- `tools/buildsh-gpu.cjs` (a gate) runs exactly this.
+desc() {
+  if [ "$DESC" = app.xml ]; then
+    say 'no --gpu: both arms use the tracked app.xml as-is, no extra arguments'
+    return 0
+  fi
+  say "descriptor: $DESC  (<renderMode>$RENDER</renderMode>, derived from app.xml)"
+  say "run-gallery.cjs args: $(aot_args)"
+}
+
+# The AOT arm's argv, in one place so `desc` can show exactly what `aot` would run
+# (a mode that is printed but not passed would otherwise look honoured).
+aot_args() {
+  printf 'run-gallery.cjs'
+  [ "$DESC" = app.xml ] || printf ' --app-xml %s' "$DESC"
+  [ -z "$BACKEND" ] || printf ' --gpu-backend %s' "$BACKEND"
+}
+
+# Write `$DESC` from app.xml with <renderMode>$RENDER</renderMode>. A descriptor with
+# no <renderMode> entry is refused rather than patched into place: guessing where the
+# element belongs would silently produce a window the caller did not ask for.
+write_descriptor() {
+  if [ "$DESC" = app.xml ]; then return 0; fi
+  ( cd "$HERE" && "$NODE" -e '
+    const fs = require("fs");
+    const [mode, out] = process.argv.slice(1);
+    const src = fs.readFileSync("app.xml", "utf8");
+    const re = /<renderMode>[^<]*<\/renderMode>/;
+    if (!re.test(src)) {
+      console.error("build.sh: app.xml has no <renderMode> under <initialWindow>");
+      process.exit(2);
+    }
+    fs.writeFileSync(out, src.replace(re, "<renderMode>" + mode + "</renderMode>"));
+  ' "$RENDER" "$DESC" ) || die "could not derive $DESC from app.xml"
+  say "descriptor $DESC  (<renderMode>$RENDER</renderMode>${BACKEND:+, --gpu-backend $BACKEND}, derived from app.xml)"
 }
 
 # ---- path spelling --------------------------------------------------------
@@ -173,13 +271,21 @@ run_air() {
   say "adl: $adl"
   say 'the window is open -- close it (or Ctrl-C) to come back to the shell'
   # cwd = this directory: adl resolves <content> relative to the descriptor, and the
-  # SWF is written next to app.xml, so the two can never disagree.
-  ( cd "$HERE" && exec "$adl" app.xml )
+  # SWF is written next to app.xml, so the two can never disagree. The descriptor
+  # argument is `$DESC`: app.xml unless `--gpu` derived another one.
+  ( cd "$HERE" && exec "$adl" "$DESC" )
 }
 
 run_aot() {
   say 'AOT arm: ui-demo/run-gallery.cjs (stage -> as-aot --air-app -> tour -> run)'
-  ( cd "$DEMO" && "$NODE" run-gallery.cjs )
+  # ARGUMENTS, not environment: the two halves of `--gpu` have to survive a
+  # bash -> node.exe boundary, and an inline `VAR=value cmd` prefix is dropped
+  # somewhere on that path (measured: the identical command typed by hand arrives
+  # with both variables set, the same one run from this script arrives with both
+  # empty). An argument has no such gap. The runner still accepts the ASC_* form
+  # for callers that drive it by env.
+  set -- $(aot_args)
+  ( cd "$DEMO" && "$NODE" "$@" )
 }
 
 # `rm` is not guaranteed in this workspace's bash (measured: "command not found"), so
@@ -199,6 +305,9 @@ clean() {
                    // the AIR driver file and the log it writes (tools/air-sweep.cjs
                    // reads that log; a stale one must not survive a clean)
                    "air-mode.txt", "air-trace.txt"];
+    // `--gpu` derives extra descriptors from app.xml. app.xml itself is TRACKED and
+    // never rewritten, so it is not a candidate.
+    for (const n of fs.readdirSync(dir)) if (/^app\..+\.xml$/.test(n)) names.push(n);
     for (const n of names) {
       const p = path.join(dir, n);
       if (!fs.existsSync(p)) continue;
@@ -210,13 +319,44 @@ clean() {
   ' . )
 }
 
-case "${1:-air}" in
-  air|adl)        run_air "${2:-}" ;;
+# ---- arguments ------------------------------------------------------------
+# Flags may appear anywhere (`./build.sh aot --gpu gl` and `./build.sh --gpu gl air
+# select` are the same command), and at most one bare word is a page name. An
+# unknown option is an error rather than ignored: `--gpu=gl` and `--gpu gl` both
+# work, a typo does not.
+ARM=
+PAGE=
+GPU=
+while [ $# -gt 0 ]; do
+  case "$1" in
+    air|adl|aot|native|swf|compile|desc|clean) ARM=$1; shift ;;
+    --gpu)   [ $# -ge 2 ] || die '--gpu needs a value (cpu|gpu|d3d12|gl|direct)'; GPU=$2; shift 2 ;;
+    --gpu=*) GPU=${1#--gpu=}; shift ;;
+    -h|--help|help) usage; exit 0 ;;
+    -*)      printf 'build.sh: unknown option %s\n' "$1" >&2; usage >&2; exit 2 ;;
+    *)
+      if [ -n "$PAGE" ]; then printf 'build.sh: unexpected argument %s\n' "$1" >&2; usage >&2; exit 2; fi
+      PAGE=$1; shift ;;
+  esac
+done
+ARM=${ARM:-air}
+
+if [ -n "$GPU" ]; then
+  gpu_mode "$GPU"
+  case "$ARM" in
+    air|adl|aot|native|desc) write_descriptor ;;
+    # `swf` compiles the same SWF in every mode (<renderMode> is a run-time window
+    # setting), and `clean` must not create what it is about to delete.
+  esac
+fi
+
+case "$ARM" in
+  air|adl)        run_air "$PAGE" ;;
   aot|native)     run_aot ;;
+  desc)           desc ;;
   swf|compile)
     root=$(sdk_root) || die 'no AIR SDK found: set AIRSDK_HOME to the SDK root (mxmlc lives in $AIRSDK_HOME/bin)'
     build_swf "$root" ;;
   clean)          clean ;;
-  -h|--help|help) usage ;;
-  *) usage >&2; exit 2 ;;
+  *)              usage >&2; exit 2 ;;
 esac

@@ -18,8 +18,40 @@ cd asaotui/ui-demo/air-gallery
 ./build.sh          # mxmlc the SWF, then open it under adl
 ./build.sh aot      # stage -> as-aot --air-app -> tour -> run the exe
 ./build.sh swf      # compile only (a portability check, no window)
+./build.sh desc     # show which descriptor / backend --gpu would build from (no build)
 ./build.sh clean    # drop the SWF / exe / generated C / tour evidence
 ```
+
+### Choosing what draws the window (`--gpu`)
+
+`app.xml` says `<renderMode>cpu</renderMode>` today, and it is the tracked source of
+truth — so `--gpu` does **not** edit it. It derives `app.<mode>.xml` next to it (one
+line off `app.xml`, gitignored, removed by `clean`) and points both arms at that file:
+`adl <descriptor>` on AIR, `--air-app <descriptor>` for the AOT.
+
+```sh
+./build.sh aot --gpu gpu      # GPU composition, the platform's own backend (D3D12)
+./build.sh aot --gpu d3d12    # GPU composition, D3D12 named
+./build.sh aot --gpu gl       # GPU composition over WGL/OpenGL (Windows only)
+./build.sh aot --gpu direct   # AIR's "direct" mode
+./build.sh --gpu cpu          # the software raster the descriptor already asks for
+./build.sh air select --gpu gl  # flags and the page name may appear in any order
+```
+
+The mode travels in **two** places, and both are checked: the descriptor's
+`<renderMode>`, and the AOT build's manifest field `gpu-backend` (`--gpu-backend`,
+Windows-only, which AIR's XSD has no slot for — `as3compiler/docs/zh-cn/compile.md`
+§3.4.6). `run-gallery.cjs` asserts a gpu mode really reached the generated manifest
+(`ASC_RENDER_WINGPU=1` plus the backend's own define), because a mode that never
+reached the build renders **identically** to the software one and would look honoured.
+
+Nothing about this is observable by eye — all five modes draw the same 41 pages — so
+`../tools/buildsh-gpu.cjs` pins the descriptor and the argv for every mode, and
+`../tools/mutation-buildsh-gpu.cjs` (5/5) shows that gate goes red when the mapping,
+the refusal of unknown modes, or the one-line-diff invariant is broken. The last one
+matters because `check-dpi.cjs` requires `app.xml` and its `air-gallery-standard` twin
+to differ in exactly one line; a derived descriptor that drifted a second line would
+make that A/B two-variable.
 
 The AIR arm starts from `demo/DocsAir.as`, not from the touring `demo/DocsMain.as`: the
 tour needs `Stage.dispatchMouse` / `Stage.dispatchWheel` / `Stage.render`, which are OUR
@@ -72,14 +104,14 @@ and `probes/widgets/*` + this demo are the end-to-end half.
 |---|---|
 | `demo/DocsMain.as` | The docs app as an **AIR document class** (`Sprite`) **and** its headless acceptance tour: hand-computed shell rects, block arithmetic on all 41 pages, a real wheel scroll, a real sidebar click, the overlay tree opened/closed, and 8 `gallery-page*.png` screenshots. Writes `gallery.txt` + `gallery.done` (`PASS` / `FAIL <problems>`). |
 | `demo/DocsAir.as` | The **AIR arm's** entry class: same model + view + `UiApp`, same subscription, same landing page — **no tour** (the tour's `Stage.dispatchMouse`/`dispatchWheel`/`render` do not exist on AIR). This is what `build.sh` compiles with mxmlc. |
-| `air-gallery/build.sh` | **The one command**: `./build.sh` = AIR arm (mxmlc → adl), `./build.sh aot` = AOT arm (delegates to `run-gallery.cjs`), `swf` = compile only, `clean` = remove the artifacts (never the tracked PNGs). Resolves the AIR SDK from `AIRSDK_HOME` or `PATH`, and picks `adl.exe` over the SDK's Unix `adl` wrapper on Windows. |
+| `air-gallery/build.sh` | **The one command**: `./build.sh` = AIR arm (mxmlc → adl), `./build.sh aot` = AOT arm (delegates to `run-gallery.cjs`), `swf` = compile only, `desc` = show what `--gpu` would build from, `clean` = remove the artifacts (never the tracked PNGs). `--gpu cpu|gpu|d3d12|gl|direct` picks the window's composition mode by deriving `app.<mode>.xml`. Resolves the AIR SDK from `AIRSDK_HOME` or `PATH`, and picks `adl.exe` over the SDK's Unix `adl` wrapper on Windows. |
 | `run-check.cjs` | Compile **and run** `CheckUi.as` through the AOT; propagates the exit code. |
 | `run-gallery.cjs` | Report the compiler tree state, then stage + build (`--air-app`) + launch + wait for `gallery.done` + print the tour + measure the screenshots. **No retry** (G11 is closed: a differing build means the compiler tree itself moved — see the state line it prints). `ASC_AIR_DIR=<dir>` points it at another app dir (that is how `check-dpi.cjs` runs its twin). `ASC_NO_OPEN=1` closes the window as soon as the evidence is in. |
 | `build-and-run.cjs` | The login demo, same pipeline. Writes its evidence into `air-uidemo/`. |
 | `check-dpi.cjs` | The **descriptor A/B**: builds the same gallery from `air-gallery/app.xml` (`high`) and `air-gallery-standard/app.xml` (`standard`), and requires 1.5× vs exactly 1× with byte-identical tour text. `mutation-dpi.cjs` shows it has teeth. |
 | `stage-air.cjs` | Materializes `<appDir>/src` from `demo/` **only** (the toolkit is compiled in place via `--as-class-path`, see above), byte-verifies every copy, prints a content hash and the two shared roots the build must name. Refuses to run without a reviewed `app.xml`. |
 | `air-run.cjs` | Shared plumbing for the two runners: descriptor reader (comment-aware), window killer, result-file poller, screenshot measurement. |
-| `air-gallery/app.xml` | The docs descriptor (`high`, 1000×700, `renderMode cpu`) — read by BOTH arms. |
+| `air-gallery/app.xml` | The docs descriptor (`high`, 1000×700, `renderMode cpu`) — read by BOTH arms. `--gpu` never rewrites it; it derives `app.<mode>.xml` instead. |
 | `air-gallery-standard/app.xml` | The control arm: identical window settings, `standard` resolution. |
 | `../tools/mxmlc-check.cjs` | Compile an AS3 tree with the REAL reference compiler. This is the only evidence that "the toolkit is pure AS3" — our AOT accepts a superset (`--sdk` overrides `AIRSDK_HOME`, and the SDK is otherwise found on `PATH`). |
 | `kit-list.cjs` | The `.as` units the AOT must be given explicitly (seam + kit). `ASC_KIT_OVERLAY=staging/<name>` swaps in shadow copies of same-named files (used to stage parallel work). |

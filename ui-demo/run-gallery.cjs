@@ -9,6 +9,12 @@
 //                          (default: leave it open for you to click through)
 //          ASC_AIR_DIR    app dir to stage+build (default: air-gallery).
 //                         check-dpi.cjs uses it with a `standard`-resolution twin.
+//          ASC_APP_XML    descriptor name inside that dir (default: app.xml).
+//                         build.sh's `--gpu` derives `app.<mode>.xml` instead of
+//                         editing the tracked descriptor -- see build.sh.
+//          ASC_GPU_BACKEND  auto|d3d12|gl: which native API composites the window.
+//                         Passed straight to `--gpu-backend`; the descriptor's
+//                         <renderMode> alone only says "a GPU window, please".
 //
 // Steps:   1) kill a leftover GalleryApp.exe -- on Windows a live window holds the
 //             file and the next build would fail with "permission denied"
@@ -16,7 +22,7 @@
 //             run can never be mistaken for a pass
 //          3) stage-air.cjs: materialize <appDir>/src from seam + kit + demo
 //             (--air-app compiles exactly `<appDir>/src` and nothing else)
-//          4) build with `--air-app <appDir>/app.xml` (the generated manifest
+//          4) build with `--air-app <appDir>/<descriptor>` (the generated manifest
 //             carries every -I/-L/-l, so none are spelled out here)
 //          5) launch the exe DETACHED, cwd = this directory
 //          6) wait for gallery.done, print the tour, MEASURE the screenshots and
@@ -56,7 +62,44 @@ const appDir = path.join(here, appDirName);
 // app dir, not the runner's own: two app dirs (the `high` demo and check-dpi.cjs's
 // `standard` twin) must never overwrite each other's screenshots.
 const outDir = appDir;
-const descriptor = path.join(appDir, 'app.xml');
+// Normally `<appDir>/app.xml`. build.sh's `--gpu <mode>` generates
+// `app.<mode>.xml` beside it instead of editing the tracked descriptor, because
+// check-dpi.cjs requires air-gallery/app.xml and its `standard` twin to differ in
+// exactly one line -- a hand-flipped <renderMode> would make the DPI A/B
+// two-variable and turn that gate red for a reason unrelated to the experiment.
+//
+// The two options come in as ARGUMENTS, and are also readable from the environment:
+// arguments are what build.sh passes (a shell -> Windows-binary boundary in this
+// workspace drops inline `VAR=value` prefixes -- measured: the same command typed by
+// hand works, the one run from inside build.sh arrives with both variables empty),
+// while `ASC_*` stays supported for callers that drive this runner by env.
+const argv = process.argv.slice(2);
+let appXmlArg = null;
+let backendArg = null;
+for (let i = 0; i < argv.length; i++) {
+  const a = argv[i];
+  if (a === '--app-xml' || a === '--gpu-backend') {
+    const v = argv[++i];
+    if (!v) {
+      console.error('[gallery] ' + a + ' needs a value');
+      process.exit(2);
+    }
+    if (a === '--app-xml') appXmlArg = v; else backendArg = v;
+  } else {
+    console.error('[gallery] unknown argument: ' + a
+      + '\n          usage: run-gallery.cjs [--app-xml <name>] [--gpu-backend <auto|d3d12|gl>]');
+    process.exit(2);
+  }
+}
+const descriptorName = appXmlArg || process.env.ASC_APP_XML || 'app.xml';
+const gpuBackend = String(backendArg || process.env.ASC_GPU_BACKEND || '').trim().toLowerCase();
+const descriptor = path.join(appDir, descriptorName);
+if (!fs.existsSync(descriptor)) {
+  console.error('[gallery] descriptor not found: ' + descriptor
+    + (appXmlArg || process.env.ASC_APP_XML ? ' (named on the command line / by ASC_APP_XML)' : '')
+    + '\n          build.sh generates it; run `./build.sh aot --gpu <mode>` from air-gallery/');
+  process.exit(2);
+}
 
 function killWindow() {
   killImage(EXE);
@@ -81,8 +124,9 @@ for (const f of [OUT + '.done', OUT + '.txt']) {
 }
 
 const size = descriptorSize();
-console.log('[gallery] descriptor ' + appDirName + '/app.xml: window ' + size.w + 'x' + size.h
-  + ', requestedDisplayResolution=' + size.resolution);
+console.log('[gallery] descriptor ' + appDirName + '/' + descriptorName + ': window ' + size.w + 'x' + size.h
+  + ', requestedDisplayResolution=' + size.resolution + ', renderMode=' + size.renderMode
+  + (gpuBackend && gpuBackend !== 'auto' ? ', gpu-backend=' + gpuBackend : ''));
 
 // ---- 3) stage -------------------------------------------------------------
 {
@@ -128,8 +172,13 @@ const args = [
   '--as-class-path', path.join(here, '..', 'seam'),
   '--as-class-path', path.join(here, '..', 'kit')
 ];
+// Which native API composites the window (air-app.ts GPU_BACKENDS). It is NOT in
+// the descriptor: AIR's schema has no slot for it (measured: `adt` refuses
+// <windows><gpuBackend>), so the choice travels as a flag and lands in the
+// generated manifest. `auto` is the platform default, i.e. saying nothing.
+if (gpuBackend && gpuBackend !== 'auto') args.push('--gpu-backend', gpuBackend);
 
-console.log('[gallery] building GalleryApp with `--air-app ' + appDirName + '/app.xml`');
+console.log('[gallery] building GalleryApp with `--air-app ' + appDirName + '/' + descriptorName + '`');
 // The compiler's own tree state is part of the measurement (compiler-gaps.md G11):
 // the one condition under which "the same source built twice" can emit different C
 // is a COMPILER that changed in between, and another session on this machine does
@@ -158,12 +207,15 @@ console.log('[gallery] building GalleryApp with `--air-app ' + appDirName + '/ap
 // build, and the generated manifest is where that is visible (ASC_DISPLAY_HIGH).
 // Asserting it here keeps the flag and the measured pixels tied to one source.
 let highDefine = false;
+const manifestDefines = [];
 if (fs.existsSync(manifestPath)) {
   const man = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const defines = [].concat(man.defines || []);
-  highDefine = defines.some((d) => /^ASC_DISPLAY_HIGH=1$/.test(String(d)));
+  for (const d of defines) manifestDefines.push(String(d));
+  highDefine = manifestDefines.some((d) => /^ASC_DISPLAY_HIGH=1$/.test(d));
   console.log('[gallery] generated manifest ' + path.basename(manifestPath)
-    + ': ASC_DISPLAY_HIGH ' + (highDefine ? 'present' : 'ABSENT'));
+    + ': ASC_DISPLAY_HIGH ' + (highDefine ? 'present' : 'ABSENT')
+    + ', ASC_RENDER_WINGPU ' + (manifestDefines.includes('ASC_RENDER_WINGPU=1') ? 'present' : 'ABSENT'));
 } else {
   console.error('[gallery] generated manifest missing: ' + manifestPath);
   process.exit(3);
@@ -214,6 +266,28 @@ for (const s of shots) console.log('  ' + s.name + '  ' + (s.size ? s.size.w + '
 if (shots.length === 0) console.log('  (none written)');
 
 const problems = [];
+// ---- the window's composition mode reached the build -----------------------
+// Same reason as ASC_DISPLAY_HIGH below: a <renderMode> that never made it into
+// the manifest produces a window that renders IDENTICALLY to the software one, so
+// every rect assertion in the tour still passes and the flag looks honoured while
+// changing nothing (§2.5). The manifest is where the choice is observable.
+{
+  const gpuWindow = size.renderMode === 'direct' || size.renderMode === 'gpu';
+  const has = (d) => manifestDefines.includes(d);
+  const wantBackend = gpuBackend === 'gl' ? 'ASC_RENDER_GL=1'
+    : (gpuBackend === 'd3d12' || process.platform === 'win32') ? 'ASC_RENDER_D3D=1'
+    : 'ASC_RENDER_METAL=1';
+  if (gpuWindow && !has('ASC_RENDER_WINGPU=1')) {
+    problems.push('descriptor says <renderMode>' + size.renderMode + '</renderMode> but the manifest has no ASC_RENDER_WINGPU=1: the build composes on the CPU');
+  }
+  if (gpuWindow && !has(wantBackend)) {
+    problems.push('a GPU window is requested but the manifest has no ' + wantBackend
+      + ' (gpu-backend "' + (gpuBackend || 'auto') + '" reached nothing)');
+  }
+  if (!gpuWindow && has('ASC_RENDER_WINGPU=1')) {
+    problems.push('descriptor says <renderMode>' + size.renderMode + '</renderMode> but the manifest carries ASC_RENDER_WINGPU=1');
+  }
+}
 if (shots.length !== PAGES) problems.push('expected ' + PAGES + ' screenshots, got ' + shots.length);
 for (const s of shots) {
   for (const p of s.problems) problems.push(p);

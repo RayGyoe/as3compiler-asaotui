@@ -208,6 +208,14 @@
 //                defect itself (the display slot computed from the description index),
 //                a sweep that stops OPENING the popups (41 pages, 0 errors, blind), and
 //                a sweep that stops one page early (a dead window must not look green).
+//   gpu mode  -- tools/mutation-buildsh-gpu.cjs: 5/5. `--gpu cpu|gpu|d3d12|gl|direct`
+//                is unverifiable by eye -- all five modes draw the same 41 pages, and a
+//                mode that is parsed and then dropped looks exactly as correct as one
+//                that works. So the gate pins the two things that DO differ: the derived
+//                descriptor (one line off app.xml) and the argv the AOT arm gets. The
+//                five mutations are the five ways to get those wrong, including a
+//                descriptor that drifts a second line -- which is precisely the HiDPI
+//                A/B that `check-dpi.cjs` demands.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -403,6 +411,30 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /OK: compiled by AIR -- (\d+) bytes/.exec(out);
   record('AIR arm (build.sh default) compiles under mxmlc' + (m ? ' (' + m[1] + ' B SWF)' : ''), r.status, out);
+}
+
+// ---- 6b5b: `--gpu <mode>` really selects the window's composition mode -------
+// `build.sh --gpu cpu|gpu|d3d12|gl|direct` is the option a reader of the docs asks
+// for first ("can I see it on the GPU?"), and it is unverifiable by looking: all five
+// modes render the same 41 pages, because a GPU nobody asked for is still a correct
+// picture. What IS observable is the descriptor (`app.<mode>.xml`, one line off
+// app.xml, handed to both arms) and the argv the AOT arm receives. The gate drives
+// the `desc` arm, which derives the descriptor and prints the argv through the same
+// `aot_args()` the `aot` arm execs -- 2 seconds, no compiler, no window -- and both
+// consumer arms were measured for real when the option landed (aot --gpu gl: manifest
+// ASC_RENDER_GL=1 and 41/41 pages; aot --gpu gpu: ASC_RENDER_D3D=1; air --gpu gl: a
+// window under adl). `run-gallery.cjs` keeps asserting that a gpu mode reached the
+// manifest, so the runtime half cannot rot silently.
+//   mutation: tools/mutation-buildsh-gpu.cjs (5/5: a named-but-unpassed backend, a mode
+//             wired to the wrong <renderMode>, an unknown mode swallowed, a derived
+//             descriptor described but not passed, and a descriptor that drifts a
+//             SECOND line -- the last one is what would break 6d's one-line A/B).
+{
+  const r = sh(process.execPath, ['tools/buildsh-gpu.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /buildsh-gpu: (\d+) checks, (\d+) failures/.exec(out);
+  record('build.sh --gpu selects renderMode + backend, app.xml untouched'
+    + (m ? ' (' + m[1] + ' checks, ' + m[2] + ' failures)' : ''), r.status, out);
 }
 
 // ---- 6b6: the docs app RUNS on the reference runtime, every page, popups open ----
