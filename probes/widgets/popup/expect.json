@@ -1,0 +1,27 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/popup/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "Window 380x520; root column, padding 20, gap 12, alignItems flex-start, white. Children in order: box 'top' (size [240,34], padding 0) holding the select, box 'lower' (size [240,180], fill 0x1E3A8A), combobox (width 240), datePicker (width 240). All three pickers use SELECT_TRIGGER, whose height is FIXED at 34 with no border, so the stack is top y=20, lower y=20+34+12=66, cb y=66+180+12=258, dp y=258+34+12=304. The select is nested on purpose: its owner has to sit at a NON-ZERO offset, otherwise a lift that keeps the parent-relative x is indistinguishable from a correct one.",
+    "final_frame": "The last phase unmounts the select (model.showSel = false) while it is OPEN and therefore lifted. 'top' has an explicit 240x34 size, so the rows below keep their y; the box is simply empty (it paints nothing) and every picker is closed.",
+    "points": [
+      "(100,30) is inside the now-empty 'top' box, which paints nothing -> the root's white. A LEAKED lifted select sprite would still sit there painting its grey trigger 0xF3F4F6, which is why this point is worth pinning.",
+      "(230,95) is 29px into the 180-tall card -> the card's fill 0x1E3A8A. The open-list phases assert this same point is a dropdown row instead.",
+      "(230,312) is inside the date picker's trigger (304..338) -> 0xF3F4F6 (SELECT_TRIGGER background)."
+    ],
+    "not_pinned": "The mid-run states cannot live here because expect.json only describes ONE frame: the open list's row colours (#DBEAFE on the selected row, #FFFFFF on the others), the combobox's white list over the date picker's grey trigger, the lifted display order (above the main tree, below the overlay tree), the absolute x/y of a lifted backing and the stage-container child counts are all asserted inside Main.as and reported through <OUT>.done."
+  },
+  "w": 380,
+  "h": 520,
+  "rects": {
+    "root": [0, 0, 380, 520],
+    "top": [20, 20, 240, 34],
+    "lower": [20, 66, 240, 180],
+    "cb": [20, 258, 240, 34],
+    "dp": [20, 304, 240, 34]
+  },
+  "points": [
+    { "x": 100, "y": 30, "rgb": "#ffffff" },
+    { "x": 230, "y": 95, "rgb": "#1e3a8a" },
+    { "x": 230, "y": 312, "rgb": "#f3f4f6" }
+  ]
+}

@@ -97,6 +97,23 @@
 //                sideways flip, the parent-local conversion dropped, the clamp
 //                dropped). A flip is invisible when missing -- the panel is still a
 //                panel with a valid rect -- so the probe asserts a NUMBER.
+//   popup 26  -- probes/widgets/popup/mutation.cjs: 4/4. The first is the REPORTED
+//                defect itself (a popup that never leaves its owner's child list is
+//                painted under the next sibling -- it stays a real requirement of the
+//                engine that painting order IS sibling order, so the node has to
+//                re-parent to be on top); the other three are the ways a lift can be
+//                half-done: keeping the parent-relative x (the popup jumps by the
+//                owner's own offset), never re-attaching on close, and detaching only
+//                when the display parent happens to be `parent.backing` (a lifted
+//                node is NOT, so its sprite stays on screen forever).
+//   typing 18 -- probes/widgets/typing/mutation.cjs: 4/4. Both halves of the second
+//                report are here: forcing the ghost visible (the placeholder that
+//                stays while you type) and calling setTextFormat from paint again
+//                (the runtime APPENDS a run per call and paints the string once per
+//                run, so the text doubles). The other two are the focus gate on the
+//                ghost and a blur that never reports the commit. NOTE the probe's
+//                onChange deliberately does NOT invalidate: the field owes the screen
+//                its own repaint, and an author-side invalidate would hide that.
 //   gallery teardown -- ui-demo/mutation-gallery-teardown.cjs: 2/2, and both are
 //                defects the SIX-page tour found and no probe could (a probe never
 //                destroys an overlay tree): dropping the WidgetTeardown hook leaves
@@ -150,7 +167,7 @@ function record(name, code, detail) {
 for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim',
                  'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay',
                  'widgets/interact', 'widgets/flip', 'widgets/motion', 'widgets/vlist',
-                 'widgets/choice', 'redraw']) {
+                 'widgets/choice', 'redraw', 'widgets/popup', 'widgets/typing']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);

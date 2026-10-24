@@ -1,0 +1,23 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE LIFT NEVER HAPPENS (the reported defect): the open dropdown stays a child of its owner, so the card below paints over rows 1..3 and the selected row is invisible
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL sel.lifted is false not true; sel is not on the stage container while open; (250,95) the selected row (Normal) over the card is #1e3a8a not #dbeafe; (250,120) row High over the card is #1e3a8a not #ffffff; (250,150) row Ultra over the card is #1e3a8a not #ffffff; the select did not lift again for the unmount phase;
+     FAIL  pixel (100,30) want #ffffff got #f3f4f6
+     restore: byte-identical (2a5d7db0945ff698)
+M2  CAUGHT  THE LIFTED NODE KEEPS ITS PARENT-RELATIVE X (the classic double offset): on the stage container the absolute value is the LOCAL value, so the whole popup shifts 20px left and the row no longer reaches the point that was inside it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL sel backing is at 0,20 not its absolute 20,20; (250,95) the selected row (Normal) over the card is #1e3a8a not #dbeafe; (250,120) row High over the card is #1e3a8a not #ffffff; (250,150) row Ultra over the card is #1e3a8a not #ffffff;
+     restore: byte-identical (8b691c5f9310ead3)
+M3  CAUGHT  CLOSING NEVER PUTS THE NODE BACK: the un-lift branch is short-circuited, so the owner keeps living on the stage container after the list closes (layout still solves, nothing re-attaches)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL sel did not go back into its owner's backing; sel did not go back into its owner's backing; cb did not go back into its owner's backing; dp did not go back into its owner's backing;
+     restore: byte-identical (8b691c5f9310ead3)
+M4  CAUGHT  UNMOUNTING A LIFTED NODE LEAKS ITS SPRITE: the pre-fix removal path only detached when the display parent was `parent.backing`, which is false for a lifted node -- the popup stays on screen, over the re-flowed page, forever
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL unmounting a lifted node left 1 extra display object(s) (stage children 3 -> 3); (100,30) where the select used to be is #f3f4f6 not #ffffff;
+     FAIL  pixel (100,30) want #ffffff got #f3f4f6
+     restore: byte-identical (8b691c5f9310ead3)
+
+MUTATION popup: 4/4 caught, 0 problem(s)
+RESULT: PASS

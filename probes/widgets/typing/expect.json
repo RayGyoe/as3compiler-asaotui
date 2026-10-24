@@ -1,0 +1,25 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/typing/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "Window 420x320; root column, padding 20, gap 10, alignItems flex-start, white. Children: the field (width 200, no explicit height -> the 32pt default from InputWidget.measure) then a button (size [140,32]). So inp y=20 and other y=20+32+10=62.",
+    "final_frame": "The last phase sets the model back to '11119' with the field UNFOCUSED, so the frame shows the typed text (one copy), no ghost, no caret. The text starts at the field's 8pt padding -> x=28 and is far shorter than the 80..200 ghost band.",
+    "points": [
+      "(25,25) is just inside the field's 1px border (0xD97706), so it is the field's own background 0xFEF3C7.",
+      "(180,40) is inside the field, well right of '11119' -- the field background again. The doubling defect painted the same glyphs again and again, so an ink pixel here would mean the text ran on.",
+      "(400,300) is inside the root but outside both children -> the root's white."
+    ],
+    "not_pinned": "The ghost's presence/absence (ink at x>=80), the single-copy text widths against a fresh reference field, the focus walk, the commit and the change count are all asserted inside Main.as and reported through <OUT>.done -- they depend on mid-run states that a single frame cannot describe."
+  },
+  "w": 420,
+  "h": 320,
+  "rects": {
+    "root": [0, 0, 420, 320],
+    "inp": [20, 20, 200, 32],
+    "other": [20, 62, 140, 32]
+  },
+  "points": [
+    { "x": 25, "y": 25, "rgb": "#fef3c7" },
+    { "x": 180, "y": 40, "rgb": "#fef3c7" },
+    { "x": 400, "y": 300, "rgb": "#ffffff" }
+  ]
+}

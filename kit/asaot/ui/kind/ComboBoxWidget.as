@@ -69,6 +69,7 @@ package asaot.ui.kind
             var wasOpen:Boolean = Boolean(n.extra[OPEN_KEY]);
             n.extra[OPEN_KEY] = c.open;
             if (!wasOpen && c.open) OverlayMotion.start(n);
+            this.liftForPopup(n, wasOpen, c.open);
             if (!c.open) n.extra[ACT_KEY] = -1;
             this.armKeys(n);
             return false;
@@ -100,6 +101,22 @@ package asaot.ui.kind
             }
             n.extra[KEYS_FN] = null;
             n.extra[KEYS_ON] = false;
+        }
+
+
+        // THE OPEN POPUP ESCAPES THE FLOW (see UiNode.lifted). The dropdown/panel
+        // is the node's LAST CHILD -- i.e. a child of this card -- and a child can
+        // never paint above a sibling that its own parent renders later, which is
+        // the "the list opens UNDER the widget below it" defect. While open this
+        // node is hoisted onto the stage container (positioned at its ABSOLUTE
+        // rect) so it wins the stacking order; closing puts it straight back.
+        // Layout, keys, focus and events are untouched: only the display object
+        // moves, because an open popup is exactly what a floating layer is for.
+        private function liftForPopup(n:UiNode, wasOpen:Boolean, open:Boolean):void
+        {
+            if (wasOpen == open) return;
+            n.lifted = open;
+            n.app.markPaint(n);
         }
 
         public function wantsPress():Boolean { return true; }

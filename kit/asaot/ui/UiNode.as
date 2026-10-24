@@ -32,6 +32,7 @@ package asaot.ui
     import flash.display.Sprite;
     import flash.display.Shape;
     import flash.display.DisplayObject;
+    import flash.display.DisplayObjectContainer;
     import flash.text.TextField;
     import flash.events.MouseEvent;
 
@@ -123,6 +124,27 @@ package asaot.ui
         public var lastIndex:int;
         public var internalCount:int;
 
+        // ---- floating layer escape (open dropdowns / popup lists) --------
+        // An OPEN popup must win over everything the main tree paints after its
+        // owner, and this engine deliberately has no z-index (overlay.as says so):
+        // DISPLAY ORDER is the stacking order. A popup that is a child node of a
+        // card therefore cannot rise above the card's later siblings -- which is
+        // exactly what "the dropdown opens UNDER the widget below it" was.
+        //
+        // `lifted` re-parents just this node's backing onto the stage container and
+        // positions it at its ABSOLUTE rect instead of the parent-relative one. The
+        // node stays in the layout tree (measure/arrange keep running through the
+        // real parent, so absX/absY stay exact) and stays in the description tree
+        // (reconcile, keys, focus ring, WidgetKeys), so events, layout and state are
+        // untouched -- only the rasterization order changes. It is inserted BELOW the
+        // overlay tree's backing so a dialog still covers a dropdown.
+        //
+        // Cost: while lifted the node no longer inherits an ancestor's clip, alpha
+        // or mouseEnabled. That is the point of a popup (a dropdown that escapes a
+        // scrolling card must not be clipped), and it only ever applies while the
+        // popup is open -- the closed state is byte-for-byte the old behaviour.
+        public var lifted:Boolean;
+
         public function UiNode(kind:String, app:UiApp):void
         {
             this.kind = kind;
@@ -166,6 +188,7 @@ package asaot.ui
             this.matched = false;
             this.lastIndex = 0;
             this.internalCount = 0;
+            this.lifted = false;
             createBacking();
         }
 
@@ -787,11 +810,12 @@ package asaot.ui
             this.state.arrangedW = w; this.state.arrangedH = h;
             this.state.hitValid = 1;
             // absX/absY are ABSOLUTE (for tests and the AIR evidence dump), but the
-            // backing is a child of the parent's backing, so its own x/y must be
-            // the LOCAL offset the engine reported -- using the absolute value here
-            // double-applies every ancestor offset.
+            // backing is normally a child of the parent's backing, so its own x/y
+            // must be the LOCAL offset the engine reported -- using the absolute
+            // value here double-applies every ancestor offset.
             this.backing.x = out[0];
             this.backing.y = out[1];
+            this.applyLift();
 
             var s:Style = this.resolved;
             this.backing.visible = this.visible && s.visibility != "hidden";
@@ -803,9 +827,49 @@ package asaot.ui
             this.widget.arrange(this);
         }
 
+        // Move the backing between the parent's backing (normal) and the stage
+        // container (lifted), and give it the x/y that space needs. Idempotent;
+        // runs at the end of arrange AND at the start of paint, because a lift
+        // usually flips in a descriptor payload -- a paint-only frame that never
+        // re-arranges still has to move the display object this frame.
+        private function applyLift():void
+        {
+            if (this.backing == null || this.app == null) return;
+            var host:DisplayObjectContainer = this.app.stageContainer;
+            if (!this.lifted)
+            {
+                // Back to the ordinary parent-relative slot. Nothing to do in the
+                // steady state; a node that was lifted last frame is re-attached at
+                // the END of the parent's display list, which the reconciler's
+                // fixDisplayOrder corrects on the next describe.
+                if (this.parent != null && this.parent.backing != null
+                    && this.backing.parent != this.parent.backing)
+                {
+                    this.parent.backing.addChild(this.backing);
+                    this.backing.x = this.absX - this.parent.absX;
+                    this.backing.y = this.absY - this.parent.absY;
+                }
+                return;
+            }
+            if (host == null) return;
+            if (this.backing.parent != host) host.addChild(this.backing);
+            // Stay UNDER the overlay tree: a dialog must still cover a dropdown.
+            var ov:DisplayObject = this.app.overlayDisplay();
+            if (ov != null && ov != this.backing && ov.parent == host)
+            {
+                var iOv:int = host.getChildIndex(ov);
+                if (host.getChildIndex(this.backing) > iOv) host.setChildIndex(this.backing, iOv);
+            }
+            this.backing.x = this.absX;
+            this.backing.y = this.absY;
+        }
+
         // ---- pass 3: paint ----------------------------------------------
         public function paintSelf():void
         {
+            // A paint-only frame does not re-arrange, so this is where a lift that
+            // flipped in a descriptor payload this frame actually takes effect.
+            this.applyLift();
             // Re-apply alpha on the PAINT side. `arrangeSelf` also writes it, but
             // a paint-only repaint (a dirty frame with no layout change) is the
             // common animation frame, and an alpha animated there would otherwise
@@ -833,12 +897,12 @@ package asaot.ui
                 this.children[i].destroySubtree();
             }
             this.children.length = 0;
-            if (this.backing != null && this.parent != null && this.parent.backing != null)
+            if (this.backing != null && this.backing.parent != null)
             {
-                if (this.backing.parent == this.parent.backing)
-                {
-                    this.parent.backing.removeChild(this.backing);
-                }
+                // Unconditional: a LIFTED node's parent is the stage container, not
+                // the parent node's backing, and leaving it there would keep a dead
+                // popup on screen forever (the old `parent.backing` test skipped it).
+                DisplayObjectContainer(this.backing.parent).removeChild(this.backing);
             }
             this.backing = null;
             this.desc = null;

@@ -73,6 +73,7 @@ package asaot.ui.kind
             var wasOpen:Boolean = Boolean(n.extra[OPEN_KEY]);
             n.extra[OPEN_KEY] = d.open;
             if (!wasOpen && d.open) OverlayMotion.start(n);
+            this.liftForPopup(n, wasOpen, d.open);
             // The active day follows the SELECTED date, so opening the picker puts the
             // keyboard where the eye already is. Only on open -- otherwise an arrow key
             // would be undone by the next render.
@@ -90,6 +91,22 @@ package asaot.ui.kind
             if (value.substring(0, 7) != DateMath.iso(y, m, 1).substring(0, 7)) return 1;
             var d:int = int(value.substring(8, 10));
             return d < 1 ? 1 : d;
+        }
+
+
+        // THE OPEN POPUP ESCAPES THE FLOW (see UiNode.lifted). The dropdown/panel
+        // is the node's LAST CHILD -- i.e. a child of this card -- and a child can
+        // never paint above a sibling that its own parent renders later, which is
+        // the "the list opens UNDER the widget below it" defect. While open this
+        // node is hoisted onto the stage container (positioned at its ABSOLUTE
+        // rect) so it wins the stacking order; closing puts it straight back.
+        // Layout, keys, focus and events are untouched: only the display object
+        // moves, because an open popup is exactly what a floating layer is for.
+        private function liftForPopup(n:UiNode, wasOpen:Boolean, open:Boolean):void
+        {
+            if (wasOpen == open) return;
+            n.lifted = open;
+            n.app.markPaint(n);
         }
 
         public function wantsPress():Boolean { return true; }

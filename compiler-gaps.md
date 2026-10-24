@@ -18,8 +18,9 @@
 | 事实 | 证据 |
 |---|---|
 | 库是**纯 AS3**，**零 `flash.*` 导入**（只有内部 `asaot.ui.*`） | `grep -rn "import" seam/asaot/` 只有 `asaot.ui.LayoutEngine` / `asaot.ui.LayoutConstants` |
-| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十五组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/23/26/44/14 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **30/30** |
+| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十七组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/23/26/44/14/26/18 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **33/33** |
 | **AIR**（`mxmlc`→`adl`）也能编能跑，且数值逐字符一致 | [`air-check/`](air-check/README.md)、[`diff-check/`](diff-check/README.md) |
+| **真实用户缺陷**也在这条路上定位（不是猜测） | 2026-10-24 的两份截图报告：弹层被盖住 ⇒ **不是编译器问题**（引擎无 z-index，靠 `UiNode.lifted` 改 reparent，见 `STATUS.md` §3.3 第 19 条）；输入框提示文字/文字复制 ⇒ **一个是库缺陷、一个是本文件 G20** |
 
 ⇒ 布局（U1）**一个编译器改动都不需要**。下面这些缺口是「用自家编译器 dogfood 自家库」时
 **顺带撞到的**，不该静默丢弃，也不该顺手改编译器，所以集中登记于此。
@@ -404,6 +405,21 @@
 | **本地怎么办** | **不改编译器**（本工作区边界）。库侧只做两件事：① 本文件登记；② 探针把这件事**钉成可见事实**——`probes/widgets/motion` 的 `(20,20)` 期望值写 `#3366cc` 并注明「若此像素变白说明 G19 已修」，于是上游修好那天这道门会**当场变红**并指出该改期望值，而不是让圆角静默复活 |
 | **影响面** | 纯视觉。布局、命中、事件均不受影响（圆角从不参与 flexbox 与拾取）。若将来要做像素级 AIR 对齐，这是第一优先 |
 | **状态** | ❌ **未修**（2026-10-24 发现于 `probes/widgets/motion` 的编写过程） |
+
+---
+
+### G20 —— `TextField.setTextFormat()` **追加** run 而不替换范围 ⇒ 重画 N 次就把字符串画 N 份
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **遗留缺陷**（AIR 上 `setTextFormat` 替换目标范围，我们追加）——而且**不用改任何几何断言就能看到**：`textWidth` 自己就跟着重画次数线性长 |
+| **症状** | 输入框里敲 `1111`，字宽是 **28.88**；失焦再聚焦、或任何一次重绘之后变成 **56.73**（两倍），再重绘变 84（三倍）；屏幕上字形挤成一串往外长，用户报的是「输入过的字被复制一遍」。症状与字体无关，可稳定复现（`probes/widgets/typing` 变异 M3） |
+| **根因** | 生成的内建方法只**追加**：`as3compiler/src/emit.ts:20417` 的 `TextField_setTextFormat` 往 `tf->_runs` 追一条、`_runs_gen++`，**不按 beginIndex/endIndex 裁剪旧 run**（`TextField_set_text` 则会 `_runs_gen++; _runs = NULL`，所以重赋 `.text` 能清掉累积）。排版侧 `vendor/skia_text_glue.cc:495` 的 `sk_textlayout_new_runs` 对**每条 run** 都 `pushStyle/addText/pop`，于是模型里的同一个字符串被 `addText` N 遍 |
+| **为何很难自己发现** | 单次调用是对的（第一次 `setTextFormat` 后宽度正常），**只在多次重绘后**才暴露；而用 `dispatchEvent(new Event(Event.CHANGE))` 直接改模型的探针（早期 `probes/widgets/interact` 相位 E）根本不经过这条路径，于是**同时盖住了两个缺陷**（本缺口 + 缺口 20 的 ghost），直到用真实文本管线（`Stage.dispatchText`）写 `probes/widgets/typing` 才看见 |
+| **证据** | ① 代码：`emit.ts:20417`（只追加）+ `skia_text_glue.cc:495`（每 run 一遍字节）；② 实测：`probes/widgets/typing` 变异 M3（把 `setTextFormat` 放回 `paint`）⇒ `blurred: textWidth is 56.7265625 for '1111', a fresh field measures 28.8828125 (runs accumulated)`、`the glyphs run to x=84, past one copy's 57.8828125`；原样运行时真实字段与现场新建的干净字段逐字相等（`28.8828125`） |
+| **本地怎么办** | **不改编译器**（本工作区边界）。库侧规避很干净：**单格式字段一律不调 `setTextFormat`**——`defaultTextFormat`（新建字段时生效）+ `textColor` 就够，`paint` 里**不碰 run**。只有真要做「一行多种格式」时才需要它，那时必须先在上游修掉本缺口 |
+| **影响面** | 任何**在重绘路径里**调 `setTextFormat` 的代码（本库目前为 0 处）。`defaultTextFormat` 不受影响（只写默认值，不进 `_runs`） |
+| **状态** | ❌ **未修**（2026-10-24 由用户报告定位；库侧规避已钉死，见 `probes/widgets/typing`） |
 
 ---
 

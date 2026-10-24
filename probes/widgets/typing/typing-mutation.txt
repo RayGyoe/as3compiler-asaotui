@@ -1,0 +1,22 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE GHOST NEVER GOES AWAY (reported defect a, verbatim): visible is forced on instead of being derived from "the model is empty", so "Placeholder text goes right here" sits on top of the typing for as long as the field is on screen
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL focused: the ghost is visible, expected hidden; focused: the ghost painted 573 ink pixel(s) at x>=110 while it should be hidden; typed: the ghost is visible, expected hidden; typed: the ghost painted 573 ink pixel(s) at x>=110 while it should be hidden; typed: the glyphs run to x=209, past one copy's 57.8828125 (duplicated text); repainted: the ghost is visible, expected hidden; repainted: the ghost painted 573 ink pixel(s) at x>=110 while it should be hidden; repainted: the glyphs run to x=209, past one copy's 57.8828125 (duplicated text); blurred: the ghost is visible, expected hidden; blurred: the ghost painted 573 ink pixel(s) at x>=110 while it should be hidden; blurred: the glyphs run to x=209, past one copy's 57.8828125 (duplicated text); afterNine: the ghost is visible, expected hidden; afterNine: the ghost painted 573 ink pixel(s) at x>=110 while it should be hidden; afterNine: the glyphs run to x=209, past one copy's 65.8828125 (duplicated text); nineRepainted: the glyphs run to x=209, past one copy's 65.8828125 (duplicated text); caretRepainted: the glyphs run to x=209, past one copy's 65.8828125 (duplicated text); emptyFocused: the ghost is visible, expected hidden; emptyFocused: the ghost painted 573 ink pixel(s) at x>=110 while it should be hidden; final: the ghost is visible, expected hidden; final: the ghost painted 573 ink pixel(s) at x>=110 while it should be hidden;
+     FAIL  pixel (180,40) want #fef3c7 got #e6debc
+     restore: byte-identical (f63d35bd1bee5b8c)
+M2  CAUGHT  THE GHOST IGNORES THE FOCUS GATE: the caret of a focused empty field sits exactly where the ghost text is, so the ghost must be hidden before the first character lands
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL focused: the ghost is visible, expected hidden; focused: the ghost painted 573 ink pixel(s) at x>=110 while it should be hidden; emptyFocused: the ghost is visible, expected hidden; emptyFocused: the ghost painted 573 ink pixel(s) at x>=110 while it should be hidden;
+     restore: byte-identical (f63d35bd1bee5b8c)
+M3  CAUGHT  setTextFormat IS CALLED FROM paint AGAIN (reported defect b): the runtime APPENDS one run per call instead of replacing the range, and its run-to-paragraph builder emits the string once per run -- so every repaint makes the same text wider and the screen shows it twice
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL blurred: textWidth is 56.7265625 for '1111', a fresh field measures 28.8828125 (runs accumulated); blurred: the glyphs run to x=84, past one copy's 57.8828125 (duplicated text); afterNine: the ghost painted 181 ink pixel(s) at x>=110 while it should be hidden; afterNine: textWidth is 120.4140625 for '11119', a fresh field measures 36.8828125 (runs accumulated); afterNine: the glyphs run to x=150, past one copy's 65.8828125 (duplicated text); nineRepainted: textWidth is 120.4140625 for '11119', a fresh field measures 36.8828125 (runs accumulated); nineRepainted: the glyphs run to x=150, past one copy's 65.8828125 (duplicated text); caretRepainted: textWidth is 120.4140625 for '11119', a fresh field measures 36.8828125 (runs accumulated); caretRepainted: the glyphs run to x=150, past one copy's 65.8828125 (duplicated text);
+     restore: byte-identical (f63d35bd1bee5b8c)
+M4  CAUGHT  BLUR NEVER REPORTS THE COMMIT: onFieldBlur still reads the field into the model but the author's onCommit is never called, so "finished with this field" is silently lost
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL onCommit got '' not '1111';
+     restore: byte-identical (f63d35bd1bee5b8c)
+
+MUTATION typing: 4/4 caught, 0 problem(s)
+RESULT: PASS

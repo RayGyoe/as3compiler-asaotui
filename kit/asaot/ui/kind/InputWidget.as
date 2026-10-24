@@ -26,7 +26,25 @@
 //      field, which is harmless only while the field is read-only: the moment
 //      typing works, the user types after the ghost text. Now a second,
 //      non-interactive TextField sits on top and is shown only while the model is
-//      empty -- so the editing field is always exactly the model.
+//      empty AND the field is not focused -- so the editing field is always
+//      exactly the model, and the ghost never sits under a live caret.
+//
+// TWO DEFECTS THIS FILE HAD TO LEARN (both reported from the gallery):
+//
+//   a. THE GHOST STAYED WHILE TYPING. `paint` decided on `n.value`, but a
+//      keystroke reaches `paint` only if something asks for one -- `onFieldChange`
+//      wrote the model and nothing else, so the frame that showed the new text was
+//      the NEXT unrelated repaint. The edit now marks itself dirty, and the ghost
+//      is also hidden while the field is focused: a focused empty field shows a
+//      caret exactly where the ghost text is, so an overlay ghost would cover it.
+//
+//   b. THE TEXT RENDERED TWICE. `paint` called `setTextFormat(fmt)` on EVERY
+//      repaint. The runtime APPENDS one (begin,end,format) run per call instead of
+//      replacing the formatting for that range (see compiler-gaps.md G20), and its
+//      run-to-paragraph builder emits every byte once per run -- so N repaints made
+//      the same string paint N times, which is what "lose focus, focus again and my
+//      text is duplicated" was. The default format is enough for a single-format
+//      field, so this file no longer calls setTextFormat at all.
 package asaot.ui.kind
 {
     import asaot.ui.Dirty;
@@ -184,19 +202,21 @@ package asaot.ui.kind
             // the caret to the end of the inserted run, which shows up as a caret
             // that jumps to position 0 on every keystroke's repaint.
             if (n.tf.text != shown) n.tf.text = shown;
-            n.tf.setTextFormat(f);
+            // NO setTextFormat HERE (defect b in the header): one format per field
+            // is fully described by defaultTextFormat + textColor, and a run table
+            // is only ever needed for RICH text (htmlText / a per-range format).
             n.tf.textColor = uint(color);
 
             var ph:TextField = TextField(n.extra[PH_KEY]);
-            var usePh:Boolean = shown.length == 0 && n.placeholder != null && n.placeholder.length > 0;
+            var usePh:Boolean = shown.length == 0 && n.state.focused == 0
+                && n.placeholder != null && n.placeholder.length > 0;
             ph.visible = usePh;
-            if (usePh)
+            if (usePh && ph.text != n.placeholder)
             {
                 var pf:TextFormat = PaintKit.formatFor(s);
                 pf.color = PLACEHOLDER_COLOR;
                 ph.defaultTextFormat = pf;
                 ph.text = n.placeholder;
-                ph.setTextFormat(pf);
             }
         }
 
@@ -211,6 +231,10 @@ package asaot.ui.kind
             var t:String = n.tf.text;
             if (t == n.value) return;
             n.value = t;
+            // The ghost depends on `n.value`, so the edit owes the screen a paint
+            // (defect a in the header -- without this the first keystroke of a
+            // freshly focused field kept "Account or email" over the typed text).
+            n.app.markPaint(n);
             if (n.binding != null) n.binding.set(t);
             if (n.onChange != null) n.onChange(t);
         }
@@ -226,6 +250,8 @@ package asaot.ui.kind
         private function commit(n:UiNode):void
         {
             if (n.extra == null) return;
+            // A blur that leaves the field empty brings the ghost back.
+            n.app.markPaint(n);
             n.extra[COMMIT_KEY] = n.value;
             if (n.binding != null) n.binding.set(n.value);
             if (n.onCommit != null) n.onCommit(n.value);
