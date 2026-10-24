@@ -36,7 +36,7 @@ const { spawnSync } = require('child_process');
 const HERE = __dirname;
 const UINODE = path.join(HERE, '..', 'kit', 'asaot', 'ui', 'UiNode.as');
 const RECON = path.join(HERE, '..', 'kit', 'asaot', 'ui', 'Reconciler.as');
-const SHOTS = [0, 1, 2, 3, 4, 5, 6].map((i) => path.join(HERE, 'air-gallery', 'gallery-page' + i + '.png'));
+const SHOTS = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => path.join(HERE, 'air-gallery', 'gallery-page' + i + '.png'));
 
 const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 
@@ -97,9 +97,9 @@ const MUTATIONS = [
     file: RECON,
     find: '            if (b != null && b.parent != null) b.parent.removeChild(b);',
     replace: '            // MUTATION M2: root detach removed',
-    verdict: (out) => /leaving page 5 left 1 display object\(s\) on the stage/.test(out)
+    verdict: (out) => /the stage holds \d+ display objects after the overlay was torn down/.test(out)
       && !/\[gallery\] RESULT: PASS/.test(out),
-    detail: (out) => (/leaving page 5 left \d+ display object/
+    detail: (out) => (/the stage holds \d+ display objects/
       ? 'the count verdict named the leak' : 'the count verdict did not appear'),
   },
 ];

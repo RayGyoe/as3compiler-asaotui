@@ -34,8 +34,8 @@ const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
 const HERE = __dirname;
-const VIEW = path.join(HERE, 'demo', 'GalleryView.as');
-const SHOTS = [0, 1, 2, 3, 4].map((i) => path.join(HERE, 'air-gallery', 'gallery-page' + i + '.png'));
+const VIEW = path.join(HERE, 'demo', 'DocsFeedback.as');
+const SHOTS = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => path.join(HERE, 'air-gallery', 'gallery-page' + i + '.png'));
 
 const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 // Screenshots are the tour's other output: snapshot them so a mutated run cannot
@@ -81,8 +81,9 @@ const before = fs.readFileSync(VIEW, 'utf8');
 const beforeHash = sha(VIEW);
 const shots = snapShots();
 const shotsBefore = shots.map((s) => s.hash).join(',');
-const FIND = 'private static const CAT_H:StyleRefinement = StyleRefinement.from({ size: [Length.pct(1), Length.px(72)] });';
-const REPLACE = 'private static const CAT_H:StyleRefinement = StyleRefinement.from({ size: [Length.px(0), Length.px(0)] });';
+const FIND = 'style: StyleRefinement.from({ size: [120, 72] }) })';
+const REPLACE = 'style: StyleRefinement.from({ size: [0, 0] }) })';
+
 let restored = false;
 let shotsOk = false;
 try {
@@ -92,11 +93,11 @@ try {
   const shotsAfterM1 = SHOTS.map((p) => sha(p)).join(',');
   record('M1 actually rewrote the screenshots', shotsAfterM1 !== shotsBefore,
     shotsAfterM1 !== shotsBefore
-      ? 'the mutated build really does overwrite the five tracked PNGs -- so the restore below is not a no-op'
+      ? 'the mutated build really does overwrite the tracked PNGs -- so the restore below is not a no-op'
       : 'the mutated build produced the SAME screenshots: the restore pin has lost its teeth (the mutation no longer reaches the pixels)');
-  const named = /page 4 has \d+ node\(s\) with a zero rect/.test(r.out);
+  const named = /image: \d+ zero-rect node\(s\)/.test(r.out);
   const stillPassed = /\[gallery\] RESULT: PASS/.test(r.out);
-  record('M1 catalog image sized 0x0 -> named red', r.code !== 0 && named && !stillPassed,
+  record('M1 the image page\'s bitmap sized 0x0 -> named red', r.code !== 0 && named && !stillPassed,
     'exit=' + r.code
       + (named ? ' + the zero-rect verdict named the page' : ' but the zero-rect verdict did not appear')
       + (stillPassed ? ' AND STILL PASSED (the verdict is decoration)' : ''));
@@ -105,13 +106,13 @@ try {
   restored = sha(VIEW) === beforeHash;
   shotsOk = restoreShots(shots);
   record('M1 screenshots restored byte-identical', shotsOk,
-    shotsOk ? '5 PNG(s), same bytes as before the mutation (the mutated run overwrites them)'
+    shotsOk ? SHOTS.length + ' PNG(s), same bytes as before the mutation (the mutated run overwrites them)'
             : 'the mutated screenshots could not be put back -- do not trust the tree');
 }
 
 console.log('');
 for (const row of rows) console.log((row.ok ? 'MUTATION PASS  ' : 'MUTATION FAIL  ') + row.name + '   [' + row.detail + ']');
-console.log('restore: ' + (restored ? 'GalleryView.as byte-identical' : 'TAMPERED')
+console.log('restore: ' + (restored ? 'DocsFeedback.as byte-identical' : 'TAMPERED')
   + '; screenshots ' + (shotsOk ? 'byte-identical' : 'TAMPERED') + (shotsOk ? ' (' + shotsBefore.slice(0, 12) + '...)' : ''));
 const bad = rows.filter((r) => !r.ok).length + (restored ? 0 : 1);
 console.log('');

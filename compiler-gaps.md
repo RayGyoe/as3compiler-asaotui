@@ -18,7 +18,7 @@
 | 事实 | 证据 |
 |---|---|
 | 库是**纯 AS3**，**零 `flash.*` 导入**（只有内部 `asaot.ui.*`） | `grep -rn "import" seam/asaot/` 只有 `asaot.ui.LayoutEngine` / `asaot.ui.LayoutConstants` |
-| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十七组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/23/26/44/14/26/18 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **33/33** |
+| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十七组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/23/26/44/14/26/18 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **34/34**（含 G16/G19/G20 三道） |
 | **AIR**（`mxmlc`→`adl`）也能编能跑，且数值逐字符一致 | [`air-check/`](air-check/README.md)、[`diff-check/`](diff-check/README.md) |
 | **真实用户缺陷**也在这条路上定位（不是猜测） | 2026-10-24 的两份截图报告：弹层被盖住 ⇒ **不是编译器问题**（引擎无 z-index，靠 `UiNode.lifted` 改 reparent，见 `STATUS.md` §3.3 第 19 条）；输入框提示文字/文字复制 ⇒ **一个是库缺陷、一个是本文件 G20** |
 
@@ -338,7 +338,7 @@
 
 ---
 
-### G16 —— 三元 `cond ? null : X` 条件为假时**丢值**：对象→`null`、数值→`0`、布尔→`false`（仅 **String** 免疫）
+### G16 —— 三元 `cond ? null : X` 条件为假时**丢值**：对象→`null`、数值→`0`、布尔→`false`（仅 **String** 免疫）—— ✅ **已修（阶段二百六十六，v0.4.230）**
 
 > 量这个方法的位置是一次库内小修：`ImageWidget` 里 `o == null ? null : Bitmap(o)` 每帧都重建 Bitmap、从不 fit。
 > 我原以为是自己的 `arrange` 写漏了，**最小化到 17 格才看清是三元运算符本身**。它**不止影响 UI 库**：
@@ -360,7 +360,8 @@
 | 对 UI 库的影响 | 全库审计命中 **1 处**：`kit/asaot/ui/kind/ImageWidget.as` 的 `bitmapOf(o)` ⇒ 已绕行 |
 | 绕行（库内） | `if (o == null) return null;\n return Bitmap(o);`（**if/return 形式**，实测两臂都对——格 13 是同形对照）；注释指向本条 + `probes/g16-ternary-null/` |
 | 修法方向（**不替他们选实现，只报事实**） | 首选 `unifyType` 补一条族规则：一侧 `null`、另一侧是**引用/数值/布尔**族 ⇒ 返回**另一侧**的类型（与 `:28920` 的 string 规则同型）。可复用的邻居：`:29005` 的 `fam()` 已把 kind 分成 `num/bool/str/null/ref`，同一个分类思想。**只改 `convert` 不够**：那只能保住值，三元的**静态类型**仍然错，后续 `is`/`as`/成员访问/参数类型仍会按 `null` 处理 |
-| 状态 | **已实测 · 未修**（库内唯一命中点已绕行） |
+| 状态 | ✅ **已修（阶段二百六十六，v0.4.230）**：`src/emit.ts` 的 `unifyType` 在 `any` 规则**之前**补了 null 家族规则（`void` 侧返对侧；数值/布尔/`\*` 侧装箱成 `any`；指针型对侧保持具体类型），探针 20 格双 runtime **20/20**、`G16_KNOWN` 已清空（任何偏离都算回归）。库内 if/else 绕行**保留**（两种写法都对，实测同值） |
+| 修后验收 | 探针 **20/20**（新增 case 18-20 = `x != null ? null : 42/true/7`，结果类型 `*` 保 null）；`mutation.cjs` **4/4**；AIR 参照 A/B（`as3compiler/temp/g16g19g20/ab-g16.cjs`）**27/27 与 adl 51.4.1 逐字节相同**；`examples/ternary-null.as` 27 断言；`unit: ternary/null-join` 13 条 |
 | 证据落盘 / 复现 | [`probes/g16-ternary-null/`](probes/g16-ternary-null/)：`node run.cjs`（一命令两臂，exit 0=一致 / 1=不一致 / 2=构建错）；`NullCases.as` 17 格单一用例源；`expect.json` 手算规则（含逐格推导）；变异 `mutation.cjs` **4/4**（① 把格 1 改成 if/return 绕行形 ⇒ 该格必须**不再**报 NULL；② 改 `expect.json` 声称格 1 是 `NULL` ⇒ runner 必须报「参考与规则不符」；③ 把**能用的**格 6 改坏 ⇒ 该格必须**加入**失败集；④ 让格 3 两分支都返 null ⇒ 实测 **AIR 臂中途死掉**，runner 必须报「AIR 臂只写了 2/14 行」——这条顺带证明**崩溃检测也有牙**），全部 `finally` 还原 + sha256 逐字节核对 |
 
 ### G17 —— Windows 上**生成的 C 语法错**：`as_job_dir_push` 的 Win32 分支把 C 字符常量写坏 —— ✅ **已修（上游，2026-10-24）**
@@ -393,7 +394,7 @@
 
 ---
 
-### G19 —— `Graphics.drawRoundRect` **静默丢弃两个椭圆半径**，只画直角矩形（AIR 画圆角）
+### G19 —— `Graphics.drawRoundRect` **静默丢弃两个椭圆半径**，只画直角矩形（AIR 画圆角）—— ✅ **已修（阶段二百六十七，v0.4.231）**
 
 | 项 | 内容 |
 |---|---|
@@ -404,11 +405,13 @@
 | **证据** | ① 代码：上一行 `drawRect` 用 `as_skia_path_add_rect`、下一行 `drawEllipse` 用 `as_skia_path_add_oval`，本该有 `as_skia_path_add_round_rect` 的位置是空的；② 实测：`probes/widgets/motion`（`(20,20)` 恒为 `#3366cc`，半径 0→12 像素无变化），`motion.samples.txt` 的 `rest radius=0` / `final radius=12` 与像素对照即为反证 |
 | **本地怎么办** | **不改编译器**（本工作区边界）。库侧只做两件事：① 本文件登记；② 探针把这件事**钉成可见事实**——`probes/widgets/motion` 的 `(20,20)` 期望值写 `#3366cc` 并注明「若此像素变白说明 G19 已修」，于是上游修好那天这道门会**当场变红**并指出该改期望值，而不是让圆角静默复活 |
 | **影响面** | 纯视觉。布局、命中、事件均不受影响（圆角从不参与 flexbox 与拾取）。若将来要做像素级 AIR 对齐，这是第一优先 |
-| **状态** | ❌ **未修**（2026-10-24 发现于 `probes/widgets/motion` 的编写过程） |
+| 状态 | ✅ **已修（阶段二百六十七，v0.4.231）**：`Graphics_drawRoundRect` 换成真实现（NaN 契约 / 负宽高镜像 / 半径=椭圆宽高的一半 / 各自夹到半个盒子 / 0 尺寸走直角）；`ellipseHeight` 默认值由 `0` 改为 `NaN`；Skia seam 新增 `sk_path_add_rrect`（真身与 no-op 桩两支都在）。**A/B：`probes/g19-roundrect/` 292 行逐字节相同 / 27 行在 AA 容差内 / 0 行分歧 / 40 行已登记**，另有解析椭圆自检 |
+| 修后唯一偏差 | **负半径**：AIR 对它自己的 cubic 自交会把墨溢出盒子 1~2 px（e.g. `ew=eh=-8` 在 40×40 上首行 span `8,10,51,49`，即 −2..41），几何上不合理；我们夹到 0（直角）。行级对照记为 `known`，不参与 PASS 判定也**不被静默忽略** |
+| 连带更新 | `probes/widgets/motion` 的 `(20,20)` 期望像素由 `#3366cc`（直角）改为 `#ffffff`（半径 12 的圆角已被切掉、露出根背景）—— 这正是该探针当初钉住这个像素的目的：修好那天**当场变红**并指出该改哪里。现 `23 checks, 0 failures` |
 
 ---
 
-### G20 —— `TextField.setTextFormat()` **追加** run 而不替换范围 ⇒ 重画 N 次就把字符串画 N 份
+### G20 —— `TextField.setTextFormat()` **追加** run 而不替换范围 ⇒ 重画 N 次就把字符串画 N 份 —— ✅ **已修（阶段二百六十八，v0.4.232）**
 
 | 项 | 内容 |
 |---|---|
@@ -419,10 +422,39 @@
 | **证据** | ① 代码：`emit.ts:20417`（只追加）+ `skia_text_glue.cc:495`（每 run 一遍字节）；② 实测：`probes/widgets/typing` 变异 M3（把 `setTextFormat` 放回 `paint`）⇒ `blurred: textWidth is 56.7265625 for '1111', a fresh field measures 28.8828125 (runs accumulated)`、`the glyphs run to x=84, past one copy's 57.8828125`；原样运行时真实字段与现场新建的干净字段逐字相等（`28.8828125`） |
 | **本地怎么办** | **不改编译器**（本工作区边界）。库侧规避很干净：**单格式字段一律不调 `setTextFormat`**——`defaultTextFormat`（新建字段时生效）+ `textColor` 就够，`paint` 里**不碰 run**。只有真要做「一行多种格式」时才需要它，那时必须先在上游修掉本缺口 |
 | **影响面** | 任何**在重绘路径里**调 `setTextFormat` 的代码（本库目前为 0 处）。`defaultTextFormat` 不受影响（只写默认值，不进 `_runs`） |
-| **状态** | ❌ **未修**（2026-10-24 由用户报告定位；库侧规避已钉死，见 `probes/widgets/typing`） |
+| 状态 | ✅ **已修（阶段二百六十八，v0.4.232）**：`TextField_setTextFormat` 改为**重建** run 表（完全在新区间之前的保留、横跨边界的切两半、被覆盖的丢弃、新 run 插在「第一条触及 `begin` 的 run」处以保持按 `start` 有序；空区间与 `format == null` 为 no-op），顺带**治好**已累积重复项的字段。**A/B：`probes/g20-settextformat/` 12 格关系式双 runtime 全绿（修前 7 格红，46.66 → 91.53 → 136.41 px）**；`mutation.cjs` 5/5；`examples/settextformat-runs.as` 12 断言；`unit: text/settextformat` 15 条 |
+| 修后仍存的相邻偏差 | **G21**（见下）：`getTextFormat()` 忽略 run 表。同一探针 case 10/11 持续测量（`expect.json` 的 `known`：AIR `true` / 我们 `false`） |
 
 ---
 
+### G21 —— `TextField.getTextFormat()` **忽略 run 表**，恒返回 `defaultTextFormat`
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **遗留缺陷**（AIR 返回该区间**生效的**格式，我们返回字段的默认格式） |
+| **症状** | 用 `setTextFormat(fmt(30, 0x0000FF))` 给整段上色/定字号后，`getTextFormat().color` 仍是 `0`、`size` 仍是 `20`；任何按「读回来 = 我设的值」写的逻辑都会读错 |
+| **根因** | `src/emit.ts` 的 `TextField_getTextFormat` 是一句 `return tf->defaultTextFormat;`，注释自述「This subset stores ONE format per field」—— 那句写在 run 表存在之前，如今 `_runs` 已经是 `(begin, end, TextFormat)` 三元组表，函数却没跟上 |
+| **实测** | `probes/g20-settextformat/` 的 case 10/11（`three.setTextFormat(fmt(30, 0x0000FF))` 后读回）：**AIR `color=255 size=30`，我们 `color=0 size=20`**。两端同源、同一进程 |
+| **影响面** | 只影响**读回**；`setTextFormat` 自己写进去的格式照样参与排版（G20 修好之后这一点是对的） |
+| **为什么本轮不修** | 它不在 G16/G19/G20 的批准范围内，而且「区间跨多条 run 时 AIR 返回什么」需要在 AIR 上逐格量（混合区间、空区间、越界区间三种形态都还没测）。按 §5，先登记再立项 |
+| **状态** | ❌ **已实测 · 未修**（2026-10-24 由 G20 的探针顺带量出）。与 G15 同处理：**先登记在本文件**，立项再占 `TODO.md` 的 `### 遗留待开发` 表 |
+| **证据落盘 / 复现** | [`probes/g20-settextformat/`](probes/g20-settextformat/)（`node run.cjs`，`expect.json` 的 `known` 两格；`mutation.cjs` M4 证明「规则是被 AIR 检验的」） |
+
+### G22 —— 闭包里的**静态字段读取**丢掉该类的 `_cinit()` 惰性初始化 ⇒ 静态 `const` 数组读到 `null`
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **遗留缺陷**（同一份数据、同一个类，只把读点从普通方法挪进闭包，语义就变） |
+| **症状** | 类把数据放在 `private static const NAMES:Array = [...]`，而**读点全在演示闭包里**（`function ():Node { return table(NAMES, ...) }`）⇒ `NAMES` 恒为 `NULL`，`NAMES[0]` 抛 `TypeError #1009`。同样的读点放进普通方法就完全正常 |
+| **根因** | 静态字段初始化是惰性的：`sfRead(owner, name)` 只在 `cinitClasses.has(owner)` 时发出 `(owner_cinit(), owner_NAME)` 这种守卫读。**闭包体内的标识符走另一条发射路径**，那条路径裸读 `CONSTS_NAMES`，于是 `_cinit()` 从未被调用。生成的 C 里能直接看到：`CONSTS_cinit` 有 forward-decl、有定义、**调用点 0 处**，而读点是 `as_array_get((as_array*)as_req_obj(CONSTS_NAMES), 0)` |
+| **触发条件** | 读点**只在闭包里**。若同一个类的任一静态字段也被**普通方法**读过，那一处会调 `_cinit()`，而它是「整类一次」的开关 ⇒ 其余闭包读点**看起来正常**。这正是它难发现的理由：库里的 `DocsStyle` / `DocsDemo` 恰好有普通方法读点（`DocsView.render`、`DocsDemo.tile`），所以 41 页文档站一直好，只有 `DocsData`（纯闭包读点）崩 |
+| **实测** | `.scratch/statrepro/one.as`（静态数组，普通方法读）= 带守卫；`two.as`（同一数组，闭包读）= 裸读；`three.as`（跨类 + 同类，都从闭包读）= 两条都裸读。判据不必跑 exe：生成 `.c` 后数 `_cinit()` 出现次数，0 处即中招 |
+| **影响面** | 把静态度量 / 样式 / 数据表写成类常量、读点又在工厂闭包里的代码 —— 也就是**任何按「页面即闭包」写的 UI**。语义错（不是缺功能）：它把初始化悄悄跳过了 |
+| **为什么本轮不修** | `src/emit.ts` 此刻正被另一个会话改写（`collectCinitClasses` / `sfRead` 所在文件脏），改那里会和它撞车。按 §5 先登记，本工作区用 `warmUp()` 绕过 |
+| **本工作区绕行** | 每个「只被闭包读」的常量类加 `public static function warmUp():void { var probe:Object = <one field>; }`，`DocsMain.onAdded` 在第一次 render 前逐个调一次 —— 普通方法里的这一读触发 `_cinit()`，整类一次性初始化完。已加：`DocsStyle` / `DocsDemo` / `DocsStart` / `DocsLayout` / `DocsText` / `DocsPickers` / `DocsData`。**G22 修好后应删掉这些**（注释已写明出处） |
+| **状态** | ❌ **已实测 · 未修**（2026-10-24，由文档站的 `table` 页 `#1009` 挖出）。探针 `probes/g22-closure-statics/` 待建 |
+
+---
 ## 2 不是缺口：已澄清 / 已关闭
 
 | 事项 | 结论 | 证据 |

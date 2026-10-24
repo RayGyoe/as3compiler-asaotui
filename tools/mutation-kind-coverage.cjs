@@ -34,7 +34,7 @@ const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
 const UI = path.resolve(__dirname, '..');
-const VIEW = path.join(UI, 'ui-demo/demo/GalleryView.as');
+const VIEW = path.join(UI, 'ui-demo/demo/DocsData.as');
 const NEW_NODE = path.join(UI, 'kit/asaot/ui/ShadowNode.as');
 const NEW_FACT = path.join(UI, 'kit/asaot/ui/shadow.as');
 
@@ -87,7 +87,7 @@ function mutate(name, apply, expectKind) {
   }
 }
 
-// M1: rename the call. `tree(` appears once in the demo (GalleryView.as's page 6).
+// M1: rename the call. `tree(` appears once in the demo (DocsData.as, the tree page).
 mutate('M1 tree call renamed in the demo', () => {
   if (!/\btree\s*\(/.test(original)) throw new Error('M1 pattern missing');
   fs.writeFileSync(VIEW, original.replace(/\btree\s*\(/, 'treeRenamed('));

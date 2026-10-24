@@ -15,3 +15,6 @@ id=14 ok
 id=15 42
 id=16 true
 id=17 7
+id=18 null
+id=19 null
+id=20 null

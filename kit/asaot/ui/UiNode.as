@@ -209,14 +209,22 @@ package asaot.ui
             // Hover / press / click are handled on the backing object, so the
             // hit region is the control's drawn region -- the same region the
             // existing pick test (as_pick_hit_local) walks.
+            //
+            // CLICK IS INSTALLED FOR EVERY KIND, unlike press: hover and click are
+            // properties of a display object (any element may carry a handler),
+            // while `pressed` is a CONTROL visual that only some kinds paint. Gating
+            // the click on wantsPress() is what made `box({ onClick: f })` dead --
+            // a container is the one element whose click region is not its own
+            // chrome. handleClick() is safe for every kind: it drops an inert node
+            // first, then gives the widget first refusal, then runs the handler.
             this.backing.addEventListener(MouseEvent.MOUSE_OVER, function (e:MouseEvent):void { self.setHover(1); });
             this.backing.addEventListener(MouseEvent.MOUSE_OUT, function (e:MouseEvent):void { self.setHover(0); });
             if (this.widget.wantsPress())
             {
                 this.backing.addEventListener(MouseEvent.MOUSE_DOWN, function (e:MouseEvent):void { self.setPressed(1); });
                 this.backing.addEventListener(MouseEvent.MOUSE_UP, function (e:MouseEvent):void { self.setPressed(0); });
-                this.backing.addEventListener(MouseEvent.CLICK, function (e:MouseEvent):void { self.handleClick(); });
             }
+            this.backing.addEventListener(MouseEvent.CLICK, function (e:MouseEvent):void { self.handleClick(); });
         }
 
         // ---- transient state changes (paint-only, never a reflow) --------
@@ -337,6 +345,14 @@ package asaot.ui
                     if (this.app != null) this.app.dropFocus(this);
                 }
             }
+
+            // ONE PLACE for the generic click handler, so every kind honours
+            // `opts.onClick` -- including a plain container, whose handler used to be
+            // stored on the description and never copied (the docs index rows are
+            // exactly that shape: full-width, left-aligned, no control chrome).
+            // The kinds that own a click assign the SAME descriptor field in their
+            // own payload below, so this line is a no-op for them.
+            this.onClick = Element(desc).onClick;
 
             var dirBefore:String = this.directionOverride;
             var relayout:Boolean = this.widget.payload(this, desc);

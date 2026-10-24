@@ -22,6 +22,17 @@ package asaot.ui
         // Rendering: the backing's alpha is scaled by PaintKit.DISABLED_ALPHA and
         // the hover/press modulation is dropped -- one place, every kind.
         public var disabled:Boolean;
+        // CLICKABLE, WHATEVER THE KIND. A `box` was the one element that could not
+        // be clicked, so `box({ onClick: pick })` -- which every factory accepts
+        // through OptionSupport.applyOpts -- was silently dead: the handler was
+        // stored on the description and nothing ever copied it to the retained
+        // node. The docs app's index rows are exactly that shape (a full-width
+        // row with left-aligned text, which no repainting control provides).
+        // This is Flash's own model: every display object is a hit region, and a
+        // click BUBBLES, so a control nested in a clickable container reaches
+        // both handlers (an author who needs one of them to stop can call
+        // stopPropagation in their handler).
+        public var onClick:Function;
 
         public function Element(kind:String):void
         {
@@ -31,6 +42,7 @@ package asaot.ui
             this.ariaValue = null;
             this.visible = true;
             this.disabled = false;
+            this.onClick = null;
         }
     }
 }

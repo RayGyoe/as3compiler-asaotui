@@ -1,0 +1,13 @@
+M1  CAUGHT  covered ranges must be DROPPED: with the "entirely left of the new range" test disabled, the old run survives next to the new one and the layout copies the characters twice -> the probe must fail (failing cases: 13)
+     restore: byte-identical (fe1f4cf74f98c255)
+M2  CAUGHT  a range that lands INSIDE a run must keep that run's tail: dropping the right remainder makes the formatted area eat the rest of the text -> case 13 (split in the middle) must fail (failing cases: 12, 13)
+     restore: byte-identical (fe1f4cf74f98c255)
+M3  CAUGHT  the new run must actually be APPENDED when no existing run reaches past begin (the empty-table case) -> removing the trailing insert leaves the field unformatted and case 1 must fail (failing cases: 14)
+     restore: byte-identical (fe1f4cf74f98c255)
+M4  CAUGHT  the RULE is checked against the REFERENCE, not assumed: expect.json claims case 2 is false while AIR answers true -> the runner must report that the reference disagrees with the derived rule
+     restore: byte-identical (fb606b8a5f0276b4)
+M5  CAUGHT  a BUILD failure is never mistaken for agreement: a missing semicolon in the emitted body must make the runner stop with "AOT BUILD FAILED" (exit 2) instead of comparing against nothing
+     restore: byte-identical (fe1f4cf74f98c255)
+
+MUTATION g20-settextformat: 5/5 caught, 0 problem(s)
+RESULT: PASS

@@ -1,31 +1,67 @@
 {
-  "_comment": "HAND-COMPUTED expectations for probes/widgets/motion/Main.as. Never regenerate these by running the probe.",
-  "_derivation": {
-    "layout": "420x320 window. root: column, alignItems flex-start, padding 20, gap 10. sizer h=40 -> y=20. pad h=60 -> y=20+40+10=70. label y=70+60+10=140 (auto height, font-dependent, never pinned).",
-    "sizer": "explicit size [100,40] at rest, [240,40] after the toggle. Border-box, so the width IS the rect. x=20 (root padding-left), y=20.",
-    "pad": "explicit [200,60], padding animates 10 -> 20. The BOX does not move or resize (border-box), so its rect is the same before and after; only its child moves.",
-    "padc": "40x20 inside pad's content box. At padding 20 the content box starts at 20+20=40 horizontally and 70+20=90 vertically, so the final rect is [40,90,40,20] (at rest it is [30,80,40,20], asserted in-program before the toggle).",
-    "points": [
-      "The frame buffer is written at the END of the run (after the dialog has finished leaving), so only the STATIC page is left: the sizer at its final size/radius, the padding at 20.",
-      "(120,40) inside the sizer, clear of every corner -> #3366cc.",
-      "(20,20) is the sizer's own top-left pixel -> #3366cc at BOTH ends. Rounded corners do NOT render on this backend: Graphics.drawRoundRect discards its ellipse arguments (compiler-gaps G19), so the corner stays filled even at radius 12 while it would be cut away on AIR. The radius itself is asserted on the resolved style in-program; this pixel is pinned so a future fix of G19 shows up here loudly.",
-      "(35,95) is INSIDE `padc` at rest (padc spans x 30..70 / y 80..100) -> #22cc88, and inside the 20px padding after the tween -> #ff9900.",
-      "(5,5) is in the root's 20px padding -> #ffffff."
-    ],
-    "precision": "The mid-tween assertions are RELATIONS (strictly between, monotone) because the sample frame is not controllable to the millisecond; the endpoints above are exact."
-  },
-  "w": 420,
-  "h": 320,
-  "rects": {
-    "root": [0, 0, 420, 320],
-    "sizer": [20, 20, 240, 40],
-    "pad": [20, 70, 200, 60],
-    "padc": [40, 90, 40, 20]
-  },
+ "_comment": "HAND-COMPUTED expectations for probes/widgets/motion/Main.as. Never regenerate these by running the probe.",
+ "_derivation": {
+  "layout": "420x320 window. root: column, alignItems flex-start, padding 20, gap 10. sizer h=40 -> y=20. pad h=60 -> y=20+40+10=70. label y=70+60+10=140 (auto height, font-dependent, never pinned).",
+  "sizer": "explicit size [100,40] at rest, [240,40] after the toggle. Border-box, so the width IS the rect. x=20 (root padding-left), y=20.",
+  "pad": "explicit [200,60], padding animates 10 -> 20. The BOX does not move or resize (border-box), so its rect is the same before and after; only its child moves.",
+  "padc": "40x20 inside pad's content box. At padding 20 the content box starts at 20+20=40 horizontally and 70+20=90 vertically, so the final rect is [40,90,40,20] (at rest it is [30,80,40,20], asserted in-program before the toggle).",
   "points": [
-    { "x": 120, "y": 40, "rgb": "#3366cc" },
-    { "x": 20, "y": 20, "rgb": "#3366cc" },
-    { "x": 35, "y": 95, "rgb": "#ff9900" },
-    { "x": 5, "y": 5, "rgb": "#ffffff" }
+   "The frame buffer is written at the END of the run (after the dialog has finished leaving), so only the STATIC page is left: the sizer at its final size/radius, the padding at 20.",
+   "(120,40) inside the sizer, clear of every corner -> #3366cc.",
+   "(20,20) is the sizer's own top-left pixel -> #ffffff at the end of the run: with cornerRadii 12 the corner arc (centre 12,12, radius 12) leaves that pixel fully outside, so the root fill shows through. G19 (drawRoundRect discarding its radii) was FIXED in stage 267; this pixel used to pin #3366cc so the fix would be loud here. The radius itself is still asserted on the resolved style.",
+   "(35,95) is INSIDE `padc` at rest (padc spans x 30..70 / y 80..100) -> #22cc88, and inside the 20px padding after the tween -> #ff9900.",
+   "(5,5) is in the root's 20px padding -> #ffffff."
+  ],
+  "precision": "The mid-tween assertions are RELATIONS (strictly between, monotone) because the sample frame is not controllable to the millisecond; the endpoints above are exact."
+ },
+ "w": 420,
+ "h": 320,
+ "rects": {
+  "root": [
+   0,
+   0,
+   420,
+   320
+  ],
+  "sizer": [
+   20,
+   20,
+   240,
+   40
+  ],
+  "pad": [
+   20,
+   70,
+   200,
+   60
+  ],
+  "padc": [
+   40,
+   90,
+   40,
+   20
   ]
+ },
+ "points": [
+  {
+   "x": 120,
+   "y": 40,
+   "rgb": "#3366cc"
+  },
+  {
+   "x": 20,
+   "y": 20,
+   "rgb": "#ffffff"
+  },
+  {
+   "x": 35,
+   "y": 95,
+   "rgb": "#ff9900"
+  },
+  {
+   "x": 5,
+   "y": 5,
+   "rgb": "#ffffff"
+  }
+ ]
 }

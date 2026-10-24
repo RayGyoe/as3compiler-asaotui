@@ -33,7 +33,7 @@
 const path = require('path');
 const fs = require('fs');
 const { spawnSync, spawn } = require('child_process');
-// Shared with build-and-run.cjs (the login demo): the descriptor reader, the
+// Shared with check-dpi.cjs (the descriptor A/B): the descriptor reader, the
 // window killer, the result-file poller and the screenshot measurement. Two
 // copies of "measure the PNG" is exactly the drift this workspace measures
 // instead of trusting.
@@ -44,6 +44,11 @@ const compilerDir = path.resolve(here, '..', '..', 'as3compiler');
 const clang = process.env.ASC_CC || 'clang';
 const OUT = 'gallery';
 const EXE = 'GalleryApp.exe';
+// The tour's screenshot count: demo/DocsMain.as renders one PNG per entry in its
+// `stops` list (start / box / button / image / select / table / tabs / dialog).
+// Kept here as a number as well, so a page that silently stops being rendered is a
+// red gate rather than a folder with one file fewer in it.
+const PAGES = 8;
 const appDirName = process.env.ASC_AIR_DIR || 'air-gallery';
 const appDir = path.join(here, appDirName);
 // EVERYTHING the app writes (gallery.txt, gallery.done, the page PNGs) is a
@@ -98,11 +103,11 @@ const args = [
   // path would be resolved against THAT.
   '--air-app', descriptor,
   // --main-class is NOT optional here even though `--air-app` can infer one: the
-  // inference matches any file whose name ENDS WITH `Main.as`, so `GalleryMain.as`
+  // inference matches any file whose name ENDS WITH `Main.as`, so `DocsMain.as`
   // makes it guess `demo.Main` (which does not exist) and the build dies in the
   // reachability closure. Naming the document class is also what the AIR model
   // does -- the descriptor does not carry it, the compiler is told.
-  '--main-class', 'demo.GalleryMain',
+  '--main-class', 'demo.DocsMain',
   // --all-sources: REMOVED (阶段二百四十九). `--air-app`'s default face is the
   // class-reference closure from the document class, and that closure used to not
   // expand a class first discovered by a file carrying free functions
@@ -191,7 +196,7 @@ if (done === null) {
   process.exit(1);
 }
 
-// ---- 6) measure the screenshots (one per page, SEVEN pages) ----------------
+// ---- 6) measure the screenshots (one per page, PAGES of them) ---------------
 // WHAT THIS PROVES: <requestedDisplayResolution>high makes Stage.render allocate
 // its surface in PHYSICAL pixels and scale the canvas to match, so the PNG of a
 // 700x560 stage comes out 1050x840 on a 150% display while the AS3 code keeps
@@ -199,7 +204,7 @@ if (done === null) {
 // reached the build -- a blurry window that every rect assertion in the tour
 // would still call perfect. That is why this is measured, not assumed.
 const shots = [];
-for (let k = 0; k < 7; k++) {
+for (let k = 0; k < PAGES; k++) {
   const f = path.join(outDir, OUT + '-page' + k + '.png');
   const c = checkShot(f, size, OUT + '-page' + k + '.png');
   shots.push({ name: OUT + '-page' + k + '.png', bytes: fs.existsSync(f) ? fs.statSync(f).size : 0, size: c.size, scale: c.scale, problems: c.problems });
@@ -209,7 +214,7 @@ for (const s of shots) console.log('  ' + s.name + '  ' + (s.size ? s.size.w + '
 if (shots.length === 0) console.log('  (none written)');
 
 const problems = [];
-if (shots.length !== 7) problems.push('expected 7 screenshots, got ' + shots.length);
+if (shots.length !== PAGES) problems.push('expected ' + PAGES + ' screenshots, got ' + shots.length);
 for (const s of shots) {
   for (const p of s.problems) problems.push(p);
   if (shots[0].size && s.size && (s.size.w !== shots[0].size.w || s.size.h !== shots[0].size.h)) problems.push(s.name + ' differs in size from the other pages');

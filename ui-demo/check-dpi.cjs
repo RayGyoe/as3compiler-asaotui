@@ -8,12 +8,12 @@
 //   arm STANDARD  air-gallery-standard/app.xml   (requestedDisplayResolution=standard)
 //
 // Both arms go through run-gallery.cjs (so both get --all-sources, the G11 retry and
-// the shared screenshot measurement), and both run the identical five-page tour with
-// the identical logical 700x560 stage. The ONLY thing that may differ is the PNG's
+// the shared screenshot measurement), and both run the identical 41-page docs tour with
+// the identical logical 1000x700 stage. The ONLY thing that may differ is the PNG's
 // pixel size:
 //
-//   high      -> 700x560 x device scale  (1050x840 on this box's 150% display)
-//   standard  -> exactly 700x560         (the compositor would stretch this)
+//   high      -> 1000x700 x device scale  (1500x1050 on this box's 150% display)
+//   standard  -> exactly 1000x700        (the compositor would stretch this)
 //
 // A one-line descriptor change with a two-way visible consequence is why this is a
 // gate rather than a note in a README: if a future change makes `high` behave like

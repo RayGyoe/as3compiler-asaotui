@@ -5,9 +5,10 @@ package asaot.ui
 {
     public class Control extends Element
     {
+        // `onClick` lives on Element now (a container is clickable too); a
+        // control only adds the keyboard-facing bits.
         public var tabEnabled:Boolean;
         public var tabIndex:int;
-        public var onClick:Function;
         public var action:String;
 
         public function Control(kind:String):void
@@ -15,7 +16,6 @@ package asaot.ui
             super(kind);
             this.tabEnabled = true;
             this.tabIndex = -1;
-            this.onClick = null;
             this.action = null;
         }
     }

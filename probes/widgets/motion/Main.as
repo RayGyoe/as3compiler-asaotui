@@ -31,14 +31,14 @@
 //   label  y = 70+60+10 = 140 (auto height, font-dependent -- never pinned)
 //
 //   pixel (120,40)  inside sizer, away from every corner            -> #3366cc
-//   pixel (20,20)   sizer's top-left corner. It stays #3366cc at BOTH ends of the
-//                   tween, and that is NOT a mistake: this backend's
-//                   Graphics.drawRoundRect DISCARDES its two ellipse arguments and
-//                   draws a plain rect (compiler-gaps G19), so a radius change is
-//                   invisible in the frame buffer here while it would be visible on
-//                   AIR. The radius is therefore asserted on the resolved style, and
-//                   this pixel is pinned only so the gap cannot be mistaken for a
-//                   toolkit regression later.
+//   pixel (20,20)   sizer's top-left corner -> BACKGROUND #ffffff at the end of the
+//                   tween. This is a ROUNDED-CORNER assertion now: G19 was fixed in
+//                   stage 267 (drawRoundRect builds a real SkRRect), so at radius 12
+//                   the box corner (offset 0,0 from a 12px arc centred at 12,12) is
+//                   fully outside the corner and the root's fill shows through. It
+//                   used to pin #3366cc precisely so the fix would be noticed here;
+//                   the rest-state pixel is the same corner with radius 0 (square),
+//                   asserted by the radius check above rather than by this pixel.
 //   pixel (35,95)   in `pad`'s padding at rest=10? no: x=35 is INSIDE padc at rest
 //                   (padc spans 30..70 x 80..100) -> #22cc88; at final padding=20
 //                   padc starts at 40, so (35,95) is the orange padding -> #ff9900
@@ -293,8 +293,8 @@ function settled():void
         fail("final padc is at " + padc.absX + "," + padc.absY + " not 40,90 (padding 20)");
     if (radiusOf(sizer) != 12)
         fail("final corner radius is " + radiusOf(sizer) + " not 12");
-    if (rgbAt(bd, 20, 20) != 0x3366CC)
-        fail("final sizer corner is " + hex(rgbAt(bd, 20, 20)) + " -- expected the SQUARE #3366cc; if this became white, Graphics.drawRoundRect started working and G19 in compiler-gaps.md is fixed");
+    if (rgbAt(bd, 20, 20) != 0xFFFFFF)
+        fail("final sizer corner is " + hex(rgbAt(bd, 20, 20)) + " -- expected the rounded-away background #ffffff at radius 12 (G19 fixed, stage 267); #3366cc here means drawRoundRect went back to drawing a plain rect");
     if (rgbAt(bd, 35, 95) != 0xFF9900)
         fail("final (35,95) is " + hex(rgbAt(bd, 35, 95)) + " not the padding's #ff9900");
     var dark:int = darkCount(bd, label);

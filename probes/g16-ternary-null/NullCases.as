@@ -20,7 +20,7 @@ package
 
     public class NullCases
     {
-        public static const COUNT:int = 17;
+        public static const COUNT:int = 20;
 
         // ---- helpers --------------------------------------------------
         private static function makeBitmap():Bitmap
@@ -52,6 +52,9 @@ package
             if (i == 15) return "x == null ? null : 42               [Number result]";
             if (i == 16) return "x == null ? null : true             [Boolean result]";
             if (i == 17) return "x == null ? null : 7                [int result]";
+            if (i == 18) return "x != null ? null : 42               [the NULL arm actually runs, Number slot]";
+            if (i == 19) return "x != null ? null : true             [the NULL arm actually runs, Boolean slot]";
+            if (i == 20) return "x != null ? null : 7                [the NULL arm actually runs, int slot]";
             return "?";
         }
 
@@ -75,6 +78,9 @@ package
             if (i == 15) return String(t15(bm));
             if (i == 16) return String(t16(bm));
             if (i == 17) return String(t17(bm));
+            if (i == 18) return String(t18(bm));
+            if (i == 19) return String(t19(bm));
+            if (i == 20) return String(t20(bm));
             return "?";
         }
 
@@ -130,6 +136,15 @@ package
         private static function t15(x:Object):Number { return x == null ? null : 42; }
         private static function t16(x:Object):Boolean { return x == null ? null : true; }
         private static function t17(x:Object):int { return x == null ? null : 7; }
+
+        // Cases 18-20 run the OTHER arm: `x != null` is TRUE, so the null literal in
+        // the THEN slot IS the value. A fix that only rescues the ELSE value (by
+        // typing the ternary as the other branch's number/boolean) would still fold
+        // this arm to 0/false. The declared return type is `*` on purpose: a
+        // `:Number` slot would coerce null to 0 at the return and hide the answer.
+        private static function t18(x:Object):* { return x != null ? null : 42; }
+        private static function t19(x:Object):* { return x != null ? null : true; }
+        private static function t20(x:Object):* { return x != null ? null : 7; }
 
         private static function wrap(x:Object):Bitmap { return Bitmap(x); }
     }

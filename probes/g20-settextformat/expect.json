@@ -1,0 +1,45 @@
+{
+  "count": 9,
+  "label": {
+    "1": "one application measures (> 0)",
+    "2": "twice == once (textWidth)",
+    "3": "three times == once (textWidth)",
+    "4": "three times == once (drawn ink extent)",
+    "5": "the text itself is unchanged by formatting",
+    "6": "the string length is unchanged by formatting",
+    "7": "sub-range x3 == sub-range x1 (textWidth)",
+    "8": "a full-range format REPLACES a sub-range one",
+    "9": "two disjoint ranges: order of application does not matter",
+    "10": "getTextFormat().color after a later full-range write (G21)",
+    "11": "getTextFormat().size after a later full-range write (G21)",
+    "12": "a narrower range splits the tail of a wider run",
+    "13": "a range in the MIDDLE splits a run into two halves (order kept)",
+    "14": "a run takes effect (24px run is wider than the 20px default)"
+  },
+  "truth": {
+    "1": "true",
+    "2": "true",
+    "3": "true",
+    "4": "true",
+    "5": "true",
+    "6": "true",
+    "7": "true",
+    "8": "true",
+    "9": "true",
+    "12": "true",
+    "13": "true",
+    "14": "true"
+  },
+  "known": {
+    "10": {
+      "air": "true",
+      "ours": "false",
+      "why": "G21: our TextField.getTextFormat() returns defaultTextFormat and ignores the run table, so a format installed by setTextFormat never reads back (AIR answers with the format in effect over the range). Out of scope for G20; registered in compiler-gaps.md"
+    },
+    "11": {
+      "air": "true",
+      "ours": "false",
+      "why": "G21: same cause as case 10 (size 30 installed by setTextFormat, defaultTextFormat is 20)"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>asaotui.probe.g19.roundargs</id>
+    <versionNumber>0.0.1</versionNumber>
+    <filename>g19-roundargs</filename>
+    <supportedProfiles>desktop</supportedProfiles>
+    <initialWindow>
+        <content>RoundArgs.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>

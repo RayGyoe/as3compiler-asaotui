@@ -16,7 +16,7 @@
 // build reads them where they live. This script now stages ONLY the demo's own
 // sources (the app's real `src/`), and prints the two roots the build must name.
 //
-// The two roots are passed to the compiler by run-gallery.cjs / build-and-run.cjs
+// The two roots are passed to the compiler by run-gallery.cjs / check-dpi.cjs
 // (see SHARED_ROOTS below, which is the single place they are listed). A stale or
 // divergent copy can no longer exist: there is no copy.
 //

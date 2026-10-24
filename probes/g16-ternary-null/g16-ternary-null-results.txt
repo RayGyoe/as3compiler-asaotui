@@ -1,34 +1,25 @@
 
 id  case                                          rule    AIR 51.4.1  our AOT     
- 1  x == null ? null : Bitmap(x)      [the reported shape]ok      ok          NULL           <-- DIFFERS
+ 1  x == null ? null : Bitmap(x)      [the reported shape]ok      ok          ok          
  2  x == null ? Bitmap(x) : null      [cond FALSE -> else IS the null]NULL    NULL        NULL        
- 3  1 == 0 ? null : Bitmap(x)         [constant condition]ok      ok          NULL           <-- DIFFERS
- 4  x == null ? null : x              [x:Object, no cast]ok      ok          NULL           <-- DIFFERS
- 5  x == null ? null : x              [x:Bitmap, no cast]ok      ok          NULL           <-- DIFFERS
+ 3  1 == 0 ? null : Bitmap(x)         [constant condition]ok      ok          ok          
+ 4  x == null ? null : x              [x:Object, no cast]ok      ok          ok          
+ 5  x == null ? null : x              [x:Bitmap, no cast]ok      ok          ok          
  6  x != null ? Bitmap(x) : null      [the workaround shape]ok      ok          ok          
- 7  x == null ? null : anyBox.bm      [property read]ok      ok          NULL           <-- DIFFERS
- 8  x == null ? null : anyBox.list[0]  [array element]ok      ok          NULL           <-- DIFFERS
- 9  x == null ? null : bm.bitmapData   [another class type]ok      ok          NULL           <-- DIFFERS
-10  o == null ? null : Bitmap(o)       [o out of a {} slot]ok      ok          NULL           <-- DIFFERS
+ 7  x == null ? null : anyBox.bm      [property read]ok      ok          ok          
+ 8  x == null ? null : anyBox.list[0]  [array element]ok      ok          ok          
+ 9  x == null ? null : bm.bitmapData   [another class type]ok      ok          ok          
+10  o == null ? null : Bitmap(o)       [o out of a {} slot]ok      ok          ok          
 11  x == null ? null : String('hi')    [value type: control]hi      hi          hi          
 12  x == null ? 0 : 42                  [then is 0, NOT the null literal: control]42      42          42          
 13  if (x == null) return null; return Bitmap(x)  [workaround]ok      ok          ok          
-14  x == null ? null : wrap(x)         [call in ELSE]ok      ok          NULL           <-- DIFFERS
-15  x == null ? null : 42               [Number result]42      42          0              <-- DIFFERS
-16  x == null ? null : true             [Boolean result]true    true        false          <-- DIFFERS
-17  x == null ? null : 7                [int result]7       7           0              <-- DIFFERS
+14  x == null ? null : wrap(x)         [call in ELSE]ok      ok          ok          
+15  x == null ? null : 42               [Number result]42      42          42          
+16  x == null ? null : true             [Boolean result]true    true        true        
+17  x == null ? null : 7                [int result]7       7           7           
+18  x != null ? null : 42               [the NULL arm actually runs, Number slot]null    null        null        
+19  x != null ? null : true             [the NULL arm actually runs, Boolean slot]null    null        null        
+20  x != null ? null : 7                [the NULL arm actually runs, int slot]null    null        null        
 
 AOT exit: 0
-RESULT: FAIL (12 disagreement(s); the failing shape is `cond ? null : obj`)
-  FAIL  id 1: our AOT says "NULL" but AIR says "ok"
-  FAIL  id 3: our AOT says "NULL" but AIR says "ok"
-  FAIL  id 4: our AOT says "NULL" but AIR says "ok"
-  FAIL  id 5: our AOT says "NULL" but AIR says "ok"
-  FAIL  id 7: our AOT says "NULL" but AIR says "ok"
-  FAIL  id 8: our AOT says "NULL" but AIR says "ok"
-  FAIL  id 9: our AOT says "NULL" but AIR says "ok"
-  FAIL  id 10: our AOT says "NULL" but AIR says "ok"
-  FAIL  id 14: our AOT says "NULL" but AIR says "ok"
-  FAIL  id 15: our AOT says "0" but AIR says "42"
-  FAIL  id 16: our AOT says "false" but AIR says "true"
-  FAIL  id 17: our AOT says "0" but AIR says "7"
+RESULT: PASS (20 cases; both arms agree with the hand-derived answers)

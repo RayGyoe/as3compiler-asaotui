@@ -60,11 +60,27 @@
 //                window inner w-2 -> w-1; the accordion mounting EVERY panel; and
 //                the layering bug the probe found, re-introduced by giving a header
 //                its own background again), every file restored byte-for-byte.
-//   G16       -- probes/g16-ternary-null/mutation.cjs: 4/4 (patch the shape the
-//                probe measures / claim a passing case is NULL / break a passing
-//                case / make the AIR arm die by returning a bare null from both
-//                branches, which the runner must report instead of silently
-//                comparing against missing lines).
+//   G16       -- probes/g16-ternary-null/mutation.cjs: 4/4. G16 is FIXED (stage 266),
+//                so the mutations measure the HARNESS instead of the defect: the rule
+//                is checked against AIR (not assumed), the AIR arm is rebuilt from the
+//                source (not read off a stale file), an arm that dies mid-run is
+//                reported, and a build failure is never mistaken for agreement. The
+//                two mutations that used to measure the collapse itself went vacuous
+//                the day it was fixed -- its header records why they were re-pointed
+//                rather than deleted.
+//   G19       -- probes/g19-roundrect/: the gate itself is the A/B (92 geometry rows x
+//                40 lines each + 13 argument cases, AIR vs AOT). Its teeth are the
+//                ANALYTIC check: every row must sit within 1 px of the exact corner
+//                ellipse computed from the case table, so a renderer that silently
+//                drops a radius (the old stub) or clamps the wrong axis fails the math,
+//                not just a snapshot. Mutation: temp/g16g19g20 (the stub itself was the
+//                "mutation" until stage 267 -- restoring `(void)ew; (void)eh;` makes
+//                every rounded row go square and the geometry comparison fails).
+//   G20       -- probes/g20-settextformat/mutation.cjs: 5/5 (3 mutations inside
+//                src/emit.ts's TextField_setTextFormat -- stop dropping covered runs /
+//                lose the right remainder of a split / drop the trailing insert -- plus
+//                "the rule is checked against AIR" and "a build failure is never
+//                agreement"), every file restored byte-for-byte by hash.
 //   G14       -- probes/obj-array-identity/mutation.cjs: 4/4 (flip an AS3 rule /
 //                drop a documented deviation / invent one / truncate the case list),
 //                every file restored byte-for-byte.
@@ -213,12 +229,12 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   record('layout-check visual half' + (m ? ' (' + m[1] + ' checks, ' + m[2] + ' failures)' : ''), r.status, out);
 }
 
-// ---- 6b: the multi-page demo tour -------------------------------------------
-// This is the only gate that exercises a WHOLE app: seven pages sharing one body
-// slot, a widget-driven page switch, a SECOND retained tree (page 5 floats a
-// dialog + menu + toast on the overlay root and tears it down again; page 6 keeps a
-// popover + bottom-sheet drawer open across reflows), and rects
-// that were hand-computed before the run (see ui-demo/demo/GalleryMain.as). It is
+// ---- 6b: the component-docs tour -------------------------------------------
+// This is the only gate that exercises a WHOLE app: 41 component pages rendered from
+// one catalog into one content column, a widget-driven page switch (the sidebar),
+// a SECOND retained tree (the overlay root carries a popover anchored by key and a
+// window-centred dialog, both opened and torn down while the app keeps running), and
+// rects that were hand-computed before the run (see ui-demo/demo/DocsMain.as). It is
 // the pin for the two layout fixes in UiNode (markLayoutDirty propagation out of a
 // subtree, and re-resolving when a widget override changes the direction) --
 // neither is visible to a single-page probe, because a single-page app never swaps
@@ -229,7 +245,7 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const r = sh(process.execPath, ['run-gallery.cjs'], path.join(UI, 'ui-demo'), { ASC_NO_OPEN: '1' });
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /\[gallery\] RESULT: (\S+)/.exec(out);
-  record('gallery tour: 7 pages (incl. the overlay tree), hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
+  record('gallery tour: 41 component pages (incl. the overlay tree), hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
 }
 
 // ---- 6b2: every registered widget kind is SHOWN by the demo ------------------
@@ -264,15 +280,7 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   record('G13 air-app reach: closure keeps 5/5, both faces build+run' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
 }
 
-// ---- 6d: the login demo, built with --air-app ----------------------------
-{
-  const r = sh(process.execPath, ['build-and-run.cjs'], path.join(UI, 'ui-demo'), { ASC_NO_OPEN: '1' });
-  const out = (r.stdout || '') + (r.stderr || '');
-  const m = /\[uidemo\] RESULT: (\S+)/.exec(out);
-  record('login demo: --air-app descriptor, hand-derived rects, HiDPI PNG' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
-}
-
-// ---- 6e: the descriptor is the CAUSE of the high-resolution pixels ----------
+// ---- 6d: the descriptor is the CAUSE of the high-resolution pixels ----------
 // Two builds of the same app from two descriptors that differ in exactly
 // requestedDisplayResolution. The gate is the A/B itself: high MUST render above 1x
 // and standard MUST render at exactly 1x, and both tours' logical rects must stay
@@ -352,18 +360,20 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
     + (m ? ' -- deviations ' + m[1].trim() : ''), r.status, out);
 }
 
-// ---- 9b: G16 -- `cond ? null : X` collapses to a zero value -----------------
-// A null LITERAL in the THEN slot makes unifyType fall through to "keep the
-// then-branch type" (src/emit.ts:28936), so the whole conditional is typed `null`
-// and `convert` emits it as a CONSTANT zero (0 / false / NULL) -- the branch that
-// would actually run is thrown away. 17 cases, run on BOTH runtimes; the AIR arm is
+// ---- 9b: G16 -- `cond ? null : X` collapses to a zero value -- FIXED, set is empty
+// A null LITERAL in the THEN slot made unifyType fall through to "keep the
+// then-branch type", so the whole conditional was typed `null` and `convert`
+// emitted it as a CONSTANT zero (0 / false / NULL). FIXED in the compiler
+// (stage 266, v0.4.230): unifyType now has a null-family rule -- pointer-shaped
+// families keep the concrete type (NULL is their null), numbers/booleans/`*` box
+// to `any` so BOTH arms survive. 20 cases, run on BOTH runtimes; the AIR arm is
 // checked against a HAND-DERIVED rule, so "AIR is the reference" is itself measured.
-// As with G14 before its fix, the gate is green while the AOT deviation set is
-// EXACTLY the documented one. A new deviation goes red; so does a case that stops
-// being run; and so does a deviation VANISHING without this list being updated --
-// because a silently shrinking set would let a regression hide behind a stale
-// expectation. The failure message says which direction to fix.
-const G16_KNOWN = ['1', '3', '4', '5', '7', '8', '9', '10', '14', '15', '16', '17'];
+// The recorded AOT deviation set is now EMPTY. The dangerous direction is no longer
+// "a new deviation appeared" alone -- it is also a deviation quietly VANISHING from
+// the AIR arm (an arm that stops running its cases would make the set look clean),
+// which is why the runner's own "only N/M lines" and "REFERENCE disagrees" checks
+// are part of the gate. A non-empty set means the fix was lost.
+const G16_KNOWN = [];
 {
   const r = sh(process.execPath, ['probes/g16-ternary-null/run.cjs'], UI);
   const out = (r.stdout || '') + (r.stderr || '');
@@ -373,12 +383,49 @@ const G16_KNOWN = ['1', '3', '4', '5', '7', '8', '9', '10', '14', '15', '16', '1
     .sort((a, b) => Number(a) - Number(b));
   const armBad = /the REFERENCE disagrees|arm wrote only/.test(out);
   const same = !armBad && aotIds.join(',') === G16_KNOWN.join(',');
-  record('G16 ternary-null (17 cases, AOT vs AIR) -- AOT deviations: '
+  record('G16 ternary-null (20 cases, AOT vs AIR) -- AOT deviations: '
     + (aotIds.join(',') || 'none'), same ? 0 : 1,
-    out + (same ? '' : '\nThe AOT deviation set is no longer the recorded one (' + G16_KNOWN.join(',') + ').'
-      + '\nIf the compiler FIXED G16, that is good news: shrink the recorded set here AND in'
-      + '\nprobes/g16-ternary-null/expect.json, and re-point its mutation M1 (its header says how).'
-      + '\nAny other change is a regression.'));
+    out + (same ? '' : '\nThe AOT deviation set is no longer the recorded one ([' + G16_KNOWN.join(',') + ']).'
+      + '\nG16 is FIXED (stage 266), so any deviation here is a REGRESSION: find the emitter change that'
+      + '\nbrought the zero-value collapse back (unifyType null-family rule, src/emit.ts).'
+      + '\nIf a case was added/changed on purpose, update expect.json AND this comment together.'));
+}
+
+// ---- 9c: G19 -- Graphics.drawRoundRect builds a real ROUND rect -------------
+// The generated body used to be `{ (void)ew; (void)eh; Graphics_drawRect(...); }`:
+// both radii consumed and dropped, so every rounded control in the kit drew square.
+// FIXED in the compiler (stage 267, v0.4.231): the emitter maps the two radii onto
+// SkRRect (half-ellipse per axis, negative -> 0, each clamped to half the box, NaN
+// ellipseHeight -> ellipseWidth, NaN ellipseWidth -> #2004), and the Skia seam gained
+// `sk_path_add_rrect` on BOTH arms.
+// The gate is the comparison itself: 9 geometry cases x ~40 rows each, run on BOTH
+// runtimes, plus the 13-case argument contract. Rows are judged against the ANALYTIC
+// corner ellipse (an exact renderer is within 1 px of the math), so "AIR and AOT agree"
+// is not the only claim -- the SHAPE has to be a round rect too. The one documented
+// deviation (negative radii, where AIR's own cubic self-intersects and inks 1-2 px
+// outside the box) is counted, never dropped.
+{
+  const r = sh(process.execPath, ['probes/g19-roundrect/run.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /geometry rows: ([^\n]+)/.exec(out);
+  record('G19 drawRoundRect, AOT vs AIR' + (m ? ' -- ' + m[1].trim() : ''), r.status, out);
+}
+
+// ---- 9d: G20 -- setTextFormat REPLACES a range, it does not stack a run -----
+// AIR replaces the formatting of the range; this build appended a run every call, and
+// the layout side copies text[start..end) once PER run -- so a repaint path grew the
+// field linearly ("the typed text got copied once more"). FIXED in the compiler
+// (stage 268, v0.4.232): the run table is rebuilt with the covered part dropped and the
+// straddling runs split in two, keeping it sorted by start.
+// Every case is RELATIONAL (two fields in the same process, then compared), because
+// AIR and this build use different text engines and their absolute widths legitimately
+// differ. Cases 10/11 are the registered G21 deviation (getTextFormat ignores the run
+// table) and are measured, not skipped.
+{
+  const r = sh(process.execPath, ['probes/g20-settextformat/run.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /RESULT: (\S+.*)/.exec(out);
+  record('G20 setTextFormat replaces the range (AOT vs AIR)' + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
 }
 
 // ---- 10: Vector.<T> is really faster than Array in OUR AOT -------------------

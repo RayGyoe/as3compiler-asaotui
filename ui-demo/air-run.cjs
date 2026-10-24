@@ -1,5 +1,5 @@
 // air-run.cjs -- the small shared plumbing of the two `--air-app` demo runners
-// (run-gallery.cjs and build-and-run.cjs). Both do the same four things around a
+// (run-gallery.cjs and check-dpi.cjs). Both do the same four things around a
 // descriptor-driven build, and doing them twice would mean two implementations of
 // "measure the screenshot" -- exactly the kind of drift this workspace measures
 // instead of trusting.

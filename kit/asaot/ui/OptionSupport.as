@@ -36,6 +36,12 @@ package asaot.ui
             // `disabled` is an Element property, so EVERY factory gets it through
             // this one line -- no factory needs to know about it.
             if (opts.disabled != null) n.disabled = Boolean(opts.disabled);
+            // onClick is an Element property too, so a CONTAINER can carry a
+            // handler -- the docs index rows are exactly box({ onClick: pick }).
+            // The retained node mirrors Element.onClick (UiNode.applyPayload), but
+            // nothing ever copied it onto the descriptor, so every container click
+            // handler was null and the row was dead to the mouse.
+            if (opts.onClick != null) n.onClick = (opts.onClick as Function);
         }
 
         public static function addChildren(n:Node, children:Array):void

@@ -1,8 +1,8 @@
 {
   "_comment": "HAND-DERIVED AS3 semantics for every case in NullCases.as. Never regenerate this file by running either arm: the point of the probe is that the rule and AIR agree independently.",
   "_derivation": "The AS3 conditional operator `cond ? a : b` returns a when cond is true and b when cond is false (AS3 language reference, conditional operator). Each case's condition therefore picks the branch: 6 tests `x != null` with a live object (TRUE -> the THEN branch `Bitmap(x)`); 2 tests `x == null` (FALSE -> the ELSE branch, which is the null literal, so the value IS null -- the first cut of this table said \"ok\" here and the AIR arm caught the mistake, which is precisely why the reference is checked and not assumed); every other case tests `x == null` with a live object (FALSE) or a constant false (case 3), so it must evaluate the ELSE branch, whose value is a live object -- that is the whole point. Nothing about the TYPE of the result may change which branch runs, and a null literal in the THEN slot is just a value.",
-  "_derivation_extended": "Cases 15-17 ask whether the collapse is specific to reference results. 12 is NOT one of them: its THEN branch is the literal 0, not null, so both branches are int and no null is involved (it is the control for `the same shape without a null literal`). 15/16/17 put the null literal in the THEN slot with a Number/Boolean/int result; the condition is false with a live x, so the value must be 42 / true / 7. If our AOT answers 0 / false / 0 instead, the collapse silently zeroes scalar results too -- a quieter failure than the NULL case, and one an all-object table would have missed.",
-  "count": 17,
+  "_derivation_extended": "Cases 15-17 ask whether the collapse is specific to reference results. 12 is NOT one of them: its THEN branch is the literal 0, not null, so both branches are int and no null is involved (it is the control for `the same shape without a null literal`). 15/16/17 put the null literal in the THEN slot with a Number/Boolean/int result; the condition is false with a live x, so the value must be 42 / true / 7. If our AOT answers 0 / false / 0 instead, the collapse silently zeroes scalar results too -- a quieter failure than the NULL case, and one an all-object table would have missed. Cases 18-20 flip the same shapes: x is a LIVE object, so `x != null` is TRUE and the THEN arm (the null literal) is the value. Declared return type is * so the null survives the return instead of being coerced by a Number/Boolean/int slot; String(null) is \"null\" on both runtimes.",
+  "count": 20,
   "truth": {
     "1": "ok",
     "2": "NULL",
@@ -20,7 +20,10 @@
     "14": "ok",
     "15": "42",
     "16": "true",
-    "17": "7"
+    "17": "7",
+    "18": "null",
+    "19": "null",
+    "20": "null"
   },
   "label": {
     "1": "x == null ? null : Bitmap(x)      [the reported shape]",
@@ -39,6 +42,9 @@
     "14": "x == null ? null : wrap(x)         [call in ELSE]",
     "15": "x == null ? null : 42               [Number result]",
     "16": "x == null ? null : true             [Boolean result]",
-    "17": "x == null ? null : 7                [int result]"
+    "17": "x == null ? null : 7                [int result]",
+    "18": "x != null ? null : 42               [the NULL arm actually runs, Number slot]",
+    "19": "x != null ? null : true             [the NULL arm actually runs, Boolean slot]",
+    "20": "x != null ? null : 7                [the NULL arm actually runs, int slot]"
   }
 }

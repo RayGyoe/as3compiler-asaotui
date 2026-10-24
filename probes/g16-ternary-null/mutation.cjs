@@ -5,11 +5,18 @@
 // Every file is restored in `finally` and its sha256 is compared byte-for-byte with
 // the pre-mutation hash, so a mutation run can never leave the probe subtly altered.
 //
-// Kept only until G16 is fixed by the compiler: once the AOT arm passes all 14 cases
-// the first mutation below ("patch the shape the probe is measuring") stops being
-// meaningful in its current form and turns into "re-introduce the shape", which is
-// the mirror image. The note is here so that whoever closes G16 rewrites M1 rather
-// than deleting it -- deleting it would leave the probe's teeth unverified.
+// HISTORY (read this before "simplifying" the list): while G16 was OPEN, two of the
+// four mutations measured the defect itself -- "patch case 1 into the if/return
+// workaround, the failure must disappear" and "rewrite the working case 6 into the
+// broken shape, it must join the failure set". Both went VACUOUS the moment the
+// compiler was fixed (stage 266, v0.4.230), because a broken shape now works and a
+// patched one changes nothing. They are NOT deleted and NOT left in place: they are
+// re-pointed at the harness properties that still have to hold when there is no
+// deviation to observe -- the AIR arm is rebuilt from the source rather than read
+// from a stale file, the rule is checked against it, a dying arm is reported as such,
+// and a build failure is never mistaken for agreement. Deleting them would leave the
+// probe's teeth unverified; keeping them as-is would have made the whole script pass
+// by measuring nothing.
 //
 // USAGE (from asaotui/):   node probes/g16-ternary-null/mutation.cjs
 'use strict';
@@ -29,45 +36,40 @@ const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest
 const MUTATIONS = [
   {
     id: 'M1',
-    why: 'case 1 patched to the if/return workaround -> the AOT arm must STOP reporting id 1 as NULL '
-      + '(this is the "the probe reads the real value" direction)',
-    file: 'probes/g16-ternary-null/NullCases.as',
-    find: '        private static function t1(x:Object):Bitmap { return x == null ? null : Bitmap(x); }',
-    replace: '        private static function t1(x:Object):Bitmap\n'
-      + '        {\n'
-      + '            if (x == null) return null;\n'
-      + '            return Bitmap(x);\n'
-      + '        }',
-    // with the shape patched, the count of FAIL lines must drop by exactly one
-    expectFewerFails: true,
-    wantFailedIdsNot: ['1'],
-  },
-  {
-    id: 'M2',
-    why: 'the rule itself: expect.json claims case 1 is NULL -> the runner must report that the '
-      + 'REFERENCE disagrees with the hand-derived rule',
+    why: 'the RULE is checked, not assumed: expect.json claims case 1 is NULL while the source says '
+      + 'otherwise -> the runner must report that the REFERENCE disagrees with the hand-derived rule',
     file: 'probes/g16-ternary-null/expect.json',
     find: '    "1": "ok",',
     replace: '    "1": "NULL",',
     expectSubstring: 'the REFERENCE disagrees',
   },
   {
-    id: 'M3',
-    why: 'case 6 -- the WORKING shape -- rewritten into the broken one: id 6 must join the failing set '
-      + '(the probe follows the source, not a snapshot)',
+    id: 'M2',
+    why: 'the AIR arm is REBUILT from the source, not read off a stale file: case 17 answers 8 instead '
+      + 'of 7 -> AIR must now disagree with the rule (and the AOT arm must follow the source too)',
     file: 'probes/g16-ternary-null/NullCases.as',
-    find: '        private static function t6(x:Object):Bitmap { return x != null ? Bitmap(x) : null; }',
-    replace: '        private static function t6(x:Object):Bitmap { return x == null ? null : Bitmap(x); }',
-    expectFailedIds: ['6'],
+    find: '        private static function t17(x:Object):int { return x == null ? null : 7; }',
+    replace: '        private static function t17(x:Object):int { return x == null ? null : 8; }',
+    expectSubstring: 'the REFERENCE disagrees',
   },
   {
-    id: 'M4',
-    why: 'case 3 returns a bare null from both branches -> measured: the AIR arm DIES after id 2, and the '
-      + 'runner must say so instead of comparing against missing lines',
+    id: 'M3',
+    why: 'an arm that DIES is reported, not silently compared against missing lines: case 3 returns a '
+      + 'bare null from both branches -> the AIR arm stops after id 2 and the runner must say so',
     file: 'probes/g16-ternary-null/NullCases.as',
     find: 'private static function t3(x:Object):Bitmap { return 1 == 0 ? null : Bitmap(x); }',
     replace: 'private static function t3(x:Object):Bitmap { return 1 == 0 ? null : null; }',
     expectSubstring: 'AIR arm wrote only',
+  },
+  {
+    id: 'M4',
+    why: 'a BUILD failure is never mistaken for agreement: a parse error in the case table must make the '
+      + 'runner stop with "AOT BUILD FAILED" (exit 2) instead of comparing against nothing',
+    file: 'probes/g16-ternary-null/NullCases.as',
+    find: '        public static const COUNT:int = 20;',
+    replace: '        public static const COUNT:int = ;',
+    expectSubstring: 'AOT BUILD FAILED',
+    expectExit: 2,
   },
 ];
 
@@ -75,14 +77,6 @@ const log = [];
 const line = (s) => { console.log(s); log.push(s); };
 let caught = 0;
 let broken = 0;
-
-// Baseline (unmutated) failure set, computed once so each mutation is compared
-// against a measured reference rather than a guess.
-const base = spawnSync(process.execPath, [RUN], { cwd: UI, encoding: 'utf8' });
-const baseOut = (base.stdout || '') + (base.stderr || '');
-const baselineFailIds = [...new Set([...baseOut.matchAll(/FAIL  id (\d+)/g)].map((x) => x[1]))];
-line('baseline (unmutated): ' + baselineFailIds.length + ' failing case(s): ' + baselineFailIds.join(', '));
-line('');
 
 for (const m of MUTATIONS) {
   const file = path.join(UI, m.file);
@@ -98,24 +92,15 @@ for (const m of MUTATIONS) {
     fs.writeFileSync(file, before.split(m.find).join(m.replace));
     const r = spawnSync(process.execPath, [RUN], { cwd: UI, encoding: 'utf8' });
     const out = (r.stdout || '') + (r.stderr || '');
-    const failedIds = [...new Set([...out.matchAll(/FAIL  id (\d+)/g)].map((x) => x[1]))];
 
-    let ok = false;
-    let detail = '';
-    if (m.expectSubstring) {
-      ok = out.indexOf(m.expectSubstring) >= 0;
-      detail = ok ? '' : ' expected the runner to say "' + m.expectSubstring + '"';
-    } else if (m.expectFewerFails) {
-      ok = failedIds.length === baselineFailIds.length - 1
-        && !failedIds.includes(m.wantFailedIdsNot[0]);
-      detail = ok ? '' : ' baseline failed ids [' + baselineFailIds.join(',') + '], mutated [' + failedIds.join(',') + ']';
-    } else if (m.expectFailedIds) {
-      ok = m.expectFailedIds.every((id) => failedIds.includes(id));
-      detail = ok ? '' : ' mutated failed ids [' + failedIds.join(',') + ']';
+    let ok = out.indexOf(m.expectSubstring) >= 0;
+    let detail = ok ? '' : ' expected the runner to say "' + m.expectSubstring + '"';
+    if (m.expectExit != null && r.status !== m.expectExit) {
+      ok = false;
+      detail += ' (exit ' + r.status + ', wanted ' + m.expectExit + ')';
     }
     if (ok) caught++; else broken++;
     line(m.id + '  ' + (ok ? 'CAUGHT' : 'MISSED (THIS IS BAD)') + '  ' + m.why + detail);
-    if (failedIds.length) line('     failed cases with the mutation: ' + failedIds.join(', '));
   } finally {
     fs.writeFileSync(file, before);
   }

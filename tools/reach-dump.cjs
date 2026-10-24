@@ -30,7 +30,7 @@ function walk(dir, out) {
 
 (async () => {
   const srcDir = path.resolve(process.argv[2] || path.join(UI, 'ui-demo', 'air-gallery', 'src'));
-  const mainClass = process.argv[3] || 'demo.GalleryMain';
+  const mainClass = process.argv[3] || 'demo.DocsMain';
   // The extra roots: what the build names with --as-class-path (seam + kit, see
   // ui-demo/stage-air.cjs SHARED_ROOTS). Without them the dump would report a
   // closure over the demo's six files only.

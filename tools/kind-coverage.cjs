@@ -163,8 +163,8 @@ if (notShown.length) {
   for (const r of notShown) {
     console.error('  ' + r.kind + '  (class ' + r.cls + ', factories: ' + r.factories.join(' ') + ')');
   }
-  console.error('[kind-coverage] add each one to ui-demo/demo/GalleryView.as (and to GalleryMain\'s'
-    + ' pageKeys) so the demo keeps being the place a widget can be LOOKED at.');
+  console.error('[kind-coverage] add each one to its own page under ui-demo/demo/Docs*.as'
+    + ' (and to DocsCatalog\'s page list) so the docs keep being the place a widget can be LOOKED at.');
   process.exit(1);
 }
 console.log('[kind-coverage] RESULT: PASS');
