@@ -73,7 +73,7 @@ package demo
                 new DocPage("spinner", "spinner", 7, "An indeterminate ring."),
                 new DocPage("skeleton", "skeleton", 7, "Loading placeholders in text/circle/rect shapes."),
                 new DocPage("tooltip", "tooltip", 7, "A small bubble with an arrow."),
-                new DocPage("image", "image", 7, "A BitmapData scaled into a box."),
+                new DocPage("image", "image", 7, "A picture -- a BitmapData or a `src` -- scaled into its box."),
 
                 new DocPage("dialog", "dialog", 8, "A scrim plus a centred panel -- overlay tree only."),
                 new DocPage("drawer", "drawer", 8, "An edge sheet: the window's own gutter."),

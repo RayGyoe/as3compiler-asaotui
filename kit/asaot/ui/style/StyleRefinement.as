@@ -92,6 +92,10 @@ package asaot.ui.style
             if (o.boxShadow != null) r.boxShadow = BoxShadow.listFromAny(o.boxShadow);
             if (o.opacity != null) r.opacity = Number(o.opacity);
             if (o.visibility != null) r.visibility = String(o.visibility);
+            // Validated HERE, not when the pointer enters: an unknown name must be
+            // an author error at describe time, where the message can be acted on
+            // (see Style.checkCursor).
+            if (o.cursor != null) r.cursor = Style.checkCursor(String(o.cursor));
             if (o.transitionMs != null) r.transitionMs = Number(o.transitionMs);
             if (o.transitionEase != null) r.transitionEase = String(o.transitionEase);
             if (o.text != null) r.text = TextStyle.fromAny(o.text);

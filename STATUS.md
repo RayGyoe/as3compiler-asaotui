@@ -57,12 +57,22 @@
 > 以及 `textArea`（**独立 kind，不是单行文本框上的一个布尔开关**：Enter 的契约是反过来的——单行提交、
 > 多行插入，所以它**不吃 13**，让运行时自己插换行；高度契约是 `rows × 行高`，也不是测量出来的）。
 > 五组判据钉在新探针 `probes/widgets/textfx`（18 checks），变异 **5/5**（见 §3.14）；文档站 41 → **42 页**，门 45 → **46 道**。
+> 第十五轮（2026-10-25）是**指针真实感 + 图片真的能加载**这两件：`Style.cursor`（`auto/arrow/button/hand/ibeam`，
+> 树内**继承**、`CLICKABLE` 那批 kind 由主题给 `hand`）落地，并且把 hover **从逐对象 roll 事件改成一次
+> stage `MOUSE_MOVE`** —— 因为 AOT **从不派发** `mouseOver`（G25），旧写法在 adl 里亮、在我们自己的产物里
+> **永远不亮**；新写法用运行时自己的命中测试（`as_pick_hit`）取目标 + 整条**祖先链**置 hover，与 AIR 的冒泡
+> 同义，且顺手把 `Mouse.cursor` 按链推导（`Mouse` 是进程级状态，离场必须回 `auto`）。第二件是 `image()` 的
+> `src`：控件自己持 `Loader`，`onLoad()`（零参）/`onError(msg)`（一参）走**已有的 arity 契约**，失败写进
+> `UiNode.loadError` 而**不是画一块空白**；`scaleMode` 未知值现在**抛错**（文档页过去写的 `letterbox`/`zoom`
+> 从来不是合法值，`zoom` 一直渲染成 contain）。判据：新探针 `probes/widgets/pointer`（23 项）、`probes/widgets/imaging`
+> （27 项，变异 **5/5**）；顺带按新语义**重导**了 `probes/widgets/callback` 的两个滑块像素钉（指针停在滑块上
+> 就是 hover 态，裸轨道 #E5E7EB → #E7E9ED = 8% 提亮）。
 > 第五轮（2026-10-24）补的是**动画深度 + 三处控件空白**：`Anim` 现在分 **paint 字段**与 **layout 字段**
 > （`width/height/padding/gap` 动画每帧重解、`textColor/cornerRadius` 可 tween）、浮层加**退场动画**；
 > `virtualList`（千级列表只挂 9 个节点）、`tree`、`combobox`、`datePicker`（纯整数日历，无 `Date`）落地。
 > 两个 demo 现均用 **`--air-app`** 编译：窗口属性（含**高分辨率/HiDPI**）由 AIR 描述符当唯一真相源。
 > 仍然缺的是：`icon`（图标字体/矢量集）、`accordion` 多开、`table` 排序/列宽拖拽、
-> 样式面的 `grid`/`cursor`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
+> 样式面的 `grid`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 生成日期：2026-10-24（第十二轮补：监听器寿命 `#1009` + `air-sweep` 指针钻 + G25） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**46 道门**）
@@ -79,7 +89,7 @@
 | L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表 |
 | L2 动画 | ✅ **样式 5 字段 + layout 字段 + 浮层入/退场** | 样式 `paint` 字段：`opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`；样式 **`layout` 字段**：`width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y)——写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停（`probes/widgets/anim` 14 项 + `probes/widgets/motion` 23 项）；显示对象级：`OverlayMotion`（入场 140ms ease-out / **退场 120ms ease-in**，墙钟，每帧从引擎读基准，不累加），见 §3.4 |
 | L3 控件库 | ✅ **40 个工厂 / 35 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**35 个 kind 全部上了画廊**（第七页 Advanced），由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 画廊是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
-| L3 样式面 | ✅ **31 字段** | 见 §3.2；仅剩 `grid`/`boxShadow`/`cursor` 刻意缺席 |
+| L3 样式面 | ✅ **33 字段** | 见 §3.2；仅剩 `grid` 刻意缺席（`cursor` 第十五轮已落地） |
 | L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入退场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、**入场 140ms / 退场 120ms**；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**）+ `probes/widgets/motion` **23 项**（变异 **7/7**） |
 | L3 组合能力 | ✅ **42 页组件文档站** | `ui-demo/demo/Docs*.as`（17 个文件）+ `ui-demo/run-gallery.cjs`：左侧 9 组 / 42 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
 | L3 可访问性 | ⚠️ 半成品 | `role`/`ariaName` **仍只是字段**（无消费者）；但 `Control.tabEnabled` 现在真被 Tab 环读（`UiApp.collectFocus`）、`Element.disabled` 真阻断点击与导航 |
@@ -115,7 +125,8 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | `divider(opts)` | `DividerNode` | 1px 分隔线（`orientation`） |
 | `tabs(labels, opts)` | `TabsNode` | 横向分段；**分段是控件自算**，见 §3.1.1 |
 | `list(items, builder, opts)` | `ListNode` | 真容器（每行一个真实 UiNode）；**无虚拟滚动——万级用 `virtualList`** |
-| `image(opts)` | `ImageNode` | 位图控件，**源是 `BitmapData`（不是 URL）**；`scaleMode`: `fit`/`stretch`/`none`；`payload` 懒建 `Bitmap` |
+| `image(opts)` | `ImageNode` | 位图控件；源二选一：`bitmapData`（调用者已有像素）或 **`src`（控件自己持 `Loader`，异步）**；
+`scaleMode`: `fit`/`stretch`/`none`（**未知值抛错**）；`onLoad()`/`onError(msg)`、失败进 `UiNode.loadError` |
 | `scrollView(opts, children)` | `ScrollViewNode` | **真裁剪**滚动容器（引擎 `scrollRect`）；竖向滚轮；视口用 `setMinMax(min)` 阻断子收缩 |
 | `spinner(opts)` | `SpinnerNode` | 不定进度圆环；`diameter`/`thickness`/`tone`/`spin`/`phase`；**环画成填充带（描边宽度不被遵守）** |
 | `skeleton(opts)` | `SkeletonNode` | 占位骨架；`variant`: `text`/`circle`/`rect` + `lines`/`barHeight`/`gap`/`tone` |
@@ -190,15 +201,15 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 | **tabs 的 gap 来源** | ⚠️ `TabsWidget.payload` 先读 `opts.gap`，回落到 `n.resolved.gapX`（已解算值）。若一次重排**恰好只改了 gap**，分段 pitch 会用上一帧的 gap 一帧（`Reconciler` 是「先 resolve 后 payload」，payload 改方向会在同帧重解，见 §3.3） |
 | **list 选择高亮** | ✅ 由 `list` 自身在 `shapeA`（子件之下）画高亮条；行本身需透明才能看见 |
 
-### 3.2 样式面：从 18 补到 **32 字段**（不再缺布局字段）
+### 3.2 样式面：从 18 补到 **33 字段**（不再缺布局字段）
 
-`kit/asaot/ui/style/Style.as` 现有 **32 个字段**（`node tools/scan.cjs kit/asaot/ui/style/Style.as "public var"`）：
+`kit/asaot/ui/style/Style.as` 现有 **33 个字段**（`node tools/scan.cjs kit/asaot/ui/style/Style.as "public var"`）：
 
 | 组 | 字段 |
 |---|---|
 | 布局 | `flexDirection` `justifyContent` `alignItems` `alignSelf` `alignContent` `flexWrap` `gapX` `gapY` `flexGrow` `flexShrink` `flexBasis` `display` `aspectRatio` `position` `inset` `margin` |
 | 盒 | `size` `minSize` `maxSize` `padding` `borderWidths` `boxSizing` `overflow` |
-| 装饰 | `background`（纯色**或** `Fill.gradient`）`borderColor` `cornerRadii` `opacity` `visibility` `boxShadow`（`BoxShadow` 数组） |
+| 装饰 | `background`（纯色**或** `Fill.gradient`）`borderColor` `cornerRadii` `opacity` `visibility` `boxShadow`（`BoxShadow` 数组）`cursor`（**树内继承**，见 §3.2 末尾） |
 | 文本 | `text`（`TextStyle`，含 `whiteSpace` / `textOverflow`） |
 | 动画 | `transitionMs` `transitionEase` |
 
@@ -208,7 +219,10 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
   那是**文字投影不是盒子投影**；只画了文字的 kind（无 `shapeA`）落到字段自身，两者皆无则**抛错**而不是静默丢弃；
   `spread != 0` / `inset == true` 也抛错（`DropShadowFilter` 没有对应旋钮，近似就是画了作者没要的阴影）；
 - 布局验收基准**不是 `adl`**（AIR 无 flexbox），而是 W3C flexbox / 浏览器；
-- 仍刻意缺席：`grid`、`cursor`（引擎不实现；seam 层面也会抛错）。
+- 仍刻意缺席：`grid`（引擎不实现；seam 层面也会抛错）。`cursor` 第十五轮落地：**继承**语义（子节点未设则
+  沿祖先链取），值为 `auto`/`arrow`/`button`/`hand`/`ibeam`（与 `flash.ui.MouseCursor` 同名字面量），
+  最终由 `UiApp.applyCursor()` 写 **进程级** `Mouse.cursor`——所以指针一离开声明它的节点就必须回 `auto`，
+  这条由 `probes/widgets/pointer` 钉（“离开后进程上留下一个 hand” = 整个窗口都像坏了一样）。
 
 复核命令：
 
@@ -597,6 +611,44 @@ wrap 宽度置 NaN / 截断条件置 false / Enter 加入消费集），且每�
 礼仪边界（AGENTS.md §2.5，全部具名抛错而不是近似）：`BoxShadow` 的 `spread != 0` / `inset`、
 `Fill.gradient` 的非 `linear` / < 2 色标 / 非 0 `focalPointRatio` / 非法 ratio、`whiteSpace:"normal"`
 但宽度不是 POINT、`textArea` 无 `shapeA` 无 `tf` 时却带 `boxShadow`、未知 `whiteSpace`/`textOverflow` 值。
+
+### 3.15 指针真实感（hover 在 AOT 里从来是死的）+ 图片真的能加载（第十五轮补）
+
+**头号项不是「缺功能」，是「两个臂语义不同」**：库的 hover 过去只挂 `MOUSE_OVER`/`MOUSE_OUT`
+（`UiNode.createBacking`），而 `as3compiler/src/emit.ts` 里 `mouseOver` 这个串**出现 0 次**——
+生成的 C 里它只作为常量存在（`MouseEvent_MOUSE_OVER`），**没有任何派发点**（G25）。
+后果是：`adl` 里按钮悬停会亮，**我们自己的产物里永远不亮**，而 41 页截图、所有 AOT 探针、
+整个像素对比**全绿**——因为没有任何东西让指针动一下。
+
+修法在库侧，且刻意**不自算矩形**：`UiApp` 接**一个** stage `MOUSE_MOVE`（两个臂都会派发、`bubbles=true`、
+没命中时 target 退化为 stage），命中判定**复用运行时自己的 `as_pick_hit`**（与点击同一套规则，
+自算就是第二套规则——“亮着但点不到”正是它的后果），再经 `backing → UiNode` 的 `Dictionary`
+把**整条祖先链**置 hover（AIR 的 `mouseOver` 会冒泡，所以卡片必须随它的子件亮）。
+`Mouse.cursor` 是**进程级**状态，因此 `applyCursor()` 每次从链上重新推导、否则回落 `auto`。
+顺带一个真缺陷被这次重构抓住：`setHover` 会 `markPaint` 一个**已销毁**的节点（`#1009`），
+所以 `destroySubtree` 必须注销注册表，且 `setHover` 对 `app == null` 要直接返回。
+
+| 判据 | 钉什么 |
+|---|---|
+| `probes/widgets/pointer`（23 项，变异 **5/5**） | 叶子亮 / **祖先亮** / 兄弟不亮 / 换目标同一拍清旧的 / `MOUSE_LEAVE` 全清 + `Mouse.cursor` 回 `auto` / hover **不 reflow** / 撤销后注册表 −1 且下一次移动仍可用 |
+| `probes/widgets/lifecycle`（9 项） | 销毁前后注册表计数；**仍然派发** `mouseOver`/`mouseOut` 当负控（它们现在什么也不该做） |
+| `probes/widgets/interact`（25 项） | 禁用控件不吃 hover、离开后清干净 |
+
+**第二件：`image()` 的 `src`**。控件自己持 `Loader`（`COMPLETE`→采纳 Bitmap 并**重新测量**、
+`IO_ERROR`→写 `UiNode.loadError` 并调 `onError(msg)`，**不画任何自造的错误 chrome**）。
+三个真陷阱：①**完成回调必须带上它自己的那个 Loader**，否则换过 `src` 之后旧的那次完成会
+落到新节点上；②`onLoad()` **零参**、`onError(msg)` **一参**——这是已有的 arity 契约，`tools/callback-arity.cjs`
+现在把这两个名字也纳入了两个方向的扫描；③`scaleMode` 未知值**抛错**（文档页过去写 `letterbox`/`zoom`，
+两个都从来不是合法值，`zoom` 一直静默渲染成 contain ⇒ 页已按真词汇表重导）。
+
+变异 `probes/widgets/imaging/mutation.cjs` **5/5**，而**第一版是 3/5**，两类假绿值得记住：
+
+- M1（`COMPLETE` 不重新测量）在**第一版里 MISSED**：那时 `auto` 那张图的 `src` 从第一帧就在，
+  于是“提交任务 → 首次布局”之间没有空隙，测量时像素已经在了，`markLayoutDirty()` 拿掉也看不出来。
+  改成 **`src` 晚一点才出现**（300ms 后写 model 再 reflow），同一个变异立刻变红——
+  **夹具的时序本身就是被钉住的契约**。
+- M5（忽略 `stretch`）也 MISSED：`pic` 当时是 40×40 方框配 16×16 方图，**contain 和 fill 恰好同形**。
+  改成 60×20 之后 `min(3.75, 1.25) ≠ 1.25`，两种语义才分得开——**一个变异不在几何上分叉，就什么也没证明**。
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 

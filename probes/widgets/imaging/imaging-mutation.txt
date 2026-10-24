@@ -1,0 +1,36 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  COMPLETE DOES NOT RE-MEASURE: the paint bit alone never re-solves a box, so an image with no `size` keeps the 64x64 placeholder it measured before the bytes landed -- the exact failure that makes async images look broken while every property is correct
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL auto (no size) is 10,114,64,64, not the loaded 16x16;
+     FAIL  rect auto[w] want 16 got 64
+     FAIL  rect auto[h] want 16 got 64
+     restore: byte-identical (b8e446f2df7a4847)
+M2  CAUGHT  "fit" CONTAINS WITH max(): 16x16 into an 80x20 box becomes 80x80 and spills out of the box on the short axis, so the pixel just left of the contained area is painted instead of showing the background
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL pic's right half is not blue: #6f008f a=255; fit painted outside the contained image: #ff0000 a=255; the failed image painted something: #ff0000 a=255;
+     FAIL  pixel (50,20) want #0000ff got #6f008f
+     FAIL  pixel (15,48) want #ffffff got #ff0000
+     FAIL  pixel (30,85) want #ffffff got #ff0000
+     restore: byte-identical (b8e446f2df7a4847)
+M3  CAUGHT  A FAILED LOAD NEVER REACHES UiNode.loadError: the author callback still fires, but nothing on the node says the image is broken, so a re-describe repaints a silent blank box forever
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL UiNode.loadError did not receive the message: null;
+     restore: byte-identical (b8e446f2df7a4847)
+M4  CAUGHT  THE LOADED BITMAP IS NOT ADOPTED: the job succeeds, the callbacks run, and the widget keeps measuring the placeholder -- "bytes arrived, nothing displayed"
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL auto (no size) is 10,114,64,64, not the loaded 16x16; pic's left half is not red: #0000ff a=255; pic's right half is not blue: #ffffff a=255; fit painted outside the contained image: #ff0000 a=255; fit's left half is not red: #ffffff a=255; fit's right half is not blue: #ffffff a=255;
+     FAIL  rect auto[w] want 16 got 64
+     FAIL  rect auto[h] want 16 got 64
+     FAIL  pixel (20,20) want #ff0000 got #0000ff
+     ... and 4 more
+     restore: byte-identical (b8e446f2df7a4847)
+M5  CAUGHT  "stretch" IS IGNORED: the picture is contained instead of filled, so the 40x40 box shows a 20x20 image in its middle -- a scale mode that is parsed, accepted and not applied
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL pic's left half is not red: #ffffff a=255; pic's right half is not blue: #ffffff a=255;
+     FAIL  pixel (20,20) want #ff0000 got #ffffff
+     FAIL  pixel (50,20) want #0000ff got #ffffff
+     restore: byte-identical (b8e446f2df7a4847)
+
+MUTATION imaging: 5/5 caught, 0 problem(s)
+RESULT: PASS

@@ -467,17 +467,23 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 //
 // THE POINTER DRILL (2026-10-24, the second report): AIR cannot be scripted to click,
 // so until then the sweep had NO pointer -- and `TypeError #1009` out of
-// `UiNode.setHover` walked straight through it: `mouseOut` is delivered one beat AFTER
+// `UiNode.setHover` walked straight through it: an event is delivered one beat AFTER
 // the frame that removed the node, so a listener left on a dead node's backing ran into
 // nulled fields. Our AOT never dispatches roll-over/roll-out at all (compiler-gaps.md
-// G25), so no AOT probe could see that class by construction. `DocsAir` now hovers every
-// leaf of the page it is about to leave (3107 nodes over the catalog) and delivers the
-// roll-out one tick after the switch (348 of them had really been destroyed), which is
-// why this gate also grades `ROLL` lines.
+// G25), so no AOT probe could see that class by construction. `DocsAir` now captures
+// every leaf of the page it is about to leave (3107 nodes over the catalog) and delivers
+// CLICK + MOUSE_DOWN one tick after the switch to the ones that really died (348 on the
+// first measured run), which is why this gate also grades `TEARDOWN` lines.
+//
+// (It graded `ROLL` lines until 2026-10-26, when the library stopped installing
+// per-object roll listeners -- hover is synthesized from one stage MOUSE_MOVE, the only
+// pointer event both arms deliver. CLICK and MOUSE_DOWN are still per-object, so the
+// drill moved to those; the invariant is the same, and the `destroyed=` floor still
+// proves the drill meets torn-down nodes instead of grading a blind test.)
 {
   const r = sh(process.execPath, ['tools/air-sweep.cjs'], UI);
   const out = (r.stdout || '') + (r.stderr || '');
-  const m = /\[air-sweep\] (\d+)\/(\d+) page\(s\) visited, (\S+)\/(\d+) popup\(s\) opened, (\d+) runtime error\(s\), (\d+) node\(s\) hovered and (\d+) of them destroyed/.exec(out);
+  const m = /\[air-sweep\] (\d+)\/(\d+) page\(s\) visited, (\S+)\/(\d+) popup\(s\) opened, (\d+) runtime error\(s\), (\d+) node\(s\) captured and (\d+) of them destroyed/.exec(out);
   record('docs app on AIR (adl): every page, popups open, pointer drill, no runtime error'
     + (m ? ' (' + m[1] + '/' + m[2] + ' pages, ' + m[3] + '/' + m[4] + ' popups, ' + m[5]
       + ' errors, ' + m[7] + '/' + m[6] + ' destroyed)' : ''),

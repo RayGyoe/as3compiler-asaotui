@@ -371,11 +371,37 @@ function dragEnd():void
         problems = problems + "a press with no drag did not set 0.5 (calls=" + view.numCalls
             + " arg=" + view.lastNum + " model=" + view.slVal + "); ";
     }
+    setTimeout(sliderHoverPixels, 250);
+}
+
+// The pointer is left ON the slider by the press above, and since the hover rewrite
+// (UiApp derives hover from ONE stage MOUSE_MOVE; G25) that is a REAL hover state, so
+// the bare track is tinted. Hand-derived: stateColor lifts the track 8% toward white
+// (PaintKit.HOVER_LIFT), and mixRGB(0xE5E7EB, 0xFFFFFF, 8) = 0xE7E9ED -- the exact
+// number this probe first tripped over, because nothing was ever hovered before.
+// Asserting it here also keeps the IDLE colour below honest: the two differ, so a
+// widget that stopped reading `state.hover` would show one number twice.
+function sliderHoverPixels():void
+{
+    // (160,144) is bare track right of the knob (value 0.5 puts the knob at local 100).
+    send(160, 144, "mouseMove");
+    setTimeout(sliderHoverDraw, 250);
+}
+
+function sliderHoverDraw():void
+{
+    var bd:BitmapData = new BitmapData(W, H, true, 0xFF000000);
+    bd.draw(stage);
+    problems = problems + expectStr(bd, 160, 144, 0xE7E9ED, "the bare track under the pointer (hover lift)");
+    // Off the slider entirely, so the next frame measures the IDLE surface.
+    send(10, 30, "mouseMove");
     setTimeout(sliderPixels, 250);
 }
 
-// The settled value after the release. Value 0.5: fill = 100 wide, knob centre at
-// local (100,32) -> stage (110,144), bare track right of it.
+// The settled value after the release, with the pointer taken OFF the slider -- the
+// idle track colour is the style's own value, not a state tint.
+// Value 0.5: fill = 100 wide, knob centre at local (100,32) -> stage (110,144), bare
+// track right of it.
 function sliderPixels():void
 {
     var bd:BitmapData = new BitmapData(W, H, true, 0xFF000000);

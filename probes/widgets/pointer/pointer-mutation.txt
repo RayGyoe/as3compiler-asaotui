@@ -1,0 +1,25 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  ANCESTORS DO NOT GET THE HOVER: only the hit node lights, so a card whose background must react to its children stays flat -- AIR bubbles mouseOver, and every hover-on-container design depends on it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the root (an ancestor) did not get the bubbled hover; the card (an ancestor of the inner box) did not get the bubbled hover; the root lost its hover while the pointer is still inside it;
+     restore: byte-identical (684590b7f9040c77)
+M2  CAUGHT  THE OLD CHAIN IS NEVER CLEARED: the node the pointer just left keeps its hover, so two controls are lit at once and the stale one never goes dark again
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the button stayed hovered after the pointer left it; the inner box stayed hovered (hover is sticky); the card stayed hovered off its area; the root stayed hovered after the pointer left the window; the button stayed hovered after the pointer left the window;
+     restore: byte-identical (684590b7f9040c77)
+M3  CAUGHT  NO FALLBACK TO "auto": Mouse.cursor is process-wide, so leaving a node that asked for an I-beam leaves the I-beam on the whole window -- the shape never comes back on its own
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL leaving a cursor-declaring node left ibeam on the process; the pointer is ibeam over a plain area; the pointer left the window but the shape is still hand;
+     restore: byte-identical (684590b7f9040c77)
+M4  CAUGHT  THE DERIVED SHAPE IS NEVER WRITTEN: cursor is parsed, inherited and resolved on every move, and the result is dropped -- an opt-in that does nothing at all
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the pointer over a button is auto not hand; an explicit cursor:"ibeam" did not reach Mouse.cursor (got auto);
+     restore: byte-identical (684590b7f9040c77)
+M5  CAUGHT  A DESTROYED NODE STAYS THE HOVER TARGET: the registry drops it, but the chain keeps a node whose `app` is null, and the next move calls markPaint on it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a destroyed node is still the app's hover target;
+     restore: byte-identical (684590b7f9040c77)
+
+MUTATION pointer: 5/5 caught, 0 problem(s)
+RESULT: PASS

@@ -80,6 +80,9 @@ icudtl.dat
 # …但 6 页画廊截图（两种 DPI 各 6 张，是 DPI A/B 的证据）与单页截图是成品，留下
 !/ui-demo/air-*/gallery-page*.png
 !/ui-demo/air-*/uidemo-shot.png
+# …以及文档 image 页通过 `src` 加载的那张图：它是**构建输入**（app 运行时按 cwd 读它），
+# 不是产物。两个臂各自在**自己目录**下运行，所以两个目录各一份（同一张 138 字节的 PNG）。
+!/ui-demo/air-*/as-image.png
 # …而两个 AIR 应用的**源码**也必须留下：描述符是窗口（尺寸/标题/renderMode/
 # requestedDisplayResolution）的唯一真源，`stage-air.cjs` 没有它直接拒绝运行，
 # `build.sh` 的两个臂都从它读窗口；`build.sh` 是默认跑法（mxmlc→adl）的入口。

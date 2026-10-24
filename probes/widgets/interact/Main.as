@@ -161,10 +161,14 @@ function settle():void
 }
 
 // ---- phase 1: HOVER --------------------------------------------------------
+// Through the REAL pointer path: the library derives hover from one stage
+// MOUSE_MOVE (roll events do not exist in our runtime -- G25), so a probe that
+// dispatched mouseOver at the backing would be testing a listener that is gone
+// and would pass while the whole app had no hover at all.
+// btnA's centre is (90,36); btnD's is (90,78).
 function phaseHover():void
 {
-    var a:UiNode = app.findByKey("btnA");
-    a.backing.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OVER, false, false));
+    send(90, 36, "mouseMove");
     setTimeout(checkHover, 250);
 }
 
@@ -175,9 +179,8 @@ function checkHover():void
     bd.draw(stage);
     problems = problems + expectStr(bd, 26, 26, HOVERED, "the hovered button's fill (8% toward white)");
     // A disabled button does not react to the pointer at all.
-    var d:UiNode = app.findByKey("btnD");
     var before:uint = bd.getPixel(26, 68) & 0xFFFFFF;
-    d.backing.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OVER, false, false));
+    send(90, 78, "mouseMove");
     carry = problems;
     setTimeout(function ():void { checkHoverDisabled(before); }, 250);
 }
@@ -191,9 +194,8 @@ function checkHoverDisabled(before:uint):void
     bd.draw(stage);
     var after:uint = bd.getPixel(26, 68) & 0xFFFFFF;
     if (after != before) problems = problems + "a disabled button lifted its fill on hover (" + hex(before) + " -> " + hex(after) + "); ";
-    // Leave the pointer.
-    app.findByKey("btnA").backing.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OUT, false, false));
-    app.findByKey("btnD").backing.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OUT, false, false));
+    // Leave the pointer — over the root's own padding, i.e. off every control.
+    send(700, 520, "mouseMove");
     carry = problems;
     setTimeout(checkUnhovered, 250);
 }
@@ -203,7 +205,7 @@ function checkUnhovered():void
     var problems:String = carry;
     var bd:BitmapData = new BitmapData(W, H, true, 0xFF000000);
     bd.draw(stage);
-    problems = problems + expectStr(bd, 26, 26, SERIF, "the fill did not return to idle after MOUSE_OUT");
+    problems = problems + expectStr(bd, 26, 26, SERIF, "the fill did not return to idle after the pointer left");
     carry = problems;
     setTimeout(phasePress, 100);
 }
@@ -396,6 +398,20 @@ function hex(v:uint):String
 function clickLocal(n:UiNode, lx:Number, ly:Number):void
 {
     n.backing.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false, lx, ly));
+}
+
+// A real pointer move at stage coordinates: the stage hit-tests, then UiApp derives
+// hover from the target (the runtime never dispatches mouseOver/mouseOut -- G25).
+function send(x:Number, y:Number, type:String):void
+{
+    try
+    {
+        stage.dispatchMouse(x, y, type);
+    }
+    catch (err:Error)
+    {
+        carry = carry + type + " at (" + x + "," + y + ") threw " + err.name + ": " + err.message + "; ";
+    }
 }
 
 function writeText(path:String, t:String):void

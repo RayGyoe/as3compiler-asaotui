@@ -1,9 +1,22 @@
-// asaot.ui.kind.ImageWidget -- the Bitmap behind ImageNode.
+// asaot.ui.kind.ImageWidget -- the Bitmap (or the Loader that produces one) behind
+// ImageNode.
 //
-// THE BITMAP IS CREATED LAZILY, in `payload`, the first time a BitmapData shows up.
-// `build` cannot do it: at structure time the description may carry no pixels at
-// all (a node built before its data arrives), and a `new Bitmap(null)` would leave
-// a display object whose width/height are zero for the rest of the run.
+// TWO PATHS, ONE DISPLAY OBJECT
+// -----------------------------
+// The widget always ends up scaling a `Bitmap` in `arrange`; the difference is who
+// owns it:
+//
+//   bitmapData -> the widget creates the Bitmap and adds it to the backing;
+//   src        -> a `Loader` is added to the backing and its COMPLETE content (a
+//                 Bitmap the Loader already parented) is adopted as the same
+//                 BITMAP_KEY. Nothing is re-parented, so the pixels stay where the
+//                 Loader put them and `arrange` has ONE thing to fit.
+//
+// THE BITMAP IS CREATED LAZILY, in `payload`, the first time pixels exist. `build`
+// cannot do it: at structure time the description may carry no pixels at all (a
+// node built before its data arrives), and a `new Bitmap(null)` would leave a
+// display object whose width/height are zero for the rest of the run. The same is
+// true of the Loader: it is created when a src first appears, never in `build`.
 //
 // FITTING happens in `arrange`, never in `paint`: `Bitmap` scaling is a display
 // object property, and paint is supposed to be a drawing pass. `arrange` runs after
@@ -13,8 +26,21 @@
 // Src size is read from `bitmapData.width/height` in SOURCE pixels. `bmp.width`
 // would be the SCALED size after we set it, so reading it back would compound the
 // scale every frame -- that is the one trap here.
+//
+// ASYNC SAFETY
+// ------------
+// A load can finish after the node is gone (the IO job holds its own reference, so
+// the Loader survives) or after the author changed `src` (the old Loader is still
+// in flight when the new one starts). Both callbacks therefore take the Loader they
+// were created for and compare it with the node's CURRENT one: a stale or late
+// completion is dropped, never applied to a dead or re-pointed node.
+//
+// A failed load is not silent: `n.loadError` carries the message (which includes
+// AIR's error number) and `onError(message)` runs. The widget does not invent error
+// chrome -- the author decides what an unreachable picture looks like.
 package asaot.ui.kind
 {
+    import asaot.ui.Dirty;
     import asaot.ui.ImageNode;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
@@ -26,11 +52,24 @@ package asaot.ui.kind
 
     import flash.display.Bitmap;
     import flash.display.BitmapData;
+    import flash.display.DisplayObject;
+    import flash.display.Loader;
+    import flash.display.LoaderInfo;
     import flash.display.Shape;
+    import flash.events.Event;
+    import flash.events.IOErrorEvent;
+    import flash.net.URLRequest;
 
     public class ImageWidget implements Widget
     {
-        private static const BMP_KEY:String = "bmp";
+        private static const BMP_KEY:String = "bmp";       // the Bitmap being fitted
+        private static const OWN_KEY:String = "own";       // we created it (vs the Loader)
+        private static const LDR_KEY:String = "ldr";       // the Loader, when src is set
+        private static const LI_KEY:String = "li";         // its LoaderInfo
+        private static const SRC_KEY:String = "src";       // the src currently loaded
+        private static const ERR_KEY:String = "err";       // last load error text
+        private static const ONC_KEY:String = "onc";       // the COMPLETE closure
+        private static const ONE_KEY:String = "one";       // the IO_ERROR closure
         private static const MODE_KEY:String = "mode";
         private static const SMOOTH_KEY:String = "smooth";
 
@@ -40,28 +79,52 @@ package asaot.ui.kind
         {
             n.shapeA = new Shape();       // background / placeholder frame
             n.backing.addChild(n.shapeA);
-            // The Bitmap itself is added later, on top of shapeA (see payload).
+            // The Bitmap (or the Loader that will hold one) is added later, on top of
+            // shapeA -- see payload.
         }
 
         public function payload(n:UiNode, desc:Node):Boolean
         {
             var im:ImageNode = ImageNode(desc);
             var relayout:Boolean = false;
-            var b:Bitmap = bitmapOf(n);
-            var bd:BitmapData = im.bitmapData;
-            if (bd != null && b == null)
+
+            if (im.bitmapData != null)
             {
-                b = new Bitmap(bd);
-                n.extra[BMP_KEY] = b;
-                n.backing.addChild(b);   // above shapeA: the pixels sit on the frame
-                relayout = true;         // the intrinsic size is the bitmap's now
+                // Pixels handed over by the caller win over any URL: whoever passes a
+                // BitmapData is not asking for a fetch.
+                if (loaderOf(n) != null) { disposeLoader(n); relayout = true; }
+                var b:Bitmap = bitmapOf(n);
+                if (b == null || n.extra[OWN_KEY] == null)
+                {
+                    b = new Bitmap(im.bitmapData);
+                    n.extra[BMP_KEY] = b;
+                    n.extra[OWN_KEY] = b;
+                    n.backing.addChild(b);   // above shapeA: the pixels sit on the frame
+                    relayout = true;         // the intrinsic size is the bitmap's now
+                }
+                else if (b.bitmapData != im.bitmapData)
+                {
+                    b.bitmapData = im.bitmapData;
+                    relayout = true;
+                }
+                if (b.smoothing != im.smooth) b.smoothing = im.smooth;
             }
-            else if (b != null && b.bitmapData != bd)
+            else
             {
-                b.bitmapData = bd;
-                relayout = true;
+                var prev:Object = n.extra[SRC_KEY];
+                var prevSrc:String = prev == null ? null : String(prev);
+                if (im.src == null)
+                {
+                    // An image that LOSES its source must lose its pixels: keeping the
+                    // last picture would show a stale face under a new name.
+                    if (loaderOf(n) != null || n.extra[OWN_KEY] != null) { disposeLoader(n); relayout = true; }
+                }
+                else if (prevSrc == null || prevSrc != im.src)
+                {
+                    startLoad(n, im.src);
+                    relayout = true;
+                }
             }
-            if (b != null && b.smoothing != im.smooth) b.smoothing = im.smooth;
 
             var mode:String = im.scaleMode == null ? "fit" : im.scaleMode;
             var prevMode:Object = n.extra[MODE_KEY];
@@ -74,6 +137,105 @@ package asaot.ui.kind
                 relayout = true;
             }
             return relayout;
+        }
+
+        // ---- the Loader lifecycle ----------------------------------------
+
+        private function startLoad(n:UiNode, src:String):void
+        {
+            disposeLoader(n);
+            var ldr:Loader = new Loader();
+            var li:LoaderInfo = ldr.contentLoaderInfo;
+            var self:UiNode = n;
+            // The closure carries ITS OWN Loader: a late COMPLETE from a superseded
+            // load must not be applied to the node's current one.
+            var onc:Function = function (e:Event):void { loaded(self, ldr); };
+            var one:Function = function (e:IOErrorEvent):void { failed(self, ldr, e.text); };
+            n.extra[LDR_KEY] = ldr;
+            n.extra[LI_KEY] = li;
+            n.extra[SRC_KEY] = src;
+            n.extra[ERR_KEY] = null;
+            n.extra[ONC_KEY] = onc;
+            n.extra[ONE_KEY] = one;
+            n.backing.addChild(ldr);      // above shapeA
+            n.listen(li, Event.COMPLETE, onc);
+            n.listen(li, IOErrorEvent.IO_ERROR, one);
+            ldr.load(new URLRequest(src));
+        }
+
+        // Unhook everything the previous load owns. The listeners are removed from the
+        // LoaderInfo itself (not just at teardown) because a replaced load can still
+        // complete: leaving them would keep an old closure alive per src change and
+        // would run it against a node that has moved on.
+        private function disposeLoader(n:UiNode):void
+        {
+            var ldr:Loader = loaderOf(n);
+            var li:LoaderInfo = n.extra[LI_KEY] as LoaderInfo;
+            if (li != null && n.extra[ONC_KEY] != null)
+            {
+                li.removeEventListener(Event.COMPLETE, n.extra[ONC_KEY] as Function);
+                li.removeEventListener(IOErrorEvent.IO_ERROR, n.extra[ONE_KEY] as Function);
+            }
+            if (ldr != null)
+            {
+                if (ldr.parent != null) ldr.parent.removeChild(ldr);
+                // unload() detaches the content; an in-flight job keeps its own
+                // reference and will dispatch into a Loader nobody listens to.
+                ldr.unload();
+            }
+            n.extra[LDR_KEY] = null;
+            n.extra[LI_KEY] = null;
+            n.extra[ONC_KEY] = null;
+            n.extra[ONE_KEY] = null;
+            n.extra[SRC_KEY] = null;
+            n.extra[ERR_KEY] = null;
+            n.extra[BMP_KEY] = null;
+            n.extra[OWN_KEY] = null;
+        }
+
+        private function loaded(n:UiNode, ldr:Loader):void
+        {
+            // Torn down, or superseded by a newer src: drop it. (`app` is the
+            // library's own "dead" marker.)
+            if (n.app == null || loaderOf(n) != ldr) return;
+            var c:DisplayObject = ldr.content;
+            if (!(c is Bitmap))
+            {
+                // A Loader can hold an SWF. Honouring that would mean running its own
+                // frames and scripts, which this widget cannot do -- say so instead of
+                // painting an empty box.
+                failed(n, ldr, "image src loaded something that is not a Bitmap");
+                return;
+            }
+            var b:Bitmap = Bitmap(c);
+            n.extra[BMP_KEY] = b;
+            n.extra[ERR_KEY] = null;
+            n.loadError = null;
+            var d:Node = n.desc;
+            if (d is ImageNode && b.smoothing != ImageNode(d).smooth) b.smoothing = ImageNode(d).smooth;
+            // The intrinsic size just became knowable: an auto-sized image has to
+            // re-measure on the next frame or it keeps the 64x64 placeholder box.
+            n.markLayoutDirty();
+            n.dirty = n.dirty | Dirty.M_PAINT;
+            n.app.markPaint(n);
+            if (d is ImageNode && ImageNode(d).onLoad != null) ImageNode(d).onLoad();
+        }
+
+        private function failed(n:UiNode, ldr:Loader, msg:String):void
+        {
+            if (n.app == null || loaderOf(n) != ldr) return;
+            n.extra[ERR_KEY] = msg;
+            n.loadError = msg;
+            n.dirty = n.dirty | Dirty.M_PAINT;
+            n.app.markPaint(n);
+            var d:Node = n.desc;
+            if (d is ImageNode && ImageNode(d).onError != null) ImageNode(d).onError(msg);
+        }
+
+        private function loaderOf(n:UiNode):Loader
+        {
+            var o:Object = n.extra[LDR_KEY];
+            return o == null ? null : Loader(o);
         }
 
         private function bitmapOf(n:UiNode):Bitmap

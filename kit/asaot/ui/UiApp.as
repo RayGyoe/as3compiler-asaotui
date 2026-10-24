@@ -32,7 +32,11 @@ package asaot.ui
     import flash.events.Event;
     import flash.events.FocusEvent;
     import flash.events.KeyboardEvent;
+    import flash.events.MouseEvent;
     import flash.text.TextField;
+    import flash.ui.Mouse;
+    import flash.ui.MouseCursor;
+    import flash.utils.Dictionary;
     import flash.utils.getTimer;
 
     public class UiApp
@@ -130,6 +134,11 @@ package asaot.ui
             // input's commit-on-blur all agree with what the runtime did.
             stage.addEventListener(FocusEvent.FOCUS_IN, onStageFocusIn);
             stage.addEventListener(FocusEvent.FOCUS_OUT, onStageFocusOut);
+            // Hover (see the synthesis block above). ONE listener, for the whole
+            // window: per-node roll listeners cannot work on a runtime that never
+            // dispatches a roll event.
+            stage.addEventListener(MouseEvent.MOUSE_MOVE, onStageMouseMove);
+            stage.addEventListener(Event.MOUSE_LEAVE, onStageMouseLeave);
             this._running = true;
             this.invalidate(Dirty.ALL);
             this.reflow();
@@ -177,6 +186,153 @@ package asaot.ui
         {
             node.dirty = node.dirty | Dirty.M_PAINT;
             this._needsPaint = true;
+        }
+
+        // ---- pointer: hover is SYNTHESIZED here, not delivered (G25) ------
+        //
+        // The AOT runtime dispatches mouseDown / mouseUp / click / doubleClick /
+        // wheel / MOUSE_LEAVE and NEVER mouseOver or mouseOut -- the string does
+        // not occur in src/emit.ts at all (G25 in compiler-gaps.md). A per-object
+        // roll listener is therefore DEAD on our own builds and alive only under
+        // adl, which would make the two arms disagree about what hover means.
+        //
+        // MOUSE_MOVE is the one event both arms deliver, it BUBBLES, and when
+        // nothing is hit the runtime targets the stage. So hover is derived ONCE,
+        // here: hit target -> nearest registered backing -> that node plus every
+        // ANCESTOR of it. Ancestors because AIR's mouseOver bubbles -- a card with
+        // a hover background has to light while the pointer is over its children.
+        //
+        // The hit test stays the runtime's own (as_pick_hit, the one clicks use).
+        // Recomputing rectangles from the tree would be a SECOND hit rule, and its
+        // failure mode -- a control that lights up but cannot be clicked -- is
+        // invisible in every screenshot.
+        private var _nodeOf:Dictionary;     // backing -> UiNode (identity lookup)
+        private var _regCount:int;          // entries in _nodeOf (O(1) diagnostic)
+        private var _hover:UiNode;          // deepest node under the pointer
+        public var hoverMoves:int;          // every MOUSE_MOVE the stage sent
+
+        // Called by UiNode.createBacking. The registry is how a hit target (which
+        // may be a TextField or a child node's backing) finds its owner in O(depth)
+        // instead of an O(tree) walk per mouse move.
+        public function nodeBackingBuilt(n:UiNode):void
+        {
+            if (n == null || n.backing == null) return;
+            if (this._nodeOf == null) this._nodeOf = new Dictionary();
+            if (this._nodeOf[n.backing] == null) this._regCount = this._regCount + 1;
+            this._nodeOf[n.backing] = n;
+        }
+
+        // Called by UiNode.destroySubtree BEFORE the node's fields are nulled.
+        public function nodeBackingGone(n:UiNode):void
+        {
+            if (n == null) return;
+            // A destroyed node must not survive in two places. The registry is a
+            // GC root for both key and value (a leak), and the hover chain would
+            // hold a node whose `app` is null -- the next mouse move would then
+            // run `app.markPaint` on null, i.e. exactly the #1009 that the
+            // listener teardown of 2026-10-24 removed.
+            if (this._nodeOf != null && n.backing != null && this._nodeOf[n.backing] == n)
+            {
+                delete this._nodeOf[n.backing];
+                this._regCount = this._regCount - 1;
+            }
+            if (this._hover != null && this.onChain(this._hover, n)) this.setHoverTarget(null);
+        }
+
+        // Diagnostics: how many backings are registered. Read only by probes -- a
+        // leak here is invisible on screen (the stale entries draw nothing).
+        public function hoverRegistryCount():int
+        {
+            return this._regCount;
+        }
+
+        public function getHover():UiNode
+        {
+            return this._hover;
+        }
+
+        // Is `n` on `x`'s ancestor chain (or `x` itself)?
+        private function onChain(x:UiNode, n:UiNode):Boolean
+        {
+            var p:UiNode = x;
+            while (p != null)
+            {
+                if (p == n) return true;
+                p = p.parent;
+            }
+            return false;
+        }
+
+        // The node that owns a display object: walk UP from the hit target until a
+        // registered backing appears. The runtime answers the pick with the
+        // DEEPEST interactive object (a selectable TextField, a child node's
+        // backing), and every one of those lives inside exactly one node's
+        // backing, so the walk is bounded by the display depth.
+        public function nodeAt(o:DisplayObject):UiNode
+        {
+            if (this._nodeOf == null) return null;
+            var d:DisplayObject = o;
+            while (d != null)
+            {
+                var n:UiNode = this._nodeOf[d] as UiNode;
+                if (n != null) return n;
+                d = d.parent;
+            }
+            return null;
+        }
+
+        public function setHoverTarget(n:UiNode):void
+        {
+            var old:UiNode = this._hover;
+            if (old == n) return;
+            this._hover = n;
+            // Clear the old chain MINUS the ancestors the new one still has:
+            // sliding from a label onto the button beside it must not blink the
+            // parent's hover off for a frame.
+            var p:UiNode = old;
+            while (p != null)
+            {
+                if (!this.onChain(n, p)) p.setHover(0);
+                p = p.parent;
+            }
+            p = n;
+            while (p != null)
+            {
+                p.setHover(1);
+                p = p.parent;
+            }
+            this.applyCursor();
+        }
+
+        // Mouse.cursor is PROCESS-WIDE and it OVERRIDES the runtime's own rule
+        // (src/emit.ts ASC_window_update_cursor only computes ibeam/hand while
+        // cursor == "auto"), so a stale "hand" would stick to the whole window and
+        // a text field would lose its I-beam. Hence: re-derive from the hover
+        // chain on every change, and hand the decision back with "auto" when
+        // nothing on the chain asks for a shape.
+        public function applyCursor():void
+        {
+            var want:String = null;
+            var p:UiNode = this._hover;
+            while (p != null)
+            {
+                var c:String = p.resolved != null ? p.resolved.cursor : null;
+                if (c != null) { want = c; break; }
+                p = p.parent;
+            }
+            if (want == null) want = MouseCursor.AUTO;
+            if (Mouse.cursor != want) Mouse.cursor = want;
+        }
+
+        private function onStageMouseMove(e:MouseEvent):void
+        {
+            this.hoverMoves = this.hoverMoves + 1;
+            this.setHoverTarget(this.nodeAt(e.target as DisplayObject));
+        }
+
+        private function onStageMouseLeave(e:Event):void
+        {
+            this.setHoverTarget(null);
         }
 
         // ---- frame boundary ---------------------------------------------
@@ -360,6 +516,10 @@ package asaot.ui
             }
 
             this._pending = 0;
+            // The pointer shape is re-derived at the END of the pass, so a style
+            // change under a stationary pointer still reaches the window (the
+            // hover chain is unchanged, so no callback would otherwise fire).
+            this.applyCursor();
 
         }
 

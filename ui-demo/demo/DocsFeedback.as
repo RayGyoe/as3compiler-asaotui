@@ -158,16 +158,16 @@ package demo
 
             if (id == "image") return [
                 new DocSection("A BitmapData in a box", [
-                    "The image scales a bitmap into the box it was given; scaleMode picks how. Keep the",
+                    "The image scales a bitmap into the box it was given; `scaleMode` picks how. Keep the",
                     "BitmapData STABLE across renders -- a new one every frame would re-upload the texture."
                 ], [
-                    "image({ bitmapData: SRC, scaleMode: \"letterbox\",",
+                    "image({ bitmapData: SRC, scaleMode: \"fit\",",
                     "        style: { size: [120, 80] } })"
                 ], 104, function ():Node
                 {
                     ensureSrc();
                     return row({ gap: 14, alignItems: "center" }, [
-                        image({ key: "imgA", bitmapData: SRC8, scaleMode: "letterbox",
+                        image({ key: "imgA", bitmapData: SRC8, scaleMode: "fit",
                             style: StyleRefinement.from({ size: [120, 72] }) }),
                         image({ key: "imgB", bitmapData: SRC8, scaleMode: "stretch",
                             style: StyleRefinement.from({ size: [72, 72] }) })
@@ -175,17 +175,39 @@ package demo
                 }),
 
                 new DocSection("Scale modes", [
-                    "letterbox keeps the aspect ratio and pads; stretch fills the box. The bitmap is not",
-                    "resampled per frame -- the renderer scales it."
+                    "There are three: `fit` contains the picture and pads (the default), `stretch` fills the",
+                    "box and ignores the aspect, `none` draws it 1:1, centred. An unknown mode THROWS at",
+                    "describe time -- a silent fallback to `fit` would leave a picture the wrong size with",
+                    "nothing on screen saying why. There is no cover/fill: covering means clipping what falls",
+                    "outside the box, and clipping belongs to a scrollView's viewport, not to a scale mode."
                 ], [
-                    "// one static SRC8 BitmapData, three boxes, three scale modes"
+                    "image({ bitmapData: SRC, scaleMode: \"none\" })   // 1:1, centred"
                 ], 76, function ():Node
                 {
                     ensureSrc();
                     return row({ gap: 14, alignItems: "center" }, [
-                        image({ key: "imgC", bitmapData: SRC8, scaleMode: "zoom",
-                            style: StyleRefinement.from({ size: [64, 64] }) }),
-                        text("letterbox / stretch / zoom", { style: DocsDemo.MONO, ariaName: "" })
+                        image({ key: "imgC", bitmapData: SRC8, scaleMode: "none",
+                            style: StyleRefinement.from({ size: [64, 64], background: 0xF3F4F6 }) }),
+                        text("fit / stretch / none", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("From a file or a URL", [
+                    "`src` hands the loading to the widget: it owns a Loader, so the author writes no COMPLETE",
+                    "wiring and no torn-down-node guard. The path is resolved by the RUNTIME (relative to the",
+                    "process's working directory), and a load is ASYNC: until it lands the box is the 64x64",
+                    "placeholder, so give an auto-sized image a `size` if it must not jump. A failure is not",
+                    "silent -- `onLoad()` takes nothing, `onError(message)` takes the IOError text, and",
+                    "`UiNode.loadError` keeps it on the node."
+                ], [
+                    "image({ src: \"avatar.png\", scaleMode: \"fit\", style: { size: [64, 64] },",
+                    "        onError: function (msg:String):void { trace(msg); } })"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 14, alignItems: "center" }, [
+                        image({ key: "imgSrc", src: "as-image.png", scaleMode: "fit",
+                            style: StyleRefinement.from({ size: [64, 64], background: 0xF3F4F6 }) }),
+                        text("loaded from as-image.png", { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];

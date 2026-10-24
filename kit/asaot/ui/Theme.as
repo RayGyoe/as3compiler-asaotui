@@ -34,6 +34,18 @@ package asaot.ui
         private static var _scratch2:Style;
         private static var _defaults:Object;   // kind -> Style
 
+        // Kinds whose whole region IS the interactive thing. They hand the pointer
+        // the hand shape (the same affordance AIR gives a SimpleButton). The list
+        // is deliberately short: a scroll view, a list, a table and a tree are
+        // SELECTABLE REGIONS, not buttons -- a hand over every pixel of a 400px
+        // list claims every pixel is clickable, which is exactly the kind of lie
+        // that makes a pointer feel broken. Roles that are clickable only when the
+        // author says so (image / avatar / card / box) set `cursor` themselves.
+        private static const CLICKABLE:Array = ["button", "checkbox", "radio", "switch",
+            "slider", "select", "combobox", "tabs", "menu", "accordion", "pagination",
+            "breadcrumb", "chip", "datePicker"];
+        private static var _clickable:Style;
+
         private static function ensure():void
         {
             if (_scratch1 != null) return;
@@ -46,6 +58,17 @@ package asaot.ui
             _defaults["textInput"] = makeTextInput();
             _defaults["textArea"] = makeTextInput();
             _defaults["checkbox"] = makeCheckbox();
+            // ONE shared instance: `resolve` copies the baseline into scratch1 and
+            // never writes it in place, so every clickable kind can point at the
+            // same style without any of them affecting another.
+            _clickable = makeBox();
+            _clickable.cursor = "hand";
+            for (var i:int = 0; i < CLICKABLE.length; i++)
+            {
+                var k:String = String(CLICKABLE[i]);
+                if (_defaults[k] == null) _defaults[k] = _clickable;
+                else _defaults[k].cursor = "hand";
+            }
         }
 
         public static function controlDefault(kind:String):Style

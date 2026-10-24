@@ -326,17 +326,23 @@ package demo
         // needs the EVENTS, and those are dispatched from here.
         //
         // The sequence is the one that threw TypeError #1009 in the wild (reported on
-        // the accordion page, reproduced by clicking around): `mouseOut` arrives at the
+        // the accordion page, reproduced by clicking around): an event arrives at the
         // object that WAS under the pointer ONE BEAT AFTER the frame that removed it --
         // AIR finishes the frame first and only then recomputes the pointer's target.
         // If the node was torn down in between, the listener used to run into a nulled
         // field.
         //
-        // So: hover EVERY leaf of both trees (main + overlay) BEFORE the page switch,
-        // then deliver the roll-out one tick later, when the reconciler has replaced
-        // the tree. The `destroyed=` field counts how many of the captured nodes really
-        // did die -- if that number fell to nothing the drill stopped biting, and the
-        // gate fails instead of reporting a clean sweep of a blind test.
+        // 2026-10-26: the library no longer installs per-object ROLL listeners. Our AOT
+        // runtime never dispatches mouseOver/mouseOut (G25), so hover is synthesized
+        // from ONE stage MOUSE_MOVE and both arms run the same code. The hazard did not
+        // go away, it moved: a backing still carries its DOWN/UP/CLICK listeners until
+        // destroySubtree takes them off, and AIR can deliver to a removed object. So the
+        // drill CAPTURES every leaf of both trees (main + overlay) before the page
+        // switch, then delivers CLICK + MOUSE_DOWN one tick later to the ones that
+        // REALLY died -- and never to a live one, because a live click would mutate the
+        // page under test. `destroyed=` still counts the torn-down nodes: if it fell to
+        // nothing the drill stopped biting, and the gate fails instead of grading a
+        // blind test.
         private function captureHover():void
         {
             this.rolled = [];
@@ -345,16 +351,15 @@ package demo
             if (ov != null) this.hoverLeaves(ov);
         }
 
-        // A HANDFUL of hovered nodes would make the delivery happen; every leaf is what
-        // makes the drill measurable. First run, 2026-10-24: 3107 nodes captured over
-        // the catalog and 348 of them really were destroyed by the page switches, so
-        // the number the gate grades is a measurement of this app, not of this comment.
+        // A HANDFUL of nodes would make the delivery happen; every leaf is what makes
+        // the drill measurable. First run, 2026-10-24: 3107 nodes captured over the
+        // catalog and 348 of them really were destroyed by the page switches, so the
+        // number the gate grades is a measurement of this app, not of this comment.
         private function hoverLeaves(n:UiNode):void
         {
             if (n == null || n.backing == null) return;
             if (n.children.length == 0)
             {
-                n.backing.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OVER));
                 // The BACKING is kept, not just the node: destroySubtree nulls the
                 // node field, and it is the display object that AIR delivers to.
                 this.rolled.push([n, n.backing]);
@@ -374,20 +379,22 @@ package demo
                 var n:UiNode = UiNode(pair[0]);
                 var bak:DisplayObject = pair[1] as DisplayObject;
                 // `app == null` is the library's own "torn down" marker.
-                if (n.app == null) dead = dead + 1;
+                if (n.app != null) continue;
+                dead = dead + 1;
                 try
                 {
-                    bak.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OUT));
+                    bak.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+                    bak.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_DOWN));
                 }
                 catch (err:Error)
                 {
                     // A caught error does NOT reach uncaughtErrorEvents, so this gate
-                    // would otherwise report a clean sweep over a throwing roll-out.
+                    // would otherwise report a clean sweep over a throwing delivery.
                     failed = failed + 1;
-                    selfLog("ROLLFAIL " + this.rollFrom + " " + n.kind + " " + err.name + ": " + err.message);
+                    selfLog("TEARDOWNFAIL " + this.rollFrom + " " + n.kind + " " + err.name + ": " + err.message);
                 }
             }
-            selfLog("ROLL " + this.rollFrom + " hovered=" + this.rolled.length
+            selfLog("TEARDOWN " + this.rollFrom + " captured=" + this.rolled.length
                 + " destroyed=" + dead + " errors=" + failed);
             this.rolled = null;
         }

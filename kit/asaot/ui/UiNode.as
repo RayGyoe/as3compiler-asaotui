@@ -87,6 +87,11 @@ package asaot.ui
         public var password:Boolean;
         public var checked:Boolean;
         public var binding:Binding;
+        // WRITTEN BY THE WIDGET, never mirrored from the description: the last
+        // failed load's message ("Error #2035: ..."). An image whose `src` cannot be
+        // read is not a blank box -- the author's `onError` gets the same text, and a
+        // probe can read it back here. null while nothing has failed.
+        public var loadError:String;
         // ARITY IS PART OF THE CONTRACT, and getting it wrong is NOT a silent no-op.
         //
         //   onClick()        -- no arguments. Every kind and every container calls it
@@ -202,6 +207,7 @@ package asaot.ui
             this.password = false;
             this.checked = false;
             this.binding = null;
+            this.loadError = null;
             this.onClick = null;
             this.onCommit = null;
             this.onChange = null;
@@ -248,25 +254,33 @@ package asaot.ui
             {
                 this.internalCount = this.internalCount - 1;
             }
-            // Hover / press / click are handled on the backing object, so the
-            // hit region is the control's drawn region -- the same region the
-            // existing pick test (as_pick_hit_local) walks.
+            // Hover is NOT wired here, on purpose. Our AOT runtime never dispatches
+            // mouseOver/mouseOut (G25 in compiler-gaps.md), so a per-object roll
+            // listener would work under adl and be dead in our own builds -- two
+            // different definitions of hover depending on which arm you run.
+            // UiApp derives hover from ONE stage MOUSE_MOVE listener using the same
+            // pick test the click uses (see its "hover is SYNTHESIZED" block), so
+            // both arms run the same code. What stays here is what the stub cannot
+            // express: press and click belong to the object under the pointer.
             //
-            // CLICK IS INSTALLED FOR EVERY KIND, unlike press: hover and click are
-            // properties of a display object (any element may carry a handler),
-            // while `pressed` is a CONTROL visual that only some kinds paint. Gating
-            // the click on wantsPress() is what made `box({ onClick: f })` dead --
+            // CLICK IS INSTALLED FOR EVERY KIND, unlike press: click is a property
+            // of a display object (any element may carry a handler), while
+            // `pressed` is a CONTROL visual that only some kinds paint. Gating the
+            // click on wantsPress() is what made `box({ onClick: f })` dead --
             // a container is the one element whose click region is not its own
             // chrome. handleClick() is safe for every kind: it drops an inert node
             // first, then gives the widget first refusal, then runs the handler.
-            this.listen(this.backing, MouseEvent.MOUSE_OVER, function (e:MouseEvent):void { self.setHover(1); });
-            this.listen(this.backing, MouseEvent.MOUSE_OUT, function (e:MouseEvent):void { self.setHover(0); });
             if (this.widget.wantsPress())
             {
                 this.listen(this.backing, MouseEvent.MOUSE_DOWN, function (e:MouseEvent):void { self.setPressed(1); });
                 this.listen(this.backing, MouseEvent.MOUSE_UP, function (e:MouseEvent):void { self.setPressed(0); });
             }
             this.listen(this.backing, MouseEvent.CLICK, function (e:MouseEvent):void { self.handleClick(); });
+            // Hover needs to FIND this node from a hit target (which may be this
+            // node's own TextField or a descendant's backing), so the app keeps
+            // backing -> node. Registered last: a backing that never made it this
+            // far must not be in the map.
+            this.app.nodeBackingBuilt(this);
         }
 
         // ---- backing listeners (detachable BY CONSTRUCTION) ---------------
@@ -312,6 +326,13 @@ package asaot.ui
         {
             if (this.state.hover == v) return;
             this.state.hover = v;
+            // A destroyed node cannot repaint, and `app` is the field
+            // destroySubtree nulls first. The app clears its hover chain before
+            // tearing a node down (UiApp.nodeBackingGone), so reaching this line
+            // with a null app means something else handed us a dead node: drop the
+            // state change instead of throwing #1009 inside a mouse move, where
+            // the frame guard would swallow it into a console line.
+            if (this.app == null) return;
             // Section 3.3: a hover DECORATES only; it must never reflow.
             this.app.markPaint(this);
         }
@@ -1049,6 +1070,11 @@ package asaot.ui
             // into this node; AIR can still deliver a roll-out to a display object it
             // removed (see listen()).
             this.releaseListeners();
+            // …and leave the pointer registry, which is the OTHER way an event can
+            // still reach this node: the app holds backing -> node, so a stale entry
+            // keeps the whole node alive and lets the next mouse move paint a dead
+            // node (see UiApp.nodeBackingGone).
+            if (this.app != null) this.app.nodeBackingGone(this);
             // Drop any in-flight tweens for this subtree BEFORE the node's scratch
             // bag is nulled, so the animator's active list never holds a dead node.
             Anim.clear(this);

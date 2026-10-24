@@ -15,10 +15,11 @@
 //
 // WHAT IT CHECKS (two directions, because either one is a #1063)
 //   1. INVOCATIONS inside kit/: every call to a VALUE callback passes exactly one
-//      argument, and every `onClick()` passes none. This is the direction that broke.
+//      argument, and every ZERO-argument hook is called with none. This is the
+//      direction that broke.
 //   2. DECLARATIONS in ui-demo/demo + probes/: every handler written for a value
-//      callback declares exactly one parameter, and every `onClick` handler declares
-//      none. This is the direction an author breaks.
+//      callback declares exactly one parameter, and every zero-argument hook's
+//      handler declares none. This is the direction an author breaks.
 //
 // HOW THE SOURCE IS READ
 //   `//` comments are stripped (with string awareness, so `"a // b"` survives) and
@@ -39,10 +40,16 @@ const path = require('path');
 
 const UI = path.resolve(__dirname, '..');
 
-// The callbacks that carry a VALUE. `onClick` is the one zero-argument member (every
-// container and every kind calls it as `onClick()`), and it is checked the other way.
-const VALUE_CBS = ['onChange', 'onCommit', 'onToggle', 'onSelect', 'onNavigate', 'onQuery', 'onSubmit'];
-const ALL_CBS = VALUE_CBS.concat(['onClick']);
+// The callbacks that carry a VALUE: called with exactly one argument, declared with
+// exactly one parameter.
+const VALUE_CBS = ['onChange', 'onCommit', 'onToggle', 'onSelect', 'onNavigate', 'onQuery', 'onSubmit', 'onError'];
+// The ZERO-argument hooks, graded the OTHER way: called with nothing, declared with
+// nothing. `onClick` is the container contract; `onLoad` is the image load's (the
+// completion carries nothing to pass -- the pixels are on the node, and whoever needs
+// the size reads it from there).
+const ZERO_CBS = ['onClick', 'onLoad'];
+const ALL_CBS = VALUE_CBS.concat(ZERO_CBS);
+const isZero = (cb) => ZERO_CBS.indexOf(cb) >= 0;
 
 // ---- source walking --------------------------------------------------------
 function asFiles(root) {
@@ -161,9 +168,9 @@ for (const file of asFiles('kit')) {
         continue;
       }
       const n = countParams(args);
-      if (cb === 'onClick') {
+      if (isZero(cb)) {
         if (n !== 0) {
-          violations.push(rel + ':' + lineOf(text, open) + ': .onClick() must be called with NO arguments (onClick is the zero-argument hook), got ' + n);
+          violations.push(rel + ':' + lineOf(text, open) + ': .' + cb + '() must be called with NO arguments (it is a zero-argument hook), got ' + n);
         }
       } else if (n !== 1) {
         violations.push(rel + ':' + lineOf(text, open) + ': .' + cb + '(...) must be called with exactly ONE argument (the new value -- a zero-argument call throws #1063 on `function (v:T)` handlers); got ' + n);
@@ -194,9 +201,9 @@ for (const root of ['ui-demo/demo', 'probes']) {
           continue;
         }
         const n = countParams(list);
-        if (cb === 'onClick') {
+        if (isZero(cb)) {
           if (n !== 0) {
-            violations.push(rel + ':' + lineOf(text, m.index) + ': an onClick handler must declare NO parameters (it is called as onClick()), got ' + n);
+            violations.push(rel + ':' + lineOf(text, m.index) + ': an ' + cb + ' handler must declare NO parameters (it is called as ' + cb + '()), got ' + n);
           }
         } else if (n !== 1) {
           violations.push(rel + ':' + lineOf(text, m.index) + ': a ' + cb + ' handler must declare exactly ONE parameter (the new value), got ' + n);

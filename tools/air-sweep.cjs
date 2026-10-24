@@ -230,42 +230,48 @@ else if (Number(endLine[1]) !== 0) failures.push('END errors=' + endLine[1]);
 const errors = lines.filter((l) => l.startsWith('ERROR '));
 if (errors.length) failures.push(errors.length + ' runtime error(s) reported by AIR');
 
-// The pointer drill. `ROLL` is emitted once per page, AFTER the targeted tree was
+// The pointer drill. `TEARDOWN` is emitted once per page, AFTER the targeted tree was
 // replaced, so `destroyed` is a fact about this app and not about the driver: if it
-// collapses the roll-out stopped meeting dead nodes and this gate is blind again.
-// 348 of 3107 hovered nodes were destroyed on the first measured run (2026-10-24);
+// collapses the delivery stopped meeting dead nodes and this gate is blind again.
+// 348 of 3107 captured nodes were destroyed on the first measured run (2026-10-24);
 // the floor is a third of that, so harmless layout drift will not fail a green app
 // while a real loss of coverage will.
+//
+// The line was called `ROLL` until 2026-10-26, when the library stopped installing
+// per-object roll listeners: hover is synthesized from one stage MOUSE_MOVE (the only
+// pointer event our AOT dispatches -- G25), so the drill now delivers CLICK +
+// MOUSE_DOWN to the torn-down backings. The invariant graded is the same one: a
+// display object that outlived its node must run NO handler.
 const ROLL_FLOOR = 100;
-const rollLines = lines.filter((l) => l.startsWith('ROLL '));
-const rollFails = lines.filter((l) => l.startsWith('ROLLFAIL '));
+const rollLines = lines.filter((l) => l.startsWith('TEARDOWN '));
+const rollFails = lines.filter((l) => l.startsWith('TEARDOWNFAIL '));
 let rollHovered = 0;
 let rollDestroyed = 0;
 for (const l of rollLines) {
-  const m = /^ROLL \S+ hovered=(\d+) destroyed=(\d+) errors=(\d+)$/.exec(l);
+  const m = /^TEARDOWN \S+ captured=(\d+) destroyed=(\d+) errors=(\d+)$/.exec(l);
   if (!m) {
     failures.push('unreadable pointer-drill line: ' + l.slice(0, 90));
     continue;
   }
   rollHovered += Number(m[1]);
   rollDestroyed += Number(m[2]);
-  if (Number(m[3]) !== 0) failures.push('a roll-out threw on page "' + l.split(' ')[1] + '"');
+  if (Number(m[3]) !== 0) failures.push('delivering to a torn-down node threw on page "' + l.split(' ')[1] + '"');
 }
 if (rollLines.length !== pages.length) {
   failures.push('the pointer drill reported ' + rollLines.length + '/' + pages.length + ' page(s)');
 }
 if (rollDestroyed < ROLL_FLOOR) {
   failures.push('the pointer drill destroyed ' + rollDestroyed + ' of ' + rollHovered
-    + ' hovered node(s) (floor ' + ROLL_FLOOR + ') -- it stopped meeting torn-down nodes');
+    + ' captured node(s) (floor ' + ROLL_FLOOR + ') -- it stopped meeting torn-down nodes');
 }
 if (rollFails.length) {
-  failures.push(rollFails.length + ' roll-out(s) threw at a torn-down node');
+  failures.push(rollFails.length + ' delivery(ies) threw at a torn-down node');
 }
 
 console.log('[air-sweep] ' + seen.length + '/' + pages.length + ' page(s) visited, '
   + (opened ? opened[1] : '?') + '/' + openKeys.length + ' popup(s) opened, '
   + errors.length + ' runtime error(s), '
-  + rollHovered + ' node(s) hovered and ' + rollDestroyed + ' of them destroyed by a switch; log: '
+  + rollHovered + ' node(s) captured and ' + rollDestroyed + ' of them destroyed by a switch; log: '
   + path.relative(UI, logFile).split(path.sep).join('/'));
 for (const l of rollFails.slice(0, 5)) console.log('  ' + l);
 if (errors.length) {

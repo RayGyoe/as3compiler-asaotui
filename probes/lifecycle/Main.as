@@ -25,16 +25,27 @@
 // page stayed green (registered as G25 in compiler-gaps.md); the reference runtime
 // was the only place the bug showed up.
 //
-// What it pins -- for EVERY kind that installs a backing listener (not just the two
-// UiNode ones, because a widget may add its own: menu's row-hover, scrollView's bar
-// hover):
-//   * dispatching mouseOver / mouseOut / mouseDown / mouseUp / click at a backing
-//     whose node is already destroyed throws NOTHING;
+// 2026-10-26: the roll listeners are GONE -- hover is synthesized from one stage
+// MOUSE_MOVE listener (UiApp), because that is the only pointer event both arms
+// deliver. The hazard just moved, it did not disappear: the app now holds
+// backing -> node for the hit test, so a destroyed node can be reached through a
+// STALE REGISTRY ENTRY, and a destroyed node left in the hover chain would run
+// `app.markPaint` on a null app on the very next mouse move. Both are pinned here.
+//
+// What it pins -- for EVERY kind that installs a backing listener (not just the
+// remaining UiNode ones, because a widget may add its own: menu's row-hover,
+// scrollView's bar hover):
+//   * dispatching mouseDown / mouseUp / click at a backing whose node is already
+//     destroyed throws NOTHING (mouseOver/mouseOut stay in the list as the
+//     negative control: nothing listens to them any more, in either arm);
 //   * the destroyed node ignores the event in the stronger sense too: `state.hover`
-//     stays 0 after a mouseOver, and an author's `onClick` never runs;
-//   * the guard is a no-op for LIVE nodes -- hovering a live control still sets its
-//     state, and a real click still runs its handler and still reaches the screen.
-//     Without that half, "return early every time" would pass.
+//     stays 0, and an author's `onClick` never runs;
+//   * destroying nodes does NOT grow the pointer registry (a stale entry keeps the
+//     node -- and its whole subtree -- alive in a Dictionary that is a GC root);
+//   * the guard is a no-op for LIVE nodes -- hovering a live control through the
+//     real pointer path still sets its state, and a real click still runs its
+//     handler and still reaches the screen. Without that half, "return early every
+//     time" would pass.
 import asaot.ui.*;
 import asaot.ui.style.*;
 import flash.display.BitmapData;
@@ -160,6 +171,7 @@ function destroyedTraffic():void
 {
     stageMark("destroyed traffic");
     ensureRegistered();
+    var regBefore:int = app.hoverRegistryCount();
     for (var k:int = 0; k < KINDS.length; k++)
     {
         for (var t:int = 0; t < TYPES.length; t++)
@@ -176,7 +188,15 @@ function destroyedTraffic():void
                 continue;
             }
             var bak:DisplayObject = dead.backing;
+            if (app.hoverRegistryCount() != regBefore + 1)
+            {
+                problems = problems + kind + " never entered the pointer registry; ";
+            }
             dead.destroySubtree();
+            if (app.hoverRegistryCount() != regBefore)
+            {
+                problems = problems + kind + " stayed in the pointer registry after teardown; ";
+            }
             try
             {
                 bak.dispatchEvent(new MouseEvent(type));
@@ -225,17 +245,21 @@ function liveTraffic():void
         finish();
         return;
     }
-    // Hover arrives as a plain event at the backing (the same call AIR makes), so
-    // this is the live half of the same listener.
-    n.backing.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OVER));
+    // Hover arrives through the REAL pointer path (one stage MOUSE_MOVE, the same
+    // call the window backend makes), not as a roll event at the backing: roll
+    // events do not exist in our runtime (G25), and this half of the probe exists
+    // so "destroyed nodes return early" cannot be satisfied by also breaking
+    // live ones. (110,26) is inside the 200x32 button at 10,10.
+    send(110, 26, "mouseMove");
     if (n.state.hover != 1)
     {
-        problems = problems + "mouseOver on a live node did not set hover (got " + n.state.hover + "); ";
+        problems = problems + "mouseMove over a live node did not set hover (got " + n.state.hover + "); ";
     }
-    n.backing.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OUT));
+    // …and off it again. (5,175) is the root's padding, over no child.
+    send(5, 175, "mouseMove");
     if (n.state.hover != 0)
     {
-        problems = problems + "mouseOut on a live node did not clear hover (got " + n.state.hover + "); ";
+        problems = problems + "moving off a live node did not clear hover (got " + n.state.hover + "); ";
     }
     // The node tree is untouched: same rect as the settle frame.
     if (n.absX != 10 || n.absY != 10 || n.absW != 200 || n.absH != 32)

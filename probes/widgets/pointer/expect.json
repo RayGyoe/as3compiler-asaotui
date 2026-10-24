@@ -1,0 +1,27 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/pointer/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "Window 300x200. Root is a column, padding 10, gap 8, alignItems flex-start, so children are laid out at x=10 from the top. card is size [200,60] with NO padding -> 10,10,200,60. inner is size [80,20] inside the card, which has no padding, so it lands on the card's origin -> 10,10,80,20. btn is size [120,32] and follows the card with the gap -> 10, 10+60+8=78,120,32.",
+    "points": [
+      "(70,94) is the middle of btn (10..130 x, 78..110 y).",
+      "(50,20) is inside inner (10..90 x, 10..30 y).",
+      "(150,50) is inside card but right of inner, which ends at x=90.",
+      "(280,190) is inside the root's 300x200 box and over no child."
+    ],
+    "not_pinned": "hover state, the ancestor chain, Mouse.cursor and the registry count are asserted inside Main.as and reported through <OUT>.done. They are STATE, not geometry: pinning them here would mean copying the program's output, and the point of the probe is that the numbers come from the runtime's hit test at those four points."
+  },
+  "w": 300,
+  "h": 200,
+  "rects": {
+    "root": [0, 0, 300, 200],
+    "card": [10, 10, 200, 60],
+    "inner": [10, 10, 80, 20],
+    "btn": [10, 78, 120, 32]
+  },
+  "points": [
+    { "x": 5, "y": 5, "rgb": "#ffffff" },
+    { "x": 150, "y": 40, "rgb": "#eeeeee" },
+    { "x": 50, "y": 15, "rgb": "#dddddd" },
+    { "x": 70, "y": 94, "rgb": "#2563eb" }
+  ]
+}

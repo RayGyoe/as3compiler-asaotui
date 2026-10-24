@@ -7,9 +7,13 @@
 // the layout / box / decoration / text grouping but expose only the fields this
 // toolkit can actually drive through the layout seam -- a field we cannot honour
 // would be a silent wrong-semantics trap, which AGENTS.md 2.4 forbids. The
-// remaining unimplemented GPUI fields (grid, cursor) are deliberately ABSENT, and
-// the seam itself throws loudly if someone reaches for them (seam/README.md
-// section 4).
+// remaining unimplemented GPUI field (grid) is deliberately ABSENT, and the seam
+// itself throws loudly if someone reaches for it (seam/README.md section 4).
+//
+// `cursor` IS exposed (2026-10-26) and is the one field here that is not painted:
+// it is applied to `Mouse.cursor`, which is a PROCESS-WIDE value, so it is
+// re-derived from the hover chain on every hover change (UiApp.applyCursor) and
+// never stored per node on the display list.
 //
 // `boxShadow` IS exposed (2026-10-25): it is DRAWN, not deferred. The runtime
 // really renders a DropShadowFilter (`as_render_filtered`, src/emit.ts), and a
@@ -76,6 +80,12 @@ package asaot.ui.style
         public var boxShadow:Array;
         public var opacity:Number;
         public var visibility:String;      // "visible" | "hidden" (inheritable)
+        // The OS POINTER SHAPE over this node (inheritable, like visibility).
+        // null = unset: the runtime's own rule decides -- I-beam over selectable
+        // text, a hand over a `buttonMode` object (src/emit.ts
+        // ASC_window_update_cursor). "auto" is the EXPLICIT spelling of that same
+        // rule, so a node can stop an inherited "hand" by asking for auto.
+        public var cursor:String;
 
         // ---- animation (NOT a visual field; consumed by UiNode.applyAnim) ----
         // `transitionMs` is the duration of a change to an animatable field
@@ -111,6 +121,7 @@ package asaot.ui.style
             this.boxShadow = null;
             this.opacity = NaN;
             this.visibility = null;
+            this.cursor = null;
             this.transitionMs = NaN;
             this.transitionEase = null;
             this.text = new TextStyle();
@@ -134,7 +145,7 @@ package asaot.ui.style
             this.aspectRatio = NaN;
             this.background = null; this.borderColor = NaN;
             this.cornerRadii = null; this.boxShadow = null;
-            this.opacity = NaN; this.visibility = null;
+            this.opacity = NaN; this.visibility = null; this.cursor = null;
             this.transitionMs = NaN; this.transitionEase = null;
             this.text = new TextStyle();
         }
@@ -179,6 +190,7 @@ package asaot.ui.style
             out.boxShadow = this.boxShadow != null ? this.boxShadow : parent.boxShadow;
             out.opacity = isNaN(this.opacity) ? parent.opacity : this.opacity;
             out.visibility = this.visibility != null ? this.visibility : parent.visibility;
+            out.cursor = this.cursor != null ? this.cursor : parent.cursor;
             out.transitionMs = isNaN(this.transitionMs) ? parent.transitionMs : this.transitionMs;
             out.transitionEase = this.transitionEase != null ? this.transitionEase : parent.transitionEase;
             this.text.mergeInto(out.text, parent.text);
@@ -192,12 +204,16 @@ package asaot.ui.style
             return out;
         }
 
-        // The inheritable projection: only `text.*` and `visibility` cascade
-        // (design doc section 2.3).
+        // The inheritable projection: `text.*`, `visibility` and `cursor` cascade
+        // (design doc section 2.3). `cursor` is inherited because the pointer
+        // shape is a property of the REGION, not of the object that happens to be
+        // the hit target: without the cascade, hovering a button's padding and its
+        // label would show two different cursors.
         public function projectInherited(out:Style):void
         {
             this.text.copyCoverInto(out.text);
             out.visibility = this.visibility;
+            out.cursor = this.cursor;
         }
 
         public function copyInto(out:Style):void
@@ -231,6 +247,7 @@ package asaot.ui.style
             out.boxShadow = this.boxShadow;
             out.opacity = this.opacity;
             out.visibility = this.visibility;
+            out.cursor = this.cursor;
             out.transitionMs = this.transitionMs;
             out.transitionEase = this.transitionEase;
             this.text.copyCoverInto(out.text);
@@ -271,11 +288,30 @@ package asaot.ui.style
             if (!fillEq(prev.background, cur.background) || !numEq(prev.borderColor, cur.borderColor)
                 || !cornersEq(prev.cornerRadii, cur.cornerRadii) || !numEq(prev.opacity, cur.opacity)
                 || !shadowsEq(prev.boxShadow, cur.boxShadow)
-                || !strEq(prev.visibility, cur.visibility))
+                || !strEq(prev.visibility, cur.visibility)
+                // NOT layout and NOT text: only the OS pointer changes. It still
+                // dirties the frame, because UiApp re-derives Mouse.cursor at the
+                // END of a paint pass (the new value must reach the window on the
+                // frame the style changed, not on the next mouse move).
+                || !strEq(prev.cursor, cur.cursor))
             {
                 f |= 4;
             }
             return f;
+        }
+
+        // ---- the accepted pointer shapes ---------------------------------
+        // flash.ui.MouseCursor is the source of truth (it is exactly what the
+        // runtime's `Mouse.cursor` understands, src/emit.ts
+        // ASC_cursor_kind_of_name). The list lives here so StyleRefinement.from can
+        // reject a typo AT DESCRIBE TIME: the same typo assigned later would be
+        // rejected inside a mouse-move handler, where the frame guard swallows the
+        // error and the only trace is a console line.
+        public static function checkCursor(v:String):String
+        {
+            if (v == "auto" || v == "arrow" || v == "button" || v == "hand" || v == "ibeam") return v;
+            throw new Error("asaot.ui: style.cursor \"" + v
+                + "\" is not a MouseCursor name (accepted: auto, arrow, button, hand, ibeam)");
         }
 
         // ---- small merge / compare helpers --------------------------------
