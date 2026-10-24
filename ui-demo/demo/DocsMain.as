@@ -16,7 +16,7 @@
 //      DocSection.height(), which sums the same constants DocsStyle gives the
 //      engine. The tour compares the scroll view's published contentH against a
 //      recomputed sum, and then -- the part that cannot lie -- requires that no
-//      child's solved rect escapes its block on ANY of the 41 pages. A forgotten
+//      child's solved rect escapes its block on ANY of the 42 pages. A forgotten
 //      gap or a wrong line height shows up as a rect outside its box;
 //   3. a real wheel scroll (the content pane), asserting the offset, the clamp and
 //      that the pixels actually moved while the layout did not;
@@ -253,7 +253,7 @@ package demo
             // frame boundary, which means a single widget can stop the TOUR (no
             // gallery.done, an opaque TIMEOUT) while the window keeps running. Catching
             // per page turns that into a named failure and lets the other 40 pages
-            // still report -- which is what a docs app has to do with 41 pages.
+            // still report -- which is what a docs app has to do with 42 pages.
             var pages:Array = DocsCatalog.pages();
             var badPages:int = 0;
             var badBlocks:int = 0;
@@ -494,7 +494,7 @@ package demo
             // ---- 6d. the toastHost demo ---------------------------------------
             // Every stage above checks a surface the page mounts BY ITSELF. The
             // toastHost page is the opposite: its two toasts exist only once the
-            // model's `tsh.open` flips, so the 41-page sweep (which only renders)
+            // model's `tsh.open` flips, so the 42-page sweep (which only renders)
             // never built them -- and the demo had shipped asking for "tone: info", a
             // CHIP tone that toast.as throws on. The frame guard recovers the throw and
             // re-renders the same tree, so the symptom was a console stream, not a

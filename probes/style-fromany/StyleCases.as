@@ -55,9 +55,10 @@ package
                 case 10: return lenEdgeOf(LengthEdges.fromAny([10, 20]));
                 case 11: return lenEdgeOf(LengthEdges.fromAny("auto"));
 
-                // ---- Fill (background). An array is a gradient stop list,
-                // deferred -> null; a Number is a solid colour --------------
-                case 12: return Fill.fromAny([11, 22]) == null ? "null" : "fill";
+                // ---- Fill (background). An array is a gradient stop list
+                // (`Fill.gradient`, 第十四轮 2026-10-25 -- it used to answer
+                // null while gradients were deferred); a Number is a solid ----
+                case 12: return gradOf(Fill.fromAny([11, 22]));
                 case 13: return fillOf(Fill.fromAny(0x2563EB));
                 case 14: return fillOf(Fill.fromAny(Fill.solid(0x112233)));
 
@@ -74,7 +75,7 @@ package
                     return edgeOf(StyleRefinement.from(opts).padding);
                 case 18:
                     opts = { background: [1, 2] };
-                    return StyleRefinement.from(opts).background == null ? "null" : "fill";
+                    return gradOf(StyleRefinement.from(opts).background);
             }
             return "id" + id + "=?";
         }
@@ -126,6 +127,16 @@ package
         {
             if (f == null) return "null";
             return "#" + hex6(f.rgb()) + "@" + String(int(f.alpha() * 255 + 0.5));
+        }
+
+        // A gradient has no single colour, so the answer is its SHAPE: type, stop
+        // count, angle. "solid" would be the silent failure mode this file exists
+        // to catch (an array collapsing to stop 0).
+        private static function gradOf(f:Fill):String
+        {
+            if (f == null) return "null";
+            if (!f.isGradient()) return "solid";
+            return f.gradientType + ":" + String(int(f.colors.length)) + ":" + String(int(f.angle));
         }
 
         private static function hex6(n:Number):String

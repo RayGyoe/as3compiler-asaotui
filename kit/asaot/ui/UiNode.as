@@ -25,6 +25,7 @@ package asaot.ui
     import asaot.ui.style.Fill;
     import asaot.ui.style.Size;
     import asaot.ui.style.TextStyle;
+    import asaot.ui.style.BoxShadow;
 
     import asaot.ui.LayoutConstants;
     import asaot.ui.anim.Anim;
@@ -33,6 +34,7 @@ package asaot.ui
     import flash.display.Shape;
     import flash.display.DisplayObject;
     import flash.display.DisplayObjectContainer;
+    import flash.filters.DropShadowFilter;
     import flash.text.TextField;
     import flash.events.EventDispatcher;
     import flash.events.MouseEvent;
@@ -74,6 +76,8 @@ package asaot.ui
         // Allocated ONCE per node at structure time -- steady state allocates
         // nothing (AGENTS.md memory rule).
         public var extra:Object;
+        // `extra` key holding the last APPLIED box-shadow stack (see applyShadow).
+        private static const SHADOW_LAST:String = "shadowLast";
 
         // ---- control payload (mirrored from the description node) --------
         public var textContent:String;
@@ -542,8 +546,16 @@ package asaot.ui
             }
 
             // background: the packed 0xAARRGGBB of a SOLID fill.
-            var toBg:Number = this.resolved.background != null ? this.resolved.background.argb : NaN;
-            var prevBg:Number = this.previous.background != null ? this.previous.background.argb : NaN;
+            //
+            // A GRADIENT is deliberately not animated: the animator only knows how to
+            // interpolate one packed colour (`lerpArgb`), and re-deriving N stops per
+            // frame would allocate. Passing NaN drops the tween, which is the honest
+            // reading of "there is nothing here to interpolate" -- not a fallback to
+            // the first stop, which would silently paint a solid fill.
+            var toGrad:Boolean = this.resolved.background != null && this.resolved.background.ratios != null;
+            var prevGrad:Boolean = this.previous.background != null && this.previous.background.ratios != null;
+            var toBg:Number = (this.resolved.background != null && !toGrad) ? this.resolved.background.argb : NaN;
+            var prevBg:Number = (this.previous.background != null && !prevGrad) ? this.previous.background.argb : NaN;
             var curBg:Number = Anim.value(this, Anim.FIELD_BACKGROUND, prevBg);
             if (active || curBg != toBg)
             {
@@ -962,6 +974,10 @@ package asaot.ui
             // A paint-only frame does not re-arrange, so this is where a lift that
             // flipped in a descriptor payload this frame actually takes effect.
             this.applyLift();
+            // Box shadow is a property of the SURFACE, not of the drawing, so it is
+            // re-applied on every paint (idempotent when unchanged) rather than on
+            // every layout -- a paint-only frame is the common one.
+            this.applyShadow();
             // Re-apply alpha on the PAINT side. `arrangeSelf` also writes it, but
             // a paint-only repaint (a dirty frame with no layout change) is the
             // common animation frame, and an alpha animated there would otherwise
@@ -972,6 +988,59 @@ package asaot.ui
                 if (this.state.disabled != 0) this.backing.alpha = this.backing.alpha * PaintKit.DISABLED_ALPHA;
             }
             this.widget.paint(this);
+        }
+
+        // ---- pass 3b: the box shadow -----------------------------------
+        // The resolved shadow STACK lands on the background shape's `filters[]`.
+        //
+        // WHY NOT THE BACKING: a filter on `backing` shades its whole subtree --
+        // the label, the icons, every child -- which is a drop shadow on the text,
+        // not on the box. Widgets that own a background shape (the overwhelming
+        // majority, see `shapeA`) therefore shadow that shape alone. A node with no
+        // background shape but a text field is a text-only kind (text/label) and the
+        // filter goes on the field: that IS a text shadow, and it is what a box
+        // shadow means for a node with no box. A node with neither THROWS rather
+        // than dropping the shadow on the floor.
+        //
+        // Idempotent: the applied stack is remembered in `extra` and compared BY
+        // VALUE (a re-describe parses a fresh array every time, so identity would
+        // rebuild the filter list every frame).
+        public function applyShadow():void
+        {
+            if (this.extra == null) return;
+            var want:Array = this.resolved.boxShadow;
+            var last:Array = null;
+            if (this.extra[SHADOW_LAST] != null) last = this.extra[SHADOW_LAST] as Array;
+            var target:DisplayObject = this.shapeA != null ? this.shapeA
+                                                    : (this.tf != null ? this.tf : null);
+            if (want == null || want.length == 0)
+            {
+                if (last != null && target != null)
+                {
+                    target.filters = [];
+                    this.extra[SHADOW_LAST] = null;
+                }
+                return;
+            }
+            if (target == null)
+            {
+                throw new Error("asaot.ui: boxShadow needs a background shape or a text field on kind \""
+                    + this.kind + "\" (it has neither, so the shadow would be invisible)");
+            }
+            if (Style.shadowsEqual(last, want)) return;
+            var list:Array = [];
+            for (var i:int = 0; i < want.length; i++)
+            {
+                var b:BoxShadow = BoxShadow(want[i]);
+                // distance/angle is coarser than x/y ONLY in absolute terms: atan2
+                // keeps the quadrant, so (0,-2) and (0,2) stay different.
+                var dist:Number = Math.sqrt(b.offsetX * b.offsetX + b.offsetY * b.offsetY);
+                var ang:Number = Math.atan2(b.offsetY, b.offsetX) * 180.0 / Math.PI;
+                list.push(new DropShadowFilter(dist, ang, b.color, b.alpha, b.blur, b.blur,
+                    1.0, 1, false, false, false));
+            }
+            target.filters = list;
+            this.extra[SHADOW_LAST] = want;
         }
 
         public function destroySubtree():void

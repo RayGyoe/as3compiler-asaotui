@@ -11,13 +11,13 @@ id  case (hand-derived expectation)                               AIR 51.4.1    
  9  Corners.fromAny([2])                                          (2,2,2,2)               (2,2,2,2)               
 10  LengthEdges.fromAny([10,20])                  [h,v]           (20px,10px,20px,10px)   (20px,10px,20px,10px)   
 11  LengthEdges.fromAny("auto")                                   (auto,auto,auto,auto)   (auto,auto,auto,auto)   
-12  Fill.fromAny([11,22])                         array = gradient -> nullnull                    null                    
+12  Fill.fromAny([11,22])                         array = gradient: type:stops:anglelinear:2:0              linear:2:0              
 13  Fill.fromAny(0x2563EB)                        scalar -> solid, opaque#2563EB@255             #2563EB@255             
 14  Fill.fromAny(Fill.solid(0x112233))            a Fill passthrough#112233@255             #112233@255             
 15  isArrayInObjectSlot([1])                      THE mechanism: is Array on an Object paramtrue                    true                    
 16  StyleRefinement.from({size:[3,4],...}).size   dynamic read -> fromAny(3px,4px)               (3px,4px)               
 17  StyleRefinement.from({size:[3,4],...}).padding                (5,5,5,5)               (5,5,5,5)               
-18  StyleRefinement.from({background:[1,2]})      array background is safenull                    null                    
+18  StyleRefinement.from({background:[1,2]})      array background = gradientlinear:2:0              linear:2:0              
 19  Size.fromAny(Length.pct(0.5))                 Length passthrough -> percent(50%,50%)               (50%,50%)               
 
 AOT exit: 0

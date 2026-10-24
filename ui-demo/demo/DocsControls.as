@@ -12,6 +12,7 @@ package demo
     import asaot.ui.row;
     import asaot.ui.slider;
     import asaot.ui.text;
+    import asaot.ui.textArea;
     import asaot.ui.textField;
     import asaot.ui.toggle;
     import asaot.ui.style.StyleRefinement;
@@ -119,6 +120,46 @@ package demo
                             style: StyleRefinement.from({ size: [200, null] }),
                             onCommit: function (t:String):void { m.put("tf.commit", t); } }),
                         text("committed: '" + m.val("tf.commit", "") + "'", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                })
+            ];
+
+            if (id == "textArea") return [
+                new DocSection("Enter inserts a newline", [
+                    "A text area is its own KIND, not a flag on the single-line field: the difference is",
+                    "Enter -- a single-line field COMMITS on it, here it inserts. So this widget never",
+                    "consumes 13; the runtime inserts the line break itself, and only for a key nobody took."
+                ], [
+                    "textArea({ key: \"notes\", rows: 4, placeholder: \"Notes...\",",
+                    "           style: { size: [320, null] },",
+                    "           onChange: function (t:String):void { model.notes = t; } })"
+                ], 140, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        textArea({ key: "taNotes", rows: 4, placeholder: "Notes for the reviewer...",
+                            value: String(m.val("ta.notes", "")),
+                            style: StyleRefinement.from({ size: [340, null] }),
+                            onChange: function (t:String):void { m.put("ta.notes", t); } }),
+                        text("model length: " + String(m.val("ta.notes", "")).length,
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("rows sets the height; commit is on blur", [
+                    "With no height in the style the box is `rows` REAL line heights of the resolved font",
+                    "(measured with the field itself, not a constant), plus padding and border. There is",
+                    "no Enter-to-commit here, so onCommit fires when focus leaves the field."
+                ], [
+                    "textArea({ rows: 2, value: model.bio,",
+                    "           onCommit: function (t:String):void { model.bio = t; } })"
+                ], 120, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        textArea({ key: "taBio", rows: 2, value: String(m.val("ta.bio", "two lines tall")),
+                            style: StyleRefinement.from({ size: [340, null] }),
+                            onCommit: function (t:String):void { m.put("ta.bio", t); } }),
+                        text("committed: '" + String(m.val("ta.bio", "") ) + "'",
+                            { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];

@@ -1,7 +1,7 @@
 // buildsh-gpu.cjs -- pin `ui-demo/air-gallery/build.sh --gpu <mode>`.
 //
 // WHY THIS EXISTS. `--gpu` changes three things at once and none of them change the
-// picture: the same 41 pages render the same pixels whether the window composes on
+// picture: the same 42 pages render the same pixels whether the window composes on
 // the CPU, on a GPU, or through an OpenGL bridge. So "I ran it and it looked fine"
 // proves nothing at all -- a mode that is parsed and then dropped is invisible.
 // What is observable is the DESCRIPTOR and the ARGV, which is what this checks:
@@ -25,7 +25,7 @@
 // `$BACKEND`) and the same `aot_args()` function, so this is not a re-implementation
 // of the build, it is the build's own decision path with the build left out. The two
 // consumer arms (adl, as-aot) were measured for real on 2026-10-25: `aot --gpu gl`
-// built with ASC_RENDER_GL=1 and toured 41/41 pages, `aot --gpu gpu` with
+// built with ASC_RENDER_GL=1 and toured 41/42 pages, `aot --gpu gpu` with
 // ASC_RENDER_D3D=1, `air --gpu gl` opened under adl -- and `run-gallery.cjs` asserts
 // on every future run that a gpu mode really reached the generated manifest.
 //

@@ -7,9 +7,15 @@
 // the layout / box / decoration / text grouping but expose only the fields this
 // toolkit can actually drive through the layout seam -- a field we cannot honour
 // would be a silent wrong-semantics trap, which AGENTS.md 2.4 forbids. The
-// remaining unimplemented GPUI fields (grid, box-shadow, cursor) are deliberately
-// ABSENT, and the seam itself throws loudly if someone reaches for them
-// (seam/README.md section 4).
+// remaining unimplemented GPUI fields (grid, cursor) are deliberately ABSENT, and
+// the seam itself throws loudly if someone reaches for them (seam/README.md
+// section 4).
+//
+// `boxShadow` IS exposed (2026-10-25): it is DRAWN, not deferred. The runtime
+// really renders a DropShadowFilter (`as_render_filtered`, src/emit.ts), and a
+// box shadow lands on the node's BACKGROUND SHAPE, never on the backing -- a
+// filter on the backing would shadow the children too (a drop shadow on the
+// label and the icons), which is not what a box shadow means.
 //
 // ALIGNMENT / MARGIN / INSET / WRAP / POSITION / OVERFLOW / DISPLAY / RATIO are
 // now exposed: the pure-AS3 engine implements alignment, wrap, margin and inset,
@@ -64,6 +70,10 @@ package asaot.ui.style
         public var background:Fill;        // null unset
         public var borderColor:Number;     // NaN unset
         public var cornerRadii:Corners;
+        // Array of BoxShadow (null unset). Drawn as the background shape's
+        // `filters[]`; an absent list means "no filter at all", so the steady
+        // state allocates nothing.
+        public var boxShadow:Array;
         public var opacity:Number;
         public var visibility:String;      // "visible" | "hidden" (inheritable)
 
@@ -98,6 +108,7 @@ package asaot.ui.style
             this.display = null;
             this.aspectRatio = NaN;
             this.borderColor = NaN;
+            this.boxShadow = null;
             this.opacity = NaN;
             this.visibility = null;
             this.transitionMs = NaN;
@@ -122,7 +133,8 @@ package asaot.ui.style
             this.position = null; this.overflow = null; this.display = null;
             this.aspectRatio = NaN;
             this.background = null; this.borderColor = NaN;
-            this.cornerRadii = null; this.opacity = NaN; this.visibility = null;
+            this.cornerRadii = null; this.boxShadow = null;
+            this.opacity = NaN; this.visibility = null;
             this.transitionMs = NaN; this.transitionEase = null;
             this.text = new TextStyle();
         }
@@ -162,6 +174,9 @@ package asaot.ui.style
             out.background = this.background != null ? this.background : parent.background;
             out.borderColor = isNaN(this.borderColor) ? parent.borderColor : this.borderColor;
             out.cornerRadii = mergeCorners(this.cornerRadii, parent.cornerRadii);
+            // An ARRAY is a whole value (a stack of shadows), not a component-wise
+            // merge target: a refinement either sets the stack or leaves it.
+            out.boxShadow = this.boxShadow != null ? this.boxShadow : parent.boxShadow;
             out.opacity = isNaN(this.opacity) ? parent.opacity : this.opacity;
             out.visibility = this.visibility != null ? this.visibility : parent.visibility;
             out.transitionMs = isNaN(this.transitionMs) ? parent.transitionMs : this.transitionMs;
@@ -213,6 +228,7 @@ package asaot.ui.style
             out.background = this.background;
             out.borderColor = this.borderColor;
             out.cornerRadii = copyCorners(this.cornerRadii, out.cornerRadii);
+            out.boxShadow = this.boxShadow;
             out.opacity = this.opacity;
             out.visibility = this.visibility;
             out.transitionMs = this.transitionMs;
@@ -254,6 +270,7 @@ package asaot.ui.style
             if (!textEq(prev.text, cur.text)) f |= 2 | 4;
             if (!fillEq(prev.background, cur.background) || !numEq(prev.borderColor, cur.borderColor)
                 || !cornersEq(prev.cornerRadii, cur.cornerRadii) || !numEq(prev.opacity, cur.opacity)
+                || !shadowsEq(prev.boxShadow, cur.boxShadow)
                 || !strEq(prev.visibility, cur.visibility))
             {
                 f |= 4;
@@ -395,14 +412,34 @@ package asaot.ui.style
             return strEq(a.fontFamily, b.fontFamily) && numEq(a.fontSize, b.fontSize)
                 && strEq(a.fontWeight, b.fontWeight) && strEq(a.fontStyle, b.fontStyle)
                 && numEq(a.color, b.color) && numEq(a.leading, b.leading)
-                && numEq(a.letterSpacing, b.letterSpacing) && strEq(a.textAlign, b.textAlign);
+                && numEq(a.letterSpacing, b.letterSpacing) && strEq(a.textAlign, b.textAlign)
+                // These two change the measured size as well as the pixels, so they
+                // ride the same flag textEq already contributes (2|4).
+                && strEq(a.whiteSpace, b.whiteSpace) && strEq(a.textOverflow, b.textOverflow);
         }
 
         private static function fillEq(a:Fill, b:Fill):Boolean
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
-            return a.argb == b.argb;
+            return a.equals(b);
+        }
+
+        // Element-wise and BY VALUE: a freshly parsed boxShadow must compare equal
+        // to last frame's, otherwise every describe pass would repaint and rebuild
+        // the filter list forever.
+        public static function shadowsEqual(a:Array, b:Array):Boolean { return shadowsEq(a, b); }
+
+        private static function shadowsEq(a:Array, b:Array):Boolean
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            if (a.length != b.length) return false;
+            for (var i:int = 0; i < a.length; i++)
+            {
+                if (!BoxShadow(a[i]).equals(BoxShadow(b[i]))) return false;
+            }
+            return true;
         }
     }
 }

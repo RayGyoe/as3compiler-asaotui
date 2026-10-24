@@ -81,6 +81,55 @@ package demo
                         box({ style: StyleRefinement.from({
                             flexGrow: 2, background: 0xBFDBFE, cornerRadii: 6 }) })
                     ]);
+                }),
+
+                new DocSection("Box shadow", [
+                    "boxShadow is DRAWN, not deferred: the runtime really renders a DropShadowFilter, and",
+                    "it lands on the node's background shape only -- a filter on the backing would shade",
+                    "the label and the children too. offset/blur/color/alpha are the four knobs AS3 has;",
+                    "`spread` and `inset` are GPUI fields this backend cannot honour, so they THROW."
+                ], [
+                    "box({ style: { padding: 12, background: 0xFFFFFF, cornerRadii: 8,",
+                    "               boxShadow: { y: 2, blur: 8, color: 0x000000, alpha: 0.25 } } })"
+                ], 108, function ():Node
+                {
+                    return row({ gap: 20, alignItems: "center" }, [
+                        box({ style: StyleRefinement.from({
+                            size: [150, 64], padding: 12, background: 0xFFFFFF, cornerRadii: 8,
+                            borderWidths: 1, borderColor: 0xE2E8F0,
+                            boxShadow: { y: 2, blur: 8, color: 0x000000, alpha: 0.25 }
+                        }) }, [ text("drop shadow", { ariaName: "" }) ]),
+                        box({ style: StyleRefinement.from({
+                            size: [150, 64], padding: 12, background: 0xFFFFFF, cornerRadii: 8,
+                            borderWidths: 1, borderColor: 0xE2E8F0,
+                            boxShadow: [ { y: 1, blur: 2, color: 0x000000, alpha: 0.18 },
+                                         { y: 6, blur: 14, color: 0x3B82F6, alpha: 0.30 } ]
+                        }) }, [ text("a stack of two", { ariaName: "" }) ])
+                    ]);
+                }),
+
+                new DocSection("Gradient background", [
+                    "A background is a Fill: one colour, or TWO OR MORE stops. An Array is a gradient, and",
+                    "`angle` is in degrees (0 = left to right, 90 = top to bottom). This backend paints",
+                    "LINEAR only -- radial/focal throws at construction instead of painting a different",
+                    "gradient than the one asked for."
+                ], [
+                    "box({ style: { background: [0x3B82F6, 0x8B5CF6], height: 48 } })",
+                    "box({ style: { background: { colors: [0xF97316, 0xFDE047], angle: 90 } } })"
+                ], 108, function ():Node
+                {
+                    return row({ gap: 16, alignItems: "center" }, [
+                        box({ style: StyleRefinement.from({
+                            size: [140, 56], background: [0x3B82F6, 0x8B5CF6], cornerRadii: 8,
+                            justifyContent: "center", alignItems: "center"
+                        }) }, [ text("horizontal", { style: StyleRefinement.from({
+                            text: { color: 0xFFFFFF } }), ariaName: "" }) ]),
+                        box({ style: StyleRefinement.from({
+                            size: [140, 56], cornerRadii: 8,
+                            background: { colors: [0xF97316, 0xFDE047], angle: 90 },
+                            justifyContent: "center", alignItems: "center"
+                        }) }, [ text("vertical", { ariaName: "" }) ])
+                    ]);
                 })
             ];
 

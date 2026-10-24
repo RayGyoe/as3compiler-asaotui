@@ -44,6 +44,7 @@ package asaot.ui
             _defaults["text"] = makeText();
             _defaults["button"] = makeButton();
             _defaults["textInput"] = makeTextInput();
+            _defaults["textArea"] = makeTextInput();
             _defaults["checkbox"] = makeCheckbox();
         }
 

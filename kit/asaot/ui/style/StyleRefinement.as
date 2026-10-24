@@ -87,6 +87,9 @@ package asaot.ui.style
             }
             if (o.borderColor != null) r.borderColor = Number(o.borderColor);
             if (o.cornerRadii != null) r.cornerRadii = Corners.fromAny(o.cornerRadii);
+            // One shadow or a stack; `listFromAny` validates the unsupported GPUI
+            // fields (spread / inset) loudly, see BoxShadow's header.
+            if (o.boxShadow != null) r.boxShadow = BoxShadow.listFromAny(o.boxShadow);
             if (o.opacity != null) r.opacity = Number(o.opacity);
             if (o.visibility != null) r.visibility = String(o.visibility);
             if (o.transitionMs != null) r.transitionMs = Number(o.transitionMs);

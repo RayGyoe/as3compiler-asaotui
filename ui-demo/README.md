@@ -45,7 +45,7 @@ Windows-only, which AIR's XSD has no slot for — `as3compiler/docs/zh-cn/compil
 (`ASC_RENDER_WINGPU=1` plus the backend's own define), because a mode that never
 reached the build renders **identically** to the software one and would look honoured.
 
-Nothing about this is observable by eye — all five modes draw the same 41 pages — so
+Nothing about this is observable by eye — all five modes draw the same 42 pages — so
 `../tools/buildsh-gpu.cjs` pins the descriptor and the argv for every mode, and
 `../tools/mutation-buildsh-gpu.cjs` (5/5) shows that gate goes red when the mapping,
 the refusal of unknown modes, or the one-line-diff invariant is broken. The last one
@@ -102,7 +102,7 @@ and `probes/widgets/*` + this demo are the end-to-end half.
 
 | File | Role |
 |---|---|
-| `demo/DocsMain.as` | The docs app as an **AIR document class** (`Sprite`) **and** its headless acceptance tour: hand-computed shell rects, block arithmetic on all 41 pages, a real wheel scroll, a real sidebar click, the overlay tree opened/closed, and 8 `gallery-page*.png` screenshots. Writes `gallery.txt` + `gallery.done` (`PASS` / `FAIL <problems>`). |
+| `demo/DocsMain.as` | The docs app as an **AIR document class** (`Sprite`) **and** its headless acceptance tour: hand-computed shell rects, block arithmetic on all 42 pages, a real wheel scroll, a real sidebar click, the overlay tree opened/closed, and 8 `gallery-page*.png` screenshots. Writes `gallery.txt` + `gallery.done` (`PASS` / `FAIL <problems>`). |
 | `demo/DocsAir.as` | The **AIR arm's** entry class: same model + view + `UiApp`, same subscription, same landing page — **no tour** (the tour's `Stage.dispatchMouse`/`dispatchWheel`/`render` do not exist on AIR). This is what `build.sh` compiles with mxmlc. |
 | `air-gallery/build.sh` | **The one command**: `./build.sh` = AIR arm (mxmlc → adl), `./build.sh aot` = AOT arm (delegates to `run-gallery.cjs`), `swf` = compile only, `desc` = show what `--gpu` would build from, `clean` = remove the artifacts (never the tracked PNGs). `--gpu cpu|gpu|d3d12|gl|direct` picks the window's composition mode by deriving `app.<mode>.xml`. Resolves the AIR SDK from `AIRSDK_HOME` or `PATH`, and picks `adl.exe` over the SDK's Unix `adl` wrapper on Windows. |
 | `run-check.cjs` | Compile **and run** `CheckUi.as` through the AOT; propagates the exit code. |
@@ -125,7 +125,7 @@ the dev box it is `C:\Program Files\LLVM\bin`.
 # (a) correctness self-check -- the CI-gateable one
 node run-check.cjs                       # -> CHECKUI: 23 checks, 0 failures, exit 0
 
-# (a2) the component-docs tour (41 pages, widget-driven switch, 8 screenshots)
+# (a2) the component-docs tour (42 pages, widget-driven switch, 8 screenshots)
 ASC_NO_OPEN=1 node run-gallery.cjs       # -> [gallery] RESULT: PASS
                                          #    air-gallery/gallery{,.done,-page0..7}.{txt,png}
 

@@ -48,6 +48,7 @@ package demo
 
                 new DocPage("button", "button", 3, "A pressable label. Variants are styles, not kinds."),
                 new DocPage("textField", "textField", 3, "Editable text, optionally bound, masked or ghosted."),
+                new DocPage("textArea", "textArea", 3, "A multi-line field: Enter inserts a newline, the box is `rows` lines tall."),
                 new DocPage("checkbox", "checkbox", 3, "A boolean with a label. Bound or plain."),
                 new DocPage("radio", "radio", 3, "One of N in a named group."),
                 new DocPage("toggle", "toggle", 3, "A switch: the `switch` kind, spelled around the keyword."),

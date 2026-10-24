@@ -13,13 +13,13 @@
     "9": "(2,2,2,2)",
     "10": "(20px,10px,20px,10px)",
     "11": "(auto,auto,auto,auto)",
-    "12": "null",
+    "12": "linear:2:0",
     "13": "#2563EB@255",
     "14": "#112233@255",
     "15": "true",
     "16": "(3px,4px)",
     "17": "(5,5,5,5)",
-    "18": "null",
+    "18": "linear:2:0",
     "19": "(50%,50%)"
   },
   "label": {
@@ -34,13 +34,13 @@
     "9": "Corners.fromAny([2])",
     "10": "LengthEdges.fromAny([10,20])                  [h,v]",
     "11": "LengthEdges.fromAny(\"auto\")",
-    "12": "Fill.fromAny([11,22])                         array = gradient -> null",
+    "12": "Fill.fromAny([11,22])                         array = gradient: type:stops:angle",
     "13": "Fill.fromAny(0x2563EB)                        scalar -> solid, opaque",
     "14": "Fill.fromAny(Fill.solid(0x112233))            a Fill passthrough",
     "15": "isArrayInObjectSlot([1])                      THE mechanism: is Array on an Object param",
     "16": "StyleRefinement.from({size:[3,4],...}).size   dynamic read -> fromAny",
     "17": "StyleRefinement.from({size:[3,4],...}).padding",
-    "18": "StyleRefinement.from({background:[1,2]})      array background is safe",
+    "18": "StyleRefinement.from({background:[1,2]})      array background = gradient",
     "19": "Size.fromAny(Length.pct(0.5))                 Length passthrough -> percent"
   },
   "_derivation": {
@@ -55,13 +55,13 @@
     "9": "Corners.fromArray: length==1 -> all(2).",
     "10": "LengthEdges.fromArray: length==2 -> h=lenOf(a[0])=px(10), v=lenOf(a[1])=px(20); builds new LengthEdges(v,h,v,h) = (top=20px,right=10px,bottom=20px,left=10px).",
     "11": "not an array -> lenOf(\"auto\") -> String and == \"auto\" -> Length.AUTO -> all(AUTO).",
-    "12": "is Array -> fromArray -> null (gradients are deferred; see Fill.as header).",
+    "12": "is Array -> fromArray([11,22]) -> gradient(): n=2 so ratios=[0,255], alphas=[1,1], gradientType='linear' and angle=0 (opts is null). gradOf prints type:stops:angle = 'linear:2:0'. Until 2026-10-25 this answered null while gradients were deferred; the runtime had beginGradientFill all along.",
     "13": "not an array -> is Number -> solid(0x2563EB). Fill ctor: 0x2563EB <= 0xFFFFFF so alpha is forced opaque -> 0xFF2563EB. rgb() = 0x2563EB, alpha() = 255/255 = 1 -> int(1*255+0.5)=255.",
     "14": "not an array (a Fill instance) -> is Number false -> is Fill -> returned as-is: rgb 0x112233, opaque.",
     "15": "An array literal handed to an Object-typed parameter, then `is Array`. This is exactly what G14 broke and 阶段二百五十三 fixed.",
     "16": "StyleRefinement.from reads o.size as a dynamic `o.size` (a *) and hands it to Size.fromAny(Object) -> array branch -> fromArray([3,4]) -> (3px,4px).",
     "17": "same path through Edges.fromAny(5) -> all(5).",
-    "18": "same path through Fill.fromAny([1,2]) -> fromArray -> null. Before the revert this line was branched at the call site; the point of the case is that it is NOT any more and still lands on null (and does not crash).",
+    "18": "same path through Fill.fromAny([1,2]) -> gradient() -> 'linear:2:0'. Before the revert this line was branched at the call site; the point of the case is that it is NOT any more and still lands on a real gradient (and does not crash). It also still refuses the silent failure: 'solid' would mean the array collapsed to stop 0.",
     "19": "not an array -> lenOf is Length -> pct(0.5); toEngineValue() = 0.5*100 = 50 -> '50%'."
   }
 }

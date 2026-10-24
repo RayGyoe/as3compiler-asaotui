@@ -21,15 +21,22 @@ package asaot.ui
     import asaot.ui.style.Style;
     import asaot.ui.style.Edges;
     import asaot.ui.style.TextStyle;
+    import asaot.ui.style.Fill;
 
     import asaot.ui.LayoutConstants;
 
     import flash.display.Shape;
+    import flash.geom.Matrix;
     import flash.text.TextField;
     import flash.text.TextFormat;
 
     public class PaintKit
     {
+        // Per-node scratch key for the gradient matrix. A gradient needs a Matrix
+        // per draw, and allocating one every frame is exactly the "no per-frame
+        // allocation" red line in AGENTS.md 2.4 -- so each node owns one and it is
+        // re-filled in place.
+        public static const GRAD_MTX:String = "gradMtx";
         // ---- interaction state -> pixels ----------------------------------
         //
         // THE STATE IS DERIVED, NOT AUTHORED. `ElementState` already carried
@@ -134,6 +141,29 @@ package asaot.ui
             return t;
         }
 
+        // ---- gradient-aware background ------------------------------------
+        // One place decides how `Style.background` becomes a paint, so a solid and
+        // a gradient cannot drift apart between the two box drawers. A gradient
+        // goes through `beginGradientFill` with the matrix `createGradientBox`
+        // would build, i.e. the axis spans exactly the node's own box.
+        public static function beginBackground(g:Object, f:Fill, w:Number, h:Number, n:UiNode):void
+        {
+            if (f.ratios != null)
+            {
+                var m:Matrix = null;
+                if (n != null && n.extra != null) m = n.extra[GRAD_MTX] as Matrix;
+                if (m == null)
+                {
+                    m = new Matrix();
+                    if (n != null && n.extra != null) n.extra[GRAD_MTX] = m;
+                }
+                m.createGradientBox(w, h, f.angle * Math.PI / 180.0, 0, 0);
+                g.beginGradientFill(f.gradientType, f.colors, f.alphas, f.ratios, m, "pad", "rgb", 0);
+                return;
+            }
+            g.beginFill(f.rgb(), f.alpha());
+        }
+
         public static function formatFor(s:Style):TextFormat
         {
             var t:TextStyle = s.text;
@@ -150,21 +180,57 @@ package asaot.ui
         }
 
         // Writes n.state.measuredW/H (the intrinsic size of `content`).
-        public static function measureField(n:UiNode, field:TextField, content:String, s:Style):void
+        //
+        // `wrapW` is the CONTENT width to wrap at; NaN/Omitted means "one line",
+        // which is every caller but the text kind. Wrapping needs a real width to
+        // wrap against, so it is a MEASURE-time parameter, not a paint-time one:
+        // the wrapped height is what an auto-height text node must publish.
+        public static function measureField(n:UiNode, field:TextField, content:String, s:Style,
+                                            wrapW:Number = NaN):void
         {
             var f:TextFormat = formatFor(s);
             field.defaultTextFormat = f;
-            field.autoSize = "left";
-            field.multiline = false;
-            field.wordWrap = false;
+            var wrapped:Boolean = !isNaN(wrapW) && wrapW > 0;
+            field.autoSize = wrapped ? "none" : "left";
+            field.wordWrap = wrapped;
+            field.multiline = wrapped;
+            if (wrapped) field.width = wrapW;
             field.text = content == null ? "" : content;
             // A full-range replace, safe to repeat: G20 (compiler stage 268) made
             // setTextFormat REBUILD the run table instead of appending a run per
             // call, so re-measuring the same field cannot accumulate runs.
             field.setTextFormat(f);
-            n.state.measuredW = field.textWidth;
+            n.state.measuredW = wrapped ? wrapW : field.textWidth;
             n.state.measuredH = field.textHeight;
             n.state.measureValid = 3;
+        }
+
+        // Largest prefix of `content` whose rendered width (plus the ellipsis) fits
+        // `maxW`. The field is used as the ruler, so this measures with exactly the
+        // font and run table that will be drawn -- a second width model would drift.
+        //
+        // `\u2026` is spelled as an escape on purpose: the generated C carries string
+        // literals byte-for-byte, and a source-encoded glyph would depend on how this
+        // file was saved.
+        public static function ellipsize(field:TextField, content:String, maxW:Number):String
+        {
+            if (field == null) return content;
+            var full:String = content == null ? "" : content;
+            field.text = full;
+            if (field.textWidth <= maxW) return full;
+            var tail:String = "\u2026";
+            var lo:int = 0;
+            var hi:int = full.length;
+            while (lo < hi)
+            {
+                var mid:int = Math.floor((lo + hi + 1) / 2);
+                field.text = full.substring(0, mid) + tail;
+                if (field.textWidth <= maxW) lo = mid;
+                else hi = mid - 1;
+            }
+            var out:String = (lo > 0) ? (full.substring(0, lo) + tail) : tail;
+            field.text = out;
+            return out;
         }
 
         // ---- box drawing ----------------------------------------------------
@@ -179,7 +245,7 @@ package asaot.ui
             var hasBg:Boolean = s.background != null;
             if (hasBg)
             {
-                g.beginFill(s.background.rgb(), s.background.alpha());
+                beginBackground(g, s.background, w, h, null);
             }
             var hasBorder:Boolean = s.borderWidths != null && !isNaN(s.borderColor);
             if (hasBorder)
@@ -221,10 +287,21 @@ package asaot.ui
             var hasBg:Boolean = s.background != null;
             if (hasBg)
             {
-                var bg:uint = s.background.rgb();
-                if (pressedSink > 0) bg = mixRGB(bg, 0x000000, pressedSink);
-                else if (hoveredLift > 0) bg = mixRGB(bg, 0xFFFFFF, hoveredLift);
-                g.beginFill(bg, s.background.alpha());
+                if (s.background.ratios != null)
+                {
+                    // A gradient is NOT state-tinted: mixing "toward white" is
+                    // meaningless for more than one stop, and re-deriving every stop
+                    // per frame would allocate. The border below still reacts, so a
+                    // gradient surface is not inert -- it is just not tinted.
+                    beginBackground(g, s.background, w, h, n);
+                }
+                else
+                {
+                    var bg:uint = s.background.rgb();
+                    if (pressedSink > 0) bg = mixRGB(bg, 0x000000, pressedSink);
+                    else if (hoveredLift > 0) bg = mixRGB(bg, 0xFFFFFF, hoveredLift);
+                    g.beginFill(bg, s.background.alpha());
+                }
             }
             var hasBorder:Boolean = s.borderWidths != null && !isNaN(s.borderColor);
             if (hasBorder)

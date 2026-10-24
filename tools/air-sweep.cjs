@@ -270,7 +270,7 @@ console.log('[air-sweep] ' + seen.length + '/' + pages.length + ' page(s) visite
 for (const l of rollFails.slice(0, 5)) console.log('  ' + l);
 if (errors.length) {
   // The first error of each page, with its stack: one line per broken page is the
-  // difference between "somewhere in 41 pages" and a fix.
+  // difference between "somewhere in 42 pages" and a fix.
   const byPage = new Map();
   for (let i = 0; i < lines.length; i++) {
     if (!lines[i].startsWith('ERROR ')) continue;

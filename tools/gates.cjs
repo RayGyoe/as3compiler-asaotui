@@ -153,6 +153,16 @@
 //                NOTE the probe's onChange deliberately does NOT invalidate: the
 //                field owes the screen its own repaint, and an author-side invalidate
 //                would hide that.
+//   textfx 18 -- probes/widgets/textfx/mutation.cjs: 5/5, one per surface of the batch
+//                that added boxShadow, gradient fills, wrap, ellipsis and textArea.
+//                The shadow one is the whole point of the pixel assertion: the filter
+//                list is built and then NOT handed to the display object, which leaves
+//                every property correct and the screen unchanged. The gradient one is
+//                the silent fallback the kit refuses for radial (it throws) -- painting
+//                the first stop as a solid keeps the left edge dark and only the ramp
+//                check sees it. The last is the contract inversion: a text area that
+//                CONSUMES Return still compiles, still renders, and quietly reverts the
+//                field instead of inserting a line break.
 //   gallery teardown -- ui-demo/mutation-gallery-teardown.cjs: 2/2, and both are
 //                defects the SIX-page tour found and no probe could (a probe never
 //                destroys an overlay tree): dropping the WidgetTeardown hook leaves
@@ -200,16 +210,16 @@
 //                hook (`Stage.render`), which is exactly why the AIR entry class is
 //                separate from the touring `DocsMain` in the first place.
 //   air sweep -- tools/mutation-air-sweep.cjs: 3/3. The one gate that RUNS adl over
-//                all 41 pages with every popup open, because our AOT is more forgiving
+//                all 42 pages with every popup open, because our AOT is more forgiving
 //                than AIR: `setChildIndex` past the end throws #2006 there and clamps
 //                here, so `fixDisplayOrder` throwing once per frame on the
 //                select/combobox/datePicker pages was invisible to every AOT probe and
-//                to a render-only 41-page screenshot sweep. The three mutations are the
+//                to a render-only 42-page screenshot sweep. The three mutations are the
 //                defect itself (the display slot computed from the description index),
-//                a sweep that stops OPENING the popups (41 pages, 0 errors, blind), and
+//                a sweep that stops OPENING the popups (42 pages, 0 errors, blind), and
 //                a sweep that stops one page early (a dead window must not look green).
 //   gpu mode  -- tools/mutation-buildsh-gpu.cjs: 5/5. `--gpu cpu|gpu|d3d12|gl|direct`
-//                is unverifiable by eye -- all five modes draw the same 41 pages, and a
+//                is unverifiable by eye -- all five modes draw the same 42 pages, and a
 //                mode that is parsed and then dropped looks exactly as correct as one
 //                that works. So the gate pins the two things that DO differ: the derived
 //                descriptor (one line off app.xml) and the argv the AOT arm gets. The
@@ -255,7 +265,7 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay',
                  'widgets/interact', 'widgets/flip', 'widgets/motion', 'widgets/vlist',
                  'widgets/choice', 'redraw', 'widgets/popup', 'widgets/typing', 'widgets/scrollbar',
-                 'widgets/callback', 'lifecycle']) {
+                 'widgets/callback', 'lifecycle', 'widgets/textfx']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);
@@ -323,7 +333,8 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const r = sh(process.execPath, ['run-gallery.cjs'], path.join(UI, 'ui-demo'), { ASC_NO_OPEN: '1' });
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /\[gallery\] RESULT: (\S+)/.exec(out);
-  record('gallery tour: 41 component pages (incl. the overlay tree), hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
+  const pg = /pages=(\d+)/.exec(out);
+  record('gallery tour: ' + (pg ? pg[1] : '?') + ' component pages (incl. the overlay tree), hand-computed rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
 }
 
 // ---- 6b2: every registered widget kind is SHOWN by the demo ------------------
@@ -416,13 +427,13 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // ---- 6b5b: `--gpu <mode>` really selects the window's composition mode -------
 // `build.sh --gpu cpu|gpu|d3d12|gl|direct` is the option a reader of the docs asks
 // for first ("can I see it on the GPU?"), and it is unverifiable by looking: all five
-// modes render the same 41 pages, because a GPU nobody asked for is still a correct
+// modes render the same 42 pages, because a GPU nobody asked for is still a correct
 // picture. What IS observable is the descriptor (`app.<mode>.xml`, one line off
 // app.xml, handed to both arms) and the argv the AOT arm receives. The gate drives
 // the `desc` arm, which derives the descriptor and prints the argv through the same
 // `aot_args()` the `aot` arm execs -- 2 seconds, no compiler, no window -- and both
 // consumer arms were measured for real when the option landed (aot --gpu gl: manifest
-// ASC_RENDER_GL=1 and 41/41 pages; aot --gpu gpu: ASC_RENDER_D3D=1; air --gpu gl: a
+// ASC_RENDER_GL=1 and 41/42 pages; aot --gpu gpu: ASC_RENDER_D3D=1; air --gpu gl: a
 // window under adl). `run-gallery.cjs` keeps asserting that a gpu mode reached the
 // manifest, so the runtime half cannot rot silently.
 //   mutation: tools/mutation-buildsh-gpu.cjs (5/5: a named-but-unpassed backend, a mode
@@ -445,7 +456,7 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // AIR and CLAMPS on our runtime (compiler-gaps.md G24), so `Reconciler.fixDisplayOrder`
 // computing a display slot from a description index threw once per frame -- a frozen
 // select/combobox/datePicker page and a console stream -- while every AOT probe and a
-// 41-page screenshot sweep passed. The sweep visits all 41 pages of the catalog with
+// 42-page screenshot sweep passed. The sweep visits all 42 pages of the catalog with
 // every openable popup flipped open (the lifted state), and fails on any error AIR
 // reports, on a short page list, and on a popup step that stopped taking effect.
 // ~20 s, one window. Exit 3 (no AIR SDK on this box) is reported as SKIP.

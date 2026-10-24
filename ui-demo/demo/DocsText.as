@@ -72,6 +72,41 @@ package demo
                         text("inherited", { ariaName: "" }),
                         text("also inherited", { ariaName: "" })
                     ]);
+                }),
+
+                new DocSection("Wrapping", [
+                    "whiteSpace: \"normal\" wraps at the node's POINT width and publishes the WRAPPED",
+                    "height, which is what an auto-height node needs. The height depends on the width,",
+                    "so a percent width is refused (throws) rather than guessed at measure time."
+                ], [
+                    "text(LONG, { style: { size: [260, null],",
+                    "    text: { whiteSpace: \"normal\" } } })"
+                ], 150, function ():Node
+                {
+                    return box({ style: StyleRefinement.from({
+                        size: [300, null], padding: 10, background: 0xF8FAFC, cornerRadii: 8 }) }, [
+                        text("Wrapping needs a definite width: the engine asks for the height before",
+                            { style: StyleRefinement.from({ size: [272, null],
+                                text: { whiteSpace: "normal", fontSize: 12, color: 0x334155 } }), ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Ellipsis", [
+                    "textOverflow: \"ellipsis\" truncates one line to the FINAL box width, so it can only",
+                    "happen at paint time. A wrapped node ignores it -- truncating a wrapped run would",
+                    "collapse the lines the measure pass just laid out."
+                ], [
+                    "text(LONG, { style: { width: 180, text: { textOverflow: \"ellipsis\" } } })"
+                ], 84, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        text("A single line that is far too long for its 180px box...",
+                            { style: StyleRefinement.from({ size: [180, null],
+                                text: { textOverflow: "ellipsis", fontSize: 12 } }), ariaName: "" }),
+                        text("and a short one fits",
+                            { style: StyleRefinement.from({ size: [180, null],
+                                text: { textOverflow: "ellipsis", fontSize: 12 } }), ariaName: "" })
+                    ]);
                 })
             ];
 

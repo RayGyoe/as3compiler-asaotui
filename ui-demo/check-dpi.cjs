@@ -8,7 +8,7 @@
 //   arm STANDARD  air-gallery-standard/app.xml   (requestedDisplayResolution=standard)
 //
 // Both arms go through run-gallery.cjs (so both get --all-sources, the G11 retry and
-// the shared screenshot measurement), and both run the identical 41-page docs tour with
+// the shared screenshot measurement), and both run the identical 42-page docs tour with
 // the identical logical 1000x700 stage. The ONLY thing that may differ is the PNG's
 // pixel size:
 //

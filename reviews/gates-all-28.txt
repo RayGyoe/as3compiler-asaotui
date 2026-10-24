@@ -1,0 +1,60 @@
+46/46 gates, 46 pass, 0 fail, 0 skip
+node tools/gates.cjs  --  asaotui @ ecf01e8
+run 2026-10-24T21:10:03.842Z
+
+this run adds gate "probe widgets/textfx" to the 45 of reviews/gates-all-27.txt, and drops the
+hard-coded page count from the gallery-tour label: it now reads the `pages=N` the tour prints
+(41 -> 42 by adding the textArea page). Semantic change pinned in the same run: an Array
+background is a gradient now, so probes/style-fromany cases 12/18 ask for type:stops:angle
+instead of null, and ui-demo CheckUi asks for a gradient instead of "no fill".
+compiler tree: HEAD 96935e4 (0 files per tools/compiler-fingerprint.cjs -- this workspace wrote
+nothing there; HEAD moved upstream under a concurrent session, tree is clean).
+[PASS] probe widgets/chip (19 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/form (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/display (48 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/nav (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/anim (14 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/feedback (43 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/media (43 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/data (77 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/overlay (65 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/interact (25 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/flip (54 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/motion (23 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/vlist (26 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/choice (44 checks, 0 failures)  (exit 0)
+[PASS] probe redraw (14 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/popup (26 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/typing (18 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/scrollbar (44 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/callback (24 checks, 0 failures)  (exit 0)
+[PASS] probe lifecycle (9 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/textfx (18 checks, 0 failures)  (exit 0)
+[PASS] layout-check text half (133 checks, 0 failures)  (exit 0)
+[PASS] ui-demo CheckUi (33 checks, 0 failures)  (exit 0)
+[PASS] layout-check visual half (12 checks, 0 failures)  (exit 0)
+[PASS] gallery tour: 42 component pages (incl. the overlay tree), hand-computed rects (PASS)  (exit 0)
+[PASS] gallery kind coverage: all registered widgets are shown (36/36)  (exit 0)
+[PASS] docs demos pass only options the factories read (0 unknown)  (exit 0)
+[PASS] author callbacks carry their documented argument (17 calls / 88 handlers) (0 violations)  (exit 0)
+[PASS] AIR arm (build.sh default) compiles under mxmlc (87748 B SWF)  (exit 0)
+[PASS] build.sh --gpu selects renderMode + backend, app.xml untouched (29 checks, 0 failures)  (exit 0)
+[PASS] docs app on AIR (adl): every page, popups open, pointer drill, no runtime error (42/42 pages, 10/10 popups, 0 errors, 380/3254 destroyed)  (exit 0)
+[PASS] kit listeners are all releasable (UiNode.listen + destroySubtree) (31 wired, 0 raw)  (exit 0)
+[PASS] G13 air-app reach: closure keeps 5/5, both faces build+run (PASS)  (exit 0)
+[PASS] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (PASS)  (exit 0)
+[PASS] style scan: no Object-typed local is used as a condition (0 found)  (exit 0)
+[PASS] G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (1/5 hashes)  (exit 0)
+[PASS] G14 array-in-Object-slot identity (26 cases, AOT vs AIR) -- deviations none  (exit 0)
+[PASS] G16 ternary-null (20 cases, AOT vs AIR) -- AOT deviations: none  (exit 0)
+[PASS] G19 drawRoundRect, AOT vs AIR -- 292 byte-identical, 27 within the AA tolerance, 0 disagreeing, 40 known (negative radius)  (exit 0)
+[PASS] G20 setTextFormat replaces the range (AOT vs AIR) (PASS (12 relational cases; both arms treat a repeated range format as a replacement))  (exit 0)
+[PASS] G21 getTextFormat reads the run table (AOT vs AIR) (PASS (30 cases; both arms agree and the emitted getTextFormat is range-aware))  (exit 0)
+[PASS] G22 closure statics initialise (AOT vs AIR, emitted C audited) (PASS (10 cases; both arms agree and every static read carries its _cinit() guard))  (exit 0)
+[PASS] Vector vs Array throughput, both runtimes (AOT ratio 0.18x)  (exit 0)
+[PASS] style fromAny is total: 19 cases, AOT vs AIR (PASS (19 cases; both arms agree with the hand-derived answers))  (exit 0)
+[PASS] Array(x) wraps on both runtimes (8 cases, AOT vs AIR) (AGREE)  (exit 0)
+[PASS] fingerprint porcelain parsing: no dropped records (PASS)  (exit 0)
+
+==== 46/46 gates PASS ====
+RESULT: PASS

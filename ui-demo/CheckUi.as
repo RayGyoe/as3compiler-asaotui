@@ -187,22 +187,32 @@ checkRect("right rect", app.findByKey("right"), 230, 90, 310, 100);
 // used to be a bare pointer, so `is Fill` inside Fill.fromAny read the array
 // header as a vtable and took the process down (0xC0000005, compiler-gaps.md G14,
 // probe case 26) -- and a dead process prints nothing, so reaching the checks
-// below IS the result. What we then pin is the observable value: a stop list means
-// a gradient, gradients are deferred, so the answer is "no fill" -- which is also
-// AIR's answer today, i.e. alignment, not invention. (b) Since G14 was fixed in
-// as3compiler 阶段二百五十三 the workaround is gone: this used to be branched at the
-// CALL SITE (`o.background is Array ? Fill.fromArray(...) : Fill.fromAny(...)`)
-// and the branch has been folded back into `Fill.fromAny` itself. The `arraySlot`
-// checks at the end of this section could not even be written before -- they ask
-// the questions that used to be a compile-time lie (`is Array` folded to false) or
-// a crash (`is Fill`).
+// below IS the result.
+// (b) What the VALUE is changed on 2026-10-25 (第十四轮): gradients were deferred,
+// so a stop list used to answer "no fill" and this section pinned that null. The
+// runtime had `beginGradientFill` all along and `Fill.gradient` now exists, so an
+// array background IS a gradient. The pin moved from "null" to the new contract --
+// and it still refuses the other silent failure: an array must never collapse into
+// a SOLID fill (that would paint stop 0 and call it a background).
+// (c) Since G14 was fixed in as3compiler 阶段二百五十三 the workaround is gone: this
+// used to be branched at the CALL SITE (`o.background is Array ? Fill.fromArray(...)
+// : Fill.fromAny(...)`) and the branch has been folded back into `Fill.fromAny`
+// itself. The `arraySlot` checks at the end of this section could not even be
+// written before -- they ask the questions that used to be a compile-time lie
+// (`is Array` folded to false) or a crash (`is Fill`).
 var arrBg:StyleRefinement = StyleRefinement.from({ background: [255, 0, 0] });
-check("array background yields no fill (deferred gradient)", arrBg.background == null,
-    "argb=" + (arrBg.background == null ? "null" : String(arrBg.background.argb)));
+// NOTE the literal: `[255, 0, 0]` is THREE stop COLOURS (255, 0, 0), not an RGB
+// triple -- a gradient's array is a stop list, one colour per entry.
+check("array background yields a gradient, not a solid",
+    arrBg.background != null && arrBg.background.isGradient()
+        && arrBg.background.colors.length == 3,
+    "stops=" + (arrBg.background == null ? "null"
+        : (arrBg.background.isGradient() ? String(arrBg.background.colors.length) : "solid")));
 // The revert is inside fromAny, so ask fromAny DIRECTLY as well: a call somewhere
 // else must not be able to reach a solid fill by forgetting to branch.
-check("Fill.fromAny(Array) itself yields no fill", Fill.fromAny([255, 0, 0]) == null,
-    "fill=" + (Fill.fromAny([255, 0, 0]) == null ? "null" : "solid"));
+var directFill:Fill = Fill.fromAny([255, 0, 0]);
+check("Fill.fromAny(Array) itself yields a gradient", directFill != null && directFill.isGradient(),
+    "fill=" + (directFill == null ? "null" : (directFill.isGradient() ? "gradient" : "solid")));
 // The other side of the nail: the scalar path must be untouched by the revert.
 var scalarBg:StyleRefinement = StyleRefinement.from({ background: 0x2563EB });
 check("scalar background still yields an opaque solid fill",
@@ -214,8 +224,10 @@ check("Fill.fromAny(scalar) still solid", viaAny != null && viaAny.argb == 0xFF2
 
 var diffPair:StyleRefinement = StyleRefinement.from({ background: [1, 2, 3], borderColor: 0x111111 });
 check("an array background does not swallow the sibling fields",
-    diffPair.background == null && diffPair.borderColor == 0x111111,
-    "borderColor=" + diffPair.borderColor);
+    diffPair.background != null && diffPair.background.isGradient()
+        && diffPair.background.colors.length == 3 && diffPair.borderColor == 0x111111,
+    "stops=" + (diffPair.background == null ? "null" : String(diffPair.background.colors.length))
+        + " borderColor=" + diffPair.borderColor);
 
 // Since G14 was fixed (as3compiler 阶段二百五十三, v0.4.217) the slot's IDENTITY is
 // answerable too, and that is what the two lines above could only observe from the

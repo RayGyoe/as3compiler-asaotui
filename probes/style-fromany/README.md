@@ -16,9 +16,10 @@ on the next line read the array header as a vtable and killed the process with `
 (**G14**, see [`compiler-gaps.md`](../../compiler-gaps.md)).
 
 G14 was fixed in as3compiler **阶段二百五十三** (`54bda6d`, v0.4.217). The split was then **reverted**:
-`fromAny` dispatches the array form itself. `fromArray` is kept as an *explicit* entry point, because a
-gradient stop list really is an array and the typed parameter is what will make `a.length` safe the day
-gradients land.
+`fromAny` dispatches the array form itself. `fromArray` is kept as an *explicit* entry point, and since
+2026-10-25 (第十四轮) it is a real gradient factory: `Fill.gradient` landed, so an array of colours is a
+gradient and `fromArray` simply delegates. Cases 12 and 18 therefore ask for the gradient's SHAPE
+(`type:stops:angle`) instead of answering `null` — `solid` would be the silent failure they exist for.
 
 **This probe measures the revert instead of trusting it.** One command, both runtimes:
 
@@ -44,7 +45,7 @@ What the cases cover:
 | `Edges` | 5, 6, 7 | `[h,v]` → `hv(h,v)` / `[t,r,b,l]` / scalar |
 | `Corners` | 8, 9 | `[tl,tr,br,bl]` / one-element |
 | `LengthEdges` | 10, 11 | `[h,v]` with `Length` per side / `"auto"` |
-| `Fill` | 12, 13, 14 | an array is a gradient → `null` / scalar → opaque solid / a `Fill` passthrough |
+| `Fill` | 12, 13, 14 | an array is a gradient → `type:stops:angle` / scalar → opaque solid / a `Fill` passthrough |
 | end-to-end | 16, 17, 18 | through `StyleRefinement.from`, where every value arrives as a **dynamic `o.<field>` read** — the real caller |
 
 **A short line count is a crash, not a pass.** Each driver appends its line *immediately*, so the case
