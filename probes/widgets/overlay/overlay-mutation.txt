@@ -16,8 +16,8 @@ M2  CAUGHT  the scrim goes from 0.4 to 0.6 alpha -> the hand-computed composite 
      restore: byte-identical (de0533c304e2b218)
 M3  CAUGHT  rowAt stops using the row's own solved rect and matches every row from the top -> a click reported as row 0, so the band never moves
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL the select reported row 0 not 2; the select did not report: value is Alpha; the band did not move to row 2 after the click is #ffffff not #dbeafe; the menu reported row 0 not 2; the band did not move down after the row click is #ffffff not #dbeafe;
-     restore: byte-identical (c03d5a08761ed4ae)
+     FAIL  program verdict: FAIL the select reported row 0 not 2; the select did not report: value is Alpha; the band did not move to row 2 after the click is #ffffff not #dbeafe; the menu reported row 0 not 2; the band did not move down after the row click is #ffffff not #dbeafe; a click inside the submenu also activated parent row 0;
+     restore: byte-identical (9f73cbb602f45928)
 M4  CAUGHT  THE FIRST DEFECT THIS PROBE FOUND, re-introduced: the overlay tree is solved once against the 560x460 pre-window fallback and never re-solved when the stage reports 760x560
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL dialog is not vertically centred: 151+158; dialog panel is 130,300 not 230,300; the scrim over white is not #999999 (0x66 alpha == 0.4 -> 255*0.6) is #ffffff not #999999; the scrim does not reach the top-right corner is #ffffff not #999999; toasts are not flush right (324,324 not 524); the last toast's bottom is 444 not 544;
@@ -25,11 +25,11 @@ M4  CAUGHT  THE FIRST DEFECT THIS PROBE FOUND, re-introduced: the overlay tree i
      FAIL  rect dlg:scrim[h] want 560 got 460
      FAIL  rect dlg:panel[x] want 230 got 130
      ... and 9 more
-     restore: byte-identical (170874cae4914507)
+     restore: byte-identical (e79f2f14b6a660fd)
 M5  CAUGHT  THE SECOND DEFECT THIS PROBE FOUND, re-introduced: the panel surface is not created, so paintBox (and OverlayList.band) null-guard out of their work -- the surface has a correct solved rect and paints nothing
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the popover panel's padding is not white is #999999 not #ffffff; the menu's selected row band is #ffffff not #dbeafe; menu row 0 must not be banded is #f3f4f6 not #ffffff; the band did not move down after the row click is #ffffff not #dbeafe;
-     restore: byte-identical (cc763102388cf288)
+     restore: byte-identical (8b0c19f7c137ac5e)
 M6  CAUGHT  the stack gap drops from 8 to 0 -> the toasts touch, and the probe's exact stack arithmetic (gap 8, last bottom 544) no longer holds
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the toast gap is not 8 (512 -> 512);
@@ -37,7 +37,15 @@ M6  CAUGHT  the stack gap drops from 8 to 0 -> the toasts touch, and the probe's
 M7  CAUGHT  THE FOURTH DEFECT THIS PROBE FOUND, re-introduced: a visibility flip writes the field but raises no arrange bit, so the display object keeps the old visibility -- the dropdown reopens in the tree and stays invisible on screen
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the band did not move to row 2 after the click is #ffffff not #dbeafe;
-     restore: byte-identical (a7c27df5720f52ec)
+     restore: byte-identical (99ac0f20ea21ba57)
+M8  CAUGHT  THE PARENT-LOCAL CONVERSION IS DROPPED for the submenu (its parent is the MENU, not the overlay root at the origin), so the nested panel lands 20px to the right of its row
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL popover at 166,20 not 146,20; the popover panel's padding is not white is #999999 not #ffffff; the submenu is at x=199 not 179 (row right 175 + 4);
+     restore: byte-identical (8b0c19f7c137ac5e)
+M9  CAUGHT  THE SUBMENU COLLISION GUARD IS REMOVED: a click inside the submenu is also read as a click on the parent row at the same height (they overlap), so the parent selection moves too
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a click inside the submenu also activated parent row 1;
+     restore: byte-identical (c21b9783724d76a7)
 
-MUTATION overlay: 7/7 caught, 0 problem(s)
+MUTATION overlay: 9/9 caught, 0 problem(s)
 RESULT: PASS

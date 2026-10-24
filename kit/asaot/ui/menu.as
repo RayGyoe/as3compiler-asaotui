@@ -27,6 +27,7 @@ package asaot.ui
             if (opts.width != null) n.width = Number(opts.width);
             if (opts.items != null) n.items = OptionSupport.list(opts.items);
             if (opts.selectedIndex != null) n.selectedIndex = int(Number(opts.selectedIndex));
+            if (opts.submenuIndex != null) n.submenuIndex = int(Number(opts.submenuIndex));
             if (opts.onSelect != null) n.onSelect = (opts.onSelect as Function);
             if (opts.closeOnOutside != null) n.closeOnOutside = Boolean(opts.closeOnOutside);
             if (opts.onClose != null) n.onClose = (opts.onClose as Function);
@@ -50,6 +51,29 @@ package asaot.ui
                                      ariaName: label });
             rowNode.addChild(text(label, { key: base + ":i" + i + ":t", style: OverlayChrome.MENU_TEXT }));
             n.addChild(rowNode);
+        }
+
+        // SUBMENUS, as trailing children (see MenuNode.submenuIndex). Each one is an
+        // ordinary `menu` ANCHORED TO ITS OWN ROW -- the placement, the overflow flip
+        // and the outside-click dismissal are then the same code every other popup
+        // uses, and the nested menu can nest again with no extra machinery.
+        for (var s:int = 0; s < items.length; s++)
+        {
+            var it2:Object = items[s];
+            if (it2 == null || it2 is String) continue;
+            if (it2.submenu == null) continue;
+            var subItems:Array = OptionSupport.list(it2.submenu);
+            var sub:Node = menu({
+                key: base + ":sub" + s,
+                open: n.submenuIndex == s,
+                anchorKey: base + ":i" + s,
+                placement: "right",
+                offset: 4,
+                width: n.width,
+                items: subItems,
+                onSelect: (it2.onSelect as Function)
+            });
+            n.addChild(sub);
         }
         return n;
     }

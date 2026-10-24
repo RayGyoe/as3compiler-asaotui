@@ -33,6 +33,9 @@ package asaot.ui
             if (opts.ariaName != null) n.ariaName = String(opts.ariaName);
             if (n.ariaName == null) n.ariaName = "";
             if (opts.visible != null) n.visible = Boolean(opts.visible);
+            // `disabled` is an Element property, so EVERY factory gets it through
+            // this one line -- no factory needs to know about it.
+            if (opts.disabled != null) n.disabled = Boolean(opts.disabled);
         }
 
         public static function addChildren(n:Node, children:Array):void

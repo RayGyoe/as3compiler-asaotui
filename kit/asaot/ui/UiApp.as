@@ -27,8 +27,12 @@ package asaot.ui
 
     import flash.display.DisplayObject;
     import flash.display.DisplayObjectContainer;
+    import flash.display.InteractiveObject;
     import flash.display.Stage;
     import flash.events.Event;
+    import flash.events.FocusEvent;
+    import flash.events.KeyboardEvent;
+    import flash.text.TextField;
     import flash.utils.getTimer;
 
     public class UiApp
@@ -51,8 +55,18 @@ package asaot.ui
         public var paintPasses:int;
         public var invalidateCalls:int;
         public var enterFrameTicks:int;
+        // Keyboard/focus diagnostics. `tabMoves` counts ring moves the LIBRARY
+        // performed (not the runtime's own), `keyEvents` counts every KEY_DOWN the
+        // stage handed us -- so a probe can tell "the key never arrived" from
+        // "it arrived and nothing handled it".
+        public var tabMoves:int;
+        public var keyEvents:int;
 
         private var root:UiNode;
+        // The keyboard owner. Library state, not display-list state: see
+        // UiNode.tabEnabled for why the tab ring is a walk of the retained tree
+        // rather than the runtime's `as_tab_scan`.
+        private var _focus:UiNode;
         // The SECOND retained root: everything that floats above the layout tree
         // (dialog / drawer / popover / menu / toast). Reconciled from
         // View.renderOverlay(). It is a separate display object attached after
@@ -90,6 +104,9 @@ package asaot.ui
             this.paintPasses = 0;
             this.invalidateCalls = 0;
             this.enterFrameTicks = 0;
+            this.tabMoves = 0;
+            this.keyEvents = 0;
+            this._focus = null;
             if (view != null) view.attachApp(this);
         }
 
@@ -103,6 +120,16 @@ package asaot.ui
             this.view.mount(stage);
             stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
             stage.addEventListener(Event.RESIZE, onResize);
+            // Keyboard and runtime focus. KEY_DOWN bubbles from whatever the runtime
+            // made the target (the focused object, else the stage), so ONE stage
+            // listener sees every key in the window.
+            stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+            // The runtime focuses a TextField on mouse-down by itself (measured on
+            // adl: FOCUS_IN fires BEFORE the field's own mouseDown listener). We
+            // mirror that into library focus so the ring, the tab anchor and the
+            // input's commit-on-blur all agree with what the runtime did.
+            stage.addEventListener(FocusEvent.FOCUS_IN, onStageFocusIn);
+            stage.addEventListener(FocusEvent.FOCUS_OUT, onStageFocusOut);
             this._running = true;
             this.invalidate(Dirty.ALL);
             this.reflow();
@@ -333,6 +360,7 @@ package asaot.ui
             }
 
             this._pending = 0;
+
         }
 
         // One root: intrinsic measure, engine solve, arrange. Shared by the main
@@ -387,6 +415,192 @@ package asaot.ui
                 n.paintSelf();
             }
             for (var i:int = 0; i < n.children.length; i++) paintDirty(n.children[i]);
+        }
+
+        // ---- focus --------------------------------------------------------
+        // Focus is ONE library pointer plus a per-node int (`state.focused`).
+        // Moving it repaints two nodes and re-solves nothing: a ring is decoration,
+        // exactly like hover (design doc 3.3).
+        public function focusedNode():UiNode
+        {
+            return this._focus;
+        }
+
+        // Programmatic focus. `null` clears it. An inert or invisible node is
+        // refused rather than silently half-focused.
+        public function focusNode(n:UiNode):void
+        {
+            if (n != null && (n.inert() || !n.visible || n.app != this)) return;
+            if (n == this._focus)
+            {
+                this.applyStageFocus();
+                return;
+            }
+            if (this._focus != null) this._focus.setFocused(0);
+            this._focus = n;
+            if (n != null) n.setFocused(1);
+            this.applyStageFocus();
+        }
+
+        // Called by a node that became inert while focused.
+        public function dropFocus(n:UiNode):void
+        {
+            if (this._focus == n) this.focusNode(null);
+        }
+
+        // Put the runtime's `stage.focus` where the focused node wants it. Only an
+        // editable kind claims it (WidgetFocus); everything else clears it, which
+        // is what makes clicking a button blur a text field -- the AIR-measured
+        // behaviour for a non-TextField target.
+        private function applyStageFocus():void
+        {
+            if (this.stage == null) return;
+            var want:DisplayObject = this._focus == null ? null : this._focus.focusTarget();
+            if (want == this.stage.focus) return;
+            if (want is TextField) this.stage.focus = InteractiveObject(want);
+            else if (this.stage.focus != null) this.stage.focus = null;
+        }
+
+        // ---- the tab ring -------------------------------------------------
+        // Pre-order over the RETAINED tree, main tree first and the floating layer
+        // second (it is drawn on top, so it comes last in reading order too). A node
+        // is a stop iff it is tabEnabled, visible, and nothing above it is disabled.
+        //
+        // TRAP: once focus is INSIDE the floating layer, Tab stays there. That is
+        // the one rule that gives a modal dialog a focus trap without UiApp having
+        // to know what a dialog is -- and it cannot trap the page behind a MENU,
+        // because opening a menu never moves the focus into it.
+        private function focusNext(dir:int):void
+        {
+            var ring:Vector.<UiNode> = new Vector.<UiNode>();
+            if (this._focus != null && inTree(this.overlayRoot, this._focus))
+            {
+                collectFocus(this.overlayRoot, ring);
+            }
+            else
+            {
+                collectFocus(this.root, ring);
+                collectFocus(this.overlayRoot, ring);
+            }
+            var m:int = ring.length;
+            if (m == 0) return;
+            var at:int = -1;
+            for (var i:int = 0; i < m; i++) { if (ring[i] == this._focus) { at = i; break; } }
+            var next:int;
+            if (at >= 0) next = (at + dir + m) % m;
+            else next = dir > 0 ? 0 : m - 1;
+            this.tabMoves = this.tabMoves + 1;
+            this.focusNode(ring[next]);
+        }
+
+        private function collectFocus(n:UiNode, out:Vector.<UiNode>):void
+        {
+            if (n == null) return;
+            // A hidden subtree has no stops. `visible` is the Element flag, which is
+            // what a closed dialog sets -- the runtime's own ring walk does not check
+            // it, and would happily put the caret inside a closed dialog.
+            if (!n.visible) return;
+            if (n.tabEnabled && !n.inert()) out.push(n);
+            for (var i:int = 0; i < n.children.length; i++) collectFocus(n.children[i], out);
+        }
+
+        private function inTree(root:UiNode, n:UiNode):Boolean
+        {
+            var p:UiNode = n;
+            while (p != null)
+            {
+                if (p == root) return root != null;
+                p = p.parent;
+            }
+            return false;
+        }
+
+        // The retained node that owns this display object (or one of its internal
+        // objects, e.g. an input field). Identity walk, no map, no hashing.
+        private function findNodeFor(o:DisplayObject):UiNode
+        {
+            var hit:UiNode = findIn(this.overlayRoot, o);
+            if (hit != null) return hit;
+            return findIn(this.root, o);
+        }
+
+        private function findIn(n:UiNode, o:DisplayObject):UiNode
+        {
+            if (n == null) return null;
+            if (n.backing == o || n.tf == o) return n;
+            for (var i:int = 0; i < n.children.length; i++)
+            {
+                var hit:UiNode = findIn(n.children[i], o);
+                if (hit != null) return hit;
+            }
+            return null;
+        }
+
+        private function onStageFocusIn(e:FocusEvent):void
+        {
+            var n:UiNode = findNodeFor(e.target as DisplayObject);
+            if (n == null || n == this._focus) return;
+            // Do NOT call focusNode(): the runtime already moved stage.focus, and
+            // re-assigning it here would re-enter as_set_focus.
+            if (this._focus != null) this._focus.setFocused(0);
+            this._focus = n;
+            n.setFocused(1);
+        }
+
+        private function onStageFocusOut(e:FocusEvent):void
+        {
+            var n:UiNode = findNodeFor(e.target as DisplayObject);
+            if (n == null || n != this._focus) return;
+            // A focus move within the library is already handled by focusNode (it
+            // sets the new node after clearing the old). This branch is the runtime
+            // blurring us -- focus became null -- so the pointer must go too.
+            var rel:UiNode = e.relatedObject == null ? null : findNodeFor(e.relatedObject as DisplayObject);
+            if (rel == null)
+            {
+                n.setFocused(0);
+                this._focus = null;
+            }
+        }
+
+        // ---- keys ---------------------------------------------------------
+        private function onKeyDown(e:KeyboardEvent):void
+        {
+            this.keyEvents = this.keyEvents + 1;
+            var kc:int = e.keyCode;
+
+            // TAB. The runtime ALSO moves focus on Tab (as_focus_tab over the display
+            // list) after the event is dispatched, unless the event was cancelled --
+            // so preventing the default is not optional here, it is the difference
+            // between one ring and two.
+            if (kc == 9)
+            {
+                this.focusNext(e.shiftKey ? -1 : 1);
+                e.preventDefault();
+                return;
+            }
+
+            var f:UiNode = this._focus;
+            if (f == null) return;
+            // A kind that knows the key consumes it first (menu arrows, dialog Esc,
+            // input Enter). `is` on an optional interface -- see WidgetKeys.
+            if (f.widget is WidgetKeys)
+            {
+                if (WidgetKeys(f.widget).onKey(f, kc, e.shiftKey))
+                {
+                    e.preventDefault();
+                    return;
+                }
+            }
+            // Default activation: Enter / Space press the focused control. Skipped
+            // when the focus target is an editable field -- there, Enter is the
+            // field's commit and Space is a character, and swallowing either would
+            // break typing.
+            if (kc == 13 || kc == 32)
+            {
+                if (f.focusTarget() is TextField) return;
+                e.preventDefault();
+                f.handleClick();
+            }
         }
 
         // ---- introspection for tests / a11y ----------------------------

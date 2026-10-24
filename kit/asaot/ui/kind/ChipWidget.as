@@ -92,6 +92,9 @@ package asaot.ui.kind
             if (tone == "info") { bg = 0xDBEAFE; fg = 0x1D4ED8; }
             else if (tone == "danger") { bg = 0xFEE2E2; fg = 0xB91C1C; }
 
+            // Hover / press are derived, not authored (see PaintKit): a chip that
+            // reacts to the pointer is the reference implementation of the rule.
+            bg = PaintKit.stateColor(n, bg);
             var w:Number = PaintKit.w1(n);
             var h:Number = PaintKit.h1(n);
             if (n.shapeA != null)

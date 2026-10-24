@@ -128,6 +128,36 @@ public interface WidgetTeardown { function teardown(n:UiNode):void; }
 
 ---
 
+### 2c 可选键盘/焦点钩子 `WidgetKeys` / `WidgetFocus`（**想参与 Tab 环就必须读**）
+
+```as3
+public interface WidgetKeys  { function onKey(n:UiNode, keyCode:int, shift:Boolean):Boolean; } // true = 我消费了
+public interface WidgetFocus { function focusTarget(n:UiNode):DisplayObject; }                  // 缺省 = n.backing
+```
+
+`UiApp` 的管线（在 stage 的 `KEY_DOWN` 上）：
+
+1. **Tab / Shift+Tab**：`focusNext(dir)` 遍历**保留树**（不是运行时的 `as_tab_scan`），
+   收集条件只有一条：`n.tabEnabled && !n.inert()`。焦点已在 `overlayRoot` 子树里时**不逃出去**（焦点陷阱）。
+2. **其它键**：先给**焦点节点自己**的 `WidgetKeys.onKey`（它自己再沿 widget 接口找），
+   **没人消费才**把 `Enter(13)`/`Space(32)` 当成一次点击——**`TextField` 例外**（那是打字）。
+3. 焦点一换：旧节点 `setFocused(false)`、新节点 `setFocused(true)`（`M_PAINT`），
+   `applyStageFocus()` 把 stage 焦点真的设过去（`focusTarget()` 可返回内部的 `TextField`）。
+
+**你要做什么**：
+
+| 你的控件是 | 要做的事 |
+|---|---|
+| 可点击的按钮类 | **什么都不用做**（13/32 自动当点击，焦点环由 `PaintKit.drawBoxFor` 画） |
+| 有内部选中态（菜单/下拉/标签页） | 实现 `WidgetKeys`，处理上下/左右/Esc（参考 `kind/MenuWidget.as`、`kind/SelectWidget.as`） |
+| 内部有真 `TextField` | 实现 `WidgetFocus.focusTarget` 返回那个 `TextField`（参考 `kind/InputWidget.as`） |
+| 想在 `build()` 之外接管 Esc（浮层壳） | 实现 `WidgetKeys` 并**只在 `closeOnScrim` 时**吃 Esc（参考 `kind/PanelShellWidget.as`） |
+
+**不要**自己在控件里 `stage.addEventListener(KeyboardEvent.KEY_DOWN, …)`：那会绕过焦点环、
+在销毁时又漏拆监听（§2b）。库里已有 `WidgetKeys` 的地方一律走它。
+
+---
+
 ## 3 值类型与 unset 哨兵
 
 | 类型 | 未设哨兵 | 构造 |
@@ -248,11 +278,17 @@ s = s + as_v_to_number(as_array_get(v, k));                      // 每格一次
 - 需要临时容器就用**调用者提供的缓冲**或节点的持久字段；
 - `paint` 里读 `n.extra["tone"]` 是**属性读**，不分配，OK；`n.extra["k"] = v` 只在值变化时写。
 
-## 6 交互与键盘的现状（别踩空）
+## 6 交互与键盘的现状
 
-- 悬停/按下/点击**可用**（`setHover/setPressed/click`）。
-- **键盘完全没接**：`UiApp` 里 `KeyboardEvent/KEY_DOWN/TEXT_INPUT/focus` 各 0 处；`Control.tabEnabled/tabIndex` 目前**没有消费者**。所以**不要**假设 Tab 序或按键事件会来；键盘相关能力请登记进 `asaotui/STATUS.md §3.1`，不要在控件里自己造。
-- 控件"能点"靠 `n.backing` 的鼠标事件；`wantsPress()` 只影响按下态。
+- 悬停/按下/点击**可用**（`setHover/setPressed/click`）；`PaintKit` 从这四种状态
+  （`hover`/`pressed`/`focused`/`disabled`）**派生绘制**，见 §2c 上面的「你要做什么」。
+- **派生只对「可交互节点」生效**：`n.tabEnabled || n.onClick != null` 且 `!n.state.disabled`。
+  这条闸门在 `drawBoxFor` 与 `stateColor` 里**各写一遍**（宁可重复也不让两者漂移）——
+  去掉它，每个布局容器都会变成 CSS `:hover`，页面根节点在鼠标划过时整体提亮 8%。
+- `n.state.disabled` 由 `Element.disabled`（+ 沿 parent 链的 `n.inert()`）驱动：
+  `handleClick` 早退、Tab 环跳过、`backing.alpha = 0.45`。
+- **仍然没有**：按键重复（长按不会连发）、应用级快捷键表、输入法合成事件、右键/双击语义。
+  要加这些请先改 `UiApp` 的管线，**不要**在单个控件里自己装 stage 监听。
 
 ---
 

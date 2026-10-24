@@ -44,7 +44,10 @@ var st:Object = {
     sel: true, selVal: "Beta",
     t1: true, t2: true,
     menuSel: 1,
-    selectedRow: -1
+    selectedRow: -1,
+    subMenu: -1,       // which menu item's submenu is open
+    subRow: -1,        // the last row activated INSIDE a submenu
+    entered: -1        // a keyboard Enter on the menu reports the active row here
 };
 
 class OverlayProbe extends View
@@ -107,7 +110,9 @@ class OverlayProbe extends View
         var m:Node = menu({
             key: "mnu", open: st.mnu, anchorKey: "anchorBtn",
             placement: "bottom", offset: 6, width: 160,
-            items: ["Cut", "Copy", "Paste"], selectedIndex: st.menuSel,
+            items: ["Cut", { label: "Copy", submenu: ["Copy one", "Copy two"],
+                             onSelect: function (i:int):void { st.subRow = i; } }, "Paste"],
+            selectedIndex: st.menuSel, submenuIndex: st.subMenu,
             onSelect: function (i:int):void { st.menuSel = i; app.invalidate(Dirty.VALUE); },
             onClose: function ():void { st.mnu = false; app.invalidate(Dirty.VALUE); }
         });
@@ -348,7 +353,79 @@ function menuMoved():void
     bd.draw(stage);
     problems = problems + expectStr(bd, 30, 128, 0xDBEAFE, "the band did not move down after the row click");
     problems = problems + expectStr(bd, 30, 102, 0xFFFFFF, "the old band survived the move");
+    carry = problems;
+    // A submenu is armed by the author, exactly like every other `open`.
+    st.subMenu = 1;
+    app.invalidate(Dirty.VALUE);
+    setTimeout(checkSubmenu, 400);
+}
 
+// ---- E: the SUBMENU (a nested menu anchored to its own row) -----------------
+function checkSubmenu():void
+{
+    var problems:String = carry;
+    var sub:UiNode = app.findByKey("mnu:sub1");
+    if (sub == null) { writeText(OUT + ".done", problems + "the submenu node does not exist (menu.as did not build it)"); return; }
+    if (!sub.backing.visible) problems = problems + "the submenu was not opened by submenuIndex; ";
+    // Row 1 of the menu is 25,89,150,26 => its right edge is 175, +4 = 179, and the
+    // nested panel's top is the row's own top (89).
+    if (sub.absX != 179) problems = problems + "the submenu is at x=" + sub.absX + " not 179 (row right 175 + 4); ";
+    if (sub.absY != 89) problems = problems + "the submenu is at y=" + sub.absY + " not 89 (its row's top); ";
+    if (sub.absW != 160) problems = problems + "the submenu is " + sub.absW + " wide not 160 (it inherits the menu width); ";
+
+    // A click INSIDE the submenu must not be read as a click on the parent row that
+    // happens to sit at the same height (row 1 spans y 89..115, and the submenu's
+    // first row is 94..120 -- they overlap).
+    clickLocal(app.findByKey("mnu:sub1:i0"), 10, 13);
+    carry = problems;
+    setTimeout(subClicked, 250);
+}
+
+function subClicked():void
+{
+    var problems:String = carry;
+    if (st.subRow != 0) problems = problems + "the submenu reported row " + st.subRow + " not 0; ";
+    if (st.menuSel != 2) problems = problems + "a click inside the submenu also activated parent row " + st.menuSel + "; ";
+    carry = problems;
+    setTimeout(stageMotion, 100);
+}
+
+// ---- F: the ENTRANCE animation --------------------------------------------
+// Driven white-box: `start` + one `apply` in the same tick is t == 0, so the
+// mid-flight value does not depend on frame pacing (a frame-count-based sample
+// would be a coin flip). The LANDING is what matters, and it is exact: alpha back
+// to 1, the backing back on its solved offset, and the motion disarmed.
+function stageMotion():void
+{
+    var t:UiNode = app.findByKey("t1");
+    OverlayMotion.start(t);
+    OverlayMotion.apply(t, t, t, 0, 8);
+    carry = carry
+        + (t.backing.alpha < 1 ? "" : "the entrance never faded (alpha is already 1); ")
+        + (t.backing.y != t.absY ? "" : "the entrance never moved the surface; ");
+    setTimeout(checkMotionLanded, 400);
+}
+
+function checkMotionLanded():void
+{
+    var problems:String = carry;
+    var t:UiNode = app.findByKey("t1");
+    if (OverlayMotion.isRunning(t)) problems = problems + "the entrance never finished (it is still armed); ";
+    if (t.backing.alpha != 1) problems = problems + "the toast settled at alpha " + t.backing.alpha + " not 1; ";
+    // The toast host is at 0,0, so a landed backing sits exactly on its own absY.
+    if (t.backing.y != t.absY) problems = problems + "the toast settled at y=" + t.backing.y + " not " + t.absY + " (the entrance parked it); ";
+    // ...and it must stop repainting once landed.
+    var paints:int = app.paintPasses;
+    carry = problems + "|" + paints;
+    setTimeout(stopPaintCheck, 250);
+}
+
+function stopPaintCheck():void
+{
+    var parts:Array = carry.split("|");
+    var problems:String = String(parts[0]);
+    if (parts.length > 1 && app.paintPasses != int(Number(parts[1])))
+        problems = problems + "a landed entrance kept repainting (" + parts[1] + " -> " + app.paintPasses + "); ";
     writeText(OUT + ".done", problems == "" ? "PASS" : "FAIL " + problems);
 }
 

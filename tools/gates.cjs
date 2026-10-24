@@ -75,15 +75,28 @@
 //                swap an [h,v] pair / hard-code `is Array` on an Object param to
 //                false), every file restored byte-for-byte. This is the gate on the
 //                REVERT of the workaround G14 had forced on the style layer.
-//   overlay 65 -- probes/widgets/overlay/mutation.cjs: 7/7. Five of the seven are the
+//   overlay 65 -- probes/widgets/overlay/mutation.cjs: 9/9. Five of the nine are the
 //                REAL DEFECTS the probe found while it was written (overlay tree
 //                solved once against the pre-window fallback and never re-solved; a
 //                panel surface that was never created, so its rect was right and it
 //                painted nothing; the control's own `width` option leaking into a
 //                style shorthand and shrinking the layer; row routing that read a
 //                target-relative localY; a visibility flip that raised no arrange
-//                bit and never reached the display object). The other two move a
-//                hand-computed pixel/geometry by one unit.
+//                bit and never reached the display object; and a click inside a SUBMENU
+//                that was also read as a click on the parent row underneath it). The
+//                other four move a hand-computed pixel/geometry by one unit (incl. the
+//                submenu's parent-local conversion and the flip's clamp).
+//   interact 25 -- probes/widgets/interact/mutation.cjs: 8/8. Every mutation is one of
+//                the four features the phase added, turned OFF: nothing reads
+//                state.hover / the press sink / the disabled dimming / the focus ring /
+//                the inert skip in the tab ring / Event.CHANGE write-back / the Enter
+//                commit. Two of them are also the defects this probe found (a
+//                read-only field and an onChange the node never carried).
+//   flip 54   -- probes/widgets/flip/mutation.cjs: 5/5, the five ways a placement can
+//                go wrong (no vertical flip, the panel's own height dropped, no
+//                sideways flip, the parent-local conversion dropped, the clamp
+//                dropped). A flip is invisible when missing -- the panel is still a
+//                panel with a valid rect -- so the probe asserts a NUMBER.
 //   gallery teardown -- ui-demo/mutation-gallery-teardown.cjs: 2/2, and both are
 //                defects the SIX-page tour found and no probe could (a probe never
 //                destroys an overlay tree): dropping the WidgetTeardown hook leaves
@@ -131,7 +144,8 @@ function record(name, code, detail) {
 
 // ---- 1..3: pure-AS3 probes (windowed; probe.cjs owns build+run+assert) -------
 for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim',
-                 'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay', 'redraw']) {
+                 'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay',
+                 'widgets/interact', 'widgets/flip', 'redraw']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);

@@ -107,7 +107,7 @@ package asaot.ui.kind
             {
                 var g:Object = n.shapeA.graphics;
                 g.clear();
-                g.beginFill(0xFFFFFF, 1.0);
+                g.beginFill(PaintKit.stateColor(n, 0xFFFFFF), 1.0);
                 g.lineStyle(2, on ? 0x2563EB : 0x9CA3AF, 1.0);
                 g.drawCircle(8, cy, 7);
                 g.endFill();

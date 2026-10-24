@@ -18,7 +18,7 @@
 | 事实 | 证据 |
 |---|---|
 | 库是**纯 AS3**，**零 `flash.*` 导入**（只有内部 `asaot.ui.*`） | `grep -rn "import" seam/asaot/` 只有 `asaot.ui.LayoutEngine` / `asaot.ui.LayoutConstants` |
-| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` 三组控件探针 **19 / 41 / 48** 全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **7/7** |
+| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十二组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/14 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **27/27** |
 | **AIR**（`mxmlc`→`adl`）也能编能跑，且数值逐字符一致 | [`air-check/`](air-check/README.md)、[`diff-check/`](diff-check/README.md) |
 
 ⇒ 布局（U1）**一个编译器改动都不需要**。下面这些缺口是「用自家编译器 dogfood 自家库」时
@@ -362,7 +362,7 @@
 | 状态 | **已实测 · 未修**（库内唯一命中点已绕行） |
 | 证据落盘 / 复现 | [`probes/g16-ternary-null/`](probes/g16-ternary-null/)：`node run.cjs`（一命令两臂，exit 0=一致 / 1=不一致 / 2=构建错）；`NullCases.as` 17 格单一用例源；`expect.json` 手算规则（含逐格推导）；变异 `mutation.cjs` **4/4**（① 把格 1 改成 if/return 绕行形 ⇒ 该格必须**不再**报 NULL；② 改 `expect.json` 声称格 1 是 `NULL` ⇒ runner 必须报「参考与规则不符」；③ 把**能用的**格 6 改坏 ⇒ 该格必须**加入**失败集；④ 让格 3 两分支都返 null ⇒ 实测 **AIR 臂中途死掉**，runner 必须报「AIR 臂只写了 2/14 行」——这条顺带证明**崩溃检测也有牙**），全部 `finally` 还原 + sha256 逐字节核对 |
 
-### G17 —— Windows 上**生成的 C 语法错**：`as_job_dir_push` 的 Win32 分支把 C 字符常量写坏 —— 🔧 **本地已打补丁（未提交上游）**
+### G17 —— Windows 上**生成的 C 语法错**：`as_job_dir_push` 的 Win32 分支把 C 字符常量写坏 —— ✅ **已修（上游，2026-10-24）**
 
 | 项 | 内容 |
 |---|---|
@@ -371,9 +371,9 @@
 | **根因** | `src/runtime.ts` 的 `RUNTIME_PREAMBLE` 是 **TS 模板字符串**，里面的 `'\\'` 经 TS 转义后交给 C 的是 **`'\'`**（单反斜杠 + 单引号）⇒ 未终止的字符常量。`'\0'` 同理在转义层被吃掉 |
 | **本地改法** | 3 处加倍：TS 源写 `'\\\\'`（C 得 `'\\'`）、`'\\0'`（C 得 `'\0'`）；`git -C as3compiler diff src/runtime.ts` 可逐字核对 |
 | **证据** | 本工作区 `ui-demo/build-air.cjs` 与 `probes/widgets/overlay` 的窗口臂在本机全链路可建可跑；回退该补丁即回到 clang 语法错 |
-| **状态** | 🔧 **本地补丁已生效**，`git status` 为 `M src/runtime.ts`；上游修好后应删除本地改动 |
+| **状态** | ✅ **已修（上游，2026-10-24）**：本地补丁已从工作树撤除；`node tools/compiler-fingerprint.cjs` 在 HEAD `480b81c` 报 **`0 files`（CLEAN）** |
 
-### G18 —— 非 Cocoa 后端的**应用菜单钩子未定义** —— 🔧 **本地已打补丁（未提交上游）**
+### G18 —— 非 Cocoa 后端的**应用菜单钩子未定义** —— ✅ **已修（上游，2026-10-24）**
 
 | 项 | 内容 |
 |---|---|
@@ -382,12 +382,13 @@
 | **根因** | `vendor/window_glue.cc` 的 `#else`（非 Cocoa）分支只定义了 `sk_menu_supported` / `sk_menu_install_app` / `sk_menu_install_dock`，漏了两个无参钩子（Cocoa 分支有，第 2967/2978 行） |
 | **本地改法** | 在 `sk_menu_supported` 前补两个显式空桩（带注释说明为何是 no-op） |
 | **证据** | `git -C as3compiler diff vendor/window_glue.cc`；调用点：第 807 行（帧）与第 1263 行（事件循环） |
-| **状态** | 🔧 **本地补丁已生效**，`git status` 为 `M vendor/window_glue.cc` |
+| **状态** | ✅ **已修（上游，2026-10-24）**：同上，工作树 CLEAN；本机窗口程序仍可全链路构建（`ui-demo/build-air.cjs`、八道窗口门全绿） |
 
-> **两条一起的代价必须写明**：本工作区长期宣称「`asaotui` 不动 `as3compiler/` 一行」，而
-> `node tools/compiler-fingerprint.cjs` 现在会诚实报出 `M src/runtime.ts` + `M vendor/window_glue.cc`。
-> 这两条不是排版洁癖：修之前**本机无法构建任何窗口程序**，浮层与六页画廊的验收全都跑不了。
-> 上游（并发会话）修好后**删除本地补丁、指纹回 CLEAN**，本文档相应改成「✅ 已修」。
+> **这两条的来历值得留着**：2026-10-23 本工作区为了让 Windows 上能构建窗口程序，在编译器树里
+> 打了两个补丁，并如实披露「`asaotui` 不动 `as3compiler/` 一行」这句话**当时不成立**。2026-10-24
+> 上游并发会话把两条都修好并提交，本地补丁随即撤除，`node tools/compiler-fingerprint.cjs` 在
+> HEAD `480b81c` 报 `0 files`——**这句话现在重新成立（零个文件）**。
+> 修之前本机无法构建任何窗口程序（浮层与六页画廊的验收全都跑不了），所以这不是排版洁癖。
 
 ---
 

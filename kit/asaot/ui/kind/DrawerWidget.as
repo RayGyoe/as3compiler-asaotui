@@ -9,6 +9,15 @@ package asaot.ui.kind
 
     public class DrawerWidget extends PanelShellWidget
     {
+        // The edge the sheet arrives from -- the entrance slides it in from THERE.
+        // It has to come from the descriptor: the factory turns `side` into a layer
+        // STYLE, and a retained node keeps the resolved style, not the refinement's
+        // fields, so the widget would otherwise have to guess from the solved rect.
+        override protected function slideOf(desc:Node):String
+        {
+            return DrawerNode(desc).side;
+        }
+
         override protected function openOf(desc:Node):Boolean
         {
             return DrawerNode(desc).open;

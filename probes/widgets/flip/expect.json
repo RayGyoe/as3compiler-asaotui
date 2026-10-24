@@ -1,0 +1,27 @@
+{
+  "w": 400,
+  "h": 260,
+  "note": "Hand-computed. Column at padding 20 / gap 10: content 32+10+90+10+32+10+32 = 216, + 40 padding = 256 <= 260 so nothing is flex-shrunk (a shrunk column gives fractional rects and every number below becomes unreadable). top 20..52, filler 62..152, low 162..194, rgt (alignSelf flex-end) 260..380 x, 204..236 y. A popover panel is 66 tall (1+12+40+12+1) and 120 wide. popT wants 52+6=58 (58+66=124 fits, no flip). popB wants 194+6=200 but 200+66=266 > 260, and 162-6-66=90 >= 0, so it flips above: y=90, bottom edge 156. popR wants 380+6=386 but 386+120=506 > 400, and 260-6-120=134 >= 0, so it flips to the anchor's left at x=134; its y is then clamped from 204 to 260-4-66=190 (EDGE_MARGIN 4) so its bottom edge lands on 256. The page is #f3f4f6 so a white sample can only be a panel's padding.",
+  "rects": {
+    "root": [0, 0, 400, 260],
+    "top": [20, 20, 120, 32],
+    "filler": [20, 62, 120, 90],
+    "low": [20, 162, 120, 32],
+    "rgt": [260, 204, 120, 32],
+    "popT": [20, 58, 120, 66],
+    "popB": [20, 90, 120, 66],
+    "popR": [134, 190, 120, 66],
+    "popT:body": [33, 71, 100, 40],
+    "popB:body": [33, 103, 100, 40],
+    "popR:body": [147, 203, 100, 40]
+  },
+  "points": [
+    { "x": 30, "y": 68, "rgb": "#ffffff" },
+    { "x": 30, "y": 140, "rgb": "#ffffff" },
+    { "x": 140, "y": 197, "rgb": "#ffffff" },
+    { "x": 30, "y": 30, "rgb": "#e0e7ff" },
+    { "x": 30, "y": 175, "rgb": "#e0e7ff" },
+    { "x": 270, "y": 215, "rgb": "#e0e7ff" },
+    { "x": 10, "y": 250, "rgb": "#f3f4f6" }
+  ]
+}

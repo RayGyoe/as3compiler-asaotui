@@ -20,22 +20,30 @@
 package asaot.ui.kind
 {
     import asaot.ui.Node;
+    import asaot.ui.OverlayMotion;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
+    import asaot.ui.WidgetKeys;
 
     import flash.events.MouseEvent;
+    import flash.events.KeyboardEvent;
 
-    public class PanelShellWidget implements Widget
+    public class PanelShellWidget implements Widget, WidgetKeys
     {
         protected static const OPEN_KEY:String = "open";
         protected static const CLOSE_KEY:String = "closeOnScrim";
         protected static const FN_KEY:String = "onClose";
         protected static const HIT_KEY:String = "hitOutside";
+        // Which edge the sheet arrives from ("" = the centred dialog). Mirrored from
+        // the descriptor by the subclass, because the edge is pure STYLE in the
+        // factory and a retained node does not keep its style refinement's fields.
+        protected static const SLIDE_KEY:String = "slide";
 
         // ---- what the subclass supplies ---------------------------------
         protected function openOf(desc:Node):Boolean { return false; }
         protected function closeOnScrimOf(desc:Node):Boolean { return true; }
         protected function onCloseOf(desc:Node):Function { return null; }
+        protected function slideOf(desc:Node):String { return ""; }
 
         // ---- the shared behaviour ---------------------------------------
         public function build(n:UiNode):void
@@ -44,6 +52,7 @@ package asaot.ui.kind
             n.extra[CLOSE_KEY] = 1;
             n.extra[FN_KEY] = null;
             n.extra[HIT_KEY] = 0;
+            n.extra[SLIDE_KEY] = "";
             n.backing.addEventListener(MouseEvent.CLICK,
                 function (e:MouseEvent):void { PanelShellWidget.onClick(n, e); });
         }
@@ -52,12 +61,14 @@ package asaot.ui.kind
         {
             n.extra[CLOSE_KEY] = closeOnScrimOf(desc) ? 1 : 0;
             n.extra[FN_KEY] = onCloseOf(desc);
+            n.extra[SLIDE_KEY] = slideOf(desc);
 
             var open:Boolean = openOf(desc);
             var prev:* = n.extra[OPEN_KEY];
             var was:Boolean = prev != null && Boolean(prev);
             if (was == open) return false;
             n.extra[OPEN_KEY] = open;
+            if (open) OverlayMotion.start(n);
             // Mirror onto the retained node AND the display object immediately: an
             // `open` change can land on a frame with no arrange pass, and a closed
             // shell must stop blocking input in the SAME frame it closes (the pick
@@ -77,7 +88,40 @@ package asaot.ui.kind
 
         public function arrange(n:UiNode):void { }
 
-        public function paint(n:UiNode):void { }
+        public function paint(n:UiNode):void
+        {
+            // The LAYER is the fade target (so the scrim ramps with the panel) and
+            // the PANEL is the moving one -- a centred dialog rises 8px, an edge
+            // sheet slides in from its own edge by its own size.
+            if (n.children.length == 0) { OverlayMotion.apply(n, n, null, 0, 0); return; }
+            var panel:UiNode = n.children[n.children.length - 1];
+            if (panel == null || panel.backing == null)
+            {
+                OverlayMotion.apply(n, n, null, 0, 0);
+                return;
+            }
+            var dx:Number = 0;
+            var dy:Number = 8;
+            var side:String = String(n.extra[SLIDE_KEY]);
+            if (side == "left") { dx = -(panel.absW > 0 ? panel.absW : 240); dy = 0; }
+            else if (side == "right") { dx = panel.absW > 0 ? panel.absW : 240; dy = 0; }
+            else if (side == "top") { dx = 0; dy = -(panel.absH > 0 ? panel.absH : 200); }
+            else if (side == "bottom") { dx = 0; dy = panel.absH > 0 ? panel.absH : 200; }
+            OverlayMotion.apply(n, n, panel, dx, dy);
+        }
+
+        // Escape closes -- but only while this shell HOLDS the keyboard (see the
+        // header of WidgetKeys): the shell deliberately does not steal focus when it
+        // opens, so an author who wants a keyboard-dismissable modal calls
+        // `app.focusNode(app.findByKey("<first control>"))` from its open handler.
+        public function onKey(n:UiNode, keyCode:int, shift:Boolean):Boolean
+        {
+            if (keyCode != 27) return false;
+            if (Number(n.extra[CLOSE_KEY]) == 0) return true;   // consumed but ignored
+            var f:Function = n.extra[FN_KEY];
+            if (f != null) f();
+            return true;
+        }
 
         public function click(n:UiNode):Boolean
         {

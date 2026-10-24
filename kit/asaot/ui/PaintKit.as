@@ -30,6 +30,35 @@ package asaot.ui
 
     public class PaintKit
     {
+        // ---- interaction state -> pixels ----------------------------------
+        //
+        // THE STATE IS DERIVED, NOT AUTHORED. `ElementState` already carried
+        // hover/pressed/focused/disabled as ints (it was written for exactly this)
+        // and `UiNode` has been flipping hover/pressed since the first widget --
+        // but nothing ever READ them, so a hovered button looked identical to an
+        // idle one. Three numbers below turn that state into pixels with no new
+        // style field:
+        //
+        //   hover   -- lift the surface toward white by HOVER_LIFT percent
+        //   pressed -- sink it toward black by PRESS_SINK percent
+        //   focused -- a 2px accent ring, DRAWN AS FOUR FILLED RECTS (not a
+        //              lineStyle stroke: stroke width is not honoured on this
+        //              backend -- see OverlayChrome's header), so the ring is
+        //              integer-exact and a probe can assert a single pixel
+        //   disabled-- the whole backing's alpha is scaled by DISABLED_ALPHA in
+        //              UiNode (NOT here): dimming at the draw call would leave the
+        //              label, an image and a chip at full strength, and it would
+        //              multiply twice on a node that already dims itself
+        //
+        // IDLE MUST BE BYTE-IDENTICAL TO BEFORE. Every branch below is a no-op at
+        // (0,0,0,0), which is what keeps the six gallery screenshots and every
+        // widget probe baseline valid while adding the whole feature.
+        public static const HOVER_LIFT:int = 8;      // percent toward white
+        public static const PRESS_SINK:int = 12;     // percent toward black
+        public static const DISABLED_ALPHA:Number = 0.45;
+        public static const FOCUS_RING:uint = 0x2563EB;
+        public static const FOCUS_RING_W:Number = 2;
+
         // ---- NaN-tolerant accessors --------------------------------------
         public static function nz(v:Number):Number { return isNaN(v) ? 0 : v; }
 
@@ -164,10 +193,104 @@ package asaot.ui
             if (hasBg) g.endFill();
         }
 
-        // Null-safe wrapper: many widgets have no background shape at all.
+        // ---- the state-aware box ------------------------------------------
+        // ONE function carries hover / pressed / focused into every widget that
+        // draws through paintBox -- 20+ kinds get the feedback with no widget-file
+        // change (the same interception idea as `Anim` on `resolved`, one layer
+        // down: here the interception is on the DRAW, because a hover must never
+        // re-solve a style).
+        public static function drawBoxFor(n:UiNode, sh:Shape, s:Style, w:Number, h:Number):void
+        {
+            var g:Object = sh.graphics;
+            g.clear();
+            // A HOVER MEANS "THIS SURFACE REACTS TO THE POINTER", so it is derived
+            // only for an INTERACTIVE node. `state.hover` is set on every backing (the
+            // MOUSE_OVER listener is wired in UiNode.createBacking for all kinds), and
+            // honouring it everywhere turned every layout container into a :hover div
+            // -- a plain `box` or the page root would lighten 8% whenever the pointer
+            // crossed it. "Interactive" is the two things the library itself uses to
+            // mean it: a focused-able control (tabEnabled) or a node some widget
+            // handed a click handler to (chips, cards).
+            var live:Boolean = (n.tabEnabled || n.onClick != null) && n.state.disabled == 0;
+            var hoveredLift:int = (live && n.state.hover != 0) ? HOVER_LIFT : 0;
+            var pressedSink:int = (live && n.state.pressed != 0) ? PRESS_SINK : 0;
+
+            var hasBg:Boolean = s.background != null;
+            if (hasBg)
+            {
+                var bg:uint = s.background.rgb();
+                if (pressedSink > 0) bg = mixRGB(bg, 0x000000, pressedSink);
+                else if (hoveredLift > 0) bg = mixRGB(bg, 0xFFFFFF, hoveredLift);
+                g.beginFill(bg, s.background.alpha());
+            }
+            var hasBorder:Boolean = s.borderWidths != null && !isNaN(s.borderColor);
+            if (hasBorder)
+            {
+                var bc:uint = uint(s.borderColor) & 0xFFFFFF;
+                if (pressedSink > 0) bc = mixRGB(bc, 0x000000, pressedSink);
+                else if (hoveredLift > 0) bc = mixRGB(bc, 0xFFFFFF, hoveredLift);
+                g.lineStyle(nz(s.borderWidths.top), bc, 1.0);
+            }
+            if (hasBg || hasBorder)
+            {
+                var r:Number = 0;
+                if (s.cornerRadii != null) r = nz(s.cornerRadii.topLeft);
+                if (r > 0) g.drawRoundRect(0, 0, w, h, r * 2, r * 2);
+                else g.drawRect(0, 0, w, h);
+            }
+            if (hasBg) g.endFill();
+
+            if (n.state.focused != 0 && n.tabEnabled && n.state.disabled == 0
+                && w >= FOCUS_RING_W * 4 && h >= FOCUS_RING_W * 4)
+            {
+                // Four filled bars, NOT a stroke: the ring then lands on integer
+                // pixels (probe: (x+1,y) is exactly FOCUS_RING for any w,h).
+                var t:Number = FOCUS_RING_W;
+                g.beginFill(FOCUS_RING, 1.0);
+                g.drawRect(0, 0, w, t);
+                g.drawRect(0, h - t, w, t);
+                g.drawRect(0, t, t, h - t - t);
+                g.drawRect(w - t, t, t, h - t - t);
+                g.endFill();
+            }
+        }
+
+        // Percent blend of two packed RGB colours. Integer arithmetic with an
+        // explicit round, so the result is a number a probe can predict exactly:
+        // mixRGB(0xF3F4F6, white, 8) == 0xF4F5F7.
+        public static function mixRGB(c:uint, target:uint, pct:int):uint
+        {
+            var r:int = int(uint(c >> 16) & 0xFF);
+            var g:int = int(uint(c >> 8) & 0xFF);
+            var b:int = int(uint(c) & 0xFF);
+            var tr:int = int(uint(target >> 16) & 0xFF);
+            var tg:int = int(uint(target >> 8) & 0xFF);
+            var tb:int = int(uint(target) & 0xFF);
+            r = r + Math.round((tr - r) * pct / 100);
+            g = g + Math.round((tg - g) * pct / 100);
+            b = b + Math.round((tb - b) * pct / 100);
+            if (r < 0) r = 0; if (r > 255) r = 255;
+            if (g < 0) g = 0; if (g > 255) g = 255;
+            if (b < 0) b = 0; if (b > 255) b = 255;
+            return uint((r << 16) | (g << 8) | b);
+        }
+
+        // The state colour for a widget that draws its own surface (chip, slider,
+        // progress). Same rule as drawBoxFor, exposed so those kinds do not
+        // re-derive it and drift. Same interactivity gate, same idle guarantee.
+        public static function stateColor(n:UiNode, c:uint):uint
+        {
+            if (n.state.disabled != 0) return c;
+            if (n.tabEnabled == false && n.onClick == null) return c;
+            if (n.state.pressed != 0) return mixRGB(c, 0x000000, PRESS_SINK);
+            if (n.state.hover != 0) return mixRGB(c, 0xFFFFFF, HOVER_LIFT);
+            return c;
+        }
+
+        // Null-safe wrappers: many widgets have no background shape at all.
         public static function paintBox(n:UiNode, s:Style, w:Number, h:Number):void
         {
-            if (n.shapeA != null) drawBox(n.shapeA, s, w, h);
+            if (n.shapeA != null) drawBoxFor(n, n.shapeA, s, w, h);
         }
     }
 }

@@ -41,6 +41,7 @@ package demo
     import asaot.ui.UiApp;
     import asaot.ui.UiNode;
     import asaot.ui.as3.As3LayoutNode;
+    import flash.display.BitmapData;
     import flash.display.StageAlign;
     import flash.display.StageScaleMode;
     import flash.display.Sprite;
@@ -207,6 +208,28 @@ package demo
                 // re-deriving a number the runner already has would be a second
                 // implementation to keep honest.
                 this.stage.render(GW, GH, OUT + "-page" + k + ".png");
+
+                // PAGE 5 ALSO PINS THAT THE ENTRANCE LANDED. Every floating surface
+                // fades in over 140 ms of WALL time (OverlayMotion), and this tour
+                // pumps frames by hand -- so it is the one place where an entrance that
+                // never finishes is invisible to every rect assertion while being
+                // glaringly obvious on screen: the whole dialog layer renders at a few
+                // percent alpha (that is exactly what page 5 did before these two
+                // lines existed). The scrim is 0x66 black over white, so
+                // 255 * (1 - 0.4) = 153 = #999999; the panel is opaque white over it.
+                if (k == 5)
+                {
+                    var pbd:BitmapData = new BitmapData(GW, GH, true, 0xFF000000);
+                    pbd.draw(this.stage);
+                    var scrimPx:uint = pbd.getPixel(100, 500) & 0xFFFFFF;
+                    // (205,194) is the panel AT 200,188 with a 1px border and 12px padding, i.e. its
+                    // own white corner -- not the muted body slab the dialog puts inside it.
+                    var panelPx:uint = pbd.getPixel(205, 194) & 0xFFFFFF;
+                    this.report = this.report + "  page5 pixels: scrim=#" + scrimPx.toString(16)
+                        + " panel=#" + panelPx.toString(16) + String.fromCharCode(10);
+                    if (scrimPx != 0x999999) this.problems = this.problems + "page 5's scrim is #" + scrimPx.toString(16) + " not #999999 (a mid-flight entrance layer, or a scrim that never painted); ";
+                    if (panelPx != 0xFFFFFF) this.problems = this.problems + "page 5's dialog panel is #" + panelPx.toString(16) + " not #ffffff (the panel is not opaque over its scrim); ";
+                }
             }
 
             // TEARDOWN INVARIANT: leaving the overlay page must take the second

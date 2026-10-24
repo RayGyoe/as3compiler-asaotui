@@ -1,0 +1,16 @@
+{
+  "w": 760,
+  "h": 560,
+  "note": "Hand-computed from the layout constants only: root column 760x560, padding 20, gap 10, alignItems flex-start. btnA/btnD/nxt are 140x32, the text field 200x32. The idle pixels are the button's own background (0x2563EB) plus the white page; every state-dependent colour (hover/press/ring/disabled) is asserted inside the program verdict, because those are transient and only one bitmap is read back.",
+  "rects": {
+    "root": [0, 0, 760, 560],
+    "btnA": [20, 20, 140, 32],
+    "btnD": [20, 62, 140, 32],
+    "inp": [20, 104, 200, 32],
+    "nxt": [20, 146, 140, 32]
+  },
+  "points": [
+    { "x": 26, "y": 26, "rgb": "#e0e7ff" },
+    { "x": 240, "y": 300, "rgb": "#ffffff" }
+  ]
+}

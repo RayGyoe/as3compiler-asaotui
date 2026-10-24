@@ -6,7 +6,7 @@
 // SPECIFIC failure line it must produce, so that "it went red" is never confused
 // with "it failed to build".
 //
-// Five of the seven are the REAL DEFECTS this probe found while it was being
+// Five of the nine are the REAL DEFECTS this probe found while it was being
 // written -- the overlay tree solved against the pre-window fallback size, the
 // panel surfaces that painted nothing at all, the layer that shrank when the
 // control's own `width`/`size` option leaked into a style shorthand, the row
@@ -98,6 +98,24 @@ const MUTATIONS = [
     find: '            if (vis != this.visible)\n            {\n                this.visible = vis;\n                this.dirty |= Dirty.M_ARRANGE | Dirty.M_PAINT;\n                this.markLayoutDirty();\n            }',
     replace: '            this.visible = vis;',
     expect: 'the band did not move to row 2 after the click',
+  },
+  {
+    id: 'M8',
+    why: 'THE PARENT-LOCAL CONVERSION IS DROPPED for the submenu (its parent is the MENU, not the '
+      + 'overlay root at the origin), so the nested panel lands 20px to the right of its row',
+    file: 'kit/asaot/ui/kind/PopoverWidget.as',
+    find: '                eng.setPosition(e, LayoutConstants.EDGE_LEFT, a.absX + a.absW + off - ox,',
+    replace: '                eng.setPosition(e, LayoutConstants.EDGE_LEFT, a.absX + a.absW + off - ox + 20,',
+    expect: 'the submenu is at x=199 not 179',
+  },
+  {
+    id: 'M9',
+    why: 'THE SUBMENU COLLISION GUARD IS REMOVED: a click inside the submenu is also read as a click on '
+      + 'the parent row at the same height (they overlap), so the parent selection moves too',
+    file: 'kit/asaot/ui/kind/MenuWidget.as',
+    find: '                if (OverlayList.isInside(c.backing, e.target)) return;',
+    replace: '',
+    expect: 'a click inside the submenu also activated parent row',
   },
 ];
 

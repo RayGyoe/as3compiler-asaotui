@@ -14,6 +14,9 @@ package asaot.ui
         public var placeholder:String;
         public var password:Boolean;
         public var onCommit:Function;
+        // Fires on every edit with the new value (see textField.as); onCommit is
+        // Enter / blur only, this one is "the user changed it".
+        public var onChange:Function;
 
         private static var registered:Boolean = false;
 
@@ -27,6 +30,7 @@ package asaot.ui
             this.placeholder = "";
             this.password = false;
             this.onCommit = null;
+            this.onChange = null;
         }
     }
 }

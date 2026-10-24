@@ -15,6 +15,13 @@ package asaot.ui
         // `visibility:hidden`, not `display:none`, and it maps straight onto the
         // backing object's `visible` flag.
         public var visible:Boolean;
+        // DISABLED (design doc section 8). An element that cannot be interacted
+        // with, INHERITED BY ITS SUBTREE: a disabled card disables every control
+        // inside it. `UiNode.inert()` walks the retained parent chain, which is why
+        // this is one boolean per element rather than a flag copied down.
+        // Rendering: the backing's alpha is scaled by PaintKit.DISABLED_ALPHA and
+        // the hover/press modulation is dropped -- one place, every kind.
+        public var disabled:Boolean;
 
         public function Element(kind:String):void
         {
@@ -23,6 +30,7 @@ package asaot.ui
             this.ariaName = null;
             this.ariaValue = null;
             this.visible = true;
+            this.disabled = false;
         }
     }
 }

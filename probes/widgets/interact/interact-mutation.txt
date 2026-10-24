@@ -1,0 +1,37 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  nothing reads `state.hover` again -- the pre-audit state, where the flag was maintained and the surface ignored it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the hovered button's fill (8% toward white) is #e0e7ff not #e2e9ff;
+     restore: byte-identical (418066a9025a827e)
+M2  CAUGHT  the press no longer sinks the surface -> a pressed button is indistinguishable from an idle one
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the pressed button's fill (12% toward black) is #e0e7ff not #c5cbe0;
+     restore: byte-identical (418066a9025a827e)
+M3  CAUGHT  the disabled dimming is dropped from the BACKING (UiNode), which is the only place that can dim the label, the border and the fill together
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a disabled node's backing alpha is 1 not 0.45; a disabled button paints the same colour as a live one (#e0e7ff at 26,26 == #e0e7ff at 26,68); the disabled flip did not reach the display object (alpha 1); the disabled flip left the live colour on screen (still #e0e7ff);
+     restore: byte-identical (99ac0f20ea21ba57)
+M4  CAUGHT  DISABLED STOPS BEING INERT: the guard in handleClick is removed, so a direct dispatch (a test, a programmatic click on a child) runs the handler of a disabled control
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a disabled button ran its onClick 1 time(s);
+     restore: byte-identical (99ac0f20ea21ba57)
+M5  CAUGHT  the focus ring is not drawn -> the ring pixel stays the fill colour (the four-bar draw is the only thing that can put FOCUS_RING on the border while the fill stays put)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the focus ring's left bar is #e0e7ff not #2563eb;
+     restore: byte-identical (418066a9025a827e)
+M6  CAUGHT  the tab ring stops excluding inert subtrees -> Tab lands on the disabled button
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL Tab from btnA landed on btnA not inp (a disabled control must be skipped); Shift+Tab from inp landed on nxt not btnA;
+     restore: byte-identical (153fb00533543327)
+M7  CAUGHT  THE ORIGINAL DEFECT, re-introduced: the field only MIRRORS the model. Event.CHANGE no longer writes back, so the user types and the model never hears about it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the retained node's value is '' not 'Ada'; a repaint erased the typing (field is ''); Enter did not commit (onCommit got '');
+     restore: byte-identical (0b19c1a430b8d23f)
+M8  CAUGHT  Enter no longer commits -> the model updates but onCommit never fires (a form cannot ever be submitted)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL Enter did not commit (onCommit got '');
+     restore: byte-identical (0b19c1a430b8d23f)
+
+MUTATION interact: 8/8 caught, 0 problem(s)
+RESULT: PASS

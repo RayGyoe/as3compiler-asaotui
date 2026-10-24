@@ -21,19 +21,23 @@ package asaot.ui.kind
     import asaot.ui.OverlayChrome;
     import asaot.ui.OverlayList;
     import asaot.ui.PaintKit;
+    import asaot.ui.OverlayMotion;
     import asaot.ui.SelectNode;
     import asaot.ui.UiNode;
+    import asaot.ui.WidgetKeys;
     import flash.display.Shape;
     import asaot.ui.Widget;
 
     import flash.events.MouseEvent;
 
-    public class SelectWidget implements Widget
+    public class SelectWidget implements Widget, WidgetKeys
     {
         private static const OPEN_KEY:String = "open";
         private static const SEL_FN:String = "onSelect";
         private static const OPEN_FN:String = "onOpenChange";
         private static const HIT_KEY:String = "hit";
+        private static const ACT_KEY:String = "actRow";
+        private static const BAND_KEY:String = "bandShape";
 
         public function build(n:UiNode):void
         {
@@ -49,6 +53,8 @@ package asaot.ui.kind
             n.shapeA = new Shape();
             n.backing.addChild(n.shapeA);
             n.extra[HIT_KEY] = 0;
+            n.extra[ACT_KEY] = -1;
+            n.extra[BAND_KEY] = null;
             var self:SelectWidget = this;
             n.backing.addEventListener(MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onClickAt(n, e); });
@@ -60,7 +66,11 @@ package asaot.ui.kind
             n.extra[SEL_FN] = s.onSelect;
             n.extra[OPEN_FN] = s.onOpenChange;
             n.onChange = s.onSelect;
+            var wasOpen:Boolean = Boolean(n.extra[OPEN_KEY]);
             n.extra[OPEN_KEY] = s.open;
+            // The dropdown gets the same entrance as every other floating surface
+            // (see OverlayMotion), armed on the open flip only.
+            if (!wasOpen && s.open) OverlayMotion.start(n);
             // The dropdown's visibility rides on its own child node, so `open` needs
             // no relayout from here; a width change arrives as a style diff.
             return false;
@@ -92,6 +102,12 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             PaintKit.paintBox(n, n.resolved, PaintKit.w1(n), PaintKit.h1(n));
+            this.paintActiveBand(n);
+            if (n.children.length > 0)
+            {
+                var drop:UiNode = n.children[n.children.length - 1];
+                if (drop.backing != null) OverlayMotion.apply(n, drop, drop, 0, 6);
+            }
             if (n.shapeA == null) return;
             // The caret: a filled triangle at the right, inside the trigger's own
             // 10px horizontal padding. Filled, not stroked -- stroke width is not
@@ -112,6 +128,94 @@ package asaot.ui.kind
         public function click(n:UiNode):Boolean
         {
             return Number(n.extra[HIT_KEY]) != 0;
+        }
+
+        // ---- keyboard ------------------------------------------------------
+        // Arrows move an ACTIVE row; Enter/Space activates it (choosing it and
+        // closing, exactly like a click); Escape closes. When the dropdown is shut,
+        // Down/Enter opens it at the current value.
+        public function onKey(n:UiNode, keyCode:int, shift:Boolean):Boolean
+        {
+            var open:Boolean = Boolean(n.extra[OPEN_KEY]);
+            var drop:UiNode = n.children.length > 0 ? n.children[n.children.length - 1] : null;
+            var rows:int = drop == null ? 0 : drop.children.length;
+
+            if (keyCode == 27)
+            {
+                if (!open) return false;
+                this.close(n, false);
+                return true;
+            }
+            if (keyCode == 13 || keyCode == 32)
+            {
+                if (!open) { this.close(n, true); return true; }
+                var act:int = int(Number(n.extra[ACT_KEY]));
+                if (act >= 0 && act < rows) this.choose(n, act);
+                else this.close(n, false);
+                return true;
+            }
+            if (keyCode == 40 || keyCode == 38)
+            {
+                if (!open)
+                {
+                    if (keyCode == 40) this.close(n, true);
+                    return true;
+                }
+                if (rows == 0) return true;
+                var a:int = int(Number(n.extra[ACT_KEY]));
+                if (a < 0) a = 0;
+                else a = keyCode == 40 ? (a + 1) % rows : (a - 1 + rows) % rows;
+                n.extra[ACT_KEY] = a;
+                n.app.markPaint(n);
+                return true;
+            }
+            return false;
+        }
+
+        private function choose(n:UiNode, row:int):void
+        {
+            var sel:Function = n.extra[SEL_FN];
+            if (sel != null) sel(row);
+            this.close(n, false);
+        }
+
+        private function close(n:UiNode, open:Boolean):void
+        {
+            n.extra[ACT_KEY] = -1;
+            var f:Function = n.extra[OPEN_FN];
+            if (f != null) f(open);
+        }
+
+        // The active row's band. It MUST live on a shape inside the DROPDOWN, above
+        // the dropdown's own background and below its rows: drawing it on the
+        // select's shapeA would put it under the dropdown's opaque white, and drawing
+        // it into drop.shapeA from here is undone anyway by the dropdown's own paint,
+        // which runs AFTER its parent.
+        //
+        // The shape is created once and inserted at `drop.internalCount`, the exact
+        // slot the reconciler's display-order repair treats as "before the UiNode
+        // children" (see Reconciler.fixDisplayOrder).
+        private function paintActiveBand(n:UiNode):void
+        {
+            var drop:UiNode = n.children.length > 0 ? n.children[n.children.length - 1] : null;
+            if (drop == null || drop.backing == null) return;
+            var raw:Object = drop.extra[BAND_KEY];
+            var sh:Shape;
+            if (raw == null)
+            {
+                sh = new Shape();
+                drop.backing.addChildAt(sh, drop.internalCount);
+                drop.internalCount = drop.internalCount + 1;
+                drop.extra[BAND_KEY] = sh;
+            }
+            else sh = Shape(raw);
+            sh.graphics.clear();
+            var act:int = int(Number(n.extra[ACT_KEY]));
+            if (!Boolean(n.extra[OPEN_KEY]) || act < 0 || act >= drop.children.length) return;
+            var r:UiNode = drop.children[act];
+            sh.graphics.beginFill(OverlayChrome.ITEM_HOVER, 1.0);
+            sh.graphics.drawRect(r.absX - drop.absX, r.absY - drop.absY, r.absW, r.absH);
+            sh.graphics.endFill();
         }
 
         private function onClickAt(n:UiNode, e:MouseEvent):void

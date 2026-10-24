@@ -30,6 +30,7 @@ package asaot.ui
 
     import flash.display.Sprite;
     import flash.display.Shape;
+    import flash.display.DisplayObject;
     import flash.text.TextField;
     import flash.events.MouseEvent;
 
@@ -85,6 +86,14 @@ package asaot.ui
         public var directionOverride:String;
         public var visible:Boolean;
         public var action:String;
+        // Mirrored from Control.tabEnabled. The TAB RING IS BUILT IN UiApp, not by
+        // the runtime's own `as_tab_scan`: that walk is display-list order over
+        // every tabEnabled InteractiveObject, so it descends into an INVISIBLE
+        // overlay (typed text would land in a closed dialog), it counts this node's
+        // own TextField as a second stop, and it stops at 64 objects. Walking the
+        // RETAINED tree instead is exact -- a node is a stop iff its own
+        // `tabEnabled` is true, it is visible, and nothing above it is disabled.
+        public var tabEnabled:Boolean;
 
         // ---- backing internals ------------------------------------------
         public var shapeA:Shape;
@@ -140,6 +149,7 @@ package asaot.ui
             this.directionOverride = null;
             this.visible = true;
             this.action = null;
+            this.tabEnabled = false;
             this.shapeA = null;
             this.shapeB = null;
             this.tf = null;
@@ -193,11 +203,54 @@ package asaot.ui
             this.app.markPaint(this);
         }
 
+        // Focus is library state, not display-list state (see tabEnabled above):
+        // the ring is painted by PaintKit and the TAB order is a walk of THIS tree.
+        public function setFocused(v:int):void
+        {
+            if (this.state.focused == v) return;
+            this.state.focused = v;
+            this.app.markPaint(this);
+        }
+
+        // Disabled is INHERITED: a disabled container makes its whole subtree
+        // inert, which is the only reading of "disable this form" that does not
+        // require every factory to copy the flag down.
+        public function inert():Boolean
+        {
+            var n:UiNode = this;
+            while (n != null)
+            {
+                if (n.state.disabled != 0) return true;
+                n = n.parent;
+            }
+            return false;
+        }
+
         public function handleClick():void
         {
+            // Direct dispatch (a test, a programmatic click on a child) bypasses the
+            // runtime's hit test, so the inert check belongs HERE and not only in
+            // the pick walk: a disabled control must never run its handler.
+            if (this.inert()) return;
             this.setPressed(0);
             if (this.widget.click(this)) return;
             if (this.onClick != null) this.onClick();
+        }
+
+        // The object that should take `stage.focus` (see WidgetFocus). Null for
+        // every non-editable kind, which is what keeps a ring-only focus from
+        // stealing the keyboard from a text field that another node owns.
+        public function focusTarget():DisplayObject
+        {
+            if (this.widget is WidgetFocus) return WidgetFocus(this.widget).focusTarget(this);
+            return null;
+        }
+
+        private function applyDisabledAlpha():void
+        {
+            if (this.backing == null) return;
+            var base:Number = isNaN(this.resolved.opacity) ? 1.0 : this.resolved.opacity;
+            this.backing.alpha = this.state.disabled != 0 ? base * PaintKit.DISABLED_ALPHA : base;
         }
 
         // ---- payload mirroring (called by the reconciler) ---------------
@@ -224,6 +277,32 @@ package asaot.ui
                 this.visible = vis;
                 this.dirty |= Dirty.M_ARRANGE | Dirty.M_PAINT;
                 this.markLayoutDirty();
+            }
+
+            // ---- interaction state (mirrored, never authored on the retained
+            // node) -------------------------------------------------------
+            // `tabEnabled` only exists on Control. The `is` test is on a library
+            // class, so a plain Element (a box, a text) is simply not tabbable.
+            var tab:Boolean = (desc is Control) ? Control(desc).tabEnabled : false;
+            if (tab != this.tabEnabled) this.tabEnabled = tab;
+
+            // A disabled flip is a PAINT change (the alpha and the dropped
+            // hover/press win) -- plus it has to reach the display object in the
+            // same frame it flips, exactly like `visible` above: a disabled
+            // control that still looks enabled for one frame is the bug the whole
+            // feature exists to prevent.
+            var dis:int = Element(desc).disabled ? 1 : 0;
+            if (dis != this.state.disabled)
+            {
+                this.state.disabled = dis;
+                this.dirty |= Dirty.M_ARRANGE | Dirty.M_PAINT;
+                this.applyDisabledAlpha();
+                if (dis != 0 && this.state.focused != 0)
+                {
+                    // A control that becomes inert cannot hold the keyboard.
+                    this.setFocused(0);
+                    if (this.app != null) this.app.dropFocus(this);
+                }
             }
 
             var dirBefore:String = this.directionOverride;
@@ -629,6 +708,7 @@ package asaot.ui
             var s:Style = this.resolved;
             this.backing.visible = this.visible && s.visibility != "hidden";
             this.backing.alpha = isNaN(s.opacity) ? 1.0 : s.opacity;
+            if (this.state.disabled != 0) this.backing.alpha = this.backing.alpha * PaintKit.DISABLED_ALPHA;
 
             // The inner display objects are placed by the kind, which reads the
             // solved rect back through PaintKit (insetX/insetY/contentW/H).
@@ -645,6 +725,7 @@ package asaot.ui
             if (this.backing != null)
             {
                 this.backing.alpha = isNaN(this.resolved.opacity) ? 1.0 : this.resolved.opacity;
+                if (this.state.disabled != 0) this.backing.alpha = this.backing.alpha * PaintKit.DISABLED_ALPHA;
             }
             this.widget.paint(this);
         }

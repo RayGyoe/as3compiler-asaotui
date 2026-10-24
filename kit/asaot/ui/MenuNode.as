@@ -20,6 +20,10 @@ package asaot.ui
     {
         public var items:Array;           // [ "Label", ... ] or [ { label, value }, ... ]
         public var selectedIndex:int;     // -1 == none
+        // Which item's SUBMENU is open (-1 = none). Author-owned like every other
+        // overlay `open`, so render() stays a pure function of the model: the author
+        // sets it from onSelect when the activated row has a submenu.
+        public var submenuIndex:int;
         public var onSelect:Function;     // Function(index:int)
 
         private static var menuRegistered:Boolean = false;
@@ -32,6 +36,7 @@ package asaot.ui
             this.role = "menu";
             this.items = [];
             this.selectedIndex = -1;
+            this.submenuIndex = -1;
             this.onSelect = null;
             this.width = 160;
         }

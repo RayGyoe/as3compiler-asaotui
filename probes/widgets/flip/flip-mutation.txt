@@ -1,0 +1,41 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  NO VERTICAL FLIP: the overflow test is short-circuited, so the panel stays below its anchor and hangs 6px out of a 260px window (y=200, bottom edge 266)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the overflowing popover is at y=200 not 90 (anchor 162 - 6 - 66); the flipped popover still overflows the window (266 > 260); the flipped popover's bottom edge is 266 not 156; the right-anchored popover is at x=386 not 134 (anchor left 260 - 6 - 120); the sideways-flipped popover still overflows the window (506 > 400); the flipped panel's padding is #f3f4f6 not white; the sideways-flipped panel's padding is #f3f4f6 not white;
+     FAIL  rect popB[y] want 90 got 200
+     FAIL  rect popR[x] want 134 got 386
+     FAIL  rect popB:body[y] want 103 got 213
+     ... and 3 more
+     restore: byte-identical (8b0c19f7c137ac5e)
+M2  CAUGHT  THE PANEL'S OWN HEIGHT IS DROPPED from the flipped placement, so it lands exactly where the anchor is (y=156) instead of ending there -- the bottom edge is off by its own height
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the overflowing popover is at y=156 not 90 (anchor 162 - 6 - 66); the flipped popover's bottom edge is 222 not 156; the flipped panel's padding is #f3f4f6 not white;
+     FAIL  rect popB[y] want 90 got 156
+     FAIL  rect popB:body[y] want 103 got 169
+     FAIL  pixel (30,140) want #ffffff got #f3f4f6
+     ... and 1 more
+     restore: byte-identical (8b0c19f7c137ac5e)
+M3  CAUGHT  NO SIDEWAYS FLIP: only the vertical branch is kept, so the right-anchored panel stays where it was asked to go (x=386) and hangs 106px out of a 400px window
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the right-anchored popover is at x=386 not 134 (anchor left 260 - 6 - 120); the sideways-flipped popover still overflows the window (506 > 400); the sideways-flipped panel's padding is #f3f4f6 not white;
+     FAIL  rect popR[x] want 134 got 386
+     FAIL  rect popR:body[x] want 147 got 399
+     FAIL  pixel (140,197) want #ffffff got #f3f4f6
+     restore: byte-identical (8b0c19f7c137ac5e)
+M4  CAUGHT  THE PARENT-LOCAL CONVERSION IS DROPPED from the horizontal inset (the `- ox` of a padded parent), so an anchored panel is offset by 40px -- x=-20 here
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the flipped popover is at x=-20 not 20 (the anchor's left edge);
+     FAIL  rect popB[x] want 20 got -20
+     FAIL  rect popB:body[x] want 33 got -7
+     restore: byte-identical (8b0c19f7c137ac5e)
+M5  CAUGHT  THE CLAMP IS DROPPED on the flipped-side branch: the panel is on the correct axis but its bottom hangs 10px out of the window (y=204 instead of 190)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the sideways-flipped popover is at y=204 not 190 (clampY: 260 - 4 - 66); the clamped popover's bottom edge is 270 not 256 (the clamp keeps a 4px margin); the sideways-flipped panel's padding is #f3f4f6 not white;
+     FAIL  rect popR[y] want 190 got 204
+     FAIL  rect popR:body[y] want 203 got 217
+     FAIL  pixel (140,197) want #ffffff got #f3f4f6
+     restore: byte-identical (8b0c19f7c137ac5e)
+
+MUTATION flip: 5/5 caught, 0 problem(s)
+RESULT: PASS

@@ -108,7 +108,7 @@ package asaot.ui.kind
             {
                 var g:Object = n.shapeA.graphics;
                 g.clear();
-                g.beginFill(0xE5E7EB, 1.0);
+                g.beginFill(PaintKit.stateColor(n, 0xE5E7EB), 1.0);
                 g.drawRoundRect(0, ty, w, 8, 8, 8);
                 g.endFill();
                 if (fill > 0)

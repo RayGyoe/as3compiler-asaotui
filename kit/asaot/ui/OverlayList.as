@@ -43,15 +43,36 @@ package asaot.ui
         // Which child row contains `ly` (the point in the CONTAINER's local space)?
         // -1 when the point is in the padding. Rects come from the engine's arrange
         // pass (absX/absY), never from `rowHeight * index`.
+        //
+        // SUBMENUS ARE SKIPPED. menu.as appends them AFTER the rows, so a row keeps
+        // `childIndex == rowIndex` and the returned index is still exact -- but a
+        // submenu's rect starts at its row's top and runs further down, so without
+        // this skip a click in the menu's bottom padding could be read as a click on
+        // a nested menu.
         public static function rowAt(n:UiNode, ly:Number):int
         {
             for (var i:int = 0; i < n.children.length; i++)
             {
                 var c:UiNode = n.children[i];
+                if (c.kind == "menu") continue;
                 var top:Number = c.absY - n.absY;
                 if (ly >= top && ly < top + c.absH) return i;
             }
             return -1;
+        }
+
+        // Is `t` this display object or somewhere inside it? An identity walk up the
+        // parent chain -- the same technique PopoverWidget's outside test uses, and
+        // exact for a real click, a programmatic dispatch and a direct one alike.
+        public static function isInside(o:DisplayObject, t:Object):Boolean
+        {
+            var p:DisplayObject = t as DisplayObject;
+            while (p != null)
+            {
+                if (p == o) return true;
+                p = p.parent;
+            }
+            return false;
         }
 
         // The click's Y in `n`'s own space, WHICHEVER node inside it was hit.

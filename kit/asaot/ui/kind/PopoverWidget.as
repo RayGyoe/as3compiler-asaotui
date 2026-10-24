@@ -28,7 +28,10 @@ package asaot.ui.kind
     import asaot.ui.LayoutConstants;
     import asaot.ui.LayoutEngine;
     import asaot.ui.Node;
+    import asaot.ui.OverlayMotion;
+    import asaot.ui.PaintKit;
     import asaot.ui.PopoverNode;
+    import asaot.ui.style.Style;
     import asaot.ui.UiNode;
     import flash.display.Shape;
     import asaot.ui.Widget;
@@ -47,6 +50,10 @@ package asaot.ui.kind
         protected static const CLOSE_KEY:String = "closeOnOutside";
         protected static const FN_KEY:String = "onClose";
         protected static const MISS_KEY:String = "anchorMiss";
+        // The placement ACTUALLY used this frame: the requested one, unless it would
+        // have overflowed the window (see `measure`).
+        protected static const EFF_KEY:String = "effPlace";
+        protected static const EDGE_MARGIN:Number = 4;
         // What teardown() needs to UNDO build(): the stage it subscribed to and the
         // closure it subscribed with. Kept on the node (not on the widget) because
         // one widget instance serves every node of its kind.
@@ -69,6 +76,7 @@ package asaot.ui.kind
             n.extra[CLOSE_KEY] = 1;
             n.extra[FN_KEY] = null;
             n.extra[MISS_KEY] = 0;
+            n.extra[EFF_KEY] = "bottom";
             // Attached ONCE, at structure time, on the STAGE -- not on this node.
             // A click outside the panel never reaches this node's backing (that is
             // what "outside" means), so a listener here could only ever see clicks
@@ -116,6 +124,9 @@ package asaot.ui.kind
                 n.extra[OPEN_KEY] = p.open;
                 n.visible = p.open;
                 if (n.backing != null) n.backing.visible = p.open;
+                // The entrance runs on the flip, not on every frame: a surface that
+                // re-entered on each describe would never settle.
+                if (p.open) OverlayMotion.start(n);
                 relayout = true;
             }
             return relayout;
@@ -154,36 +165,110 @@ package asaot.ui.kind
             if (a == null) return;
 
             var off:Number = Number(n.extra[OFFSET_KEY]);
-            var place:String = String(n.extra[PLACE_KEY]);
+            var want:String = String(n.extra[PLACE_KEY]);
             var winW:Number = PopoverWidget.windowW(n);
             var winH:Number = PopoverWidget.windowH(n);
 
+            // ABSOLUTE -> PARENT-LOCAL. The engine's insets are relative to the
+            // PARENT's padding box (its border box inset by the border), and the
+            // anchor's `absX/absY` are absolute. For a top-level surface the parent
+            // is the overlay root at the window origin with no border, so ox/oy are
+            // 0 and ow/oh are the window -- which is why this used to be written
+            // straight through with absolute numbers and worked. A SUBMENU is the
+            // first surface whose parent is not at the origin; without this
+            // conversion its panel landed one menu-offset away from its row.
+            var ox:Number = 0, oy:Number = 0;
+            if (n.parent != null)
+            {
+                var ps:Style = n.parent.resolved;
+                var pbx:Number = ps.borderWidths == null ? 0 : PaintKit.nz(ps.borderWidths.left);
+                var pby:Number = ps.borderWidths == null ? 0 : PaintKit.nz(ps.borderWidths.top);
+                ox = n.parent.absX + pbx;
+                oy = n.parent.absY + pby;
+            }
+
+            // ---- FLIP ---------------------------------------------------
+            // The panel's own size is not known before the solve, so this uses the
+            // PREVIOUS frame's solved rect (n.absW/absH; 0 on the very first frame,
+            // where the requested placement is used as-is). That is the standard
+            // two-pass compromise, and it is safe here because every overlay node is
+            // measured on every solve whether or not it is visible -- so a panel is
+            // never opened without a size from an earlier pass. (An explicit
+            // "please solve again" hook was written first and then removed: no probe
+            // could make it observable, which means it had no reachable case.)
+            //
+            // ONLY START EDGES ARE WRITTEN, and only ever from the anchor's rect and
+            // the panel's own size -- never from the PARENT's size. The parent's
+            // `absW/absH` are a frame stale during measure (arrange writes them), and
+            // on the frame a window resize lands that stale value is the OLD window:
+            // a bottom-pinned inset then lands the panel 200px above its anchor and,
+            // because nothing measures it again, it stays there. (The flip probe
+            // caught exactly that, as a popover at y=-80.)
+            var pw:Number = n.absW > 0 ? n.absW : 0;
+            var ph:Number = n.absH > 0 ? n.absH : 0;
+            var place:String = want;
+            if (pw > 0 && ph > 0)
+            {
+                if (want == "bottom" && a.absY + a.absH + off + ph > winH
+                    && a.absY - off - ph >= 0) place = "top";
+                else if (want == "top" && a.absY - off - ph < 0
+                    && a.absY + a.absH + off + ph <= winH) place = "bottom";
+                else if (want == "right" && a.absX + a.absW + off + pw > winW
+                    && a.absX - off - pw >= 0) place = "left";
+                else if (want == "left" && a.absX - off - pw < 0
+                    && a.absX + a.absW + off + pw <= winW) place = "right";
+            }
+            n.extra[EFF_KEY] = place;
+
             if (place == "top")
             {
-                eng.setPosition(e, LayoutConstants.EDGE_LEFT, a.absX, LayoutConstants.UNIT_POINT);
-                // Trailing inset: the distance from the panel's bottom edge to the
-                // window's bottom. The panel never needs its own height this way.
-                eng.setPosition(e, LayoutConstants.EDGE_BOTTOM, winH - a.absY + off,
+                eng.setPosition(e, LayoutConstants.EDGE_LEFT, clampX(a.absX, pw, winW) - ox,
+                                LayoutConstants.UNIT_POINT);
+                eng.setPosition(e, LayoutConstants.EDGE_TOP, a.absY - off - ph - oy,
                                 LayoutConstants.UNIT_POINT);
             }
             else if (place == "right")
             {
-                eng.setPosition(e, LayoutConstants.EDGE_LEFT, a.absX + a.absW + off,
+                eng.setPosition(e, LayoutConstants.EDGE_LEFT, a.absX + a.absW + off - ox,
                                 LayoutConstants.UNIT_POINT);
-                eng.setPosition(e, LayoutConstants.EDGE_TOP, a.absY, LayoutConstants.UNIT_POINT);
+                eng.setPosition(e, LayoutConstants.EDGE_TOP, clampY(a.absY, ph, winH) - oy,
+                                LayoutConstants.UNIT_POINT);
             }
             else if (place == "left")
             {
-                eng.setPosition(e, LayoutConstants.EDGE_RIGHT, winW - a.absX + off,
+                eng.setPosition(e, LayoutConstants.EDGE_LEFT, a.absX - off - pw - ox,
                                 LayoutConstants.UNIT_POINT);
-                eng.setPosition(e, LayoutConstants.EDGE_TOP, a.absY, LayoutConstants.UNIT_POINT);
+                eng.setPosition(e, LayoutConstants.EDGE_TOP, clampY(a.absY, ph, winH) - oy,
+                                LayoutConstants.UNIT_POINT);
             }
             else
             {
-                eng.setPosition(e, LayoutConstants.EDGE_LEFT, a.absX, LayoutConstants.UNIT_POINT);
-                eng.setPosition(e, LayoutConstants.EDGE_TOP, a.absY + a.absH + off,
+                eng.setPosition(e, LayoutConstants.EDGE_LEFT, clampX(a.absX, pw, winW) - ox,
+                                LayoutConstants.UNIT_POINT);
+                eng.setPosition(e, LayoutConstants.EDGE_TOP, a.absY + a.absH + off - oy,
                                 LayoutConstants.UNIT_POINT);
             }
+        }
+
+        // Keep the panel inside the window on the axis the placement leaves free.
+        // `size <= 0` means "not solved yet" -- clamping with a 0 width would pin the
+        // panel to the right edge on the very first frame.
+        protected static function clampX(x:Number, w:Number, winW:Number):Number
+        {
+            if (w <= 0) return x;
+            var v:Number = x;
+            if (v + w > winW - EDGE_MARGIN) v = winW - EDGE_MARGIN - w;
+            if (v < EDGE_MARGIN) v = EDGE_MARGIN;
+            return v;
+        }
+
+        protected static function clampY(y:Number, h:Number, winH:Number):Number
+        {
+            if (h <= 0) return y;
+            var v:Number = y;
+            if (v + h > winH - EDGE_MARGIN) v = winH - EDGE_MARGIN - h;
+            if (v < EDGE_MARGIN) v = EDGE_MARGIN;
+            return v;
         }
 
         public function arrange(n:UiNode):void { }
@@ -192,6 +277,8 @@ package asaot.ui.kind
         {
             // The panel's own background/border; children paint on top of it.
             PaintKit.paintBox(n, n.resolved, PaintKit.w1(n), PaintKit.h1(n));
+            // Entrance: fade + a small rise, on the panel itself.
+            OverlayMotion.apply(n, n, n, 0, 8);
         }
 
         public function click(n:UiNode):Boolean { return false; }

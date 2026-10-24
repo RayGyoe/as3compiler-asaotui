@@ -69,6 +69,11 @@ icudtl.dat
 #   measurements/tmp/{c_floor,yoga_min,yoga_one,yoga_many,vis,vis2,hello,w}.c
 #   measurements/wasi-probe/{floor_printf,smoke}.c + attrib/controls/*.{c,cc}
 
+# --- §4b 本机临时草稿（.scratch/） ----------------------------------------
+# 一次性脚本与日志（画廊 tour 日志单个 340 KB、探针调试输出），全部可重建，
+# 且**从不进任何文档的引用**。2026-10-24 起显式忽略：之前它只是「恰好没被 add」，
+# 而 git status 每次都把它列成 untracked 噪声。
+/.scratch/
 # --- §5 构建输出目录 -------------------------------------------------------
 # ui-demo/air-*/ 是 stage-air.cjs 的暂存树（其 src/ 是 ui-demo/demo/ 的逐字节拷贝）
 /ui-demo/air-*/*

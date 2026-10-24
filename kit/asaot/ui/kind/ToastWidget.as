@@ -15,6 +15,7 @@
 package asaot.ui.kind
 {
     import asaot.ui.Node;
+    import asaot.ui.OverlayMotion;
     import asaot.ui.PaintKit;
     import asaot.ui.ToastNode;
     import asaot.ui.UiNode;
@@ -67,6 +68,7 @@ package asaot.ui.kind
             var was:Boolean = Boolean(n.extra[OPEN_KEY]);
             if (was == t.open) return false;
             n.extra[OPEN_KEY] = t.open;
+            if (t.open) OverlayMotion.start(n);
             n.visible = t.open;
             if (n.backing != null) n.backing.visible = t.open;
 
@@ -90,6 +92,9 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             PaintKit.paintBox(n, n.resolved, PaintKit.w1(n), PaintKit.h1(n));
+            // A toast rises into its slot (the stack grows upward, so a rise reads
+            // as "this one just arrived").
+            OverlayMotion.apply(n, n, n, 0, 8);
         }
 
         public function click(n:UiNode):Boolean { return false; }
