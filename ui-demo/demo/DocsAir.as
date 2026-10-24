@@ -73,6 +73,8 @@
 //     START
 //     OPENED <n>                       (once; counted from the model after the flip)
 //     PAGE <id>                        (before each switch)
+//     ROLL <from> hovered=<h> destroyed=<d> errors=<e>     (one per page; see captureHover)
+//     ROLLFAIL <from> <kind> <error>   (a roll-out at a torn-down node threw)
 //     ERROR <page> <Class>: <message>  [+ `  at ...` stack lines]
 //     SWEEP DONE <n>
 //     END errors=<n>
@@ -89,11 +91,14 @@ package demo
 {
     import asaot.ui.Dirty;
     import asaot.ui.UiApp;
+    import asaot.ui.UiNode;
     import flash.desktop.NativeApplication;
+    import flash.display.DisplayObject;
     import flash.display.Sprite;
     import flash.display.StageAlign;
     import flash.display.StageScaleMode;
     import flash.events.Event;
+    import flash.events.MouseEvent;
     import flash.events.TimerEvent;
     import flash.events.UncaughtErrorEvent;
     import flash.filesystem.File;
@@ -110,6 +115,10 @@ package demo
         private var sweepIndex:int;
         private var sweepStep:int;      // 0 = land, 1 = open the popups, 2 = shut them
         private var openKeys:Array;
+        // [[node, backing], ...] captured while the pointer is "over" a node -- see
+        // captureHover/dispatchRoll.
+        private var rolled:Array;
+        private var rollFrom:String;
         private var logFile:File;
         private var errorCount:int;
 
@@ -233,6 +242,11 @@ package demo
         // Three ticks per page: land, open the popups, shut them again. Without the
         // open/shut ticks the sweep would only ever see the closed state, which is the
         // state that WORKS (see the header note).
+        //
+        // Step 0 puts the POINTER down on the page it is about to leave and step 1
+        // delivers the roll-out one tick later, after the reconciler has replaced the
+        // tree -- see captureHover. That is the fourth thing this sweep measures, and
+        // the only one that needs a pointer.
         private function selfAdvance():void
         {
             if (this.sweepStep == 0)
@@ -247,23 +261,35 @@ package demo
                     NativeApplication.nativeApplication.exit(0);
                     return;
                 }
+                // Hover BEFORE the switch: a page change replaces the whole node tree,
+                // so every node captured here dies in the next frame.
+                this.captureHover();
+                this.rollFrom = String(this.model.doc);
                 var id:String = DocPage(this.pages[this.sweepIndex]).id;
                 selfLog("PAGE " + id);
                 this.model.doc = id;
                 this.model.notify(Dirty.ALL);
-                this.sweepStep = this.openKeys.length > 0 ? 1 : 3;
+                this.sweepStep = 1;
                 return;
             }
             if (this.sweepStep == 1)
             {
-                this.flipOpen(true);
-                this.sweepStep = 2;
+                // One tick after the switch the reconciler has run, so the captured
+                // nodes are gone and this is the delivery that used to throw #1009.
+                this.dispatchRoll();
+                this.sweepStep = this.openKeys.length > 0 ? 2 : 4;
                 return;
             }
             if (this.sweepStep == 2)
             {
-                this.flipOpen(false);
+                this.flipOpen(true);
                 this.sweepStep = 3;
+                return;
+            }
+            if (this.sweepStep == 3)
+            {
+                this.flipOpen(false);
+                this.sweepStep = 4;
                 return;
             }
             this.sweepIndex = this.sweepIndex + 1;
@@ -291,6 +317,79 @@ package demo
                 }
                 selfLog("OPENED " + on);
             }
+        }
+
+        // ---- the pointer, for the library's sake --------------------------
+        // AIR cannot be scripted to click, so this was the blind spot that let a whole
+        // class of crash through: EVERY pointer-driven bug (hover, press, drag) needs a
+        // pointer, and the sweep had none. It does not need the OS pointer though -- it
+        // needs the EVENTS, and those are dispatched from here.
+        //
+        // The sequence is the one that threw TypeError #1009 in the wild (reported on
+        // the accordion page, reproduced by clicking around): `mouseOut` arrives at the
+        // object that WAS under the pointer ONE BEAT AFTER the frame that removed it --
+        // AIR finishes the frame first and only then recomputes the pointer's target.
+        // If the node was torn down in between, the listener used to run into a nulled
+        // field.
+        //
+        // So: hover EVERY leaf of both trees (main + overlay) BEFORE the page switch,
+        // then deliver the roll-out one tick later, when the reconciler has replaced
+        // the tree. The `destroyed=` field counts how many of the captured nodes really
+        // did die -- if that number fell to nothing the drill stopped biting, and the
+        // gate fails instead of reporting a clean sweep of a blind test.
+        private function captureHover():void
+        {
+            this.rolled = [];
+            this.hoverLeaves(this.app.getRoot());
+            var ov:UiNode = this.app.getOverlayRoot();
+            if (ov != null) this.hoverLeaves(ov);
+        }
+
+        // A HANDFUL of hovered nodes would make the delivery happen; every leaf is what
+        // makes the drill measurable. First run, 2026-10-24: 3107 nodes captured over
+        // the catalog and 348 of them really were destroyed by the page switches, so
+        // the number the gate grades is a measurement of this app, not of this comment.
+        private function hoverLeaves(n:UiNode):void
+        {
+            if (n == null || n.backing == null) return;
+            if (n.children.length == 0)
+            {
+                n.backing.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OVER));
+                // The BACKING is kept, not just the node: destroySubtree nulls the
+                // node field, and it is the display object that AIR delivers to.
+                this.rolled.push([n, n.backing]);
+                return;
+            }
+            for (var i:int = 0; i < n.children.length; i++) this.hoverLeaves(n.children[i]);
+        }
+
+        private function dispatchRoll():void
+        {
+            if (this.rolled == null) return;
+            var dead:int = 0;
+            var failed:int = 0;
+            for (var i:int = 0; i < this.rolled.length; i++)
+            {
+                var pair:Array = this.rolled[i] as Array;
+                var n:UiNode = UiNode(pair[0]);
+                var bak:DisplayObject = pair[1] as DisplayObject;
+                // `app == null` is the library's own "torn down" marker.
+                if (n.app == null) dead = dead + 1;
+                try
+                {
+                    bak.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OUT));
+                }
+                catch (err:Error)
+                {
+                    // A caught error does NOT reach uncaughtErrorEvents, so this gate
+                    // would otherwise report a clean sweep over a throwing roll-out.
+                    failed = failed + 1;
+                    selfLog("ROLLFAIL " + this.rollFrom + " " + n.kind + " " + err.name + ": " + err.message);
+                }
+            }
+            selfLog("ROLL " + this.rollFrom + " hovered=" + this.rolled.length
+                + " destroyed=" + dead + " errors=" + failed);
+            this.rolled = null;
         }
 
         private function selfRecordError(e:UncaughtErrorEvent):void

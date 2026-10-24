@@ -55,9 +55,9 @@ package asaot.ui.kind
             // One closure per event type, created at structure time (steady state
             // stays allocation-free). `this` is the kind singleton; `n` is this node.
             var self:SliderWidget = this;
-            n.backing.addEventListener(MouseEvent.MOUSE_DOWN,
+            n.listen(n.backing, MouseEvent.MOUSE_DOWN,
                 function (e:MouseEvent):void { self.onPress(n, e); });
-            n.backing.addEventListener(MouseEvent.MOUSE_UP,
+            n.listen(n.backing, MouseEvent.MOUSE_UP,
                 function (e:MouseEvent):void { self.endDrag(n); });
         }
 

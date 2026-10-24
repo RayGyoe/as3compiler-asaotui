@@ -1,0 +1,17 @@
+baseline (unmutated): PASS
+
+M1  CAUGHT  MenuWidget attaches its row-hover listener straight to the backing again
+     exit 1
+     kit/asaot/ui/kind/MenuWidget.as: n.backing.addEventListener( -- attach through n.listen(n.backing, ...) instead
+     restore: byte-identical (6f1b70691e10d73f)
+M2  CAUGHT  InputWidget bypasses listen() for the TextField listeners (a scan that only watched `.backing` would stay green)
+     exit 1
+     kit/asaot/ui/kind/InputWidget.as: n.tf.addEventListener( -- attach through n.listen(n.tf, ...) instead
+     restore: byte-identical (2c52f526436e5bfa)
+M3  CAUGHT  destroySubtree stops releasing: every listener stays on a dead node
+     exit 1
+     kit/asaot/ui/UiNode.as: destroySubtree() does not call releaseListeners() -- every listener stays on a dead node
+     restore: byte-identical (5edb76298c835d4c)
+
+MUTATION listener-wiring: 3/3 caught, 0 problem(s)
+RESULT: PASS

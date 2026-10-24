@@ -476,7 +476,22 @@
 | **修法（库侧，已落地）** | `fixDisplayOrder` 改成**「只数在用的孩子」的槽位计数器**：`slot = internalCount`，只有 `backing.parent == n.backing` 的孩子才 `setChildIndex(..., slot++)`。末位最多落在 `numChildren-1`（有 `aboveContent` 时少一），**结构性**不可能越界；`lastIndex` 仍是**描述下标**（那是未带 key 的兄弟的身份 token，不是显示位） |
 | **状态** | 库侧 ✅ 已修。编译器侧 ❌ **仍在**（未动 `as3compiler/`，按本工作区约定登记于此） |
 | **对编译器的主张** | 建议把 `setChildIndex` 对齐 AIR：越界 → `RangeError #2006`；非孩子 → `ArgumentError #2025`。这条**不只是洁癖**：它正是「库 bug 只能靠 AIR 才测得出来」的根因 —— 修好后，任何一个 AOT 探针只要碰到同样的错法就会**当场以具名错误**变红，而不必等 41 页扫描之后的人工复现 |
-| **证据落盘 / 复现** | 新门 `tools/air-sweep.cjs`（**唯一跑参考运行时**的门）：41 页 × `adl`、每页把 10 个可弹层开关打开再关掉，任何 AIR 报的错都算失败。变异 `tools/mutation-air-sweep.cjs` **3/3**：把槽位计数改回 `internalCount + i` ⇒ 立刻在 `select` / `combobox` / `datePicker` 上报 `#2006`；去掉「打开弹层」这一步 ⇒ `OPENED` 缺失（扫得全绿但已经瞎了）；少走一页 ⇒ 页数不足。见 [`reviews/air-sweep-2026-10-24.md`](reviews/air-sweep-2026-10-24.md) |
+| **证据落盘 / 复现** | 新门 `tools/air-sweep.cjs`（**唯一跑参考运行时**的门）：41 页 × `adl`、每页把 10 个可弹层开关打开再关掉，任何 AIR 报的错都算失败。变异 `tools/mutation-air-sweep.cjs` **5/5**：把槽位计数改回 `internalCount + i` ⇒ 立刻在 `select` / `combobox` / `datePicker` 上报 `#2006`；去掉「打开弹层」这一步 ⇒ `OPENED` 缺失（扫得全绿但已经瞎了）；少走一页 ⇒ 页数不足；去掉 `releaseListeners()` ⇒ 145 个 `#1009`（见 G25）；只悬停不投递 ⇒ 指针钻报 `0/41`。见 [`reviews/air-sweep-2026-10-24.md`](reviews/air-sweep-2026-10-24.md)、[`reviews/listener-lifetime-2026-10-24.md`](reviews/listener-lifetime-2026-10-24.md) |
+
+---
+
+### G25 —— AOT 侧**从不向对象派发** `mouseOver` / `mouseOut` / `rollOver` / `rollOut`（AIR 派发）
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **遗留缺陷**（AIR 能给的应用反馈我们没有 ⇒ §2.4 「对齐 AIR 是底线」）；比 G24 更隐蔽的是它的**二阶后果**：它让「监听器生命周期」这一类缺陷在我们的 AOT 上**结构性不可观测** |
+| **症状（用户报的）** | 文档站连着点几下，控制台（AIR）刷 `TypeError: Error #1009: Cannot access a property or method of a null object reference.`<br>`at asaot.ui::UiNode/setHover()` ← `at Function/UiNode.as$1::anonymous()`（即节点自己挂的 `mouseOut` 监听器）；`air-trace.txt` 上出现在 `accordion` / `dialog` / `drawer` / `menu` 四页（分别是 1 / 4 / 3 / 3 次） |
+| **真因（库侧，已修）** | `destroySubtree()` 把节点的 backing 从显示列表摘掉、并把 `app` / `extra` / `backing` 置空，但**摘不掉它自己挂在那张 backing 上的匿名监听器**。AIR 的投递时序是**晚一拍**：先结束这一帧（节点已死），再重算指针目标 ⇒ `mouseOut` 落在尸体上，闭包读到已置空的字段。〔AIR 契约另有一条：**按下期间指针“属于”按下目标**，所以按住按钮时移出不会投递 leave〕 |
+| **为什么我们的 AOT 看不见** | `src/emit.ts` 里 **`mouseOver` 字符串出现 0 次**（`rollOver` 只出现在注释里）：AOT 的鼠标派发只发 `mouseDown`/`mouseUp`/`click`/`wheel` 与 Stage 的 `mouseLeave`，**逐对象的 roll-over/roll-out 这对事件从未发出**（`_mouse_in` 只用来驱动 MovieClip 的按钮态，见 `emit.ts:17702-17713` 的实测注释与 `TODO.md` 的 rollOver/rollOut 残留项）⇒ 在我们的 AOT 上那个监听器**永不执行**，因此「执行到尸体上」也不可能发生 |
+| **影响面（对使用者）** | 用我们 AOT 编出来的应用，**`addEventListener(MouseEvent.MOUSE_OVER / MOUSE_OUT / ROLL_OVER / ROLL_OUT, …)` 永不触发** —— 所有 hover 反馈（高亮、悬停提亮、光标附近的提示）在 AOT 上是死的，在 AIR 上是活的。库侧的 `setHover` / hover 样式因此只在我们自己的探针里（探针是**显式 `dispatchEvent`**，两个运行时都走）被验证过 |
+| **修法（库侧，已落地）** | `UiNode` 增加 `wired:Array` + `listen(target, type, fn)`（登记三元组）+ `releaseListeners()`；`destroySubtree()` **先** `releaseListeners()` 再置空字段；全库 24 处监听器（含 `n.tf` 上的两个编辑事件）从裸 `addEventListener` 改为 `n.listen(...)`（16 个 widget 文件）。**STAGE 监听器不在此列**：它们属于某次手势，保留 widget 自己 teardown 里的显式 add/remove 对 |
+| **对编译器的主张** | 把对象的 `mouseOver`/`mouseOut`/`rollOver`/`rollOut` 补上（含 AIR 的两条时序契约：①移除对象的**下一帧**仍要投递 roll-out；②按下期间不投递 leave）。**这不只是补功能**：补上之后，「死节点上的监听器」这类缺陷会被任何 AOT 探针**当场具名抓到**，而不必依赖 `adl` |
+| **证据落盘 / 复现** | 库侧：`probes/lifecycle/`（10 种 kind × 5 种指针事件版本：节点销毁后派发不抛、`state.hover` 保持 0、无游离 `onClick`，同时证明活节点上这道闸**不改变行为**）；静态门 `tools/listener-wiring.cjs`（`kit/` 里禁止裸 `x.backing.addEventListener(`，且要求 `destroySubtree` 里有 `releaseListeners()`，扫到 0 处也算失败）；变异 `probes/lifecycle/mutation.cjs` **4/4**、`tools/mutation-listener-wiring.cjs` **3/3**。AIR 侧：`tools/air-sweep.cjs` 的**指针钻**（每页离开前悬停该页 3107 个叶子中的每一个，切页后**下一拍**投递 roll-out；实测 348 个悬停对象真的已销毁）——去掉 `releaseListeners()` 立刻 145 个 `#1009` |
 
 ---
 

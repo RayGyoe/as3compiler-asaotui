@@ -39,6 +39,14 @@
 > 逐像素相同，只有真 AIR 会抛。改法是结构性重写（只数「在用」孩子的槽位计数器），并新增**第一道也是
 > 唯一一道真跑参考运行时的门** `tools/air-sweep.cjs`（41 页 × 每页开/关 10 个弹层，任何 AIR 报的错都算失败）。
 > 同一件事在编译器侧登记为缺口 **G24**（见 `compiler-gaps.md`）。
+> 第十二轮（2026-10-24）是**监听器寿命**：用户第四次报告「多点了几次报错」，控制台是
+> `TypeError #1009 … at asaot.ui::UiNode/setHover()`。`destroySubtree()` 把显示对象摘掉、把字段置空，
+> 却**摘不掉节点自己挂在那张 backing 上的匿名监听器**；而 AIR 的 `mouseOut` **晚一拍**才投递（先结束
+> 帧、再重算指针目标）⇒ 闭包落到已置空的字段上，`accordion`/`dialog`/`drawer`/`menu` 四页中招。
+> **AOT 侧结构上看不见**：`emit.ts` 里 `mouseOver` 出现 0 次（逐对象 roll-over/roll-out 从未发出）⇒
+> 登记缺口 **G25**。库侧新增 `UiNode.listen()`/`releaseListeners()`（24 处监听、16 个文件改造），
+> 并给 `air-sweep` 补了**指针钻**（悬停每页每个叶子 → 切页 → 下一拍投递 roll-out：3107 hovered /
+> 348 真的已销毁 / 0 错）。
 > 第五轮（2026-10-24）补的是**动画深度 + 三处控件空白**：`Anim` 现在分 **paint 字段**与 **layout 字段**
 > （`width/height/padding/gap` 动画每帧重解、`textColor/cornerRadius` 可 tween）、浮层加**退场动画**；
 > `virtualList`（千级列表只挂 9 个节点）、`tree`、`combobox`、`datePicker`（纯整数日历，无 `Date`）落地。
@@ -47,8 +55,7 @@
 > 样式面的 `grid`/`boxShadow`/`cursor`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
-
-生成日期：2026-10-24（第十一轮补：参考运行时门 `air-sweep`） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**42 道门**）
+生成日期：2026-10-24（第十二轮补：监听器寿命 `#1009` + `air-sweep` 指针钻 + G25） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**44 道门**）
 
 ---
 
@@ -194,7 +201,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 41 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 44 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -229,7 +236,8 @@ cd asaotui && node tools/gates.cjs                           # 41 道门，含 l
 | 24 | **侧栏整行只有文字本身可点**（行高 26、宽 219，但 Label 右侧的空白点下去什么都不发生） | 命中测试是**按绘制区域**而非布局盒（`as_pick_hit_local` → Graphics 的 fill/stroke ∪ 子件）：行的样式只有 padding 没有 `background`，于是行自己的 graphics 是空的，只有标签的 TextField 是目标。这是**Air 的真实语义**（透明的容器不是点击目标），但作为导航行是设计缺陷 | `DocsStyle.NAV_ITEM` 加 `background: 0xF8FAFC` —— 与 `SIDE` 同色，**屏幕上看不出差别**，但行从此有填充区域（选中态本来就是 `0xEFF6FF`） | 同上门：示例按**行中心**（x=123，远在标签右侧）派发，加这条背景之前断言必红（命中测试落在祖先容器上，行自己的 backing 不是 target）。注释写清「容器只在绘制处可点」这条 Flash 语义 |
 | 25 | **滚动条被内容盖住**（第 0 页截图里 thumb 只从没被盖住的缝隙里露一条：代码块、选中的导航行、demo 卡片背景全压在条上） | 不是条画错。`fixDisplayOrder` 从 `internalCount`（= `build()` 之后 `backing` 的子件数）开始给内容子件排序，于是内容一律排在 `build` 造出的**所有**对象之上 —— 对背景是对的，对 chrome 是错的。条只能靠 `paintBars` 里那句 `setChildIndex` 补救，所以它**取决于这一帧有没有重绘这个滚动节点**；而切页是「描述但不重绘」（`Dirty.ALL` 不含 `M_PAINT`）⇒ 条永久埋在下面 | `UiNode.aboveContent`：kind 在 `build()` 里声明「我这一个对象在内容之上」，`internalCount` 于是**不数它** ⇒ 内容排到它前面，每次 describe 都自动把它推到最后，不再依赖重绘（`paintBars` 那句保留，它是给 `applyLift` 把子件重新挂到末尾那条路的） | `docs tour` 的 6d 阶段新增 `chromeOnTop("docScroll"/"nav")`：在**切页那一帧**（只有 describe、没有 paint）断言条是 backing 的**最后一个子件**。变异见 `tools/mutation-docs-tour.cjs`：去掉 `n.aboveContent = n.shapeB` ⇒ `the 'docScroll' bars sit at display index 1 of 3, so the content below them paints over the bars` |
 | 26 | **拖一下滑块就报错、而且滑块根本不动**（用户第二次报告：截图里一行 `#1063 Argument count mismatch`，点了/拖了没反应） | 两个独立缺陷叠在同一个控件上：①`SliderWidget`/`CheckboxWidget`/`SwitchWidget`/`RadioWidget` 调 `n.onChange()` **不传参**，而每个调用方（41 页文档站 + 探针）都声明 `function (v:Number)` / `(v:Boolean)` ⇒ AVM2 上**参数个数不符即抛 #1063**，帧守卫恢复该帧，于是**回调从未运行**、模型从未变、唯一痕迹是控制台一行；②就算参数对了，`SliderWidget` 也只有「按下就地设值」——**没有拖动**（按下后移动鼠标什么都不发生） | 四个控件的调用点补上参数（`onChange(next)` / `onChange(true)`）；`SliderWidget` **重写**：实现 `Widget, WidgetTeardown`，按下设值、拖动期间在 **stage** 上临时挂 `MOUSE_MOVE/MOUSE_UP`（闭包存 `n.extra["dragmv"]/["dragup"]` 以便按引用摘除），`endDrag` 幂等、`teardown` 调它；单一写入点 `commit()`（状态 → `Binding` → `onChange(v)` → `markPaint` → `invalidate(Dirty.VALUE)`），值没变不报 | **行为面**：新探针 `probes/widgets/callback`（24 项，**只点未绑定控件**，含按下→拖动→越界夹紧→回 0→松手→松手后移动无效→纯点击设值）+ 像素（拖动中帧必须跟着走）。变异 8/8（`probes/widgets/callback/mutation.cjs`），含「回调不传参」的四条与「松手什么都不结束」「去掉自抬重绘」。**静态面**：新门 `tools/callback-arity.cjs`（双向扫描：kit 的**调用点**恰好 1 参数、文档站/探针的**声明**恰好 1 参数，`onClick` 两边都是 0），变异 6/6。**为什么此前无人发现**：`probes/widgets/form` 只点**绑定了** `binding` 的控件（走 Binding 分支，不碰 `onChange`），而 41 页截图只渲染不点击 |
-| 27 | **一点下拉就报错、页面冻住**（用户第三次报告，`select`/`combobox`/`datePicker` 三页：`RangeError: Error #2006: The supplied index is out of bounds.` → `DisplayObjectContainer/setChildIndex()` → `asaot.ui::Reconciler/fixDisplayOrder()` → … → `UiApp/onEnterFrame()`，每帧一行，屏幕停在上一棵树） | **两个不同的事故叠在一起**：①库侧——`fixDisplayOrder` 用 `setChildIndex(c.backing, internalCount + <描述下标>)` 修显示序，而弹出的下拉会把**属主节点** `lifted` 出去（`UiNode.lifted`，为了越过后续兄弟的 z 序，见第 19 条）：它**仍占描述树一个槽位，但已不在父 backing 里** ⇒ 下标每遇到一个被抬起的兄弟就多算一，`index == numChildren` 即越界；②编译器侧——`emit.ts:11635` 的 `DisplayObjectContainer_setChildIndex` 对越界做了 `if (index >= length) index = length - 1;`（**夹紧**）且「不是孩子」时直接 `return`，而 AIR 分别抛 `RangeError #2006` / `ArgumentError #2025` ⇒ **同一份代码，AIR 报错、我们静默放行**。夹紧到末尾恰好是最后一个孩子的正确落点，所以画面逐像素相同：41 页截图扫描、全部 AOT 探针、41 道门全部看不见 | 库侧：`fixDisplayOrder` 改成**只数「在用」孩子的槽位计数器**（`slot = internalCount`，只有 `backing.parent == n.backing` 才 `setChildIndex(…, slot++)`），末位最多落到 `numChildren-1`（有 `aboveContent` 时少一），**结构性**不可能越界；`lastIndex` 仍是**描述下标**（那是未带 key 兄弟的身份 token，不是显示位）。编译器侧：**未动**（按本工作区约定登记为缺口 **G24**，附「建议对齐 AIR」的理由） | **新门 `tools/air-sweep.cjs`——本仓第一道也是唯一一道真跑参考运行时的门**：`mxmlc` 编 → `adl` 跑 41 页 × 每页把 10 个可弹层开关打开再关掉 → 读应用自己写的 `air-trace.txt`（`adl.exe` 是 GUI 子系统，管道拿不到 trace，实测）→ 任何 AIR 报的错都算失败。变异 `tools/mutation-air-sweep.cjs` **3/3**：把槽位计数改回 `internalCount + i` ⇒ 立刻在 `select`/`combobox`/`datePicker` 上报 `#2006`；去掉「打开弹层」这一步 ⇒ `OPENED` 缺失（扫得全绿但**已经瞎了**）；少走一页 ⇒ `visited 40/41`（死了的窗口不许当绿）。三条都按 sha256 逐字节还原 |
+| 27 | **一点下拉就报错、页面冻住**（用户第三次报告，`select`/`combobox`/`datePicker` 三页：`RangeError: Error #2006: The supplied index is out of bounds.` → `DisplayObjectContainer/setChildIndex()` → `asaot.ui::Reconciler/fixDisplayOrder()` → … → `UiApp/onEnterFrame()`，每帧一行，屏幕停在上一棵树） | **两个不同的事故叠在一起**：①库侧——`fixDisplayOrder` 用 `setChildIndex(c.backing, internalCount + <描述下标>)` 修显示序，而弹出的下拉会把**属主节点** `lifted` 出去（`UiNode.lifted`，为了越过后续兄弟的 z 序，见第 19 条）：它**仍占描述树一个槽位，但已不在父 backing 里** ⇒ 下标每遇到一个被抬起的兄弟就多算一，`index == numChildren` 即越界；②编译器侧——`emit.ts:11635` 的 `DisplayObjectContainer_setChildIndex` 对越界做了 `if (index >= length) index = length - 1;`（**夹紧**）且「不是孩子」时直接 `return`，而 AIR 分别抛 `RangeError #2006` / `ArgumentError #2025` ⇒ **同一份代码，AIR 报错、我们静默放行**。夹紧到末尾恰好是最后一个孩子的正确落点，所以画面逐像素相同：41 页截图扫描、全部 AOT 探针、41 道门全部看不见 | 库侧：`fixDisplayOrder` 改成**只数「在用」孩子的槽位计数器**（`slot = internalCount`，只有 `backing.parent == n.backing` 才 `setChildIndex(…, slot++)`），末位最多落到 `numChildren-1`（有 `aboveContent` 时少一），**结构性**不可能越界；`lastIndex` 仍是**描述下标**（那是未带 key 兄弟的身份 token，不是显示位）。编译器侧：**未动**（按本工作区约定登记为缺口 **G24**，附「建议对齐 AIR」的理由） | **新门 `tools/air-sweep.cjs`——本仓第一道也是唯一一道真跑参考运行时的门**：`mxmlc` 编 → `adl` 跑 41 页 × 每页把 10 个可弹层开关打开再关掉 → 读应用自己写的 `air-trace.txt`（`adl.exe` 是 GUI 子系统，管道拿不到 trace，实测）→ 任何 AIR 报的错都算失败。变异 `tools/mutation-air-sweep.cjs` **5/5**：把槽位计数改回 `internalCount + i` ⇒ 立刻在 `select`/`combobox`/`datePicker` 上报 `#2006`；去掉「打开弹层」这一步 ⇒ `OPENED` 缺失（扫得全绿但**已经瞎了**）；少走一步 ⇒ `visited 40/41`（死了的窗口不许当绿）；去掉 `releaseListeners()` ⇒ 145 个 `#1009`（见第 28 条）；只悬停不投递 ⇒ 指针钻报 `0/41`。五条都按 sha256 逐字节还原 |
+| 28 | **多点了几下就报错**（用户第四次报告：`TypeError: Error #1009: Cannot access a property or method of a null object reference.` → `asaot.ui::UiNode/setHover()` ← `Function/UiNode.as$1::anonymous()`） | **两层时序缺一不可**：①库侧——`destroySubtree()` 把节点的 backing 从父容器摘掉、把 `app`/`extra`/`backing` 置空，但**监听器是挂在 backing 这个 EventDispatcher 上的**，`removeChild` 不会替你摘 ⇒ 那个闭包仍活着、捕获变量已全空；②AIR 侧——**`mouseOut` 晚一拍**才投递（先结束这一帧，**然后**才重算「指针下面是谁」并投给上一帧那个对象）⇒ 只要「指针停在某个控件上、而某一帧把那个控件拆了」就会落到尸体上。实测（`adl` 51.4.1，`air-trace.txt`）：只有**点了就拆树**的页中招——`accordion` 1 次、`dialog` 4 次、`drawer` 3 次、`menu` 3 次，其余 37 页 0 次 | 库侧：`UiNode` 新增 `wired:Array` + `listen(target,type,fn)`（登记三元组）+ `releaseListeners()`；`destroySubtree()` **第一句**就释放，再摘显示对象、再置空（顺序是契约：先断线再断电）；全库 **24 处 / 16 个文件**改造。**STAGE 监听器刻意不在此列**（它们属于某次手势，保留 widget 自己 teardown 的显式 add/remove 对）。编译器侧：**未动**，登记缺口 **G25**（AOT 从不派发逆对象的 roll-over/roll-out） | **三道新门 + 一道扩门**：`probes/lifecycle`（**9 项**：10 种 kind × 5 种指针事件，**销毁后**再派发不抛、`state.hover` 保持 0、无游离 `onClick`；同时证明活节点上这道闸不变行为）；`tools/listener-wiring.cjs`（静态扫描：禁裸 `x.backing.addEventListener(`、`destroySubtree` 必须有 `releaseListeners()`、**扫到 0 处也算失败**，现 **29 wired / 0 raw**）；`air-sweep` 新增**指针钻**（离开每页前悬停该页**每个叶子**，切页后**下一拍**投递 roll-out：**3107 hovered / 348 真的已销毁 / 0 errors**）。变异：`probes/lifecycle/mutation.cjs` **4/4**、`tools/mutation-listener-wiring.cjs` **3/3**、`mutation-air-sweep` **5/5** |
 
 **已知边界（登记，不修）**：`card({title: ...})` 的标题画在内容盒左上角、**不占布局位**，
 因此会压住第一个子节点（`kind/CardWidget.as:81` 的 `tf.x/tf.y = inset`）。
@@ -469,6 +477,7 @@ AOT 臂的 tour（手算矩形 + 像素）和人工看一眼 AIR 窗口（本轮
 | `toast({ tone: "info" })` | 抛（我们的 build 也抛） | 抛，但**帧守卫接住** ⇒ 屏幕停在上一棵树、只剩控制台一行 | 只能“真点一下”（第九轮：tour 新 stage） |
 | `onChange()` 少传参 | 抛 `#1063` | **同样抛**（语义对齐），同样被帧守卫吞掉 | 只能“真点一下”（§3.10） |
 | `setChildIndex(child, index >= numChildren)` | 抛 `RangeError #2006` | **静默夹紧**（`emit.ts:11635`） | 只能跑真 AIR（本节） |
+| 死节点上的 `mouseOut` | 抛 `TypeError #1009`（**晚一拍**才投递） | **根本不投递**（`emit.ts` 里 `mouseOver` 出现 0 次，即 G25） | 只能跑真 AIR，而且**要自己发指针事件**（第十二轮补的「指针钻」） |
 
 前两类是「两边都错、但只有交互才看得见」，第三类是**只有 AIR 才错** —— 它靠 AOT 探针在原理上就无解：
 夹紧后的显示序恰好等于正确显示序，像素一模一样。所以补了一道**反向**的门：不去猜 AOT 差在哪里，
@@ -491,14 +500,48 @@ AIRSDK_HOME=$AIRSDK_HOME node tools/air-sweep.cjs     # 全量门的一部分（
 靠一次点击才出现的路径（比如“点了 trigger 才 `open` 的那个下拉”）在 AIR 里无法到达，那一半仍归
 AOT tour + 各个探针；这道门补的是**反向的一半**：AOT 看不见的，让 AIR 说。
 
-## 4 已完成且**可复现**的部分（不是意图，是跑过的）
+### 3.13 指针钻：没有指针的 UI 门等于没测指针类缺陷（第十二轮补）
 
-一条命令跑全部 **42** 道门：
+第十二轮的用户报告（`#1009`，见 §3.3 第 28 条）暴露出 3.12 那道门的一个大漏洞：它自称「真跑参考运行时」，
+却**一个指针事件都没发过**。AIR 不能被脚本点击。但那不是理由 ——
+**门需要的不是 OS 指针，是事件**，而事件可以自己 `dispatchEvent`。
 
-```sh
-node tools/gates.cjs          # 42/42 PASS 才叫绿（定稿记录 reviews/gates-all-25.txt）
+现在 `DocsAir` 每次切页前做两件事：
+
+1. **悬停**即将离开那一页的**每一个叶子**（主树 + 浮层树）；
+2. 切页，**等一拍**（reconciler 已把整棵树换掉），再把 `mouseOut` 投给**之前记下的那些 display 对象**。
+
+日志里每一页一行：
+
+```
+ROLL <page> hovered=<h> destroyed=<k> errors=0
 ```
 
+`destroyed` 是**测量**，不是声明：它数「刚才悬停的对象里有多少个**真的**已经死了」（`node.app == null`）。
+实测：全站 **3107 hovered / 348 destroyed**。门的下限是 **100**（实测值的三分之一）：
+如果哪天它掉到几十以下，说明钻头已经不咬了 —— 那就是**失败**，而不是「扫得全绿」。
+
+两条变异把这件事钉死（`tools/mutation-air-sweep.cjs`，该文件现为 5/5）：
+
+| 变异 | 期望 | 实测 |
+|---|---|---|
+| 去掉 `releaseListeners()`（把 `#1009` 种回去） | 红 | **15/41 页、145 个 `#1009`** |
+| 只悬停、不投递（钻头不咬） | 红 | 指针钻报 `0/41`、「destroyed 0 of 0 (floor 100)」 |
+
+**代价**：每页多几百次 `dispatchEvent`，总时长基本不变（仍 ~20 s 一个窗口）。
+
+## 4 已完成且**可复现**的部分（不是意图，是跑过的）
+
+一条命令跑全部 **44** 道门：
+
+```sh
+node tools/gates.cjs          # 44/44 PASS 才叫绿（定稿记录 reviews/gates-all-26.txt）
+```
+
+> 第十二轮补那次全量：**44/44 PASS**（`reviews/gates-all-26.txt`，exit 0），包括新门 `probe lifecycle`（9 项）
+> 与 `kit listeners are all releasable`（29 wired / 0 raw），以及 6b6 改判后的
+> `docs app on AIR (adl): … pointer drill … (41/41 pages, 10/10 popups, 0 errors, 348/3107 destroyed)`。
+>
 > 第十一轮补那次全量：**42/42 PASS**（`reviews/gates-all-25.txt`，exit 0），包括新门「docs app on AIR
 > (adl): every page, popups open, no runtime error (41/41 pages, 10/10 popups, 0 errors)」。
 > 新增的那道门每跑一次会**真弹一个 AIR 窗 ~20 秒**（它跑的就是参考运行时，没有无头形态）；机器上没有
@@ -522,7 +565,8 @@ node tools/gates.cjs          # 42/42 PASS 才叫绿（定稿记录 reviews/gate
 
 | 验收 | 命令 | 期望 |
 |---|---|---|
-| **参考运行时扫全站（第十一轮补，G24）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` | **41/41 页 × 10/10 弹层 × 0 runtime error**（`mxmlc` 编 → `adl` 跑 → 读应用自己写的 `air-trace.txt`）；变异 `tools/mutation-air-sweep.cjs` **3/3**（把槽位计数改回 `internalCount + i` ⇒ `#2006`；去掉「打开弹层」⇒ `OPENED` 缺；少走一页 ⇒ `visited 40/41`） |
+| **参考运行时扫全站（第十一轮补，G24）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` | **41/41 页 × 10/10 弹层 × 0 runtime error**（`mxmlc` 编 → `adl` 跑 → 读应用自己写的 `air-trace.txt`）；变异 `tools/mutation-air-sweep.cjs` **5/5**（把槽位计数改回 `internalCount + i` ⇒ `#2006`；去掉「打开弹层」⇒ `OPENED` 缺；少走一页 ⇒ `visited 40/41`；去掉 `releaseListeners()` ⇒ 145 个 `#1009`；只悬停不投递 ⇒ 指针钻 `0/41`） |
+| **指针钻：死节点上的 roll-out（第十二轮补，G25）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` + `node tools/listener-wiring.cjs` + `node tools/probe.cjs probes/lifecycle` | `air-sweep` 行末报 **3107 node(s) hovered and 348 of them destroyed**、0 errors（每页离开前悬停该页每个叶子，切页**下一拍**投递 `mouseOut`）；静态扫描 **29 wired / 0 raw**；探针 **9 项** 0 failures；变异 4/4 + 3/3 |
 | **滑块拖拽 + 回调参数（第九轮补）** | `node tools/probe.cjs probes/widgets/callback` + `node tools/callback-arity.cjs` | **24 checks**，0 failures（只点**未绑定**控件：checkbox/toggle/radio + 滑块的按下→拖动→越界夹紧→松手→松手后移动无效→纯点击）；变异 `probes/widgets/callback/mutation.cjs` **8/8**；静态门 15 调用 / 81 声明 / **0 违规**，变异 `tools/mutation-callback-arity.cjs` **6/6** |
 | **多页 App（组件文档站，41 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **41 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
 | **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **35/35** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |

@@ -59,7 +59,7 @@ package asaot.ui.kind
             n.extra[HIT_KEY] = 0;
             n.extra[SLIDE_KEY] = "";
             n.extra[EXITING_KEY] = 0;
-            n.backing.addEventListener(MouseEvent.CLICK,
+            n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { PanelShellWidget.onClick(n, e); });
         }
 

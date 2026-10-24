@@ -42,6 +42,18 @@
 //   `SWEEP DONE <n>` with n == the catalog size; `OPENED <k>` with k == the derived
 //   popup-key count (0 means the open step silently stopped happening, which would
 //   make this whole gate blind); `END errors=0`; and zero `ERROR ` lines.
+//   PLUS the pointer drill: one `ROLL` line per page, `errors=0` on every one of them,
+//   no `ROLLFAIL`, and at least ROLL_FLOOR nodes destroyed overall -- the drill has to
+//   have torn something down, or it proves nothing about a torn-down node.
+//
+// AND A POINTER. AIR cannot be scripted to click, so until 2026-10-24 the sweep had
+// no pointer at all -- and every pointer-driven bug slipped past it. The one that
+// reached a user's screen was `TypeError #1009` out of `UiNode.setHover`: `mouseOut`
+// is delivered ONE BEAT AFTER the frame that removed the node, so a listener left
+// behind by a torn-down node ran into nulled fields, once per torn-down node, on the
+// accordion / dialog / drawer / menu pages. `DocsAir` now hovers every leaf of the
+// page it is about to leave and delivers the roll-out one tick after the switch; the
+// `ROLL` line reports how many were captured and how many had really died.
 //
 // USAGE (from asaotui/):      node tools/air-sweep.cjs [--sdk <AIR SDK root>] [--keep-open]
 // Env: AIRSDK_HOME (SDK root), AIR_SWEEP_TIMEOUT (seconds, default 240).
@@ -212,16 +224,50 @@ else if (Number(opened[1]) !== openKeys.length) {
   failures.push('OPENED ' + opened[1] + ' of ' + openKeys.length + ' popup key(s) -- the open step did not take effect');
 }
 
-const endLine = /^END errors=(\d+)$/m.exec(log);
-if (!endLine) failures.push('no END line (the window did not finish)');
+const endLine = /^END errors=(\d+)$/m.exec(log);if (!endLine) failures.push('no END line (the window did not finish)');
 else if (Number(endLine[1]) !== 0) failures.push('END errors=' + endLine[1]);
 
 const errors = lines.filter((l) => l.startsWith('ERROR '));
 if (errors.length) failures.push(errors.length + ' runtime error(s) reported by AIR');
 
+// The pointer drill. `ROLL` is emitted once per page, AFTER the targeted tree was
+// replaced, so `destroyed` is a fact about this app and not about the driver: if it
+// collapses the roll-out stopped meeting dead nodes and this gate is blind again.
+// 348 of 3107 hovered nodes were destroyed on the first measured run (2026-10-24);
+// the floor is a third of that, so harmless layout drift will not fail a green app
+// while a real loss of coverage will.
+const ROLL_FLOOR = 100;
+const rollLines = lines.filter((l) => l.startsWith('ROLL '));
+const rollFails = lines.filter((l) => l.startsWith('ROLLFAIL '));
+let rollHovered = 0;
+let rollDestroyed = 0;
+for (const l of rollLines) {
+  const m = /^ROLL \S+ hovered=(\d+) destroyed=(\d+) errors=(\d+)$/.exec(l);
+  if (!m) {
+    failures.push('unreadable pointer-drill line: ' + l.slice(0, 90));
+    continue;
+  }
+  rollHovered += Number(m[1]);
+  rollDestroyed += Number(m[2]);
+  if (Number(m[3]) !== 0) failures.push('a roll-out threw on page "' + l.split(' ')[1] + '"');
+}
+if (rollLines.length !== pages.length) {
+  failures.push('the pointer drill reported ' + rollLines.length + '/' + pages.length + ' page(s)');
+}
+if (rollDestroyed < ROLL_FLOOR) {
+  failures.push('the pointer drill destroyed ' + rollDestroyed + ' of ' + rollHovered
+    + ' hovered node(s) (floor ' + ROLL_FLOOR + ') -- it stopped meeting torn-down nodes');
+}
+if (rollFails.length) {
+  failures.push(rollFails.length + ' roll-out(s) threw at a torn-down node');
+}
+
 console.log('[air-sweep] ' + seen.length + '/' + pages.length + ' page(s) visited, '
   + (opened ? opened[1] : '?') + '/' + openKeys.length + ' popup(s) opened, '
-  + errors.length + ' runtime error(s); log: ' + path.relative(UI, logFile).split(path.sep).join('/'));
+  + errors.length + ' runtime error(s), '
+  + rollHovered + ' node(s) hovered and ' + rollDestroyed + ' of them destroyed by a switch; log: '
+  + path.relative(UI, logFile).split(path.sep).join('/'));
+for (const l of rollFails.slice(0, 5)) console.log('  ' + l);
 if (errors.length) {
   // The first error of each page, with its stack: one line per broken page is the
   // difference between "somewhere in 41 pages" and a fix.

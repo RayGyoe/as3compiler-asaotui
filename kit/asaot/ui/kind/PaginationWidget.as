@@ -76,7 +76,7 @@ package asaot.ui.kind
             n.extra[HIT_KEY] = 0;
 
             var self:PaginationWidget = this;
-            n.backing.addEventListener(MouseEvent.CLICK,
+            n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onClickX(n, e); });
         }
 

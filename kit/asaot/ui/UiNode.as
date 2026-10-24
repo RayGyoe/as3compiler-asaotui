@@ -34,6 +34,7 @@ package asaot.ui
     import flash.display.DisplayObject;
     import flash.display.DisplayObjectContainer;
     import flash.text.TextField;
+    import flash.events.EventDispatcher;
     import flash.events.MouseEvent;
 
     public class UiNode
@@ -51,6 +52,8 @@ package asaot.ui
 
         // ---- retained backing + state -----------------------------------
         public var backing:Sprite;
+        // Attached listeners as flat (target, type, fn) triples -- see listen().
+        public var wired:Array;
         public var resolved:Style;     // node-owned resolved buffer
         public var previous:Style;     // snapshot of the previous resolve (diff)
         public var lastStyle:StyleRefinement;
@@ -252,14 +255,52 @@ package asaot.ui
             // a container is the one element whose click region is not its own
             // chrome. handleClick() is safe for every kind: it drops an inert node
             // first, then gives the widget first refusal, then runs the handler.
-            this.backing.addEventListener(MouseEvent.MOUSE_OVER, function (e:MouseEvent):void { self.setHover(1); });
-            this.backing.addEventListener(MouseEvent.MOUSE_OUT, function (e:MouseEvent):void { self.setHover(0); });
+            this.listen(this.backing, MouseEvent.MOUSE_OVER, function (e:MouseEvent):void { self.setHover(1); });
+            this.listen(this.backing, MouseEvent.MOUSE_OUT, function (e:MouseEvent):void { self.setHover(0); });
             if (this.widget.wantsPress())
             {
-                this.backing.addEventListener(MouseEvent.MOUSE_DOWN, function (e:MouseEvent):void { self.setPressed(1); });
-                this.backing.addEventListener(MouseEvent.MOUSE_UP, function (e:MouseEvent):void { self.setPressed(0); });
+                this.listen(this.backing, MouseEvent.MOUSE_DOWN, function (e:MouseEvent):void { self.setPressed(1); });
+                this.listen(this.backing, MouseEvent.MOUSE_UP, function (e:MouseEvent):void { self.setPressed(0); });
             }
-            this.backing.addEventListener(MouseEvent.CLICK, function (e:MouseEvent):void { self.handleClick(); });
+            this.listen(this.backing, MouseEvent.CLICK, function (e:MouseEvent):void { self.handleClick(); });
+        }
+
+        // ---- backing listeners (detachable BY CONSTRUCTION) ---------------
+        // Every listener a node installs on its own display objects goes through here,
+        // because `destroySubtree` has to be able to take it back off. An anonymous
+        // closure cannot be removed by reference afterwards, and "a dead node still
+        // receives events" is not hypothetical: AIR finishes the frame that removed a
+        // display object BEFORE it recomputes which object the pointer is over, so the
+        // object that WAS under the pointer gets its `mouseOut` one beat after the node
+        // was torn down. Measured on adl 51.4.1 -- TypeError #1009 on every click that
+        // tore down the control it was made on (accordion 1x, dialog 4x, drawer 3x,
+        // menu 3x), at `UiNode/setHover` and at every widget handler that reads the
+        // nulled scratch bag. Our own AOT never dispatches roll-over/roll-out at all
+        // (G25 in compiler-gaps.md), so no AOT gate could see it.
+        //
+        // `target` is the backing for pointer events and the node's TextField for the
+        // editing ones. STAGE listeners are deliberately NOT wired here: they belong to
+        // the gesture that installed them and keep their explicit add/remove pair in
+        // the widget's own WidgetTeardown.teardown.
+        public function listen(target:EventDispatcher, type:String, fn:Function):void
+        {
+            if (target == null) return;
+            target.addEventListener(type, fn);
+            if (this.wired == null) this.wired = [];
+            this.wired.push(target, type, fn);
+        }
+
+        private function releaseListeners():void
+        {
+            if (this.wired == null) return;
+            for (var i:int = 0; i < this.wired.length; i += 3)
+            {
+                var t:EventDispatcher = this.wired[i] as EventDispatcher;
+                if (t == null) continue;
+                t.removeEventListener(String(this.wired[i + 1]), this.wired[i + 2] as Function);
+            }
+            this.wired.length = 0;
+            this.wired = null;
         }
 
         // ---- transient state changes (paint-only, never a reflow) --------
@@ -935,6 +976,10 @@ package asaot.ui
 
         public function destroySubtree():void
         {
+            // Stop listening FIRST. Everything below assumes nothing else will call
+            // into this node; AIR can still deliver a roll-out to a display object it
+            // removed (see listen()).
+            this.releaseListeners();
             // Drop any in-flight tweens for this subtree BEFORE the node's scratch
             // bag is nulled, so the animator's active list never holds a dead node.
             Anim.clear(this);

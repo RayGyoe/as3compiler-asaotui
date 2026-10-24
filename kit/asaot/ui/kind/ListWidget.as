@@ -40,7 +40,7 @@ package asaot.ui.kind
             n.backing.addChild(n.shapeA);
 
             var self:ListWidget = this;
-            n.backing.addEventListener(MouseEvent.CLICK,
+            n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onClickY(n, e); });
         }
 

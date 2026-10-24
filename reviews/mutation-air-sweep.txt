@@ -2,21 +2,35 @@ baseline (unmutated): exit 0
 
 M1  CAUGHT  THE REPORTED BUG, re-introduced: the display slot is computed from the description index, so a lifted popup makes it overshoot -> RangeError #2006 on AIR
      exit 1
-     [air-sweep] 41/41 page(s) visited, 10/10 popup(s) opened, 6 runtime error(s); log: ui-demo/air-gallery/air-trace.txt
+     [air-sweep] 41/41 page(s) visited, 10/10 popup(s) opened, 6 runtime error(s), 3107 node(s) hovered and 348 of them destroyed by a switch; log: ui-demo/air-gallery/air-trace.txt
      [select] ERROR select Error: RangeError: Error #2006: The supplied index is out of bounds. |   at Error: RangeError: Error #2006: The supplied index is out of bounds. |   at 	at demo::DocsAir/selfReco
      [combobox] ERROR combobox Error: RangeError: Error #2006: The supplied index is out of bounds. |   at Error: RangeError: Error #2006: The supplied index is out of bounds. |   at 	at demo::DocsAir/self
      [datePicker] ERROR datePicker Error: RangeError: Error #2006: The supplied index is out of bounds. |   at Error: RangeError: Error #2006: The supplied index is out of bounds. |   at 	at demo::DocsAir/
      restore: byte-identical (742a2c7572bcbcee)
 M2  CAUGHT  the sweep never opens a popup -- 41 pages visited, zero errors, and the lifted state it exists for is never reached (the gate must notice: OPENED)
      exit 1
-     [air-sweep] 41/41 page(s) visited, ?/10 popup(s) opened, 0 runtime error(s); log: ui-demo/air-gallery/air-trace.txt
+     [air-sweep] 41/41 page(s) visited, ?/10 popup(s) opened, 0 runtime error(s), 3107 node(s) hovered and 348 of them destroyed by a switch; log: ui-demo/air-gallery/air-trace.txt
      - no OPENED line: the popup-open step never reported
-     restore: byte-identical (8eecff487d232f85)
+     restore: byte-identical (c3c2a65141333304)
 M3  CAUGHT  the sweep stops one page early -- a window that dies mid-catalog must not pass
      exit 1
-     [air-sweep] 40/41 page(s) visited, 10/10 popup(s) opened, 0 runtime error(s); log: ui-demo/air-gallery/air-trace.txt
+     [air-sweep] 40/41 page(s) visited, 10/10 popup(s) opened, 0 runtime error(s), 3035 node(s) hovered and 346 of them destroyed by a switch; log: ui-demo/air-gallery/air-trace.txt
      - visited 40/41 pages
-     restore: byte-identical (8eecff487d232f85)
+     - the pointer drill reported 40/41 page(s)
+     restore: byte-identical (c3c2a65141333304)
+M4  CAUGHT  THE REPORTED CRASH, re-introduced: a torn-down node keeps the listeners it wired on its own backing, so the roll-out AIR delivers one beat later hits a null field -> TypeError #1009 out of UiNode.setHover
+     exit 1
+     [air-sweep] 15/41 page(s) visited, 10/10 popup(s) opened, 145 runtime error(s), 1102 node(s) hovered and 132 of them destroyed by a switch; log: ui-demo/air-gallery/air-trace.txt
+     [box] ERROR box Error: TypeError: Error #1009: Cannot access a property or method of a null object reference. |   at Error: TypeError: Error #1009: Cannot access a property or method of a null object 
+     [column] ERROR column Error: TypeError: Error #1009: Cannot access a property or method of a null object reference. |   at Error: TypeError: Error #1009: Cannot access a property or method of a null o
+     [row] ERROR row Error: TypeError: Error #1009: Cannot access a property or method of a null object reference. |   at Error: TypeError: Error #1009: Cannot access a property or method of a null object 
+     restore: byte-identical (5edb76298c835d4c)
+M5  CAUGHT  the drill hovers thousands of nodes and delivers nothing -- a clean sweep of a blind test, which is the one outcome this gate must never accept
+     exit 1
+     [air-sweep] 41/41 page(s) visited, 10/10 popup(s) opened, 0 runtime error(s), 0 node(s) hovered and 0 of them destroyed by a switch; log: ui-demo/air-gallery/air-trace.txt
+     - the pointer drill reported 0/41 page(s)
+     - the pointer drill destroyed 0 of 0 hovered node(s) (floor 100) -- it stopped meeting torn-down nodes
+     restore: byte-identical (c3c2a65141333304)
 
-MUTATION air-sweep: 3/3 caught, 0 problem(s)
+MUTATION air-sweep: 5/5 caught, 0 problem(s)
 RESULT: PASS

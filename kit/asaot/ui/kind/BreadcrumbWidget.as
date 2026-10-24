@@ -38,7 +38,7 @@ package asaot.ui.kind
             n.extra[CUR_KEY] = -1;
 
             var self:BreadcrumbWidget = this;
-            n.backing.addEventListener(MouseEvent.CLICK,
+            n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onClickX(n, e); });
         }
 

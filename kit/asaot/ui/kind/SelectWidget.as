@@ -56,7 +56,7 @@ package asaot.ui.kind
             n.extra[ACT_KEY] = -1;
             n.extra[BAND_KEY] = null;
             var self:SelectWidget = this;
-            n.backing.addEventListener(MouseEvent.CLICK,
+            n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onClickAt(n, e); });
         }
 

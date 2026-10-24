@@ -247,7 +247,7 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay',
                  'widgets/interact', 'widgets/flip', 'widgets/motion', 'widgets/vlist',
                  'widgets/choice', 'redraw', 'widgets/popup', 'widgets/typing', 'widgets/scrollbar',
-                 'widgets/callback']) {
+                 'widgets/callback', 'lifecycle']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);
@@ -417,16 +417,51 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // every openable popup flipped open (the lifted state), and fails on any error AIR
 // reports, on a short page list, and on a popup step that stopped taking effect.
 // ~20 s, one window. Exit 3 (no AIR SDK on this box) is reported as SKIP.
-//   mutation: tools/mutation-air-sweep.cjs (3/3: the defect itself; a sweep that stops
-//             opening popups; a sweep that stops one page early -- each restoring its
-//             file by hash).
+//   mutation: tools/mutation-air-sweep.cjs (5/5: the #2006 defect itself; a sweep that
+//             stops opening popups; a sweep that stops one page early; the #1009 defect
+//             (a torn-down node keeps its listeners); a drill that hovers thousands of
+//             nodes and delivers nothing -- each restoring its file by hash).
+//
+// THE POINTER DRILL (2026-10-24, the second report): AIR cannot be scripted to click,
+// so until then the sweep had NO pointer -- and `TypeError #1009` out of
+// `UiNode.setHover` walked straight through it: `mouseOut` is delivered one beat AFTER
+// the frame that removed the node, so a listener left on a dead node's backing ran into
+// nulled fields. Our AOT never dispatches roll-over/roll-out at all (compiler-gaps.md
+// G25), so no AOT probe could see that class by construction. `DocsAir` now hovers every
+// leaf of the page it is about to leave (3107 nodes over the catalog) and delivers the
+// roll-out one tick after the switch (348 of them had really been destroyed), which is
+// why this gate also grades `ROLL` lines.
 {
   const r = sh(process.execPath, ['tools/air-sweep.cjs'], UI);
   const out = (r.stdout || '') + (r.stderr || '');
-  const m = /\[air-sweep\] (\d+)\/(\d+) page\(s\) visited, (\S+)\/(\d+) popup\(s\) opened, (\d+) runtime error\(s\)/.exec(out);
-  record('docs app on AIR (adl): every page, popups open, no runtime error'
-    + (m ? ' (' + m[1] + '/' + m[2] + ' pages, ' + m[3] + '/' + m[4] + ' popups, ' + m[5] + ' errors)' : ''),
+  const m = /\[air-sweep\] (\d+)\/(\d+) page\(s\) visited, (\S+)\/(\d+) popup\(s\) opened, (\d+) runtime error\(s\), (\d+) node\(s\) hovered and (\d+) of them destroyed/.exec(out);
+  record('docs app on AIR (adl): every page, popups open, pointer drill, no runtime error'
+    + (m ? ' (' + m[1] + '/' + m[2] + ' pages, ' + m[3] + '/' + m[4] + ' popups, ' + m[5]
+      + ' errors, ' + m[7] + '/' + m[6] + ' destroyed)' : ''),
     r.status, out);
+}
+
+// ---- 6b7: every listener the kit installs is a listener the kit can remove ----
+// The structural half of 6b6's pointer drill, and the cheap half: a source scan, no
+// window. A node that wires `backing.addEventListener(type, fn)` directly cannot
+// release it when it dies, so AIR's one-beat-late `mouseOut` runs a closure over
+// nulled fields -- `TypeError #1009`, once per dead node. `UiNode.listen()` records
+// the triple and `destroySubtree` replays it through `releaseListeners()`.
+// The scan is deliberately narrow (only `x.backing.` / `x.tf.` receives are graded,
+// which is where the kit attaches 29 listeners); STAGE listeners are NOT graded,
+// because they belong to a gesture, not to a node, and keep their explicit add/remove
+// pair in the widget's own teardown.
+// A scan that matches nothing would certify everything, so it also fails when it sees
+// zero attachments.
+//   mutation: tools/mutation-listener-wiring.cjs (3/3: a raw attach in MenuWidget; a
+//             TextField bypass in InputWidget; releaseListeners dropped from
+//             destroySubtree -- each restoring its file by hash).
+{
+  const r = sh(process.execPath, ['tools/listener-wiring.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /wired listeners: (\d+)\s+raw attach sites: (\d+)/.exec(out);
+  record('kit listeners are all releasable (UiNode.listen + destroySubtree)'
+    + (m ? ' (' + m[1] + ' wired, ' + m[2] + ' raw)' : ''), r.status, out);
 }
 
 // ---- 6c: the --air-app reachability probe (G13, fixed 阶段二百四十九) ----------

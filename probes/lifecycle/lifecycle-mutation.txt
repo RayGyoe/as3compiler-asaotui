@@ -1,0 +1,21 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  destroySubtree stops releasing: every listener it installed stays on the display object AIR still holds, which is exactly the shipped bug
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL box mouseOver moved state.hover of a destroyed node; text mouseOver moved state.hover of a destroyed node; button mouseOver moved state.hover of a destroyed node; slider mouseOver moved state.hover of a destroyed node; list mouseOve
+     restore: byte-identical (5edb76298c835d4c)
+M2  CAUGHT  listen() attaches but records nothing, so releaseListeners has nothing to unhook
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL box mouseOver moved state.hover of a destroyed node; text mouseOver moved state.hover of a destroyed node; button mouseOver moved state.hover of a destroyed node; slider mouseOver moved state.hover of a destroyed node; list mouseOve
+     restore: byte-identical (5edb76298c835d4c)
+M3  CAUGHT  only the FIRST recorded listener is released -- UiNode's own mouseOver, so the reported setHover crash goes quiet while menu/scrollView keep their own handlers (the widget half of the contract is what this probe must not lose)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL slider mouseOver moved state.hover of a destroyed node; list mouseOver moved state.hover of a destroyed node; menu mouseOver moved state.hover of a destroyed node; scrollView mouseOver moved state.hover of a destroyed node; select m
+     restore: byte-identical (5edb76298c835d4c)
+M4  CAUGHT  the bookkeeping is emptied without removing anything (a release that only looks like one: the array is clean, the display object is not)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL box mouseOver moved state.hover of a destroyed node; text mouseOver moved state.hover of a destroyed node; button mouseOver moved state.hover of a destroyed node; slider mouseOver moved state.hover of a destroyed node; list mouseOve
+     restore: byte-identical (5edb76298c835d4c)
+
+MUTATION lifecycle: 4/4 caught, 0 problem(s)
+RESULT: PASS

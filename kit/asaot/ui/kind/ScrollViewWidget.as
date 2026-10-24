@@ -118,19 +118,19 @@ package asaot.ui.kind
             // Like Slider/Tabs/List: the widget owns the listeners, because only the
             // widget knows what a delta or a bar press means here.
             var self:ScrollViewWidget = this;
-            n.backing.addEventListener(MouseEvent.MOUSE_WHEEL,
+            n.listen(n.backing, MouseEvent.MOUSE_WHEEL,
                 function (e:MouseEvent):void { self.onWheel(n, e); });
             // MOUSE_MOVE is also how the hover colour of a thumb is decided, and the
             // press handlers are what start a drag or page the track. They all live
             // on the backing, so a press on a child of the viewport (ordinary
             // content) bubbles here too -- the geometry test then says "not a bar".
-            n.backing.addEventListener(MouseEvent.MOUSE_MOVE,
+            n.listen(n.backing, MouseEvent.MOUSE_MOVE,
                 function (e:MouseEvent):void { self.onMove(n, e); });
-            n.backing.addEventListener(MouseEvent.MOUSE_DOWN,
+            n.listen(n.backing, MouseEvent.MOUSE_DOWN,
                 function (e:MouseEvent):void { self.onDown(n, e); });
-            n.backing.addEventListener(MouseEvent.MOUSE_UP,
+            n.listen(n.backing, MouseEvent.MOUSE_UP,
                 function (e:MouseEvent):void { self.endDrag(n); });
-            n.backing.addEventListener(MouseEvent.MOUSE_OUT,
+            n.listen(n.backing, MouseEvent.MOUSE_OUT,
                 function (e:MouseEvent):void { self.setHover(n, 0); });
             n.extra[BARS] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             n.extra[HOVER] = 0;

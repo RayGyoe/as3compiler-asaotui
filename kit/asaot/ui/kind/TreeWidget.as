@@ -50,7 +50,7 @@ package asaot.ui.kind
             n.shapeA = new Shape();
             n.backing.addChild(n.shapeA);
             var self:TreeWidget = this;
-            n.backing.addEventListener(MouseEvent.CLICK,
+            n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onClickAt(n, e); });
         }
 

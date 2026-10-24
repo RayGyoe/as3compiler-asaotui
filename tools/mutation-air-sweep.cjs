@@ -1,10 +1,10 @@
 // tools/mutation-air-sweep.cjs -- proves tools/air-sweep.cjs CAN go red.
 //
 // A gate that only ever says PASS is decoration, and this one is expensive enough
-// (a real adl run over 41 pages) that "it passed" has to mean something. The three
-// mutations are the three ways this gate is supposed to have teeth:
+// (a real adl run over 41 pages) that "it passed" has to mean something. The five
+// mutations are the five ways this gate is supposed to have teeth:
 //
-//   M1  THE DEFECT ITSELF, re-introduced: `fixDisplayOrder` addresses a display slot
+//   M1  THE FIRST DEFECT, re-introduced: `fixDisplayOrder` addresses a display slot
 //       by `<internalCount> + <description index>` again. A lifted popup holds a
 //       description slot but no display slot, so the index overshoots by one and AIR
 //       throws RangeError #2006 on the select / combobox / datePicker pages -- the
@@ -17,12 +17,22 @@
 //       counted from the MODEL after the flip, not from the argument list.
 //   M3  the sweep stops one page early. A window that dies mid-catalog must not look
 //       like a pass, so the "every catalog page, in order" criterion has to fire.
+//   M4  THE SECOND DEFECT, re-introduced: `destroySubtree` stops releasing the listeners
+//       it wired on its own backing. This is `TypeError #1009` out of `UiNode.setHover`
+//       -- the report that started the drill -- because AIR delivers `mouseOut` to a
+//       display object whose node was torn down one frame earlier. The gate must fail
+//       on the thousands of roll-outs the drill makes, and it does: 145 errors before
+//       the window died at page 15.
+//   M5  the drill stops DELIVERING (the hover capture stays). The sweep is clean, the
+//       log looks normal, and the gate must still fail, because a drill that hovered
+//       3107 nodes and delivered nothing is exactly the blind test M4 exists to rule
+//       out. This one grades `ROLL` lines, not the code's good intentions.
 //
 // Every file is restored in `finally` and compared by sha256 -- a mutation run can
 // never leave the kit or the demo subtly altered.
 //
 // USAGE (from asaotui/):   node tools/mutation-air-sweep.cjs
-//   Needs the AIR SDK (AIRSDK_HOME or --sdk, same as the gate). ~4 adl runs, ~2 min.
+//   Needs the AIR SDK (AIRSDK_HOME or --sdk, same as the gate). ~6 adl runs, ~3 min.
 'use strict';
 
 const fs = require('fs');
@@ -51,8 +61,8 @@ const MUTATIONS = [
     why: 'the sweep never opens a popup -- 41 pages visited, zero errors, and the lifted '
       + 'state it exists for is never reached (the gate must notice: OPENED)',
     file: 'ui-demo/demo/DocsAir.as',
-    find: '                this.flipOpen(true);\n                this.sweepStep = 2;',
-    replace: '                this.sweepStep = 2;',
+    find: '                this.flipOpen(true);\n                this.sweepStep = 3;',
+    replace: '                this.sweepStep = 3;',
     expect: 'OPENED'
   },
   {
@@ -62,6 +72,25 @@ const MUTATIONS = [
     find: 'if (this.sweepIndex >= this.pages.length)',
     replace: 'if (this.sweepIndex >= this.pages.length - 1)',
     expect: 'visited'
+  },
+  {
+    id: 'M4',
+    why: 'THE REPORTED CRASH, re-introduced: a torn-down node keeps the listeners it wired '
+      + 'on its own backing, so the roll-out AIR delivers one beat later hits a null field '
+      + '-> TypeError #1009 out of UiNode.setHover',
+    file: 'kit/asaot/ui/UiNode.as',
+    find: 'this.releaseListeners();',
+    replace: '',
+    expect: '#1009'
+  },
+  {
+    id: 'M5',
+    why: 'the drill hovers thousands of nodes and delivers nothing -- a clean sweep of a '
+      + 'blind test, which is the one outcome this gate must never accept',
+    file: 'ui-demo/demo/DocsAir.as',
+    find: '                this.dispatchRoll();\n',
+    replace: '',
+    expect: 'pointer drill'
   }
 ];
 

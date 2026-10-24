@@ -97,8 +97,8 @@ package asaot.ui.kind
             n.extra[COMMIT_KEY] = "";
 
             var self:InputWidget = this;
-            n.tf.addEventListener(Event.CHANGE, function (e:Event):void { self.onFieldChange(n); });
-            n.tf.addEventListener(FocusEvent.FOCUS_OUT, function (e:FocusEvent):void { self.onFieldBlur(n); });
+            n.listen(n.tf, Event.CHANGE, function (e:Event):void { self.onFieldChange(n); });
+            n.listen(n.tf, FocusEvent.FOCUS_OUT, function (e:FocusEvent):void { self.onFieldBlur(n); });
         }
 
         public function payload(n:UiNode, desc:Node):Boolean

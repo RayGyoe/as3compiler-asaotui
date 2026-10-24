@@ -55,15 +55,15 @@ package asaot.ui.kind
             n.extra[HOV_KEY] = -1;
             n.extra[ACT_KEY] = -1;
             var self:MenuWidget = this;
-            n.backing.addEventListener(MouseEvent.CLICK,
+            n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onRowClick(n, e); });
             // Row hover. MOUSE_MOVE on the panel (rather than MOUSE_OVER per row) is
             // one listener for any number of rows, and it re-derives the row from the
             // pointer's own position -- which is also what makes the band land on the
             // row the engine solved, not on a row the painter guessed.
-            n.backing.addEventListener(MouseEvent.MOUSE_MOVE,
+            n.listen(n.backing, MouseEvent.MOUSE_MOVE,
                 function (e:MouseEvent):void { self.onMove(n, e); });
-            n.backing.addEventListener(MouseEvent.MOUSE_OUT,
+            n.listen(n.backing, MouseEvent.MOUSE_OUT,
                 function (e:MouseEvent):void { self.setHoverRow(n, -1); });
         }
 

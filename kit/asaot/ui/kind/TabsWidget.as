@@ -64,7 +64,7 @@ package asaot.ui.kind
 
             // Structure time: one closure, so a click can be mapped to a segment.
             var self:TabsWidget = this;
-            n.backing.addEventListener(MouseEvent.CLICK,
+            n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onClickX(n, e); });
         }
 

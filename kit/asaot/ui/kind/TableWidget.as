@@ -53,7 +53,7 @@ package asaot.ui.kind
             n.extra[GRID_KEY] = 1;
 
             var self:TableWidget = this;
-            n.backing.addEventListener(MouseEvent.CLICK,
+            n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onClickY(n, e); });
         }
 

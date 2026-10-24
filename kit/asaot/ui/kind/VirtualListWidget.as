@@ -58,7 +58,7 @@ package asaot.ui.kind
             n.shapeA = new Shape();
             n.backing.addChild(n.shapeA);
             var self:VirtualListWidget = this;
-            n.backing.addEventListener(MouseEvent.MOUSE_WHEEL,
+            n.listen(n.backing, MouseEvent.MOUSE_WHEEL,
                 function (e:MouseEvent):void { self.onWheel(n, e); });
         }
 
