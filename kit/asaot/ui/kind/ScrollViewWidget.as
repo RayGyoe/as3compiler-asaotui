@@ -74,6 +74,10 @@ package asaot.ui.kind
         //   [14..17] horizontal thumb x,y,w,h
         private static const MAX_X:String = "maxx";
         private static const MAX_Y:String = "maxy";
+        // The PREVIOUS frame's maxY. Sticky-bottom has to compare the live offset with
+        // the end it was measured against BEFORE this frame grew the content; after
+        // `MAX_Y` has been overwritten, every offset looks "not at the end".
+        private static const PREV_MAX_Y:String = "pmaxy";
         private static const BARS:String = "bars";
         // Pointer interaction state. DRAG is the axis being dragged (0 none,
         // 1 vertical, 2 horizontal); HOVER is the bar under the pointer, for the
@@ -266,11 +270,23 @@ package asaot.ui.kind
             if (maxX < 0) maxX = 0;
             var maxY:Number = ch - h;
             if (maxY < 0) maxY = 0;
+            var sv:ScrollViewNode = ScrollViewNode(n.desc);
+            var ox:Number = clamp(Number(n.extra[LIVE_X]), maxX);
+            var oy:Number;
+            if (sv.stickToBottom && atBottom(n, maxY))
+            {
+                // Following the end: jump to the new end. This is a real move (the
+                // outputs and `onScroll` below see it), so an author's model stays in
+                // step with the screen.
+                oy = maxY;
+            }
+            else
+            {
+                oy = clamp(Number(n.extra[LIVE_Y]), maxY);
+            }
             n.extra[MAX_X] = maxX;
             n.extra[MAX_Y] = maxY;
-
-            var ox:Number = clamp(Number(n.extra[LIVE_X]), maxX);
-            var oy:Number = clamp(Number(n.extra[LIVE_Y]), maxY);
+            n.extra[PREV_MAX_Y] = maxY;
             n.extra[LIVE_X] = ox;
             n.extra[LIVE_Y] = oy;
 
@@ -304,7 +320,6 @@ package asaot.ui.kind
             // written back into the description so `offsetY` is always the effective
             // position, whether it was reached by a wheel or by an over-large request
             // (the wheel handler writes back for the same reason).
-            var sv:ScrollViewNode = ScrollViewNode(n.desc);
             sv.offsetX = ox;
             sv.offsetY = oy;
             sv.contentW = cw;
@@ -447,6 +462,22 @@ package asaot.ui.kind
             var span:Number = track - len;
             if (span <= 0 || maxOff <= 0) return 0;
             return off / maxOff * span;
+        }
+
+        // "Was the view at the END of its content?" asked against the PREVIOUS frame's
+        // `maxY`, before this frame's growth changed the answer.
+        //
+        // `prev == null` (the first paint, or a viewport that has never been laid out)
+        // counts as at-the-end: a log's first paint should show its newest line, not its
+        // oldest. 0.5px of slack absorbs the fractional offsets a bar drag produces; a
+        // whole pixel off the end is a reader who scrolled up and must not be yanked.
+        private function atBottom(n:UiNode, maxY:Number):Boolean
+        {
+            var prev:Object = n.extra[PREV_MAX_Y];
+            var live:Number = Number(n.extra[LIVE_Y]);
+            if (isNaN(live)) live = 0;
+            if (prev == null) return true;
+            return live >= Number(prev) - 0.5;
         }
 
         private function clamp(v:Number, max:Number):Number

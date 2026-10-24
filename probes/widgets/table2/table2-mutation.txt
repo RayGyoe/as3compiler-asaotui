@@ -1,0 +1,29 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE SORTED COPY IS THROWN AWAY: `sortColumn` still draws the arrow (it comes from the model) and the rows never move, which is the "sorted" table every screenshot would call correct
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL ascending: row 0 is b, want c (qty 1); ascending: row 1 is a, want b (qty 2); ascending: row 2 is c, want a (qty 10) -- text order would put 10 first; descending: row 0 is b, want a (qty 10);
+     restore: byte-identical (e5c372f3c5b47c9b)
+M2  CAUGHT  THE CYCLE HAS NO THIRD STATE: ascending -> descending -> descending forever, so a column can never return to the model's own order
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the third click reported column 1, want -1 (unsorted); cleared: row 0 is c, want b (the model's order); an arrow survived the clear: Qty ▲;
+     restore: byte-identical (ccb748ea202c4175)
+M3  CAUGHT  THE RELEASE NEVER COMMITS: the 1px preview line follows the pointer perfectly and onColumnResize is never called, so the column looks dragged for one frame and the author's model never hears about it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL onColumnResize fired 0 times, want 1; onColumnResize reported column -99, want 0; onColumnResize reported width -99, want 140 (100 + the 40px drag); column 1 now starts at 110, want 150;
+     restore: byte-identical (ccb748ea202c4175)
+M4  CAUGHT  THE POST-RELEASE CLICK IS LET IN: the window glue sends CLICK after every release, so the click that ends a resize also sorts the column that was just resized
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the click after a resize sorted the column (1 onSort call(s)); onSort fired 2 times, want 1; the first click on a column asked for descending; ascending: row 0 is a, want c (qty 1); ascending: row 2 is c, want a (qty 10) -- text order would put 10 first; the sorted header has no ascending arrow: Qty ▼; onSort fired 3 times, want 2; the second click on the same column asked for ascending; descending: row 0 is b, want a (qty 10); the descending header has no down arrow: Qty; onSort fired 4 times, want 3; the third click reported column 1, want -1 (unsorted); cleared: row 0 is c, want b (the model's order); an arrow survived the clear: Qty ▲;
+     restore: byte-identical (ccb748ea202c4175)
+M5  CAUGHT  THE TRANSPARENT HIT RECT IS GONE: the runtime picks by painted region, and a table paints only 1px hairlines and glyphs -- so a click in an empty cell targets the root behind it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL onScroll reported 0, want 60 (3 rows of 20); after the scroll the first mounted row is r0, want r3; the first visible row shows 0, want 3 (model row 3); a click on the first visible row reported -99, want 3 (absolute, not window-relative);
+     restore: byte-identical (ccb748ea202c4175)
+M6  CAUGHT  THE WINDOW KEYS ARE RELATIVE: a scrolled-in row hands the reconciler the key of the row that just left, so the row node is reused with different data and "which row is mounted" cannot be asserted
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL after the scroll the first mounted row is r0, want r3; a clamped window starts at r0, want r190; a clamped window ends at r9, want r199;
+     restore: byte-identical (e5c372f3c5b47c9b)
+
+MUTATION table2: 6/6 caught, 0 problem(s)
+RESULT: PASS

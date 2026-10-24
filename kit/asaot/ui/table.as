@@ -9,9 +9,18 @@
 //       selectedIndex: bindTo(model, "row"), onSelect: onRow })
 //
 // STRUCTURE IS BUILT HERE, per render pass: one `row` child for the header (unless
-// `header:false`) and one `row` child per data row, each holding one cell per
+// `header:false`) and one `row` child per mounted data row, each holding one cell per
 // column. The reconciler key-diffs the rows and the layout engine places them --
 // the widget positions nothing.
+//
+// WHAT CHANGES WITH THE THREE OPT-INS (see TableNode's header for the contracts):
+//   * `sortColumn >= 0` reorders a COPY of `rows` through TableNode.sortRows before
+//     anything is built, so the display order is a pure function of the description;
+//   * `virtual: true` mounts only rows [firstRow, lastRow] under keys `r<ABSOLUTE
+//     index>`, so scrolling mounts new nodes instead of reusing a window's worth of
+//     keys for different data;
+//   * `resizable: true` only tags the description (the widget does the dragging) --
+//     the width the author's model holds is still the only width the layout sees.
 //
 // WHY CELLS GET A FLEX BASIS RATHER THAN A WIDTH: alignment across rows is the
 // engine's job. Every cell in column c carries the SAME style pointer (one per
@@ -26,16 +35,17 @@
 // they need is declared once on TableNode.
 package asaot.ui
 {
+    import asaot.ui.kind.VirtualListWidget;
     import asaot.ui.style.StyleRefinement;
 
     public function table(columns:Array, rows:Array, opts:Object = null):Node
     {
         var n:TableNode = new TableNode();
+        if (opts == null) opts = {};
         n.columns = columns == null ? [] : columns;
         n.rows = rows == null ? [] : rows;
         OptionSupport.applyOpts(n, opts);
         if (n.ariaName == null || n.ariaName == "") n.ariaName = "table";
-        if (opts != null)
         {
             if (opts.selectedIndex is Binding)
             {
@@ -53,9 +63,75 @@ package asaot.ui
             if (opts.stripes != null) n.stripes = Boolean(opts.stripes);
             if (opts.grid != null) n.grid = Boolean(opts.grid);
             if (opts.rowHeight != null) n.rowHeight = Number(opts.rowHeight);
+            // ---- the three opt-ins -------------------------------------------
+            if (opts.sortColumn != null) n.sortColumn = int(opts.sortColumn);
+            if (opts.sortDescending != null) n.sortDescending = Boolean(opts.sortDescending);
+            if (opts.onSort != null) n.onSort = (opts.onSort as Function);
+            if (opts.resizable != null) n.resizable = Boolean(opts.resizable);
+            if (opts.onColumnResize != null) n.onColumnResize = (opts.onColumnResize as Function);
+            if (opts.virtual != null) n.virtual = Boolean(opts.virtual);
+            if (opts.offsetY != null) n.offsetY = Number(opts.offsetY);
+            if (opts.onScroll != null) n.onScroll = (opts.onScroll as Function);
         }
 
         var cols:int = n.columns.length;
+        // A sort column outside the column list is a silent no-op in most toolkits;
+        // here it is a bug in the author's model (they sorted by a column they
+        // deleted), and the next render would show the model order with no hint why.
+        if (n.sortColumn >= cols)
+        {
+            throw new Error("asaot.ui.table: sortColumn " + n.sortColumn
+                + " is out of range (" + cols + " column(s)) -- -1 means unsorted.");
+        }
+
+        // ---- sorting: a COPY, never the author's array ----------------------
+        var data:Array = n.rows;
+        if (n.sortColumn >= 0 && cols > 0)
+            data = TableNode.sortRows(n.rows, String(n.columns[n.sortColumn].key), n.sortDescending);
+        n.rowCount = data.length;
+
+        // ---- the window ------------------------------------------------------
+        // Non-virtual: every row is mounted (the historical behaviour).
+        var first:int = 0;
+        var last:int = data.length - 1;
+        var fit:int = data.length;
+        if (n.virtual)
+        {
+            if (!(n.rowHeight > 0))
+            {
+                // Same rule as virtualList: without a row height there is no
+                // definition of "which rows are visible", so a default would silently
+                // show the wrong slice.
+                throw new Error("asaot.ui.table: `virtual` needs a positive `rowHeight` (got "
+                    + n.rowHeight + ") -- the window is row-granular.");
+            }
+            if (n.onScroll == null)
+            {
+                // A window that cannot move is a frozen table with no error: the wheel
+                // would be swallowed and nothing would ever ask for the next slice.
+                throw new Error("asaot.ui.table: `virtual` needs `onScroll(offsetY)` --"
+                    + " the widget reports the scroll and the author re-renders with the new offset.");
+            }
+            var vh:Number = VirtualListWidget.viewportHeight(n.style);
+            if (!(vh > 0)) vh = VirtualListWidget.DEFAULT_H;
+            // The header never scrolls, so the BODY viewport is what is left of it.
+            var bodyH:Number = vh - (n.header ? n.rowHeight : 0);
+            if (bodyH < n.rowHeight) bodyH = n.rowHeight;
+            fit = int(Math.ceil(bodyH / n.rowHeight));
+            var maxFirst:int = data.length - fit;
+            if (maxFirst < 0) maxFirst = 0;
+            first = Math.round(n.offsetY / n.rowHeight);
+            if (first > maxFirst) first = maxFirst;
+            if (first < 0) first = 0;
+            n.offsetY = first * n.rowHeight;
+            // +1: a viewport whose height is not a multiple of rowHeight shows a
+            // PARTIAL last row, and that row is real. The container's scrollRect clips
+            // it, so it cannot leak out (see TableWidget).
+            last = first + fit;
+            if (last > data.length - 1) last = data.length - 1;
+        }
+        n.firstRow = first;
+        n.visibleRows = fit;
         var colStyle:Array = new Array();    // body cells, one style per column
         var headCellStyle:Array = new Array();
         var pad:StyleRefinement = StyleRefinement.from({ padding: [TableNode.CELL_PAD, 0] });
@@ -102,19 +178,28 @@ package asaot.ui
             {
                 var hcol:Object = n.columns[h];
                 var title:String = hcol.title != null ? String(hcol.title) : String(hcol.key);
+                // The indicator is part of the LABEL, not a separate node: the header
+                // cell is a plain text node, and a second child would need a style per
+                // state plus an extra node on every render. U+25B2/U+25BC are the
+                // browser's own table arrows.
+                if (n.sortColumn == h)
+                    title = title + (n.sortDescending ? " \u25BC" : " \u25B2");
+                var hstyle:StyleRefinement = headCellStyle[h];
+                // A sortable header announces itself with the pointer shape (batch 1:
+                // Style.cursor): only when there IS an onSort to answer the click.
+                if (n.onSort != null) hstyle = hstyle.withPatch(StyleRefinement.from({ cursor: "hand" }));
                 // Column positions go into the key: the header cell of column 3 is
                 // the same node across frames even when the titles change.
-                heads.push(text(title, { key: "h:" + h, style: headCellStyle[h] }));
+                heads.push(text(title, { key: "h:" + h, style: hstyle }));
             }
             kids.push(row({ key: "hdr", style: headRow }, heads));
         }
 
-        // ---- the body rows --------------------------------------------------
-        var rc:int = n.rows.length;
-        for (var r:int = 0; r < rc; r++)
+        // ---- the body rows (the mounted window under `virtual`) --------------
+        for (var r:int = first; r <= last; r++)
         {
             var cells:Array = [];
-            var rowValue:Object = n.rows[r];
+            var rowValue:Object = data[r];
             for (var cc:int = 0; cc < cols; cc++)
             {
                 var key:String = String(n.columns[cc].key);
@@ -130,6 +215,10 @@ package asaot.ui
                 else s = String(cv);
                 cells.push(text(s, { key: "r" + r + "c" + cc, style: colStyle[cc] }));
             }
+            // The key is the ABSOLUTE row index, so a window shift mounts genuinely
+            // new nodes; keying by position within the window would hand a scrolled-in
+            // row the previous occupant's node (same key, different data) and hide
+            // whatever the widget hung on it.
             // `rowH == null` picks the branch without `style` at all: passing
             // {style:null} would build an empty refinement per row per frame.
             kids.push(rowH == null ? row({ key: "r" + r }, cells) : row({ key: "r" + r, style: rowH }, cells));

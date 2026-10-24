@@ -265,7 +265,13 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay',
                  'widgets/interact', 'widgets/flip', 'widgets/motion', 'widgets/vlist',
                  'widgets/choice', 'redraw', 'widgets/popup', 'widgets/typing', 'widgets/scrollbar',
-                 'widgets/callback', 'lifecycle', 'widgets/textfx']) {
+                 'widgets/callback', 'lifecycle', 'widgets/textfx',
+                 // Added with their batches: a probe that is not in this list is a probe
+                 // nobody runs. `pointer` (hover synthesised from one mouse move),
+                 // `imaging` (ImageNode src/onLoad), `table2` (sort/resize/virtual) and
+                 // `stick` (scroll that follows its own content) were each green by hand
+                 // for a while before this line existed.
+                 'widgets/pointer', 'widgets/imaging', 'widgets/table2', 'widgets/stick']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);

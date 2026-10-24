@@ -34,6 +34,7 @@ package asaot.ui
             if (opts.offsetX != null) n.offsetX = Number(opts.offsetX);
             if (opts.offsetY != null) n.offsetY = Number(opts.offsetY);
             if (opts.wheelStep != null) n.wheelStep = Number(opts.wheelStep);
+            if (opts.stickToBottom != null) n.stickToBottom = Boolean(opts.stickToBottom);
             if (opts.onScroll != null) n.onScroll = opts.onScroll;
             // The bar modes are validated HERE, at factory time: an unknown string
             // that silently became "auto" is exactly the fallback AGENTS.md 2.5

@@ -39,6 +39,23 @@
 // horizontal one otherwise (a film strip should still respond to a wheel). A
 // shift-wheel is NOT available: the runtime's wheel event carries no modifier
 // (see Stage_dispatchWheel in the compiler).
+//
+// STICK TO BOTTOM (`stickToBottom`) is for logs, chats and consoles: the view keeps
+// following the END of the content while it grows, and stops following the moment the
+// reader scrolls away from the bottom. The whole rule is one comparison per frame
+// against the PREVIOUS frame's `maxOffsetY` (see ScrollViewWidget.paint) -- "was I at
+// the end?" cannot be answered after `maxOffsetY` has already grown, because then
+// every position looks "not at the end" and the view would never follow.
+//
+//   * a fresh view (nothing scrolled yet) counts as at-the-end, so a log opens on its
+//     newest line rather than at the top;
+//   * one pixel off the end is enough to detach: `maxOffsetY - 1` is a reader who
+//     scrolled up, not a rounding error, and 0.5px of slack absorbs the fractional
+//     offsets the bar drag produces;
+//   * scrolling back DOWN to the end re-attaches it, because the test is re-evaluated
+//     from the live offset every frame -- there is no separate "stuck" flag to reset;
+//   * the auto-scroll is a REAL move: `onScroll` fires and `offsetY` is written back,
+//     so an author's model never disagrees with what is on screen.
 package asaot.ui
 {
     import asaot.ui.kind.ScrollViewWidget;
@@ -52,6 +69,7 @@ package asaot.ui
         public var contentH:Number;
         public var maxOffsetX:Number;   // out: content - viewport, floored at 0
         public var maxOffsetY:Number;
+        public var stickToBottom:Boolean;   // follow content growth while at the end
         public var onScroll:Function;   // (offsetX:Number, offsetY:Number)
 
         public var scrollbarX:String;   // "auto" | "always" | "never"
@@ -75,6 +93,7 @@ package asaot.ui
             this.contentH = 0;
             this.maxOffsetX = 0;
             this.maxOffsetY = 0;
+            this.stickToBottom = false;
             this.onScroll = null;
             this.scrollbarX = "auto";
             this.scrollbarY = "auto";

@@ -15,11 +15,14 @@
 //
 // WHAT IT CHECKS (two directions, because either one is a #1063)
 //   1. INVOCATIONS inside kit/: every call to a VALUE callback passes exactly one
-//      argument, and every ZERO-argument hook is called with none. This is the
-//      direction that broke.
-//   2. DECLARATIONS in ui-demo/demo + probes/: every handler written for a value
-//      callback declares exactly one parameter, and every zero-argument hook's
-//      handler declares none. This is the direction an author breaks.
+//      argument, every ZERO-argument hook is called with none, and every TWO-argument
+//      callback is called with exactly two. This is the direction that broke.
+//   2. DECLARATIONS in ui-demo/demo + probes/: the same, per callback, for the
+//      handler an author writes.
+//
+// THE ARITY TABLE IS THE CONTRACT, so it is a table and not three lists: a callback
+// whose arity nobody wrote down cannot be graded, and `onScroll` sat ungraded for two
+// rounds for exactly that reason.
 //
 // HOW THE SOURCE IS READ
 //   `//` comments are stripped (with string awareness, so `"a // b"` survives) and
@@ -48,8 +51,23 @@ const VALUE_CBS = ['onChange', 'onCommit', 'onToggle', 'onSelect', 'onNavigate',
 // completion carries nothing to pass -- the pixels are on the node, and whoever needs
 // the size reads it from there).
 const ZERO_CBS = ['onClick', 'onLoad'];
-const ALL_CBS = VALUE_CBS.concat(ZERO_CBS);
-const isZero = (cb) => ZERO_CBS.indexOf(cb) >= 0;
+// The PAIR callbacks: two arguments, two parameters. `onSort(columnIndex, descending)`
+// and `onColumnResize(index, width)` both need two, and neither can be expressed as a
+// single payload without inventing a throwaway object per event.
+const PAIR_CBS = ['onSort', 'onColumnResize'];
+// `onScroll` IS DELIBERATELY NOT GRADED, and that is a stated hole rather than an
+// oversight: the kit has TWO callbacks with that name and two arities --
+// ScrollViewNode's is `(x, y)` (ScrollViewWidget.as:320) and VirtualListNode's is
+// `(y)` (VirtualListWidget). A name-based scan cannot tell which one a handler was
+// written for, so grading either direction would fail the other. Anything new that
+// needs a scroll offset should NOT add a third meaning: table's virtualisation uses
+// the VirtualListNode convention (a row window, one offset), and it is graded as
+// `onSort`/`onColumnResize` are -- by being reachable from a probe.
+const ALL_CBS = VALUE_CBS.concat(ZERO_CBS, PAIR_CBS);
+const arityOf = (cb) =>
+  ZERO_CBS.indexOf(cb) >= 0 ? 0 : (PAIR_CBS.indexOf(cb) >= 0 ? 2 : 1);
+const arityWords = (k) => (k === 0 ? 'NO arguments' : k === 1 ? 'exactly ONE argument' : 'exactly TWO arguments');
+const paramWords = (k) => (k === 0 ? 'NO parameters' : k === 1 ? 'exactly ONE parameter' : 'exactly TWO parameters');
 
 // ---- source walking --------------------------------------------------------
 function asFiles(root) {
@@ -168,12 +186,11 @@ for (const file of asFiles('kit')) {
         continue;
       }
       const n = countParams(args);
-      if (isZero(cb)) {
-        if (n !== 0) {
-          violations.push(rel + ':' + lineOf(text, open) + ': .' + cb + '() must be called with NO arguments (it is a zero-argument hook), got ' + n);
-        }
-      } else if (n !== 1) {
-        violations.push(rel + ':' + lineOf(text, open) + ': .' + cb + '(...) must be called with exactly ONE argument (the new value -- a zero-argument call throws #1063 on `function (v:T)` handlers); got ' + n);
+      const want = arityOf(cb);
+      if (n !== want) {
+        violations.push(rel + ':' + lineOf(text, open) + ': .' + cb + '() must be called with '
+          + arityWords(want) + (want === 1 ? ' (the new value -- a zero-argument call throws #1063 on `function (v:T)` handlers)' : '')
+          + ', got ' + n);
       }
     }
   }
@@ -201,12 +218,10 @@ for (const root of ['ui-demo/demo', 'probes']) {
           continue;
         }
         const n = countParams(list);
-        if (isZero(cb)) {
-          if (n !== 0) {
-            violations.push(rel + ':' + lineOf(text, m.index) + ': an ' + cb + ' handler must declare NO parameters (it is called as ' + cb + '()), got ' + n);
-          }
-        } else if (n !== 1) {
-          violations.push(rel + ':' + lineOf(text, m.index) + ': a ' + cb + ' handler must declare exactly ONE parameter (the new value), got ' + n);
+        const want = arityOf(cb);
+        if (n !== want) {
+          violations.push(rel + ':' + lineOf(text, m.index) + ': a ' + cb + ' handler must declare '
+            + paramWords(want) + (want === 2 ? ' (column index + value)' : (want === 1 ? ' (the new value)' : '')) + ', got ' + n);
         }
       }
     }

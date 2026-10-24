@@ -100,6 +100,95 @@ package demo
                 {
                     return text("selected row: " + int(m.num("tb.row", 0)),
                         { style: DocsDemo.MONO, ariaName: "" });
+                }),
+
+                // SORTING. The arrow is a fact about the MODEL (`sortColumn`), which is why
+                // this demo works at all: the widget reports the intent and the page stores
+                // it, so the order survives every re-render.
+                new DocSection("Sorting: the model owns the order", [
+                    "`onSort(column, descending)` reports an INTENT and nothing else -- the widget never",
+                    "reorders your rows. `sortColumn` is the order you hand back, and the arrow is drawn",
+                    "from it, so the header can never claim an order the rows do not have.",
+                    "The cycle is the browser's: another column sorts ascending, the same column",
+                    "descending, and a third click reports -1 (unsorted). Numbers compare as numbers",
+                    "while text compares as text, which is what makes a Qty column sort 1, 2, 10."
+                ], [
+                    "table(cols, rows, { rowHeight: 26, onSort: function (c:int, d:Boolean):void {",
+                    "    model.col = c; model.desc = d;          // then re-render with",
+                    "}, sortColumn: model.col, sortDescending: model.desc })"
+                ], 132, function ():Node
+                {
+                    var rows:Array = [
+                        { name: "Gadget", qty: 2 },
+                        { name: "Widget", qty: 10 },
+                        { name: "Bolt", qty: 1 }
+                    ];
+                    return table([{ key: "name", title: "Name", width: 200 },
+                                  { key: "qty", title: "Qty" }], rows,
+                        { key: "demoTableSort", rowHeight: ROW_H, stripes: true,
+                          style: StyleRefinement.from({ size: [340, ROW_H * 4] }),
+                          sortColumn: int(m.num("tb.col", -1)),
+                          sortDescending: m.val("tb.desc", "0") == "1",
+                          onSort: function (c:int, d:Boolean):void
+                          {
+                              m.put("tb.col", c);
+                              m.put("tb.desc", d ? "1" : "0");
+                          } });
+                }),
+
+                // COLUMN RESIZE. The width lives in the author's model too, so `resizable`
+                // only has to REPORT -- which is also the only way this demo can keep the
+                // width across the re-render the drag itself triggers.
+                new DocSection("Column widths are yours", [
+                    "Drag the divider in the header: a 1px preview line follows the pointer and, on",
+                    "release, `onColumnResize(index, width)` fires ONCE. The widget never writes into",
+                    "your `columns` array -- it is usually an inline literal rebuilt every render, so a",
+                    "width written there would vanish on the next pass.",
+                    "The click that the window sends after a release is swallowed, so resizing a",
+                    "column never also sorts it."
+                ], [
+                    "table(cols, rows, { resizable: true,",
+                    "    onColumnResize: function (i:int, w:Number):void {",
+                    "        model.widths[i] = w;                 // then re-render with it",
+                    "    } })"
+                ], 132, function ():Node
+                {
+                    var rows:Array = [
+                        { name: "Widget", qty: 12 },
+                        { name: "Gadget", qty: 7 }
+                    ];
+                    var w0:int = int(m.num("tb.w0", 140));
+                    return table([{ key: "name", title: "Name", width: w0 },
+                                  { key: "qty", title: "Qty" }], rows,
+                        { key: "demoTableResize", rowHeight: ROW_H, stripes: true, resizable: true,
+                          style: StyleRefinement.from({ size: [340, ROW_H * 3] }),
+                          onColumnResize: function (i:int, w:Number):void
+                          {
+                              if (i == 0) m.put("tb.w0", int(w));
+                          } });
+                }),
+
+                // VIRTUAL. Two hundred rows, eleven nodes.
+                new DocSection("Virtual: mount only what shows", [
+                    "`virtual` mounts the visible window plus one partial row that the clip hides --",
+                    "the rest of the model never becomes a node. It needs a POINT height (the body is",
+                    "`height - rowHeight`) and `onScroll(offsetY)`, which reports the new offset for you",
+                    "to re-render with; the header does not scroll.",
+                    "Row keys are ABSOLUTE (r0, r1, ...), so a window that shifts mounts genuinely new",
+                    "nodes instead of handing a scrolled-in row the node of the row that just left."
+                ], [
+                    "table([{ key: \"i\", title: \"#\" }], twoHundredRows, {",
+                    "    virtual: true, rowHeight: 22, offsetY: model.off,",
+                    "    onScroll: function (y:Number):void { model.off = y; } })"
+                ], 148, function ():Node
+                {
+                    var rows:Array = [];
+                    for (var i:int = 0; i < 200; i++) rows.push({ i: i });
+                    return table([{ key: "i", title: "row" }], rows,
+                        { key: "demoTableVirt", rowHeight: 22, virtual: true,
+                          style: StyleRefinement.from({ size: [340, 110] }),
+                          offsetY: m.num("tb.off", 0),
+                          onScroll: function (y:Number):void { m.put("tb.off", y); } });
                 })
             ];
 
@@ -233,6 +322,42 @@ package demo
                 {
                     return text("Drag the thumb in the panel above; its source stays in sync.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                // STICK TO BOTTOM. The one scroll feature whose whole contract is a
+                // QUESTION ABOUT THE PAST ("was I at the end before this grew?"), so the
+                // demo is live: scroll up and the next two lines no longer follow you.
+                new DocSection("Logs that follow their end", [
+                    "`stickToBottom` makes the view follow the END of its content as it grows -- a chat",
+                    "or a console. A fresh view counts as being at the end, so a log opens on its",
+                    "newest line rather than its oldest.",
+                    "Scroll up and it lets go immediately (one pixel off the end is a reader, not a",
+                    "rounding error); scroll back down and it re-attaches, because the rule is",
+                    "re-derived from the live offset every frame rather than kept in a stuck flag.",
+                    "The auto-scroll is a real move: `onScroll` fires and `offsetY` is written back,",
+                    "so your model never disagrees with the screen."
+                ], [
+                    "scrollView({ stickToBottom: true,",
+                    "             onScroll: function (x:Number, y:Number):void {",
+                    "                 model.off = y;            // the follow is reported too",
+                    "             } }, rows)"
+                ], 148, function ():Node
+                {
+                    // Eight lines in a 96px viewport: 160px of content, so the view opens on
+                    // line 8 and stays there. There is no append button in this demo -- the
+                    // growth path is pinned by probes/widgets/stick, which is where a
+                    // mutation can take the rule apart.
+                    var rows:Array = [];
+                    var n:int = int(m.num("sv.stickN", 8));
+                    for (var i:int = 0; i < n; i++)
+                        rows.push(text("line " + (i + 1), { key: "svs" + i, style: DocsDemo.LABEL,
+                                                            ariaName: "" }));
+                    return scrollView({ key: "demoSvStick", wheelStep: 26, stickToBottom: true,
+                        onScroll: function (x:Number, y:Number):void { m.put("sv.stickOff", y); },
+                        style: StyleRefinement.from({ size: [280, 96], background: 0xF8FAFC }) }, [
+                        column({ key: "demoSvStickCol", style: StyleRefinement.from({
+                            size: [Length.pct(1), Length.px(n * 20)], gap: 2, padding: 6 }) }, rows)
+                    ]);
                 })
             ];
 

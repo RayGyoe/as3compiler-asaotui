@@ -1,0 +1,31 @@
+baseline (unmutated): RESULT: PASS
+
+S1  CAUGHT  STICKY IS NEVER APPLIED: the option is parsed, carried on the node and then ignored, so a log opens at its oldest line and content growth scrolls nothing
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a fresh sticky view sits at 0, want 50 (its newest line); the opening move was not reported: 0 call(s), last y -1; the top of the viewport shows #ee1111, want band 2 #1111ee; the bottom of the viewport shows #eeee11, want band 4 #ee11ee; the sticky view is at 0, want 110 (it must follow); the follow was not reported: last y -1; after the growth the top shows #ee1111, want band 4 #ee11ee; after the growth the bottom shows #eeee11, want band 6 #ee8800; one notch up left the view at 0, want 86 (110 - 24); content growth yanked the view to 0, want 86 (the reader scrolled up); the detached view's top shows #ee1111, want band 3 #eeee11; the detached view's bottom shows #eeee11, want band 5 #11eeee; a re-attached view is at 140, want 170 (it must follow again); the second follow was not reported: last y 140; the top shows #11eeee, want band 6 #ee8800; the bottom shows #8800ee, want band 8 #00aa55;
+     FAIL  pixel (60,25) want #1111EE got #ee1111
+     FAIL  pixel (60,100) want #EE11EE got #eeee11
+     restore: byte-identical (4c6e6f9a5756f43d)
+S2  CAUGHT  THE POSITION IS NOT CONSULTED: every append drags the reader back to the end, so scrolling up in a live log is impossible
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL one notch up left the view at 110, want 86 (110 - 24); content growth yanked the view to 140, want 86 (the reader scrolled up); the detached view's top shows #11eeee, want band 3 #eeee11; the detached view's bottom shows #8800ee, want band 5 #11eeee;
+     restore: byte-identical (4c6e6f9a5756f43d)
+S3  CAUGHT  "AT THE END" IS MEASURED AFTER THE GROWTH: once maxY has moved, every offset is short of it, so the view never follows -- the exact bug the previous-frame bookkeeping exists to prevent
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a fresh sticky view sits at 0, want 50 (its newest line); the opening move was not reported: 0 call(s), last y -1; the top of the viewport shows #ee1111, want band 2 #1111ee; the bottom of the viewport shows #eeee11, want band 4 #ee11ee; the sticky view is at 0, want 110 (it must follow); the follow was not reported: last y -1; after the growth the top shows #ee1111, want band 4 #ee11ee; after the growth the bottom shows #eeee11, want band 6 #ee8800; one notch up left the view at 0, want 86 (110 - 24); content growth yanked the view to 0, want 86 (the reader scrolled up); the detached view's top shows #ee1111, want band 3 #eeee11; the detached view's bottom shows #eeee11, want band 5 #11eeee; a re-attached view is at 140, want 170 (it must follow again); the second follow was not reported: last y 140; the top shows #11eeee, want band 6 #ee8800; the bottom shows #8800ee, want band 8 #00aa55;
+     FAIL  pixel (60,25) want #1111EE got #ee1111
+     FAIL  pixel (60,100) want #EE11EE got #eeee11
+     restore: byte-identical (4c6e6f9a5756f43d)
+S4  CAUGHT  A FRESH VIEW IS NOT "AT THE END": a log opens on its oldest line, and with nothing scrolled there is no growth that can re-attach it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a fresh sticky view sits at 0, want 50 (its newest line); the opening move was not reported: 0 call(s), last y -1; the top of the viewport shows #ee1111, want band 2 #1111ee; the bottom of the viewport shows #eeee11, want band 4 #ee11ee; the sticky view is at 0, want 110 (it must follow); the follow was not reported: last y -1; after the growth the top shows #ee1111, want band 4 #ee11ee; after the growth the bottom shows #eeee11, want band 6 #ee8800; one notch up left the view at 0, want 86 (110 - 24); content growth yanked the view to 0, want 86 (the reader scrolled up); the detached view's top shows #ee1111, want band 3 #eeee11; the detached view's bottom shows #eeee11, want band 5 #11eeee;
+     FAIL  pixel (60,25) want #1111EE got #ee1111
+     FAIL  pixel (60,100) want #EE11EE got #eeee11
+     restore: byte-identical (4c6e6f9a5756f43d)
+S5  CAUGHT  THE SLACK BECOMES A TOLERANCE: 0.5px of rounding allowance widened to 100px, so a reader who scrolled up a notch still counts as "at the end" and is dragged back down
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL one notch up left the view at 110, want 86 (110 - 24); content growth yanked the view to 140, want 86 (the reader scrolled up); the detached view's top shows #11eeee, want band 3 #eeee11; the detached view's bottom shows #8800ee, want band 5 #11eeee;
+     restore: byte-identical (4c6e6f9a5756f43d)
+
+MUTATION stick: 5/5 caught, 0 problem(s)
+RESULT: PASS

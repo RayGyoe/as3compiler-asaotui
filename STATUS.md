@@ -6,7 +6,7 @@
 > 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 36 个 kind / 41 个工厂**（第二批 media/feedback/data 九件、
 > 第三批**浮层六件 dialog/drawer/popover/menu/toast/select**、第五批**列表虚拟化 `virtualList` + 选择三件**
 > `tree`/`combobox`/`datePicker` 均已落地）；
-> **样式面从 18 字段补到 32 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**42 页 / 9 组**，每页两个 live 示例 + 产生它的源码），
+> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**42 页 / 9 组**，每页两个 live 示例 + 产生它的源码），
 > 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**36/36**，变异 3/3）；
 > **浮层走第二棵保留树**（`View.renderOverlay()` + `UiApp.overlayRoot`），主树因此不再为弹层重解布局。
 > 第四轮（2026-10-24）补的是**交互动线**：`disabled` + `hover/pressed/focused` 四态绘制、`textField` 编辑回写、
@@ -71,11 +71,27 @@
 > （`width/height/padding/gap` 动画每帧重解、`textColor/cornerRadius` 可 tween）、浮层加**退场动画**；
 > `virtualList`（千级列表只挂 9 个节点）、`tree`、`combobox`、`datePicker`（纯整数日历，无 `Date`）落地。
 > 两个 demo 现均用 **`--air-app`** 编译：窗口属性（含**高分辨率/HiDPI**）由 AIR 描述符当唯一真相源。
-> 仍然缺的是：`icon`（图标字体/矢量集）、`accordion` 多开、`table` 排序/列宽拖拽、
+> 第十六轮（2026-10-25）补的是 **`table` 欠的三件 + 滚动贴底**，其中一件不是缺功能而是**缺陷**：
+> ① **表格几乎点不到** —— 运行时按**绘制区域**取命中目标，而表只画 1px 网格线和字形 ⇒ 在一个空单元格中间
+> 点一下，目标是**表格背后的根**，行根本选不中（只有恰好点在网格线上才行）。修法：`shapeA` 先画一个
+> **全透明命中矩形**（alpha 0 仍是区域，运行时注释里就是这么推荐的 Flash 惯用法），不动一个像素。
+> ② **排序**：`onSort(column, descending)` 只报意图，秩序归作者的 `sortColumn`；循环是浏览器那套
+> （另列→升序、同列→降序、再点→**-1 无序**）；`TableNode.sortRows` 排的是**拷贝**（qsort 不稳定 ⇒ 用原始
+> 下标做 tie-break，且**在降序翻转之后**才加，否则降序会翻车），数字比数字、文本比文本（所以 Qty 排得出 1,2,10）。
+> ③ **列宽**：拖拽只画 1px 预览线、**release 时调一次** `onColumnResize(index, width)`，**从不回写 `columns`**
+> （作者模型常是内联字面量，写进去下一帧就没）；松手后窗口 glue 补的那个 CLICK 被吞掉，否则"调列宽"会顺手排序。
+> ④ **虚拟化**：只挂可见窗口 + 一行被 `scrollRect` 裁掉的半行，header 不滚、body 高 = `height - rowHeight`
+> （所以必须是 POINT 高度）、行 key 用**绝对下标**（窗口移动就得挂新节点）。⑤ `scrollView.stickToBottom`：
+> **每帧一次比较，比的是上一帧的 `maxOffsetY`** —— 长大之后再问"我在末尾吗"永远得到否，所以那个答案必须
+> 在更新前取；新视图算在末尾（日志开屏就是最新一行）；0.5px 内算末尾，再远一格就算读者接管。
+> 判据：新探针 `probes/widgets/table2`（**6 变异全中**）与 `probes/widgets/stick`（**5 变异全中**）；并发现
+> `tools/gates.cjs` 的探针名单是**手写**的 —— 上一批的 `pointer`/`imaging` 一直不在里面，也就是**没人跑**。
+> 现在四道全接上，门 46 → **50 道**。
+> 仍然缺的是：`icon`（图标字体/矢量集）、`accordion` 多开、
 > 样式面的 `grid`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
-生成日期：2026-10-24（第十二轮补：监听器寿命 `#1009` + `air-sweep` 指针钻 + G25） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**46 道门**）
+生成日期：2026-10-25（第十六轮补：`table` 排序/列宽/虚拟化 + 滚动贴底 + 表格命中矩形） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**50 道门**）
 
 ---
 
@@ -127,11 +143,11 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | `list(items, builder, opts)` | `ListNode` | 真容器（每行一个真实 UiNode）；**无虚拟滚动——万级用 `virtualList`** |
 | `image(opts)` | `ImageNode` | 位图控件；源二选一：`bitmapData`（调用者已有像素）或 **`src`（控件自己持 `Loader`，异步）**；
 `scaleMode`: `fit`/`stretch`/`none`（**未知值抛错**）；`onLoad()`/`onError(msg)`、失败进 `UiNode.loadError` |
-| `scrollView(opts, children)` | `ScrollViewNode` | **真裁剪**滚动容器（引擎 `scrollRect`）；竖向滚轮；视口用 `setMinMax(min)` 阻断子收缩 |
+| `scrollView(opts, children)` | `ScrollViewNode` | **真裁剪**滚动容器（引擎 `scrollRect`）；竖向滚轮；视口用 `setMinMax(min)` 阻断子收缩；**`stickToBottom`**（日志式贴底 + 离开末尾就脱钩）、纵/横滚动条（`probes/widgets/scrollbar` 44 项 / `stick` 15 项） |
 | `spinner(opts)` | `SpinnerNode` | 不定进度圆环；`diameter`/`thickness`/`tone`/`spin`/`phase`；**环画成填充带（描边宽度不被遵守）** |
 | `skeleton(opts)` | `SkeletonNode` | 占位骨架；`variant`: `text`/`circle`/`rect` + `lines`/`barHeight`/`gap`/`tone` |
 | `tooltip(text, opts)` | `TooltipNode` | 气泡提示；`arrow`: `up`/`down`/`left`/`right`/`none`；标签**自绘居中**，尺寸可留 auto（自带内边距） |
-| `table(columns, rows, opts)` | `TableNode` | 表头 + 数据行；`rowHeight`/`stripes`/`grid`/`selectedIndex`/`onSelect`；网格/条纹/选中一律**画成填充** |
+| `table(columns, rows, opts)` | `TableNode` | 表头 + 数据行；`rowHeight`/`stripes`/`grid`/`selectedIndex`/`onSelect`；**`sortColumn`/`sortDescending`/`onSort(col, desc)`**（秩序归模型，循环 升/降/-1）、**`resizable`/`onColumnResize(idx, w)`**（只 1px 预览，release 报一次，从不回写 `columns`）、**`virtual`/`offsetY`/`onScroll(y)`**（header 不滚、body = `height - rowHeight`）；网格/条纹/选中一律**画成填充**；另画一个**全透明命中矩形**（否则空单元格点不到） |
 | `accordion(sections, opts)` | `AccordionNode` | 单开手风琴；`activeIndex`（`-1` = 全关）/`onToggle`；**header 刻意无背景**（高亮由容器画，子节点在前） |
 | `breadcrumb(items, opts)` | `BreadcrumbNode` | 面包屑；`onNavigate(index)`/`separator`/`currentIndex`；末项与分隔符都不可导航 |
 | `pagination(page, pageCount, opts)` | `PaginationNode` | 翻页器；`windowSize` 槽位窗口、省略号原型 `-1`、`onSelect`/`page` |
@@ -155,12 +171,12 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 
 | 类别 | 缺什么 | 影响的界面 |
 |---|---|---|
-| 选择 | `accordion` 多开、`table` 排序/列宽拖拽（树/日期/可输入下拉已落地） | 仪表盘、可编辑表格 |
+| 选择 | `accordion` 多开（树/日期/可输入下拉/可排序表格已落地） | 手风琴多开 |
 | 图形 | `icon`（`image` 已有，但没有图标字体/矢量图标集） | 工具条、按钮图标 |
 | 无障碍 | `role`/`ariaName` 仍只是字段（无消费者） | 屏幕阅读器 |
 
 **⇒ 现在能舒适写出的是「多页表单 / 设置页 / 列表详表 / 万级滚动列表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互 /
-树形设置 / 日期选择 / 可输入下拉」，写不出「图标字体 + 可排序表格 + 内建无障碍」类界面。**
+树形设置 / 日期选择 / 可输入下拉 / 可排序可调列宽可虚拟化的表格」，写不出「图标字体 + 内建无障碍」类界面。**
 （浮层六件落地后，`dialog`/`drawer`/`popover`/`menu`/`select`/`toast` 都已可用，手算断言探针：`probes/widgets/overlay`，**65 项**。）
 
 ---
@@ -194,7 +210,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 | 能力 | 现状 |
 |---|---|
-| **虚拟滚动** | ✅ `virtualList`（第五轮）：**只有窗口内的行是 UiNode**（1000 项、视口 150、行高 20 ⇒ **9 个**节点）；作者持有数据，控件只报 `onScroll(offset)`，作者写回模型后重渲染。⚠️ `list`/`table` 仍是「每行一个真实 UiNode」——要万级就用 `virtualList` |
+| **虚拟滚动** | ✅ `virtualList`（第五轮）：**只有窗口内的行是 UiNode**（1000 项、视口 150、行高 20 ⇒ **9 个**节点）；作者持有数据，控件只报 `onScroll(offset)`，作者写回模型后重渲染。✅ `table` 的 `virtual:true`（第十六轮）同契约（窗口 + 一行半行、`onScroll(y)`）。⚠️ `list`/`tree` 仍是「每行一个真实 UiNode」——要万级就用 `virtualList` |
 | **视口裁剪 / 滚动** | ✅ `scrollView` 用引擎 `scrollRect` 做**真裁剪**、接管滚轮，并**自绘滚动条**（第七轮）：纵/横双轴、thumb 拖动、轨道点击翻一屏、`scrollbarX/Y` 的 `auto`/`always`/`never`、没有竖向可滚时滚轮**回落横向**。条是**覆盖层**（画在内容之上、不参与布局，所以不改变任何矩形）。仍无：惯性/动量、弹性回弹、键盘翻页。`list` 本身仍不裁剪（超出自身高度的行会溢出），要滚动就套一层 `scrollView` |
 | **键盘 / 焦点** | ⚠️ 部分是：焦点环/`Enter`/`Space`/`Esc` 已通（见 §3.1），但 `tabs` 还没接**方向键**、`list` 还没接**上下键选中**（两者仍只看鼠标点击）；`list` 的行也没进 Tab 环 |
 | **tabs 分段的布局来源** | ⚠️ 分段是控件**自算**（`from n.absW` 的整数等分），**不是**引擎摆的子节点；`list` 的行**是**引擎摆的真实子节点 |
@@ -650,6 +666,78 @@ wrap 宽度置 NaN / 截断条件置 false / Enter 加入消费集），且每�
 - M5（忽略 `stretch`）也 MISSED：`pic` 当时是 40×40 方框配 16×16 方图，**contain 和 fill 恰好同形**。
   改成 60×20 之后 `min(3.75, 1.25) ≠ 1.25`，两种语义才分得开——**一个变异不在几何上分叉，就什么也没证明**。
 
+### 3.16 `table` 欠的三件 + 滚动贴底（第十六轮补）
+
+这一轮进来的是三条“常见工具箱都有”的能力，但第一条不是缺功能，是**缺陷**——而且是一类只有“真去点一下”
+才现形的缺陷。
+
+#### 3.16.1 头一件事：这个表**几乎点不到**
+
+运行时按**绘制区域**取命中目标（`as_pick_hit` → `as_obj_region_hit_local`，`emit.ts:17382`），而
+`TableWidget` 只画 1px 网格线、字形、条纹和选中带。于是一个**空单元格中间**点一下，目标是**表背后的根**，
+行根本选不中——只有恰好点在网格线上（1px 宽的线）才生效。旧 `probes/widgets/data` 看不见这个，因为它用
+`clickLocal` **直接向 backing 派发**，绕过了命中测试；`data` 里那 77 项断言全绿而那行依然不可点。
+
+修法不是自算矩形，而是**在 `shapeA` 先画一个全透明命中矩形**：alpha 0 依然是“区域”（命中测试不看 alpha，
+`emit.ts:17401`），不改一个像素，而运行时注释里写的就是这条 Flash 惯用法（“every Flash ’catch the clicks
+over this panel’ idiom draws a transparent fill first”）。钉子在 `probes/widgets/table2` 的**绝对行号**那一相：
+变异 M5（拿掉那三行）立刻变红，同时连带把 `onScroll`/`onWheel` 也打红——因为滚轮也是按同一个命中测试路由的。
+
+**教训：一个控件“能点”不是布局属性，是绘制属性。**透明的地方就是点不到的地方，而“看起来对”的截图一律看不出。
+
+#### 3.16.2 排序：秩序在作者的模型里
+
+`onSort(columnKey, descending)` **只报意图**，控件不排任何东西。`sortColumn` 是作者交回来的秩序，箭头从它画——
+所以表头不可能声称一个行并不具备的秩序。循环是浏览器那套：另一列→升序，同列→降序，同列再点→**-1（无序）**，
+用同一个词汇表而不是 `null`（作者还得自己翻回下标）。
+
+几个真陷阱：
+
+- **`sortRows` 返回新数组，永不改作者数组**：作者常在 `render()` 里写内联字面量，原位排序等于把别人的输入擦掉。
+- **qsort 不稳定，所以要 tie-break**：用原始下标做决胜，而且**必须在降序翻转之后**加，否则降序反而把并列项倒过来。
+- **数字比数字、文本比文本**：`"10" < "2"`，所以 Qty 列必须排成 1, 2, 10 而不是 1, 10, 2。
+  `isNumeric()` 用 trim 后的精确比较（`" "` 不算数字）。探针故意选了 1/2/10 这组数据，**两种秩序不同**，
+  否则“排了”和“没排”的像素一模一样。
+- `sortColumn >= columns.length` **抛错**（模型 bug，不静默夹紧）。
+
+#### 3.16.3 列宽：只报不改，而且只报一次
+
+拖拽期间只画一条 1px 预览线，松手才调 **一次** `onColumnResize(index, width)`，且**从不回写 `columns`**。
+重排在引擎手里：活 resize 意味着每次 move 都要全解一次布局。两个只有交互才暴露的细节：
+
+- 窗口 glue 每次 release 之后都会补一个 `CLICK`。这个 click 正好落在**刚提交的那条分界线上**，不吞掉就会
+  “调完列宽顺手把这一列排序了”（变异 M4 就是把这个吞掉的判断拿掉）。
+- 一次手势丢了 release（指针在窗口外松开）之后，表头会**长期失聪**——所以下一次 `onPress` 先把那个标记清掉。
+- 坐标用 `localX/localY` 而**不是** `stageX/stageY`：手工构造的 `MouseEvent` 的 stage 坐标恒为 `0.0`
+  （`emit.ts:12842`），而 `localX/localY` 相对事件 target。一条 `localToGlobal`/`globalToLocal` 规则两臂通吃。
+
+#### 3.16.4 虚拟化：契约抄 `virtualList`，但多三条
+
+`virtual:true` 需要**正 `rowHeight`**和 `onScroll(offsetY)`（缺任一**抛错**）；header **不滚**，所以 body 高 =
+`height - rowHeight` ⇒ **必须是 POINT 高度**（百分比要等 solver，猜就是错）。窗口 = `[round(offsetY/rh), +fit]`，
+多挂**一行半行**留给容器的 `scrollRect` 裁。行 key 用**绝对下标**：窗口一动就得挂真新节点，否则滚进来的一行
+会拿到刚走那行的节点（同 key、不同数据），挂在行上的东西全部错位。点击报的也是**绝对行号**。
+
+#### 3.16.5 贴底滚动：问题问的是“过去”
+
+`scrollView({ stickToBottom: true })` 是日志/聊天/控制台那类“一直跟着末尾”的视口。整个契约可以缩成一句话：
+**每帧问一次“我刚才是末尾吗”，问的是上一帧的 `maxOffsetY`**。
+
+- 在 `maxOffsetY` 更新**之后**再问，每个偏移都短于新末尾 ⇒ 永远不跟（变异 S3 就是把比较搬到更新之后）。
+- 新视图算在末尾：日志开屏就是**最新一行**，不是最旧一行（变异 S4）。
+- 0.5px 的余量是给拖动产生的分数偏移的，**不是**“接近末尾”的容差：往上滚一格（24px）就该撒手（变异 S5 把 0.5 改成 100）。
+- 再滚回末尾就**自动重新粘上**，因为规则每帧从活偏移重推，不存在一个需要重置的 stuck 标志（变异 S2 是“不查位置”）。
+- 自动滚动是一**次真的移动**：`onScroll` 会发、`offsetY` 会被写回，作者的模型不会跟屏幕分家。
+
+判据：`probes/widgets/stick`（15 项，变异 **5/5**；像素钉的是“视口顶/底分别露出第几条色带”，所以追随、
+不追随、重新追随三种状态在图上分得开）。
+
+#### 3.16.6 顺带发现：探针名单是手写的
+
+`tools/gates.cjs` 里那道 `for (const p of [...])` 是**手写枚举**，而上一批的 `probes/widgets/pointer` 与
+`probes/widgets/imaging` **从未被加进去**——于是它们一直“绿”在一个没人跑的地方。探针不在门里等于不存在。
+现在四道（`pointer`/`imaging`/`table2`/`stick`）全接上，门 **46 → 50 道**。
+
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
 一条命令跑全部 **46** 道门：
@@ -740,8 +828,8 @@ node tools/gates.cjs          # 46/46 PASS 才叫绿（定稿记录 reviews/gate
 
 ### 补齐优先级建议
 
-1. **列表虚拟化**（§3.1.1）——`scrollView` 已能真裁剪，但 `list`/`table` 仍对每个 item 建真实节点；
-   这是剩下最贵的一块（万级列表会建万级节点）。
+1. **剩余虚拟化**（§3.1.1）——`scrollView` 已能真裁剪，`virtualList` 与 `table` 的 `virtual` 已落地，
+   但 `list`/`tree` 仍对每个 item 建真实节点（万级列表会建万级节点）。
 2. **布局动画**（§3.4）——需要先定义「布局动画为什么要重解布局」；浮层的**退场**动画也卡在这里。
 3. **选择类控件**（§2.1）——`datePicker`/`tree`/`combobox`。其中 `combobox` 只差「输入框 + 过滤列表」这一层，
    而 §3.1 的编辑回写管线是它的前置（已通）。
