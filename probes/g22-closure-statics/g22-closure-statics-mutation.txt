@@ -1,0 +1,11 @@
+M1  CAUGHT  HALF 1 of the fix is load-bearing: drop the early `collectCinitClasses()` (the set is then still empty while closure bodies are emitted) -> every static read loses its guard again
+     restore: byte-identical (5041fa0120466718)
+M2  CAUGHT  HALF 2 is load-bearing: without the early `_cinit` forward declaration the guarded call precedes any declaration of it, so C rejects the program instead of running it
+     restore: byte-identical (5041fa0120466718)
+M3  CAUGHT  the RULE is checked, not assumed: expect.json claims case 1 is "alfa" while the source says "beta" -> the runner must report that the REFERENCE disagrees with the derived answer
+     restore: byte-identical (be304d31546ef59f)
+M4  CAUGHT  the AIR arm is REBUILT from the source, not read off a stale file: renaming the second element must make AIR disagree with the unchanged rule
+     restore: byte-identical (585fa800fc82ce09)
+
+MUTATION g22-closure-statics: 4/4 caught, 0 problem(s)
+RESULT: PASS

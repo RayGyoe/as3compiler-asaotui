@@ -1,0 +1,37 @@
+
+id  case                                                rule                  AIR 51.4.1            our AOT
+ 1  no runs, no args                                    size=20 color=0       size=20 color=0       size=20 color=0
+ 2  no runs, whole text                                 size=20 color=0       size=20 color=0       size=20 color=0
+ 3  no runs, empty range (3,3)                          size=null color=null  size=null color=null  size=null color=null
+ 4  no runs, empty range at the end (10,10)             throw 2006            throw 2006            throw 2006
+ 5  one run [2,6), no args                              size=null color=null  size=null color=null  size=null color=null
+ 6  one run [2,6), range fully inside                   size=30 color=16711680size=30 color=16711680size=30 color=16711680
+ 7  one run [2,6), range fully before                   size=20 color=0       size=20 color=0       size=20 color=0
+ 8  one run [2,6), range fully after                    size=20 color=0       size=20 color=0       size=20 color=0
+ 9  one run [2,6), range spans INTO the run             size=null color=null  size=null color=null  size=null color=null
+10  one run [2,6), range spans OUT of the run           size=null color=null  size=null color=null  size=null color=null
+11  one run [2,6), range covers run + both sides        size=null color=null  size=null color=null  size=null color=null
+12  two different runs [0,3)/[3,6), spans both          size=null color=null  size=null color=null  size=null color=null
+13  two different runs, inside the second               size=44 color=65280   size=44 color=65280   size=44 color=65280
+14  empty text, no args                                 size=null color=null  size=null color=null  size=null color=null
+15  past the end (20,30)                                throw 2006            throw 2006            throw 2006
+16  reversed (6,2)                                      size=null color=null  size=null color=null  size=null color=null
+17  explicit (-1,-1)                                    size=20 color=0       size=20 color=0       size=20 color=0
+18  empty text, (0,0)                                   throw 2006            throw 2006            throw 2006
+19  empty text, (0,1)                                   throw 2006            throw 2006            throw 2006
+20  no runs, (0,0)                                      throw 2006            throw 2006            throw 2006
+21  one run, empty range at its start (2,2)             size=null color=null  size=null color=null  size=null color=null
+22  no runs, interior range                             size=20 color=0       size=20 color=0       size=20 color=0
+23  no runs, last character                             size=20 color=0       size=20 color=0       size=20 color=0
+24  end past length (0,11)                              throw 2006            throw 2006            throw 2006
+25  begin default, end given (-1,5)                     size=20 color=0       size=20 color=0       size=20 color=0
+26  begin given, end default (5,-1)                     size=20 color=0       size=20 color=0       size=20 color=0
+27  two runs with the SAME values                       size=30 color=16711680size=30 color=16711680size=30 color=16711680
+28  one run covering everything, no args                size=30 color=16711680size=31 color=16711680size=31 color=16711680
+29  one run, empty range at its end (6,6)               size=null color=null  size=null color=null  size=null color=null
+30  one run, empty range before it (1,1)                size=null color=null  size=null color=null  size=null color=null
+
+AOT exit: 0
+source audit (AotMain.exe.c): getTextFormat consults _runs, compares formats and has both answers
+RESULT: FAIL (1 disagreement(s))
+  FAIL  id 28: AIR says "size=31 color=16711680" but the derived answer is "size=30 color=16711680" -- the REFERENCE disagrees; re-derive the rule

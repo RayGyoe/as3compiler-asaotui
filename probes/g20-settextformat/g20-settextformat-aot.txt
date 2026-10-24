@@ -18,6 +18,6 @@ raw splitTail=37.328125 fresh=37.328125
 id=12 true
 raw splitMid=39.109375 fresh=39.109375
 id=13 true
-raw color=0 size=20
-id=10 false
-id=11 false
+raw color=255 size=30
+id=10 true
+id=11 true

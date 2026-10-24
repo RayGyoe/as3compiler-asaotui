@@ -30,11 +30,14 @@ node probes/g20-settextformat/mutation.cjs       # 证明 run.cjs 会红（5/5�
 
 退出码：`0` 两臂与手推规则一致；`1` 有不一致；`2` 构建/adl 出错。
 
-## 已登记偏差（不修、持续测量）
+## 曾经的已登记偏差（已修）
 
-`TextField.getTextFormat()` 在我们这里恒返回 `defaultTextFormat`、不读 run 表（AIR 返回该区间**生效的**
-格式）。用例 10/11 把它记在 `expect.json` 的 `known` 里：AIR 必须答 `true`、我们**当前**必须答 `false`
-—— 哪天修好了，脚本会因为「登记的偏差消失了」而**变红**，提醒把它删掉。登记处 `compiler-gaps.md` G21。
+`TextField.getTextFormat()` 曾恒返回 `defaultTextFormat`、不读 run 表（AIR 返回该区间**生效的**
+格式）。用例 10/11 曾把它记在 `expect.json` 的 `known` 里（AIR 必须答 `true`、我们当时答 `false`），
+**阶段二百七十**修好后 `known` 已删除、两格转为正式断言 —— 这正是当初那条「哪天修好了脚本会变红」的
+提醒生效的结果。
+
+判据与 30 格读数见 [`probes/g21-gettextformat/`](../g21-gettextformat/) 与 `compiler-gaps.md` G21。
 
 ## 状态
 

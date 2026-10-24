@@ -29,17 +29,5 @@
     "12": "true",
     "13": "true",
     "14": "true"
-  },
-  "known": {
-    "10": {
-      "air": "true",
-      "ours": "false",
-      "why": "G21: our TextField.getTextFormat() returns defaultTextFormat and ignores the run table, so a format installed by setTextFormat never reads back (AIR answers with the format in effect over the range). Out of scope for G20; registered in compiler-gaps.md"
-    },
-    "11": {
-      "air": "true",
-      "ours": "false",
-      "why": "G21: same cause as case 10 (size 30 installed by setTextFormat, defaultTextFormat is 20)"
-    }
   }
 }

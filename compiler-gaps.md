@@ -423,38 +423,43 @@
 | **本地怎么办** | **不改编译器**（本工作区边界）。库侧规避很干净：**单格式字段一律不调 `setTextFormat`**——`defaultTextFormat`（新建字段时生效）+ `textColor` 就够，`paint` 里**不碰 run**。只有真要做「一行多种格式」时才需要它，那时必须先在上游修掉本缺口 |
 | **影响面** | 任何**在重绘路径里**调 `setTextFormat` 的代码（本库目前为 0 处）。`defaultTextFormat` 不受影响（只写默认值，不进 `_runs`） |
 | 状态 | ✅ **已修（阶段二百六十八，v0.4.232）**：`TextField_setTextFormat` 改为**重建** run 表（完全在新区间之前的保留、横跨边界的切两半、被覆盖的丢弃、新 run 插在「第一条触及 `begin` 的 run」处以保持按 `start` 有序；空区间与 `format == null` 为 no-op），顺带**治好**已累积重复项的字段。**A/B：`probes/g20-settextformat/` 12 格关系式双 runtime 全绿（修前 7 格红，46.66 → 91.53 → 136.41 px）**；`mutation.cjs` 5/5；`examples/settextformat-runs.as` 12 断言；`unit: text/settextformat` 15 条 |
-| 修后仍存的相邻偏差 | **G21**（见下）：`getTextFormat()` 忽略 run 表。同一探针 case 10/11 持续测量（`expect.json` 的 `known`：AIR `true` / 我们 `false`） |
+| 相邻的读回偏差 | 同一探针 case 10/11 顺带量出的 **G21**（`getTextFormat()` 忽略 run 表）已于**阶段二百七十**修好，见下 |
 
 ---
 
-### G21 —— `TextField.getTextFormat()` **忽略 run 表**，恒返回 `defaultTextFormat`
+### G21 —— `TextField.getTextFormat()` **曾忽略 run 表**，恒返回 `defaultTextFormat` —— ✅ **已修（阶段二百七十，v0.4.234）**
 
 | 项 | 内容 |
 |---|---|
-| **判定** | **遗留缺陷**（AIR 返回该区间**生效的**格式，我们返回字段的默认格式） |
+| **判定** | **遗留缺陷**（AIR 返回该区间**生效的**格式，我们返回字段的默认格式）—— 阶段二百七十正面修掉 |
 | **症状** | 用 `setTextFormat(fmt(30, 0x0000FF))` 给整段上色/定字号后，`getTextFormat().color` 仍是 `0`、`size` 仍是 `20`；任何按「读回来 = 我设的值」写的逻辑都会读错 |
-| **根因** | `src/emit.ts` 的 `TextField_getTextFormat` 是一句 `return tf->defaultTextFormat;`，注释自述「This subset stores ONE format per field」—— 那句写在 run 表存在之前，如今 `_runs` 已经是 `(begin, end, TextFormat)` 三元组表，函数却没跟上 |
-| **实测** | `probes/g20-settextformat/` 的 case 10/11（`three.setTextFormat(fmt(30, 0x0000FF))` 后读回）：**AIR `color=255 size=30`，我们 `color=0 size=20`**。两端同源、同一进程 |
-| **影响面** | 只影响**读回**；`setTextFormat` 自己写进去的格式照样参与排版（G20 修好之后这一点是对的） |
-| **为什么本轮不修** | 它不在 G16/G19/G20 的批准范围内，而且「区间跨多条 run 时 AIR 返回什么」需要在 AIR 上逐格量（混合区间、空区间、越界区间三种形态都还没测）。按 §5，先登记再立项 |
-| **状态** | ❌ **已实测 · 未修**（2026-10-24 由 G20 的探针顺带量出）。与 G15 同处理：**先登记在本文件**，立项再占 `TODO.md` 的 `### 遗留待开发` 表 |
-| **证据落盘 / 复现** | [`probes/g20-settextformat/`](probes/g20-settextformat/)（`node run.cjs`，`expect.json` 的 `known` 两格；`mutation.cjs` M4 证明「规则是被 AIR 检验的」） |
+| **根因** | `src/emit.ts` 的 `TextField_getTextFormat` 曾是一句 `return tf->defaultTextFormat;`，注释自述「This subset stores ONE format per field」—— 那句写在 run 表存在之前，而 G20 之后 `_runs` 已经是 `(begin, end, TextFormat)` 三元组表，函数却没跟上 |
+| **实测（修复前）** | `probes/g20-settextformat/` 的 case 10/11（`three.setTextFormat(fmt(30, 0x0000FF))` 后读回）：**AIR `color=255 size=30`，我们 `color=0 size=20`**。两端同源、同一进程 |
+| **AIR 口径（30 格实测，`probes/g21-gettextformat/`）** | ① 无 run ⇒ 非空范围一律回答 `defaultTextFormat`；② 完全落在一条 run 内 ⇒ 该 run 的格式；③ **跨 run 边界 / 反序 / 空区间 ⇒ 空 TextFormat（所有建模字段 null）**；④ 相邻两条 run **数值相同** ⇒ 仍回答该格式（比较的是值，不是 run 身份，case 27）；⑤ `(0,0)`、空文本、`begin >= length`、`end > length` ⇒ `RangeError #2006`，而文本内部的空区间（如 `(3,3)`）回答空格式且不抛；⑥ 任一端点给 `-1` 表示「未提供」，不做越界检查（`(-1,-1)` 在空文本上回答空格式，`(0,0)` 才抛） |
+| **修法（两半）** | ① **结构**：`TextFormat` 的 `size/color/bold/italic/underline/leading/kerning/letterSpacing/leftMargin/rightMargin` 由具体 C 类型改为**装箱**（`kind` 为 `any`）—— AIR 把这些字段声明成 `Object` 正是为了「未设置 = `null`」，不装箱就**无法表达**空格式（这是旧一行代码看起来还说得通的根本原因）。全部读写点同步换成 `as_v_num_val` / `as_v_bool_val`，排版与指纹路径逐处适配。② **语义**：`TextField_getTextFormat` 改为按 run 表**分段走查**——推 `i` 到覆盖 `pos` 的 run、gap 用 `defaultTextFormat`、切到下一个边界，逐段用 `as_tf_fmt_eq`（严格 `as_v_eq`，非宽松）比对，全同则 `as_tf_fmt_clone` 返回**副本**，否则 `as_tf_fmt_empty`；越界走 `#2006` |
+| **状态** | ✅ **已修（阶段二百七十，v0.4.234）**。**A/B：`probes/g21-gettextformat/` 30 格双 runtime 逐字相同（0 分歧）**；`mutation.cjs` **5/5**（3 条改 `emit.ts` 的空格式/越界/比对，2 条改探针真值与 AIR 源）；`examples/gettextformat.as` 11 组断言；`unit: text/getTextFormat` **31 条**（含「生成体必须读 `_runs`」「空格式十个字段全 null」「旧的一行已消失」） |
+| **证据落盘 / 复现** | [`probes/g21-gettextformat/`](probes/g21-gettextformat/)（`node run.cjs` = 双 arm + 生成 C 审计；`node mutation.cjs` 5/5） |
+| **影响面** | 只影响**读回**；`setTextFormat` 写进去的格式照样参与排版（这一点 G20 修好后就是对的）。现在「读回来 = 我设的值」成立 |
 
-### G22 —— 闭包里的**静态字段读取**丢掉该类的 `_cinit()` 惰性初始化 ⇒ 静态 `const` 数组读到 `null`
+---
+
+### G22 —— 闭包里的**静态字段读取**曾丢掉该类的 `_cinit()` 惰性初始化 —— ✅ **已修（阶段二百六十九，v0.4.233）**
 
 | 项 | 内容 |
 |---|---|
-| **判定** | **遗留缺陷**（同一份数据、同一个类，只把读点从普通方法挪进闭包，语义就变） |
+| **判定** | **遗留缺陷**（同一份数据、同一个类，只把读点从普通方法挪进闭包，语义就变）—— 阶段二百六十九正面修掉 |
 | **症状** | 类把数据放在 `private static const NAMES:Array = [...]`，而**读点全在演示闭包里**（`function ():Node { return table(NAMES, ...) }`）⇒ `NAMES` 恒为 `NULL`，`NAMES[0]` 抛 `TypeError #1009`。同样的读点放进普通方法就完全正常 |
-| **根因** | 静态字段初始化是惰性的：`sfRead(owner, name)` 只在 `cinitClasses.has(owner)` 时发出 `(owner_cinit(), owner_NAME)` 这种守卫读。**闭包体内的标识符走另一条发射路径**，那条路径裸读 `CONSTS_NAMES`，于是 `_cinit()` 从未被调用。生成的 C 里能直接看到：`CONSTS_cinit` 有 forward-decl、有定义、**调用点 0 处**，而读点是 `as_array_get((as_array*)as_req_obj(CONSTS_NAMES), 0)` |
-| **触发条件** | 读点**只在闭包里**。若同一个类的任一静态字段也被**普通方法**读过，那一处会调 `_cinit()`，而它是「整类一次」的开关 ⇒ 其余闭包读点**看起来正常**。这正是它难发现的理由：库里的 `DocsStyle` / `DocsDemo` 恰好有普通方法读点（`DocsView.render`、`DocsDemo.tile`），所以 41 页文档站一直好，只有 `DocsData`（纯闭包读点）崩 |
-| **实测** | `.scratch/statrepro/one.as`（静态数组，普通方法读）= 带守卫；`two.as`（同一数组，闭包读）= 裸读；`three.as`（跨类 + 同类，都从闭包读）= 两条都裸读。判据不必跑 exe：生成 `.c` 后数 `_cinit()` 出现次数，0 处即中招 |
-| **影响面** | 把静态度量 / 样式 / 数据表写成类常量、读点又在工厂闭包里的代码 —— 也就是**任何按「页面即闭包」写的 UI**。语义错（不是缺功能）：它把初始化悄悄跳过了 |
-| **为什么本轮不修** | `src/emit.ts` 此刻正被另一个会话改写（`collectCinitClasses` / `sfRead` 所在文件脏），改那里会和它撞车。按 §5 先登记，本工作区用 `warmUp()` 绕过 |
-| **本工作区绕行** | 每个「只被闭包读」的常量类加 `public static function warmUp():void { var probe:Object = <one field>; }`，`DocsMain.onAdded` 在第一次 render 前逐个调一次 —— 普通方法里的这一读触发 `_cinit()`，整类一次性初始化完。已加：`DocsStyle` / `DocsDemo` / `DocsStart` / `DocsLayout` / `DocsText` / `DocsPickers` / `DocsData`。**G22 修好后应删掉这些**（注释已写明出处） |
-| **状态** | ❌ **已实测 · 未修**（2026-10-24，由文档站的 `table` 页 `#1009` 挖出）。探针 `probes/g22-closure-statics/` 待建 |
+| **根因** | 静态字段初始化是惰性的：`sfRead(owner, name)` 只在 `cinitClasses.has(owner)` 时发出 `(owner_cinit(), owner_NAME)` 这种守卫读。而 **`cinitClasses` 此前只由 `emitClassRegistry` / `emitStaticFields` 填充，两者都跑在 `emitFunctionValues`（闭包体发射器）之后** ⇒ 发闭包体时那个集合还是空的，`sfRead` 于是裸读 `CONSTS_NAMES`。生成的 C 里能直接看到：`CONSTS_cinit` 有 forward-decl、有定义、**调用点 0 处**，而读点是 `as_array_get((as_array*)as_req_obj(CONSTS_NAMES), 0)` |
+| **触发条件** | 读点**只在闭包里**。若同一个类的任一静态字段也被**普通方法**读过，那一处会调 `_cinit()`，而它是「整类一次」的开关 ⇒ 其余闭包读点**看起来正常**。这正是它难发现的理由：库里的 `DocsStyle` / `DocsDemo` 恰好有普通方法读点，所以 41 页文档站一直好，只有 `DocsData`（纯闭包读点）崩 |
+| **实测** | `temp/g21g22/` 的最小复现（与 `probes/g22-closure-statics/` 同构）：静态数组在**普通方法**里读 ⇒ 带守卫；同一数组**只在闭包**里读 ⇒ 裸读；跨类 + 同类都从闭包读 ⇒ 两条都裸读。判据不必跑 exe：生成 `.c` 后数 `_cinit()` 出现次数，0 处即中招 |
+| **修法（两半，缺一不可）** | ① 在 `run()` 里把 `collectCinitClasses()` 提到 `emitFunctionValues()` **之前**（集合必须先齐）；② 在 `emitModuleVars()` 之后、`emitFunctionValues()` 之前补一轮 **`static void <Cls>_cinit(void);` 前向声明** —— 只有守卫没有声明，C 会直接拒绝这份程序（隐式声明） |
+| **状态** | ✅ **已修（阶段二百六十九，v0.4.233）**。**A/B：`probes/g22-closure-statics/` 10 格双 runtime 逐字相同**，且探针对**生成的 C** 做源码审计（每个运行时初始化的静态读都必须带 `(Owner_cinit(), ...)`，前向声明必须先于首次调用）；`mutation.cjs` **4/4**（删任一半都变红，M2 是构建失败 exit 2）；`examples/closure-statics.as` 11 断言；`unit: closure/statics` 9 条 |
+| **证据落盘 / 复现** | [`probes/g22-closure-statics/`](probes/g22-closure-statics/)（`node run.cjs` = 双 arm + 生成 C 审计；`node mutation.cjs` 4/4） |
+| **影响面** | 把静态度量 / 样式 / 数据表写成类常量、读点又在工厂闭包里的代码 —— 也就是**任何按「页面即闭包」写的 UI**。这是语义错（不是缺功能）：它把初始化悄悄跳过了 |
+| **库侧绕行已作废** | 阶段二百六十九修好后，`DocsStyle` / `DocsDemo` / `DocsStart` / `DocsLayout` / `DocsText` / `DocsPickers` / `DocsData` 的 `warmUp()` 及其调用已删除（它们只是等这个修复的临时脚手架） |
 
 ---
+
 ## 2 不是缺口：已澄清 / 已关闭
 
 | 事项 | 结论 | 证据 |

@@ -1,0 +1,29 @@
+{
+  "_comment": "HAND-DERIVED AS3 semantics for every case in ClosureCases.as. Never regenerate this file by running either arm: static field initialization is a language guarantee (a class initializer runs before the first static read), so the answers below follow from the source alone.",
+  "_derivation": "AS3 initializes a class's static fields exactly once, before any static field or method of that class is used (AS3 language reference: static initializer / static properties). A closure does not change that: it is a value, and calling it reads the same static trait. So NAMES[1] is 'beta', NUMBER*2 is 14, TITLE is 'cases', Bag.NAMES[2] is 'gamma', PAIR[1] is 'y', the nested closure reads NAMES[0] = 'alpha', CFG.mode is 'cfg', Sealed.VALUE is 'block-set' (seeded by the static block), NAMES.length is 3 and NAMES.join('-') is 'alpha-beta-gamma'. Case 3 is the control: TITLE is a compile-time literal, so no initializer is involved and it must keep answering 'cases' on both arms.",
+  "count": 10,
+  "truth": {
+    "1": "beta",
+    "2": "14",
+    "3": "cases",
+    "4": "gamma",
+    "5": "y",
+    "6": "alpha",
+    "7": "cfg",
+    "8": "block-set",
+    "9": "3",
+    "10": "alpha-beta-gamma"
+  },
+  "label": {
+    "1": "closure reads OWN static const Array (bare name)",
+    "2": "closure reads OWN static const int",
+    "3": "closure reads compile-time literal String [control: no _cinit]",
+    "4": "closure reads ANOTHER class's static Array (qualified)",
+    "5": "closure reads a SECOND own static (shares one _cinit)",
+    "6": "nested closure reads OWN static Array",
+    "7": "closure reads OWN static Object literal, then .mode",
+    "8": "closure reads a static seeded by a static{} block",
+    "9": "closure read feeds .length (NULL slot would throw #1009)",
+    "10": "closure read feeds Array.join('-')"
+  }
+}

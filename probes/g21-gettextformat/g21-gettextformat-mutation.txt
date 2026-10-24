@@ -1,0 +1,13 @@
+M1  CAUGHT  the EMPTY answer is load-bearing: handing back the field default for an empty range makes cases 3/21/29/30 report 20/black where AIR reports an all-null TextFormat
+     restore: byte-identical (03fc823104726e17)
+M2  CAUGHT  the #2006 bounds check is load-bearing: without it cases 4/15/18/19/20/24 answer instead of throwing, which the reference rejects
+     restore: byte-identical (03fc823104726e17)
+M3  CAUGHT  the format COMPARISON is load-bearing: accepting the first segment without comparing it lets a range that straddles a change answer that change instead of the empty TextFormat
+     restore: byte-identical (03fc823104726e17)
+M4  CAUGHT  the RULE is checked, not assumed: expect.json claims case 27 answers the default while the source carries two identical 30/red runs -> the runner must report that the REFERENCE disagrees
+     restore: byte-identical (a8f0ea49652c70e6)
+M5  CAUGHT  the AIR arm is REBUILT from the source, not read off a stale file: changing the run size in case 28 must make AIR disagree with the unchanged rule
+     restore: byte-identical (abd8d44983523687)
+
+MUTATION g21-gettextformat: 5/5 caught, 0 problem(s)
+RESULT: PASS

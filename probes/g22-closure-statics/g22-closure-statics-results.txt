@@ -1,0 +1,18 @@
+
+id  case                                                rule              AIR 51.4.1        our AOT
+ 1  closure reads OWN static const Array (bare name)    beta              betax             betax
+ 2  closure reads OWN static const int                  14                14                14
+ 3  closure reads compile-time literal String [control: no _cinit]cases             cases             cases
+ 4  closure reads ANOTHER class's static Array (qualified)gamma             gamma             gamma
+ 5  closure reads a SECOND own static (shares one _cinit)y                 y                 y
+ 6  nested closure reads OWN static Array               alpha             alpha             alpha
+ 7  closure reads OWN static Object literal, then .mode cfg               cfg               cfg
+ 8  closure reads a static seeded by a static{} block   block-set         block-set         block-set
+ 9  closure read feeds .length (NULL slot would throw #1009)3                 3                 3
+10  closure read feeds Array.join('-')                  alpha-beta-gamma  alpha-betax-gamma alpha-betax-gamma
+
+AOT exit: 0
+source audit (AotMain.exe.c): every static read is guarded by its _cinit()
+RESULT: FAIL (2 disagreement(s))
+  FAIL  id 1: AIR says "betax" but the derived answer is "beta" -- the REFERENCE disagrees; re-derive the rule
+  FAIL  id 10: AIR says "alpha-betax-gamma" but the derived answer is "alpha-beta-gamma" -- the REFERENCE disagrees; re-derive the rule
