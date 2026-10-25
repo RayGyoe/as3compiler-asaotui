@@ -15,6 +15,11 @@ time (and, on the web, bakes it into the page's virtual filesystem) while `adl` 
 it at run time, so the window (size, title, `renderMode`,
 `<requestedDisplayResolution>`) is described once and nothing restates it.
 
+**Live, with nothing to build:** <https://raygyoe.github.io/as3compiler-asaotui/> — the
+web arm prebuilt, served from the `gh-pages` branch (8 files, 8.15 MB, byte-identical to
+the build output). Refreshing it is `node ../tools/publish-pages.cjs --push`; see
+[Publishing the online demo](#publishing-the-online-demo).
+
 ```sh
 cd asaotui/ui-demo/air-gallery
 ./build.sh          # mxmlc the SWF, then open it under adl
@@ -111,6 +116,39 @@ launcher this arm no longer needs.
 
 Nothing under `asaotui/seam/`, `layout-check/`, `diff-check/` or `air-check/` is
 modified or vendored; the seam is used read-only.
+
+#### Publishing the online demo
+
+`../tools/publish-pages.cjs` takes what `./build.sh web` left in
+`../air-gallery-web/` and puts it on the `gh-pages` branch, which GitHub Pages serves:
+
+```sh
+node ../tools/publish-pages.cjs          # stage into .scratch/pages, print what would ship
+node ../tools/publish-pages.cjs --serve  # ...and serve it locally (127.0.0.1:8123)
+node ../tools/publish-pages.cjs --push   # commit on gh-pages + push
+node ../tools/publish-pages.cjs --check  # fetch the live site, compare bytes with the build
+```
+
+The branch holds 8 files and nothing else: `index.html` (`GalleryApp.html`, renamed),
+`GalleryApp.{js,wasm,data}`, `fonts/arial.ttf`, `app.xml`, `.nojekyll`, `README.md`.
+It deliberately does **not** publish `../air-gallery-web/` as it stands, because that
+directory also holds `GalleryApp.c` (5.6 MB), `src/` (19 staged copies of `demo/*.as`)
+and `GalleryApp.build.json`.
+
+Three invariants worth keeping if this is ever reworked:
+
+- **Byte-identical, or nothing.** The stage step sha256s every copy and refuses a
+  mismatch, and `--push` refuses to create a commit when the tree is already on the
+  branch. `--check` compares the deployed bytes to the build in *this* tree — a 200 with
+  a stale 7 MB wasm looks exactly like a 200 with the right one, so status codes prove
+  nothing.
+- **A branch, not eight files under `main`.** `.gitignore` states its rule out loud:
+  inputs and unreproducible evidence go in, regenerable output does not — and
+  `air-*/` is regenerable output. `gh-pages` is where GitHub serves from, so the rule
+  survives and a clone of `main` keeps its size.
+- **Plumbing, not `git checkout --orphan`.** The working tree carries 5.4 GB of ignored
+  build output; `hash-object` → `mktree` → `commit-tree` → `update-ref` touches the
+  object database and one ref, and leaves every checked-out file alone.
 
 ## Why `--air-app`
 

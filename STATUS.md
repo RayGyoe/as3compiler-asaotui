@@ -882,12 +882,46 @@ G24 / G25 / G26 在编译器侧全部修好后（**阶段二百七十五，v0.4.
 并验证 `rollOver` 到达进入节点**及其祖先**、不到达兄弟子树。**两套定义一旦分叉，探针变红** ——
 这条断言存在的理由，正是“两个臂语义不同”那一类缺陷在原理上依赖独立参考。变异 **6/6**（M6 删掉探针自己的引擎监听）。
 
+### 3.17c 文档站上公网：`gh-pages`（第二十一轮）
+
+43 页文档站此前只有一条看的路：克隆 5.4 GB 仓库 + 同级的 5.4 GB 编译器 + 编四分钟。现在
+<https://raygyoe.github.io/as3compiler-asaotui/> 直接打开就是它——`web` 臂的产物放在 `gh-pages` 分支。
+
+先澄清一个常见误解：**`ui-demo/` 的示例代码从来没有被忽略**。`ui-demo/demo/` 19 个 `.as`、`README.md`、
+`build.sh`、7 个 `.cjs`、16 张 `gallery-page*.png` 一直在 `main` 上（`git ls-files ui-demo` = 53 个文件；
+匿名 GitHub API 拉 `contents/ui-demo/demo` 也是 19 条）。`.gitignore` 里的 `/ui-demo/air-*/*` 禁的是**跑过
+构建之后长出来的那一层**：`src/`（`stage-air.cjs` 从 `demo/` 灌进去的拷贝）、`GalleryApp.c` 5.7 MB、
+`.exe` 11.5 MB、`*.build.json`、`*.done`、`icudtl.dat` 9.7 MB、以及整个 `air-gallery-web/`。
+
+发布器 `tools/publish-pages.cjs` 只做搬运，四条子命令：`（默认）`暂存并打印清单 / `--serve` 本地起服务 /
+`--check` 拉线上比字节 / `--push` 建提交并推。
+
+| 不变量 | 为什么它必须是硬的 |
+|---|---|
+| **逐字节，否则不发布** | 暂存时每个拷贝 sha256 不符就拒；树没变就不建提交；`--check` 比的是**部署后的字节**。“200 + 过期 7 MB wasm”与“200 + 正确 wasm”在状态码上长得一模一样 |
+| **分支，不是 `main` 下八个文件** | `.gitignore` 的口径写在它自己的头部：输入与不可再生证据入库、可再生产物不入库，而 `air-*/` 正是后者。`gh-pages` 恰好是 GitHub 的服务来源 ⇒ 口径不必破例，克隆 `main` 的体积也不变 |
+| **plumbing，不是 `git checkout --orphan`** | 工作树带着 5.4 GB 被忽略的产物；切分支会先把所有被跟踪文件重写一遍。`hash-object` → `mktree` → `commit-tree` → `update-ref` 只碰对象库和一个 ref |
+
+发布内容 8 个文件 / 8.15 MB：`index.html`（= `GalleryApp.html` 改名）、`GalleryApp.{js,wasm,data}`、
+`fonts/arial.ttf`、`app.xml`、`.nojekyll`、`README.md`。**不**发布 `air-gallery-web/` 现有内容——那里还有
+`GalleryApp.c`（5.6 MB）、`src/`（19 份拷贝）与 `GalleryApp.build.json`，没人需要下载它们。
+
+实测（都是当场跑的，不是推理）：`--check` 六个文件全部 `OK … byte-identical`（`index.html` 3056 B /
+`wasm` 7357606 B / `arial.ttf` 1045720 B，MIME 分别是 `text/html`、`application/wasm`、`font/ttf`）；
+在浏览器里打开线上地址，渲染结果与本地暂存目录逐项相同（“Getting started”页，字形有笔画 ⇒ 字体路径真的解析到了，
+而一个拿不到字体的 wasm 构建表现为**所有 TextField 空白**）；`--push` 重跑一次打印
+`tree … already on gh-pages -- nothing to publish`。
+
+顺带修掉三处过期文档数字：`README.md`（两处）与本章的「最新落盘」仍写着 `gates-all-31.txt`（实际已跑到
+`gates-all-32.txt`，即 G27 收口那次），以及 `README.md` 的缺口行里 G24/G26 仍标着“❌ 仍在”——它们和
+G25/G27 一样已在 v0.4.239 / v0.4.240 修完。
+
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
 一条命令跑全部 **52** 道门：
 
 ```sh
-node tools/gates.cjs          # 52/52 PASS 才叫绿（定稿记录 reviews/gates-all-31.txt）
+node tools/gates.cjs          # 52/52 PASS 才叫绿（定稿记录 reviews/gates-all-32.txt）
 ```
 
 > 第十二轮补那次全量：**44/44 PASS**（`reviews/gates-all-26.txt`，exit 0），包括新门 `probe lifecycle`（9 项）
