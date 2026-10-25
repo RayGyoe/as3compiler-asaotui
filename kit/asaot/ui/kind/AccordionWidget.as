@@ -99,9 +99,13 @@ package asaot.ui.kind
             var act:int = int(Number(n.extra[ACT_KEY]));
             var g:Object = n.shapeA.graphics;
 
-            // A header background AND a hairline under it, both drawn as FILLS:
-            // measured on this backend, `lineStyle` stroke width is not honoured while
-            // a filled rect rasterises exactly (temp/stroke/, 2026-10-23). The fill is
+            // A header background AND a hairline under it, both drawn as FILLS: a filled
+            // rect rasterises exactly, so the hairline is the 1px that was asked for and
+            // a probe can assert a single pixel. (The reason recorded here on 2026-10-23 --
+            // "lineStyle stroke width is not honoured" -- was re-measured on 2026-10-25
+            // and is FALSE: see probes/widgets/icon, which pins a 2px line at 2 rows and
+            // a 12px line at 12. The fill stays because it is integer-exact, not because
+            // a stroke is broken.) The fill is
             // here rather than in the header's own style because a child paints IN
             // FRONT of this shape: an open header declared with a background would hide
             // exactly the highlight we want (found by probes/widgets/data).

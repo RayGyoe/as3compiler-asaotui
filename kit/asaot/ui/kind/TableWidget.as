@@ -5,12 +5,13 @@
 // places them. So `build` only owns the background shape, and `measure`/`arrange`
 // do nothing (a container's intrinsic size is the engine's job; see BoxWidget).
 //
-// EVERYTHING PAINTED HERE IS A FILL, NEVER A STROKE. Measured on this backend
-// (temp/stroke/, 2026-10-23): a filled rect rasterises exactly at the declared
-// pixel box, while `lineStyle` stroke width is not honoured -- a 1px grid line
-// drawn as a line is not the 1px the author asked for. So the hairlines, the zebra
-// stripes and the selection highlight are all `drawRect` fills, which is also why
-// the probe can assert their exact colours.
+// EVERYTHING PAINTED HERE IS A FILL, WHICH IS WHY THE PIXELS ARE EXACT. A filled rect
+// rasterises exactly at the declared pixel box, so a 1px grid line is really 1px and the
+// probe can assert its colour. (The note this file carried until 2026-10-25 -- that
+// `lineStyle` stroke width is "not honoured" -- was wrong: re-measured, a stroke is
+// exactly as wide as it is declared, see probes/widgets/icon. The hairlines, the zebra
+// stripes and the selection highlight stay fills because a fill is integer-exact, not
+// because a stroke is broken.)
 //
 // The geometry comes from the CHILDREN's laid-out rects (absX/absY/absW/absH,
 // resolved by the engine in the arrange pass), never from arithmetic over the

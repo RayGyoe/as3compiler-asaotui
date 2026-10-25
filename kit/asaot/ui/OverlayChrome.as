@@ -11,9 +11,11 @@
 // frame from re-resolving (design doc 2.4 layer 4: a refinement's pointer IS the
 // skip test).
 //
-// ALL PANEL BORDERS ARE 1px AND ALL SURFACES ARE FILLS. `lineStyle` stroke width
-// is not honoured on this backend (temp/stroke/, 2026-10-23), so a "hairline" is
-// always `drawRect` -- which is also why the probe can assert exact colours.
+// ALL PANEL BORDERS ARE 1px AND ALL SURFACES ARE FILLS. A "hairline" is always
+// `drawRect`, because a fill is integer-exact and the probe can assert exact colours.
+// (This file used to say stroke width was not honoured on this backend; that was
+// re-measured on 2026-10-25 and is false -- see probes/widgets/icon. Strokes are fine;
+// integer-exact fills are what this file wants.)
 package asaot.ui
 {
     import asaot.ui.style.Corners;

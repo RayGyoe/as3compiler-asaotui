@@ -49,9 +49,11 @@ package asaot.ui
         //   hover   -- lift the surface toward white by HOVER_LIFT percent
         //   pressed -- sink it toward black by PRESS_SINK percent
         //   focused -- a 2px accent ring, DRAWN AS FOUR FILLED RECTS (not a
-        //              lineStyle stroke: stroke width is not honoured on this
-        //              backend -- see OverlayChrome's header), so the ring is
-        //              integer-exact and a probe can assert a single pixel
+        //              lineStyle stroke: a fill is integer-exact, so the ring is
+        //              exactly 2px and a probe can assert a single pixel. Stroke
+        //              width IS honoured on this backend -- re-measured 2026-10-25,
+        //              see probes/widgets/icon -- so this is a choice, not a
+        //              limitation)
         //   disabled-- the whole backing's alpha is scaled by DISABLED_ALPHA in
         //              UiNode (NOT here): dimming at the draw call would leave the
         //              label, an image and a chip at full strength, and it would

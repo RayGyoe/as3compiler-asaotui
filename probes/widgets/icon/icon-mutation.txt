@@ -1,0 +1,34 @@
+baseline (unmutated): RESULT: PASS
+
+I1  CAUGHT  THE CUBIC IS NEVER SUBDIVIDED: one quadratic stands in for the whole cubic, so the curve the icon data describes is drawn as a chord through it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL C..S became 3 command(s) -- the two cubics would be chords; the cubic became 2 command(s), want a subdivided run;
+     restore: byte-identical (7e6e094859dd4872)
+I2  CAUGHT  THE STROKE WIDTH IS NOT SCALED: a viewBox width is used as a device width, so the same glyph has half the outline it asked for at 2x
+     verdict: RESULT: FAIL
+     FAIL  pixel (36,90) want #2563EB got #ffffff
+     FAIL  pixel (96,92) want #2563EB got #ffffff
+     restore: byte-identical (471d00faf620c9f7)
+I3  CAUGHT  THE VIEWBOX IS IGNORED IN THE FIT: the glyph is laid out as if its data were always authored in a 24-unit box, so a 12-viewBox icon lands at the wrong scale
+     verdict: RESULT: FAIL
+     FAIL  pixel (96,92) want #2563EB got #ffffff
+     restore: byte-identical (471d00faf620c9f7)
+I4  CAUGHT  AN ARC BECOMES A CHORD: the silent approximation the class exists to refuse -- the data parses, paints, and is not the shape it says it is
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL an 'A' arc did not throw naming G26; message was ''; icon() accepted an arc; message was '';
+     restore: byte-identical (7e6e094859dd4872)
+I5  CAUGHT  A RELATIVE COMMAND IS TREATED AS ABSOLUTE: every offset in an "m/l/h/v" path is lost and the glyph collapses toward the origin
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the relative lineto is 20,0, want 22,12;
+     restore: byte-identical (7e6e094859dd4872)
+I6  CAUGHT  THE NODE'S COLOUR IS IGNORED: the glyph takes the theme colour, so an icon cannot be the colour the author asked for
+     verdict: RESULT: FAIL
+     FAIL  pixel (36,36) want #2563EB got #111827
+     FAIL  pixel (96,46) want #2563EB got #111827
+     FAIL  pixel (156,36) want #2563EB got #111827
+     FAIL  pixel (216,44) want #2563EB got #111827
+     ... and 6 more
+     restore: byte-identical (471d00faf620c9f7)
+
+MUTATION icon: 6/6 caught, 0 problem(s)
+RESULT: PASS

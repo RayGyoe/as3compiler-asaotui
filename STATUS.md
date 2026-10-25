@@ -3,11 +3,11 @@
 > 回答一个问题：**「UI 库写完了吗？」**
 >
 > 结论：**深水区做透了，表面层补齐了三批（控件集 + 多页 App + 组件目录页 + 浮层系统 + 交互动线），但还不是一个完整工具箱。**
-> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 36 个 kind / 41 个工厂**（第二批 media/feedback/data 九件、
+> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 37 个 kind / 41 个工厂**（第二批 media/feedback/data 九件、
 > 第三批**浮层六件 dialog/drawer/popover/menu/toast/select**、第五批**列表虚拟化 `virtualList` + 选择三件**
 > `tree`/`combobox`/`datePicker` 均已落地）；
-> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**42 页 / 9 组**，每页两个 live 示例 + 产生它的源码），
-> 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**36/36**，变异 3/3）；
+> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**43 页 / 9 组**，每页两个 live 示例 + 产生它的源码），
+> 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**37/37**，变异 3/3）；
 > **浮层走第二棵保留树**（`View.renderOverlay()` + `UiApp.overlayRoot`），主树因此不再为弹层重解布局。
 > 第四轮（2026-10-24）补的是**交互动线**：`disabled` + `hover/pressed/focused` 四态绘制、`textField` 编辑回写、
 > **键盘/焦点管线（Tab 环 / Esc / 方向键 / Enter / Space）**、浮层的**越界翻转 + 子菜单 + 入场动画**。
@@ -87,11 +87,28 @@
 > 判据：新探针 `probes/widgets/table2`（**6 变异全中**）与 `probes/widgets/stick`（**5 变异全中**）；并发现
 > `tools/gates.cjs` 的探针名单是**手写**的 —— 上一批的 `pointer`/`imaging` 一直不在里面，也就是**没人跑**。
 > 现在四道全接上，门 46 → **50 道**。
-> 仍然缺的是：`icon`（图标字体/矢量集）、`accordion` 多开、
+> 第十七轮（2026-10-25）补的是 **图标通道 `icon(svgPathData)`** —— 表面上是“加一个控件”，底下却先撞上
+> 一条**整条缺失的底层能力**（登记为 **G26**）：`Graphics.cubicCurveTo` 与 `Graphics.drawPath` 在 `emit.ts` 里
+> **一个字都没有**（17 个 `Graphics_` 成员里只有**二次** `curveTo`，Skia 桥也没有 `cubic_to`），而图标集
+> （Lucide/Material/Feather）的曲线**绝大多数是三次**。三条处置，一条比一条重要：
+> ① **转换放在 AS3 侧，不放在编译器侧**：`C/S` 用**自适应细分**转成二次段（偏差上界取标准结论
+> `(√3/36)·|P0−3P1+3P2−P3|`，超过容差就 de Casteljau 二分，容差 = **四分之一个渲染像素**换算成 viewBox 单位）；
+> 因为两个臂跑的是**同一串二次段**，跨臂逐像素一致——代价是对原始 SVG 有可量化的几何偏差，由探针钉住。
+> ② **`A`（椭圆弧）抛错，不静默画弦**：SVG 的弧必须先转三次再转二次，而三次正是缺的那一层；把弧画成直线
+> 会得到"看起来没错、其实形状不对"的图标——这正是本项目**拒绝**的那类失败。报错文案直接自报 G26。
+> ③ **`icon()` 在 describe 时就解析一遍**：坏数据在作者写的那一行抛，而不是在某一帧的 paint 里抛。
+> 顺带纠正了一条**过期一年**的库内实测注释：5 处注释称"本后端 `lineStyle` 描边宽度不生效"（所以全库的线条
+> 都画成 1px 填充）。**重测为假**：`lineStyle(2/4/6/8/12)` 在直线、二次曲线、圆（r=7/14/20）、矩形上一律
+> **精确等于声明宽度**（图标探针钉住 4px/8px/12px 三档）。描边因此可用；那批 1px 填充仍保留（整数像素，
+> 探针能断言单像素），但**理由从"后端做不到"改成"这是选择"**。
+> 判据：新探针 `probes/widgets/icon`（**57 项**，含三次曲线 t=0.5 点、三档描边宽度、viewBox 缩放，以及
+> `A`/未知命令/工厂抛错三个**负例**）+ 变异 **6/6**；文档站新增 `icon` 页；门 50 → **51 道**。
+>
+> 仍然缺的是：`accordion` 多开、
 > 样式面的 `grid`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
-生成日期：2026-10-25（第十六轮补：`table` 排序/列宽/虚拟化 + 滚动贴底 + 表格命中矩形） · 对应 `kit/` **155 个 .as** · 一次性验收：`node tools/gates.cjs`（**50 道门**）
+生成日期：2026-10-25（第十七轮补：图标通道 `icon()` + G26 库侧绕行；顺带推翻"描边宽度不生效"的旧实测） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**51 道门**）
 
 ---
 
@@ -112,7 +129,7 @@
 
 ---
 
-## 2 作者可见 API 全清单（155 个文件里**只有这些**）
+## 2 作者可见 API 全清单（163 个文件里**只有这些**）
 
 复核命令：
 
@@ -172,7 +189,6 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | 类别 | 缺什么 | 影响的界面 |
 |---|---|---|
 | 选择 | `accordion` 多开（树/日期/可输入下拉/可排序表格已落地） | 手风琴多开 |
-| 图形 | `icon`（`image` 已有，但没有图标字体/矢量图标集） | 工具条、按钮图标 |
 | 无障碍 | `role`/`ariaName` 仍只是字段（无消费者） | 屏幕阅读器 |
 
 **⇒ 现在能舒适写出的是「多页表单 / 设置页 / 列表详表 / 万级滚动列表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互 /
@@ -738,12 +754,58 @@ over this panel’ idiom draws a transparent fill first”）。钉子在 `probe
 `probes/widgets/imaging` **从未被加进去**——于是它们一直“绿”在一个没人跑的地方。探针不在门里等于不存在。
 现在四道（`pointer`/`imaging`/`table2`/`stick`）全接上，门 **46 → 50 道**。
 
+### 3.17 图标通道 + 一条过期注释挡住了整条路（第十七轮补）
+
+#### 3.17.1 先撞墙：三次曲线根本不存在（G26）
+
+`icon("M12 2 C…")` 这种数据，在动手前先做了一次编译期取证：
+
+```
+Codegen error at 9:13: undefined method 'cubicCurveTo' on class 'Graphics'
+Codegen error at 12:13: undefined method 'drawPath' on class 'Graphics'
+```
+
+`emit.ts` 只发射 **17** 个 `Graphics_` 成员，曲线只有**二次** `curveTo`；Skia 桥（`as_skia_path_*`）也只有
+`move_to`/`line_to`/`quad_to`/`close`。所以这不是“AS3 面少两个方法”，是**C 桥也少**。已登记 **G26**
+（`compiler-gaps.md`），本轮**不碰 `as3compiler/`**。
+
+#### 3.17.2 库侧绕行：把“近似”做成可测量的一件事
+
+| 命令 | 处理 | 为什么 |
+|---|---|---|
+| `M L H V Z` | 直译 | 直线段没有近似 |
+| `Q T` | 直译 | 引擎本来就画二次；`T` 只是把上一个控制点镜像过去 |
+| `C S` | **自适应细分转二次段** | 偏差上界 `(√3/36)·|P0−3P1+3P2−P3|`，超过容差就二分（de Casteljau t=0.5） |
+| `A` | **抛错并自报 G26** | 弧要先转三次；画成弦 = 静默错误，正是本项目拒绝的那类失败 |
+| 其他 | **抛错并带偏移** | 坏数据不能靠“猜下一个命令”混过去 |
+
+容差是**四分之一个渲染像素**，而细分发生在 AS3 侧 ⇒ AOT 与 `adl` 跑的是同一串二次段，**跨臂逐像素一致**。
+三次曲线的 t=0.5 点恰好是第一次二分的分割点，所以它是**精确**的——探针就采那一点（弦的话那里是空白）。
+
+#### 3.17.3 一条过期注释差点把方案堵死
+
+`AccordionWidget`/`SelectWidget`/`TableWidget`/`OverlayChrome`/`PaintKit` 五处都写着同一句实测结论：
+「本后端 `lineStyle` **描边宽度不生效**（`temp/stroke/`，2026-10-23）」，据此全库线条都画成 1px 填充。
+按这条，图标只能用填充方案（要给每个图标离线 flatten），描边方案**不该被考虑**。
+
+重测（2026-10-25，窗口探针读帧缓冲）：`lineStyle(2)` ⇒ **2 行**、`(4)` ⇒ **4 行**、`(6)` ⇒ **6 行**、`(8)` ⇒ **8 行**、
+`(12)` ⇒ **12 行**；在**直线 / 二次曲线 / 圆（r=7、14、20）/ 矩形**上一律精确。**旧结论是错的**（或早于某次上游修复）。
+结论：描边可用，图标走描边 + 填充两条路；那批 1px 填充**保留**（整数像素、探针可断言），但注释改成
+「这是选择，不是限制」。**教训：注释里的“实测”会过期，而它一旦过期就会替后来者做决定。**
+
+#### 3.17.4 变异：第一次漏了一个
+
+`probes/widgets/icon` 的 6 个变异里有 5 个一次命中，**I3（忽略 viewBox）漏了**：把 `scale` 改成永远按 24 算，
+12-viewBox 的字形缩放从 4 变 2——但字形是**居中**的，缩放变小后路径**仍然落在同一条 y 上**，只有**描边厚度**变了。
+补一个 `(96,92)` 的采样点（8px 带的最上一行，缩错就变白）才咬住。
+**教训：变异漏了先怀疑夹具的采样点，而不是怀疑变异太弱——“居中”会把缩放错误藏起来。**
+
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **46** 道门：
+一条命令跑全部 **51** 道门：
 
 ```sh
-node tools/gates.cjs          # 46/46 PASS 才叫绿（定稿记录 reviews/gates-all-28.txt）
+node tools/gates.cjs          # 51/51 PASS 才叫绿（定稿记录 reviews/gates-all-30.txt）
 ```
 
 > 第十二轮补那次全量：**44/44 PASS**（`reviews/gates-all-26.txt`，exit 0），包括新门 `probe lifecycle`（9 项）
@@ -776,8 +838,8 @@ node tools/gates.cjs          # 46/46 PASS 才叫绿（定稿记录 reviews/gate
 | **参考运行时扫全站（第十一轮补，G24）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` | **41/41 页 × 10/10 弹层 × 0 runtime error**（`mxmlc` 编 → `adl` 跑 → 读应用自己写的 `air-trace.txt`）；变异 `tools/mutation-air-sweep.cjs` **5/5**（把槽位计数改回 `internalCount + i` ⇒ `#2006`；去掉「打开弹层」⇒ `OPENED` 缺；少走一页 ⇒ `visited 40/41`；去掉 `releaseListeners()` ⇒ 145 个 `#1009`；只悬停不投递 ⇒ 指针钻 `0/41`） |
 | **指针钻：死节点上的 roll-out（第十二轮补，G25）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` + `node tools/listener-wiring.cjs` + `node tools/probe.cjs probes/lifecycle` | `air-sweep` 行末报 **3107 node(s) hovered and 348 of them destroyed**、0 errors（每页离开前悬停该页每个叶子，切页**下一拍**投递 `mouseOut`）；静态扫描 **29 wired / 0 raw**；探针 **9 项** 0 failures；变异 4/4 + 3/3 |
 | **滑块拖拽 + 回调参数（第九轮补）** | `node tools/probe.cjs probes/widgets/callback` + `node tools/callback-arity.cjs` | **24 checks**，0 failures（只点**未绑定**控件：checkbox/toggle/radio + 滑块的按下→拖动→越界夹紧→松手→松手后移动无效→纯点击）；变异 `probes/widgets/callback/mutation.cjs` **8/8**；静态门 15 调用 / 81 声明 / **0 违规**，变异 `tools/mutation-callback-arity.cjs` **6/6** |
-| **多页 App（组件文档站，42 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **42 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
-| **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **36/36** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
+| **多页 App（组件文档站，43 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **43 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
+| **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **37/37** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
 | **高分辨率（HiDPI）自证** | `cd asaotui/ui-demo && node check-dpi.cjs` | `standard` 700×560(1×) vs `high` 1050×840(1.5×)，且两次 tour 文本**逐字节相同** |
 | **单页登录 App** | `cd asaotui/ui-demo && node build-and-run.cjs` | 8 项手算断言 + `750×563` 截图（1.5×）+ `RESULT: PASS` |
 | **`--air-app` 闭包回归钉（G13，已修）** | `node probes/reach-freefn/run.cjs` | 默认闭包 kept **5/5** 且默认面**能建能跑**（修前是：红 + `unknown superclass 'Base' of 'p_Leaf'`） |
@@ -785,6 +847,7 @@ node tools/gates.cjs          # 46/46 PASS 才叫绿（定稿记录 reviews/gate
 | 控件探针 ×5（第一批） | `node tools/probe.cjs probes/widgets/{chip,form,display,nav,anim}` | 19 / 41 / 48 / 41 / 14 checks，全 0 failures |
 | 控件探针 ×3（第二批） | `node tools/probe.cjs probes/widgets/{media,feedback,data}` | 43 / 43 / 77 checks，全 0 failures；变异 `tools/mutation-widget-probes.cjs`（media+feedback 4/4）、`probes/widgets/data/mutation.cjs`（**5/5**，含 M4 复现本轮修的层叠 bug、M5 复现本轮修的文本内边距缺陷） |
 | **浮层探针（第三批）** | `node tools/probe.cjs probes/widgets/overlay` | **65 checks**，0 failures（A 段全场景矩形 + 像素、B 段真事件路点击、C 段抽屉、D 段菜单高亮带、E 段**子菜单**、F 段**入场动画**：中间态 `alpha<1` 且 `backing.y != absY`，落地后 `isRunning==false` / `alpha==1` / 不再重画）；变异 `probes/widgets/overlay/mutation.cjs` **9/9**（其中 5 例是把真缺陷重新植入，1 例是子菜单的 parent-local 换算） |
+| **图标通道探针（第十七轮）** | `node tools/probe.cjs probes/widgets/icon` | **57 checks**，0 failures：三次曲线 t=0.5 点（弦的话是空白）、二次曲线顶点、填充三角形内外、**三档描边宽度**（2px/4px/12px，含 12-viewBox 缩放到 8px）、无 `size` 时盒子=viewBox；**负例**三个：`A` 弧抛错且自报 G26、未知命令抛错并带偏移、`icon()` 在 describe 期抛。变异 `probes/widgets/icon/mutation.cjs` **6/6**（不细分 ⇒ 弦；描边不缩放；忽略 viewBox；弧当弦；相对命令当绝对；忽略节点颜色），每次都按 sha256 逐字节还原 |
 | **越界翻转探针（第四轮）** | `node tools/probe.cjs probes/widgets/flip` | **54 checks**，0 failures：竖向翻转（`popB` 到锚点上方、底边 156）、横向翻转（`popR` 的 `x=134`）、夹回窗口（`popR` 底边 256 = `H-4`）三件一起验；变异 `mutation.cjs` **5/5**（翻 / 自身高 / 横翻 / parent-local / 夹紧，各去一半） |
 | **交互探针（第四轮）** | `node tools/probe.cjs probes/widgets/interact` | **25 checks**，0 failures：7 个相位（disabled 惰性 / hover / press / 焦点环 / Tab+Shift+Tab / 文本回写+Enter 提交 / 运行时 disabled 翻转），像素全部手算（`#e0e7ff` → hover `#e2e9ff` → press `#c5cbe0`，焦点环 `#2563eb` 画在填充上）；变异 `mutation.cjs` **8/8** |
 | **动效探针（第五轮）** | `node tools/probe.cjs probes/widgets/motion` | **23 checks**，0 failures：pin 住 layout 字段动画（`sizer` 20→200 宽、`solves 4→9→20` 证明**每帧重解**）+ 浮层**退场**（入场 140 / 退场 120，落地才 `visible=false`），并含「**退场中强制重渲染**」相位（描述符一直 `visible:false` 也不能把表面提前藏起来）；变异 `mutation.cjs` **7/7** |
@@ -823,7 +886,7 @@ node tools/gates.cjs          # 46/46 PASS 才叫绿（定稿记录 reviews/gate
   第 14 个（翻转定位读到上一帧的 parent 尺寸）要靠**先开窗再缩窗**才看得见；
   第 15 个（入场动画在手泵帧的 tour 里永不落地）要靠**截图**才看得见——而它把所有矩形断言全部躲过去了。
   这条经验比这些 bug 本身更值钱：**探针要配一个真实应用，而且要真的看图。**
-- **表面层（控件集 / 组件目录页 / 浮层系统）**：五批共 35 kind / 40 工厂已落地并有手算探针；
+- **表面层（控件集 / 组件目录页 / 浮层系统）**：五批共 37 kind / 41 工厂已落地并有手算探针；
   仍缺的见 §2.1。当前可交付上限约「多页表单 / 设置页 / 列表详表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互」。
 
 ### 补齐优先级建议

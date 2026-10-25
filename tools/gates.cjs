@@ -271,7 +271,11 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // `imaging` (ImageNode src/onLoad), `table2` (sort/resize/virtual) and
                  // `stick` (scroll that follows its own content) were each green by hand
                  // for a while before this line existed.
-                 'widgets/pointer', 'widgets/imaging', 'widgets/table2', 'widgets/stick']) {
+                 'widgets/pointer', 'widgets/imaging', 'widgets/table2', 'widgets/stick',
+                 // `icon` (SVG path data: cubic subdivision, stroke scaling, and the
+                 // refusals an arc and a junk command must get) joined with the icons
+                 // batch; it is the only probe in the kit that drives a PARSER.
+                 'widgets/icon']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);

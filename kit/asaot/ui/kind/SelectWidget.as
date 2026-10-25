@@ -127,8 +127,9 @@ package asaot.ui.kind
             }
             if (n.shapeA == null) return;
             // The caret: a filled triangle at the right, inside the trigger's own
-            // 10px horizontal padding. Filled, not stroked -- stroke width is not
-            // honoured on this backend.
+            // 10px horizontal padding. Filled, not stroked, because a fill is
+            // integer-exact and a probe can assert it. (Stroke width IS honoured on
+            // this backend; re-measured 2026-10-25, see probes/widgets/icon.)
             var w:Number = PaintKit.w1(n);
             var h:Number = PaintKit.h1(n);
             var cx:Number = w - 10 - 4;

@@ -12,14 +12,17 @@
 //
 // WHY THE RING IS A FILLED BAND AND NOT A STROKE (measured, not assumed)
 // ---------------------------------------------------------------------
-// A stroked circle does not rasterize to the width you ask for. The radio in
-// `probes/widgets/form` is `lineStyle(2, blue)` on a radius-7 circle, and its
-// byte-exact frame shows the "2pt" ring as a ONE-pixel ring -- so a stroked arc is
-// not something a pixel probe can pin, and its thickness is not something a
-// designer can rely on. Both the track and the arc are therefore closed polygons
-// (outer edge forward, inner edge back) filled with `beginFill`: a fill region
-// rasterizes exactly, which is how every other widget in this kit draws.
-// The spin's visual smoothness is unchanged -- 24 segments is 24 segments whether
+// CORRECTION, 2026-10-25: the measurement this header used to record -- "the radio's
+// `lineStyle(2)` ring on a radius-7 circle is ONE pixel" -- does not reproduce. The same
+// shape measures 2 rows, a `lineStyle(4)` ring on the same radius measures 4, and a 12px
+// stroke measures 12 (probes/widgets/icon pins the straight and curved cases; the small
+// circles were measured by hand in a throwaway probe the same day). A stroke is exactly
+// as wide as it is declared.
+//
+// The band stays a FILL, for two reasons that never depended on that claim: a fill region
+// rasterises to integer pixels, which is what makes the ring's colours assertable at all,
+// and a 6px ring on a 20px radius drawn as a fill has no join or cap behaviour to depend
+// on. The spin's visual smoothness is unchanged -- 24 segments is 24 segments whether
 // they are stroked or filled.
 package asaot.ui.kind
 {

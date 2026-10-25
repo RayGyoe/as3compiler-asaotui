@@ -2,7 +2,7 @@
 // group, and what each one says about itself.
 //
 // TWO HALVES, ON PURPOSE:
-//   * `pages()` is CHEAP and always available: 41 tiny data objects. The sidebar
+//   * `pages()` is CHEAP and always available: 42 tiny data objects. The sidebar
 //     reads it on every render, and it must not construct a single widget.
 //   * `sections(view, id)` builds the selected page's examples on demand. That is
 //     where the factories are actually CALLED -- one page at a time, and only for
@@ -74,6 +74,7 @@ package demo
                 new DocPage("skeleton", "skeleton", 7, "Loading placeholders in text/circle/rect shapes."),
                 new DocPage("tooltip", "tooltip", 7, "A small bubble with an arrow."),
                 new DocPage("image", "image", 7, "A picture -- a BitmapData or a `src` -- scaled into its box."),
+                new DocPage("icon", "icon", 7, "An SVG path drawn into its box: stroke or fill, any colour, any size."),
 
                 new DocPage("dialog", "dialog", 8, "A scrim plus a centred panel -- overlay tree only."),
                 new DocPage("drawer", "drawer", 8, "An edge sheet: the window's own gutter."),

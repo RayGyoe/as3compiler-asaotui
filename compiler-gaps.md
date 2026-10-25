@@ -496,6 +496,21 @@
 
 ---
 
+### G26 —— `Graphics.cubicCurveTo` 与 `Graphics.drawPath` **整条缺失**（AIR 有）⇒ 图标的曲线画不出来
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **遗留缺陷**（AIR 有、我们没有；且是**编译期就报错**，不是静默画错——所以它不会伪造画面，只会让「作者想画图标」这条路**直接走不通**） |
+| **症状** | 想给库加一条**图标通道**（`icon(svgPathData)`，图标字体/矢量集都靠它）时发现：路径数据里的曲线段只有**二次**可画，**三次**与 `drawPath` 根本没有成员。<br>`Codegen error at 9:13: undefined method 'cubicCurveTo' on class 'Graphics'`<br>`Codegen error at 12:13: undefined method 'drawPath' on class 'Graphics'` |
+| **实测面** | `src/emit.ts` 里 `Graphics_` 发射的成员共 **17 个**：`ctor` / `moveTo` / `lineTo` / `curveTo` / `beginFill` / `endFill` / `lineStyle` / `beginBitmapFill` / `beginGradientFill` / `drawRect` / `drawRoundRect` / `drawCircle` / `drawEllipse` / `drawTriangles` / `clear`（另两个是内部助手）。全文 `cubicCurveTo` / `drawPath` 命中 **0**；Skia 桥（`as_skia_path_*`）也只有 `move_to` / `line_to` / `quad_to` / `close`，**没有 `cubic_to`** ⇒ 这不只是 AS3 面缺两个方法，C 桥也要加一行 |
+| **影响面（对使用者）** | ① 三段式贝塞尔（`C`/`S` 命令，Lucide/Material/Feather 绝大多数图标都有）**画不出来**；② 圆弧（`A` 命令）也画不出来，而且**不是同一个原因**：AIR 自己也没有 arc 方法，SVG 的弧必须先转成三次贝塞尔——所以「弧」这条路**同时**被缺失与缺三次堵死；③ `drawPath`（`GraphicsPath` 那套批量路径）同样不存在，作者无法用「命令数组 + 坐标数组」绕开前两条 |
+| **库侧处置（第十七轮，已落地并验收）** | 图标通道**只用引擎已有的二次曲线**：`M/L/H/V/Z` 直译，`Q/T` 直译，`C/S` 用**自适应细分转成二次段**（偏差上界取标准结论 `(√3/36)·|P0−3P1+3P2−P3|`，超过 **0.25 viewBox 单位**就二分），`A` **抛错并自报 G26**（不静默近似）。因为转换发生在 **AS3 侧**，两个臂（AOT 与 `adl`）跑的是同一串二次段 ⇒ **跨臂逐像素一致**，代价是相对原始 SVG 有一点点几何偏差（会被探针量出来钉住） |
+| **对编译器的主张** | ① `Graphics.cubicCurveTo(cx1,cy1,cx2,cy2,ax,ay)` + 桥里一行 `SkPath::cubicTo`（控件、包络、图标全受益）；② `Graphics.drawPath(commands, data, winding)`（批量路径，省掉每次 `moveTo/lineTo` 的 JS↔C 往返）。修好①之后，库侧的细分可以**保留**（它同时是 `A` 弧的正确接缝：弧先转三次，再交给引擎）；但「作者直接写 `C` 就得到原生三次」这件事只能靠编译器 |
+| **状态** | 库侧 ✅ 已绕行并验收（十七轮：`kit/asaot/ui/PathData.as` 解析 + 细分、`IconNode`/`icon()`/`kind/IconWidget` 绘制、`probes/widgets/icon` **57 项** 0 failures、变异 **6/6**、门 `51/51`）。编译器侧 ❌ **仍在**：`C`/`S` 仍要经过库内细分，`A` 仍不可用（未动 `as3compiler/`，按本工作区约定登记于此） |
+| **证据落盘 / 复现** | 两条**编译期**取证（上面两行原文，`node src/index.ts <file>.as` 即可复现）；库侧实证：`node tools/probe.cjs probes/widgets/icon` ⇒ **57 checks / 0 failures**（三次曲线 t=0.5 点画出来了、三档描边宽度精确、12-viewBox 缩放正确；`A`/未知命令/`icon()` 三个**负例**各自抛错并自报 G26）；变异 `probes/widgets/icon/mutation.cjs` ⇒ **6/6 CAUGHT**，每次按 sha256 逐字节还原。另附一条**推翻旧结论**的测量：`lineStyle` 的描边宽度在本后端**精确生效**（2/4/6/8/12 ⇒ 2/4/6/8/12 行，直线/二次曲线/圆 r=7,14,20/矩形一致），所以「描边不可用」不是 G26 的近亲，只是过期注释 |
+
+---
+
 ## 2 不是缺口：已澄清 / 已关闭
 
 | 事项 | 结论 | 证据 |

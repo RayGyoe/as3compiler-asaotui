@@ -1,4 +1,4 @@
-// demo/DocsFeedback.as -- progress / spinner / skeleton / tooltip / image: the
+// demo/DocsFeedback.as -- progress / spinner / skeleton / tooltip / image / icon: the
 // leaves that show a state rather than an interaction.
 package demo
 {
@@ -6,6 +6,7 @@ package demo
     import asaot.ui.box;
     import asaot.ui.button;
     import asaot.ui.column;
+    import asaot.ui.icon;
     import asaot.ui.image;
     import asaot.ui.progress;
     import asaot.ui.row;
@@ -23,6 +24,22 @@ package demo
         // (the widget compares the BitmapData it was given last frame, and a fresh
         // bitmap per render would reload the texture every frame).
         private static var SRC8:BitmapData = null;
+
+        // The glyph data, written as an author would copy it out of an icon set. Kept in
+        // one place so the two sizes in a row are provably the SAME data.
+        private static const P_GLYPH_CROSS:String = "M12 5 V19 M5 12 H19";
+        private static const P_GLYPH_CHECK:String = "M4 13 L9 18 L20 5";
+        private static const P_GLYPH_BOLT:String = "M13 2 L4 14 H11 L10 22 L20 10 H13 Z";
+        // Deliberately carries a cubic (C) and a smooth continuation (S): this is the
+        // path that proves the subdivider ran, in a screenshot a human can look at.
+        private static const P_GLYPH_HEART:String =
+            "M12 20 C6 15 3 12 3 8 C3 5 5 3 8 3 C10 3 11 4 12 6 S14 3 16 3 C19 3 21 5 21 8 C21 12 18 15 12 20 Z";
+        private static const P_GLYPH_STAR:String =
+            "M12 2 L15 9 L22 9 L16 14 L18 21 L12 17 L6 21 L8 14 L2 9 L9 9 Z";
+
+        private static const ICON24:StyleRefinement = StyleRefinement.from({ size: [24, 24] });
+        private static const ICON32:StyleRefinement = StyleRefinement.from({ size: [32, 32] });
+        private static const ICON48:StyleRefinement = StyleRefinement.from({ size: [48, 48] });
 
         public static function sections(view:DocsView, id:String):Array
         {
@@ -152,6 +169,61 @@ package demo
                     return row({ gap: 8, alignItems: "center" }, [
                         button({ label: "Save", style: DocsDemo.QUIET, onClick: function ():void { } }),
                         tooltip("Ctrl+S", { arrow: "left" })
+                    ]);
+                })
+            ];
+
+            if (id == "icon") return [
+                new DocSection("A glyph from path data", [
+                    "An icon is SVG path data (`d` syntax) drawn into its box, so it has no file, no",
+                    "texture and no second copy per colour -- it takes the colour and the size it is",
+                    "given and stays sharp at any scale. With no `size`, the box IS the `viewBox` (24",
+                    "by default), which is the convention every public icon set is authored in."
+                ], [
+                    "icon(\"M12 5 V19 M5 12 H19\", { size: [24, 24] }),",
+                    "icon(\"M4 13 L9 18 L20 5\",   { size: [32, 32], color: 0x16A34A })"
+                ], 104, function ():Node
+                {
+                    return row({ gap: 18, alignItems: "center" }, [
+                        icon(P_GLYPH_CROSS, { key: "icA", style: ICON24, color: 0x2563EB }),
+                        icon(P_GLYPH_CHECK, { key: "icB", style: ICON32, color: 0x16A34A }),
+                        icon(P_GLYPH_BOLT, { key: "icC", style: ICON32, color: 0xDC2626, fill: true, stroke: false }),
+                        text("stroke / stroke / fill", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Stroke width is a viewBox width", [
+                    "`strokeWidth` is in the data's own units, so it scales with the glyph: the same",
+                    "glyph at 24 and at 48 has a 2px and a 4px outline. That is what the source SVG",
+                    "means by `stroke-width`, and it is why an icon stays legible when it is scaled up."
+                ], [
+                    "icon(d, { size: [24, 24], strokeWidth: 2 }),",
+                    "icon(d, { size: [48, 48], strokeWidth: 2 })   // 4px, not 2px"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 18, alignItems: "center" }, [
+                        icon(P_GLYPH_HEART, { key: "icD", style: ICON24, color: 0xE11D48 }),
+                        icon(P_GLYPH_HEART, { key: "icE", style: ICON48, color: 0xE11D48 }),
+                        text("a cubic, subdivided to the engine's quadratics", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("What it will not draw", [
+                    "`M L H V Z` are exact, `Q T` are exact, and `C S` are converted: this engine has a",
+                    "quadratic `curveTo` and no cubic, so each cubic is split until the quadratics are",
+                    "within a quarter of a rendered pixel of it. An elliptical arc (`A`) THROWS -- an arc",
+                    "is not a curve this engine can draw without going through a cubic, and quietly",
+                    "drawing a chord instead would be an icon that looks fine and is the wrong shape.",
+                    "Unknown commands throw too, at the call site: `icon()` parses its data when you",
+                    "describe it, so the stack frame is the line you wrote."
+                ], [
+                    "icon(\"M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3\")   // THROWS: use fill: true,",
+                    "                                                       // or an arc-free path"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 14, alignItems: "center" }, [
+                        icon(P_GLYPH_STAR, { key: "icF", style: ICON48, color: 0xF59E0B, fill: true, stroke: false }),
+                        text("a ten-command polygon: no curve at all", { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];
