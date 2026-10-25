@@ -89,6 +89,11 @@ icudtl.dat
 # 它们曾经被上面那条一刀切规则静默吞掉：干净克隆里没有 app.xml，演示根本建不起来。
 !/ui-demo/air-*/app.xml
 !/ui-demo/air-*/build.sh
+# …而 web 臂的暂存目录相反：**整个目录都是生成物**。它的 app.xml / as-image.png 是
+# 从 air-gallery/ 逐字节拷来的（web-gallery.cjs 校验 sha256），src/ 由 stage-air.cjs
+# 灌入，其余全是 as-aot/emcc 的产物。所以上面三条 `!` 例外对它都不适用——这一行
+# 必须写在那些例外**之后**（.gitignore 是最后一条匹配生效）。
+/ui-demo/air-gallery-web/
 # 早期 junction 试验的残骸：`_jtest/asaot` 是指向本机的符号链接，入库无意义
 /ui-demo/_jtest/
 /measurements/build/

@@ -458,6 +458,36 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
     + (m ? ' (' + m[1] + ' checks, ' + m[2] + ' failures)' : ''), r.status, out);
 }
 
+// ---- 6b5c: `build.sh web` builds the SAME app for a browser -----------------
+// The third arm. A native build that goes wrong leaves no exe and is obvious; a web
+// build that goes wrong leaves `GalleryApp.html/.js/.wasm` which load, paint something
+// and look finished, so the arm needs an instrument rather than an eye. Two failures
+// are specific to it: the toolchain cannot be spawned (Windows: `emcc` is a POSIX shell
+// script -- compiler-gaps.md G27 -- so `web-gallery.cjs` fronts it with a PE launcher),
+// and the argv is assembled wrong (`--target wasm` without `--package web`, or a native
+// main class, each of which compiles and produces a page that never mounts).
+// So the gate drives the arm's own decision path -- `bash build.sh web --check`: the
+// toolchain is really spawned (`emcc --version` through the PATH-only env that as-aot
+// will hand it), and the printed argv is the array the build EXECS (one definition, two
+// consumers, not a description). ~5 s, no compiler, no window.
+// What it deliberately does not do is compile: that is ~3 minutes, and the product was
+// measured when the arm landed (48-point sample grid vs the native gallery-page0.png:
+// 44 identical, the four differences inside a text run; the 8 most common colours agree
+// within 0.3%). The half a fast gate cannot see is covered by that measurement, and the
+// half it CAN see is what rots silently.
+//   mutation: tools/mutation-buildsh-web.cjs (6/6: `--package web` dropped from the argv;
+//             the entry class switched to DocsAir; an emcc launcher that still looks
+//             like a 4.5 KB PE but exits 127; the --gpu refusal losing its arm
+//             comparison; the generated app dir losing its .gitignore rule; and a wrong
+//             EMSDK_HOME falling back to the workspace SDK instead of failing).
+{
+  const r = sh(process.execPath, ['tools/buildsh-web.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /buildsh-web: (\d+) checks, (\d+) failures/.exec(out);
+  record('build.sh web: toolchain spawned, argv pinned, refusals, staged dir untracked'
+    + (m ? ' (' + m[1] + ' checks, ' + m[2] + ' failures)' : ''), r.status, out);
+}
+
 // ---- 6b6: the docs app RUNS on the reference runtime, every page, popups open ----
 // The one gate that measures AIR at run time, and the reason it exists is the shape
 // of the last three user reports: our AOT is MORE FORGIVING than AIR, so a library

@@ -1,25 +1,28 @@
 # asaot.ui demo (`asaotui/ui-demo/`)
 
 Runnable demo of the GPUI-inspired AS3 UI toolkit (`asaotui/kit/asaot/ui/`), plus
-self-checks that pin the toolkit's core invariants. **One app, two arms**, one command
-each:
+self-checks that pin the toolkit's core invariants. **One app, three arms**, one
+command each:
 
 | Arm | What it is | Command |
 |---|---|---|
 | AIR (reference) | the docs site on AIR: `mxmlc` → `adl`, no tour | `air-gallery/build.sh` |
 | Native (our AOT) | the same tree through `as-aot --air-app`, plus the headless tour | `air-gallery/build.sh aot` |
+| Web (our wasm32) | the same tree through `as-aot --target wasm --package web`, served over HTTP | `air-gallery/build.sh web` |
 
-Both arms read the **same** `air-gallery/app.xml`: `--air-app` reads it at build time and
-`adl` reads it at run time, so the window (size, title, `renderMode`,
+All three arms read the **same** `air-gallery/app.xml`: `--air-app` reads it at build
+time (and, on the web, bakes it into the page's virtual filesystem) while `adl` reads
+it at run time, so the window (size, title, `renderMode`,
 `<requestedDisplayResolution>`) is described once and nothing restates it.
 
 ```sh
 cd asaotui/ui-demo/air-gallery
 ./build.sh          # mxmlc the SWF, then open it under adl
 ./build.sh aot      # stage -> as-aot --air-app -> tour -> run the exe
+./build.sh web      # stage -> as-aot --target wasm --package web -> serve the page
 ./build.sh swf      # compile only (a portability check, no window)
 ./build.sh desc     # show which descriptor / backend --gpu would build from (no build)
-./build.sh clean    # drop the SWF / exe / generated C / tour evidence
+./build.sh clean    # drop the SWF / exe / generated C / web page / tour evidence
 ```
 
 ### Choosing what draws the window (`--gpu`)
@@ -57,6 +60,45 @@ The AIR arm starts from `demo/DocsAir.as`, not from the touring `demo/DocsMain.a
 tour needs `Stage.dispatchMouse` / `Stage.dispatchWheel` / `Stage.render`, which are OUR
 test hooks and do not exist on AIR — mxmlc rejects that file, correctly. See
 `../STATUS.md` §3.11.
+
+### The browser arm (`web`)
+
+A window is opened by an executable; a page is not. So `web` cannot reuse
+`run-gallery.cjs` (nothing to launch, no `gallery.done` to wait for, no `Stage.render`
+to measure) and it has its own runner, `web-gallery.cjs`, which stages
+`../air-gallery-web/` (descriptor + `as-image.png` + one shipped font + `demo/**`), builds
+with `--target wasm --package web`, and then serves that directory over HTTP — a
+`.wasm` cannot be loaded from `file://`, and the server sends `application/wasm`.
+
+```sh
+./build.sh web                 # build, then open it (Ctrl-C stops the server)
+./build.sh web --no-serve      # build only
+./build.sh web --check         # ~1 s: is the toolchain there, and is the argv right?
+./build.sh web --port 8090     # a different static-server port
+./build.sh web --gpu gl        # REFUSED, with a reason: a browser composites itself
+```
+
+Two things about it are worth knowing before changing it:
+
+- **Windows needs an `emcc` launcher.** `as-aot --package web` spawns
+  `<EMSDK_HOME>/upstream/emscripten/emcc` directly, with no shell and with a PATH-only
+  environment. In an emsdk that file is a `#!/bin/sh` script, so on Windows the spawn
+  cannot work — `compiler-gaps.md` **G27**. `web-gallery.cjs` compiles
+  `../tools/emcc-launcher.c` (a ~4.5 KB PE that restores `EM_CONFIG`/`EMSDK_PYTHON` and
+  forwards argv to `emcc.bat`) into `.scratch/emcc-shim/` and points `EMSDK_HOME` there.
+  The compiler is untouched; the day G27 is fixed the shim can be deleted.
+- **The page is the same page.** Measured against the native arm's
+  `gallery-page0.png`: a 48-point sample grid is identical at 44 points (the four that
+  differ are inside a text run — glyph antialiasing), and the eight most common colours
+  agree within 0.3% (`#e8edf5` 18,812 px on both). Clicking a nav item in the browser
+  changes the page like it does natively. That is the whole point of the arm: the same
+  AS3 tree, three runtimes, one picture.
+
+`../tools/buildsh-web.cjs` pins the decision path `web` takes (toolchain spawnable,
+the argv, the size taken from `app.xml`, the refusals, and the generated dir staying
+git-ignored) without compiling anything, and `../tools/mutation-buildsh-web.cjs` (6/6)
+shows that gate goes red — including a mutant that leaves a perfectly good-looking
+`emcc.exe` on disk which can no longer run.
 
 Nothing under `asaotui/seam/`, `layout-check/`, `diff-check/` or `air-check/` is
 modified or vendored; the seam is used read-only.
@@ -104,14 +146,17 @@ and `probes/widgets/*` + this demo are the end-to-end half.
 |---|---|
 | `demo/DocsMain.as` | The docs app as an **AIR document class** (`Sprite`) **and** its headless acceptance tour: hand-computed shell rects, block arithmetic on all 42 pages, a real wheel scroll, a real sidebar click, the overlay tree opened/closed, and 8 `gallery-page*.png` screenshots. Writes `gallery.txt` + `gallery.done` (`PASS` / `FAIL <problems>`). |
 | `demo/DocsAir.as` | The **AIR arm's** entry class: same model + view + `UiApp`, same subscription, same landing page — **no tour** (the tour's `Stage.dispatchMouse`/`dispatchWheel`/`render` do not exist on AIR). This is what `build.sh` compiles with mxmlc. |
-| `air-gallery/build.sh` | **The one command**: `./build.sh` = AIR arm (mxmlc → adl), `./build.sh aot` = AOT arm (delegates to `run-gallery.cjs`), `swf` = compile only, `desc` = show what `--gpu` would build from, `clean` = remove the artifacts (never the tracked PNGs). `--gpu cpu|gpu|d3d12|gl|direct` picks the window's composition mode by deriving `app.<mode>.xml`. Resolves the AIR SDK from `AIRSDK_HOME` or `PATH`, and picks `adl.exe` over the SDK's Unix `adl` wrapper on Windows. |
+| `demo/DocsWeb.as` | The **web arm's** entry class: same model + view + `UiApp` again, no tour and no file channel, and **no `UncaughtErrorEvent`** — that class is what makes `DocsAir` uncompilable for wasm (it is not implemented here), so the browser needs its own three-line entry rather than a shared one. |
+| `air-gallery/build.sh` | **The one command**: `./build.sh` = AIR arm (mxmlc → adl), `./build.sh aot` = AOT arm (delegates to `run-gallery.cjs`), `web` = browser arm (delegates to `web-gallery.cjs`), `swf` = compile only, `desc` = show what `--gpu` would build from, `clean` = remove the artifacts (never the tracked PNGs; it does remove the generated `air-gallery-web/`). `--gpu cpu|gpu|d3d12|gl|direct` picks the window's composition mode by deriving `app.<mode>.xml` (the `air`/`aot` arms only — `web` refuses it). `--check`/`--no-serve`/`--port <n>` belong to the web arm. Resolves the AIR SDK from `AIRSDK_HOME` or `PATH`, and picks `adl.exe` over the SDK's Unix `adl` wrapper on Windows. |
+| `web-gallery.cjs` | The web arm's whole recipe: find the emsdk (`EMSDK_HOME`, else the workspace's `build-tools/`), build the Windows `emcc` launcher if needed, stage `../air-gallery-web/`, build with `--target wasm --package web`, verify `.html/.js/.wasm`, then serve the directory with `application/wasm`. `--check` prints the same argv the build execs (one definition, two consumers) and spawns `emcc --version` the way the compiler will; `--serve-only` re-opens an existing build without rebuilding; `ASC_NO_OPEN=1` skips the browser launch. |
+| `air-gallery-web/` | **Generated** (gitignored whole): the web app dir. Descriptor and `as-image.png` are byte-verified copies, `src/` is `demo/**` from `stage-air.cjs`, everything else is compiler/emcc output. |
 | `run-check.cjs` | Compile **and run** `CheckUi.as` through the AOT; propagates the exit code. |
 | `run-gallery.cjs` | Report the compiler tree state, then stage + build (`--air-app`) + launch + wait for `gallery.done` + print the tour + measure the screenshots. **No retry** (G11 is closed: a differing build means the compiler tree itself moved — see the state line it prints). `ASC_AIR_DIR=<dir>` points it at another app dir (that is how `check-dpi.cjs` runs its twin). `ASC_NO_OPEN=1` closes the window as soon as the evidence is in. |
 | `build-and-run.cjs` | The login demo, same pipeline. Writes its evidence into `air-uidemo/`. |
 | `check-dpi.cjs` | The **descriptor A/B**: builds the same gallery from `air-gallery/app.xml` (`high`) and `air-gallery-standard/app.xml` (`standard`), and requires 1.5× vs exactly 1× with byte-identical tour text. `mutation-dpi.cjs` shows it has teeth. |
 | `stage-air.cjs` | Materializes `<appDir>/src` from `demo/` **only** (the toolkit is compiled in place via `--as-class-path`, see above), byte-verifies every copy, prints a content hash and the two shared roots the build must name. Refuses to run without a reviewed `app.xml`. |
 | `air-run.cjs` | Shared plumbing for the two runners: descriptor reader (comment-aware), window killer, result-file poller, screenshot measurement. |
-| `air-gallery/app.xml` | The docs descriptor (`high`, 1000×700, `renderMode cpu`) — read by BOTH arms. `--gpu` never rewrites it; it derives `app.<mode>.xml` instead. |
+| `air-gallery/app.xml` | The docs descriptor (`high`, 1000×700, `renderMode cpu`) — read by ALL THREE arms. `--gpu` never rewrites it; it derives `app.<mode>.xml` instead. |
 | `air-gallery-standard/app.xml` | The control arm: identical window settings, `standard` resolution. |
 | `../tools/mxmlc-check.cjs` | Compile an AS3 tree with the REAL reference compiler. This is the only evidence that "the toolkit is pure AS3" — our AOT accepts a superset (`--sdk` overrides `AIRSDK_HOME`, and the SDK is otherwise found on `PATH`). |
 | `kit-list.cjs` | The `.as` units the AOT must be given explicitly (seam + kit). `ASC_KIT_OVERLAY=staging/<name>` swaps in shadow copies of same-named files (used to stage parallel work). |
@@ -132,6 +177,8 @@ ASC_NO_OPEN=1 node run-gallery.cjs       # -> [gallery] RESULT: PASS
 # (a2b) the SAME app on AIR -- one command, both directions
 cd air-gallery && ./build.sh             # mxmlc -> adl (window stays open)
 ./build.sh aot                           # our AOT: stage -> build -> tour -> run
+./build.sh web                           # our wasm32: stage -> build -> serve the page
+                                         #   (~3 min; --serve-only re-opens it for free)
 
 # (a3) prove the descriptor causes the high-resolution pixels (2 builds, ~2.5 min)
 node check-dpi.cjs                       # -> standard 700x560 (1x) vs high 750x563+ ... here 1050x840 (1.5x)

@@ -18,7 +18,7 @@
 | 事实 | 证据 |
 |---|---|
 | 库是**纯 AS3**，**零 `flash.*` 导入**（只有内部 `asaot.ui.*`） | `grep -rn "import" seam/asaot/` 只有 `asaot.ui.LayoutEngine` / `asaot.ui.LayoutConstants` |
-| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十七组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/23/26/44/14/26/18 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **34/34**（含 G16/G19/G20 三道） |
+| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十七组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/23/26/44/14/26/18 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **52/52**（含 G16/G19/G20 三道与 `build.sh web` 一道） |
 | **AIR**（`mxmlc`→`adl`）也能编能跑，且数值逐字符一致 | [`air-check/`](air-check/README.md)、[`diff-check/`](diff-check/README.md) |
 | **真实用户缺陷**也在这条路上定位（不是猜测） | 2026-10-24 的两份截图报告：弹层被盖住 ⇒ **不是编译器问题**（引擎无 z-index，靠 `UiNode.lifted` 改 reparent，见 `STATUS.md` §3.3 第 19 条）；输入框提示文字/文字复制 ⇒ **一个是库缺陷、一个是本文件 G20** |
 
@@ -464,39 +464,47 @@
 
 ---
 
-### G24 —— `DisplayObjectContainer.setChildIndex()`：**越界索引被夹紧，不抛 `#2006`**（AIR 抛）
+### G24 —— `DisplayObjectContainer.setChildIndex()`：**越界索引被夹紧，不抛 `#2006`**（AIR 抛）✅ 已修（阶段二百七十五，v0.4.239）
 
 | 项 | 内容 |
 |---|---|
 | **判定** | **遗留缺陷**（同一份 AS3，AIR 报错我们静默继续 ⇒ 运行时语义**比 AIR 宽松**，属 §2.4 红线「对齐 AIR 是底线」的违背；方向与 G1~G22 相反：不是「AIR 能跑我们跑不了」，而是「AIR 拦住了我们的错，我们放行」） |
 | **症状（用户报的）** | 文档站 `select` / `combobox` / `datePicker` 三页，**点一下下拉框**就每帧抛一次<br>`RangeError: Error #2006: The supplied index is out of bounds.`<br>`at flash.display::DisplayObjectContainer/setChildIndex()` → `asaot.ui::Reconciler/fixDisplayOrder()` → … → `UiApp/reflow()`；页面静止不动（reconcile 在那一帧被打断，后续节点（含代码块）从未排好序） |
 | **真因（库侧）** | `Reconciler.fixDisplayOrder` 曾用 `setChildIndex(c.backing, internalCount + <描述下标>)`。**弹出的下拉框会把 owner 节点 `lifted` 到 stage container**（`UiNode.lifted`，为了越过后续兄弟的 z 序），它**仍占描述树的一个槽位、但已不在父 backing 里** ⇒ 下标按描述位计数会**每有一个被抬起的兄弟就多算一**，`index == numChildren` 即越界 |
-| **为什么我们的 AOT 全绿** | `src/emit.ts` 的 `DisplayObjectContainer_setChildIndex`（约 `emit.ts:11635`）对越界做了 `if (index >= length) index = length - 1;`，且「不是孩子」时 `return` —— **夹紧而非抛错**。而夹紧到末尾恰好是最后一个孩子的正确落点 ⇒ 画面**逐像素相同**，41 页截图扫描、全部 AOT 探针、gate 套件都不可能看见；只有真 AIR 会抛 |
+| **为什么我们的 AOT 全绿**（**阶段二百七十五之前**的旧实现，现已删除） | `src/emit.ts` 的 `DisplayObjectContainer_setChildIndex` 曾对越界做了 `if (index >= length) index = length - 1;`，且「不是孩子」时 `return` —— **夹紧而非抛错**。而夹紧到末尾恰好是最后一个孩子的正确落点 ⇒ 画面**逐像素相同**，41 页截图扫描、全部 AOT 探针、gate 套件都不可能看见；只有真 AIR 会抛 |
 | **真参考（AIR 51.4.1 / `adl` 实测）** | 越界 ⇒ `RangeError #2006`；`child` 不是调用者的孩子 ⇒ `ArgumentError #2025`（我们那边同样是 `return`，见 `getChildIndex` 已按 #2025 修、`setChildIndex` 未修） |
 | **修法（库侧，已落地）** | `fixDisplayOrder` 改成**「只数在用的孩子」的槽位计数器**：`slot = internalCount`，只有 `backing.parent == n.backing` 的孩子才 `setChildIndex(..., slot++)`。末位最多落在 `numChildren-1`（有 `aboveContent` 时少一），**结构性**不可能越界；`lastIndex` 仍是**描述下标**（那是未带 key 的兄弟的身份 token，不是显示位） |
-| **状态** | 库侧 ✅ 已修。编译器侧 ❌ **仍在**（未动 `as3compiler/`，按本工作区约定登记于此） |
+| **状态** | **两侧都已修**。库侧 ✅ 阶段二百六十九前（槽位计数器）。编译器侧 ✅ **阶段二百七十五，v0.4.239** |
+| **编译器侧修法（已落地）** | `src/emit.ts` 的 `DisplayObjectContainer_setChildIndex` 换成 AIR 的判据与**判据顺序**：`child == NULL` → `TypeError #2007`「Error #2007: Parameter child must be non-null.」；`index < 0 || index >= n`（`n` = **当前** `numChildren`，空容器任意索引都算越界）→ `RangeError #2006`「Error #2006: The supplied index is out of bounds.」；不是调用者的孩子 → `ArgumentError #2025`「Error #2025: The supplied DisplayObject must be a child of the caller.」；`cur == index` 直接返回。**夹紧分支已删除**，且三条判据都在任何写入之前 ⇒ 被拒的调用不可能移动过东西 |
+| **判据来源（adl 51.4.1 实测，`temp/g242526/air-sem.txt`）** | `hi_eq_count` / `hi_gt_count` / `neg` / `empty_0` / `nonchild_99` / `getChildAt_neg` / `getChildAt_hi` / `removeChildAt_neg` → `RangeError #2006`；`nonchild_0` / `getChildIndex_nonchild` → `ArgumentError #2025`；`null_0` → `TypeError #2007`。**关键一条**：`setChildIndex(nonchild, 99)` 报的是 `#2006` 而不是 `#2025` ⇒ 索引判定**先于**孩子判定（反直觉，但实测如此）；`setChildIndex(null, 0)` 报 `#2007` ⇒ null 判定最前 |
+| **本轮证据** | `examples/child-index-errors.as`（`node src/index.ts examples/child-index-errors.as -o … --run` ⇒ `child-index-errors: OK`）：7 个负例在 `try/catch` 里逐条比对 `name` + `errorID` + **原文文案**（null / `==numChildren` / `>numChildren` / 负数 / 非孩子在界内 / 非孩子在界外 / 空容器），再验两次合法移动（后挪 / 前挪）与一次同下标空操作；`unit: display/SetChildIndex` **7 条**源级断言钉住顺序（null < index < is-my-child）、「按当前长度判定而非夹紧」、「拒绝前无写入」 |
 | **对编译器的主张** | 建议把 `setChildIndex` 对齐 AIR：越界 → `RangeError #2006`；非孩子 → `ArgumentError #2025`。这条**不只是洁癖**：它正是「库 bug 只能靠 AIR 才测得出来」的根因 —— 修好后，任何一个 AOT 探针只要碰到同样的错法就会**当场以具名错误**变红，而不必等 41 页扫描之后的人工复现 |
 | **证据落盘 / 复现** | 新门 `tools/air-sweep.cjs`（**唯一跑参考运行时**的门）：41 页 × `adl`、每页把 10 个可弹层开关打开再关掉，任何 AIR 报的错都算失败。变异 `tools/mutation-air-sweep.cjs` **5/5**：把槽位计数改回 `internalCount + i` ⇒ 立刻在 `select` / `combobox` / `datePicker` 上报 `#2006`；去掉「打开弹层」这一步 ⇒ `OPENED` 缺失（扫得全绿但已经瞎了）；少走一页 ⇒ 页数不足；去掉 `releaseListeners()` ⇒ 145 个 `#1009`（见 G25）；只悬停不投递 ⇒ 指针钻报 `0/41`。见 [`reviews/air-sweep-2026-10-24.md`](reviews/air-sweep-2026-10-24.md)、[`reviews/listener-lifetime-2026-10-24.md`](reviews/listener-lifetime-2026-10-24.md) |
 
 ---
 
-### G25 —— AOT 侧**从不向对象派发** `mouseOver` / `mouseOut` / `rollOver` / `rollOut`（AIR 派发）
+### G25 —— AOT 侧**从不向对象派发** `mouseOver` / `mouseOut` / `rollOver` / `rollOut`（AIR 派发）✅ 已修（阶段二百七十五，v0.4.239）
 
 | 项 | 内容 |
 |---|---|
 | **判定** | **遗留缺陷**（AIR 能给的应用反馈我们没有 ⇒ §2.4 「对齐 AIR 是底线」）；比 G24 更隐蔽的是它的**二阶后果**：它让「监听器生命周期」这一类缺陷在我们的 AOT 上**结构性不可观测** |
 | **症状（用户报的）** | 文档站连着点几下，控制台（AIR）刷 `TypeError: Error #1009: Cannot access a property or method of a null object reference.`<br>`at asaot.ui::UiNode/setHover()` ← `at Function/UiNode.as$1::anonymous()`（即节点自己挂的 `mouseOut` 监听器）；`air-trace.txt` 上出现在 `accordion` / `dialog` / `drawer` / `menu` 四页（分别是 1 / 4 / 3 / 3 次） |
 | **真因（库侧，已修）** | `destroySubtree()` 把节点的 backing 从显示列表摘掉、并把 `app` / `extra` / `backing` 置空，但**摘不掉它自己挂在那张 backing 上的匿名监听器**。AIR 的投递时序是**晚一拍**：先结束这一帧（节点已死），再重算指针目标 ⇒ `mouseOut` 落在尸体上，闭包读到已置空的字段。〔AIR 契约另有一条：**按下期间指针“属于”按下目标**，所以按住按钮时移出不会投递 leave〕 |
-| **为什么我们的 AOT 看不见** | `src/emit.ts` 里 **`mouseOver` 字符串出现 0 次**（`rollOver` 只出现在注释里）：AOT 的鼠标派发只发 `mouseDown`/`mouseUp`/`click`/`wheel` 与 Stage 的 `mouseLeave`，**逐对象的 roll-over/roll-out 这对事件从未发出**（`_mouse_in` 只用来驱动 MovieClip 的按钮态，见 `emit.ts:17702-17713` 的实测注释与 `TODO.md` 的 rollOver/rollOut 残留项）⇒ 在我们的 AOT 上那个监听器**永不执行**，因此「执行到尸体上」也不可能发生 |
+| **为什么我们的 AOT 看不见**（**阶段二百七十五之前**的旧实现，现已补齐） | `src/emit.ts` 里曾 **`mouseOver` 字符串出现 0 次**（`rollOver` 只出现在注释里）：AOT 的鼠标派发只发 `mouseDown`/`mouseUp`/`click`/`wheel` 与 Stage 的 `mouseLeave`，**逐对象的 roll-over/roll-out 这对事件从未发出**（`_mouse_in` 只用来驱动 MovieClip 的按钮态，见 `emit.ts:17702-17713` 的实测注释与 `TODO.md` 的 rollOver/rollOut 残留项）⇒ 在我们的 AOT 上那个监听器**永不执行**，因此「执行到尸体上」也不可能发生 |
 | **影响面（对使用者）** | 用我们 AOT 编出来的应用，**`addEventListener(MouseEvent.MOUSE_OVER / MOUSE_OUT / ROLL_OVER / ROLL_OUT, …)` 永不触发** —— 作者自己挂的 hover 反馈在 AOT 上是死的，在 AIR 上是活的。**库不再踩这个坑**（第十五轮）：`UiApp` 只接**一个** stage `MOUSE_MOVE`（两个臂都派发、`bubbles=true`、没命中时 target 退化为 stage），命中判定**复用运行时的 `as_pick_hit`**（与点击同一套规则——自算矩形就是第二套规则，“亮着但点不到”正是它的后果），再经 `backing → UiNode` 的 `Dictionary` 把**整条祖先链**置 hover（对应 AIR 冒泡语义），`Mouse.cursor` 也随之按链推导。逐对象的 `MOUSE_OVER`/`MOUSE_OUT` 监听已从 `UiNode.createBacking` **移除**（留两个会说谎的来源没有意义），`probes/widgets/pointer`（23 项）钉住这条合成路径，`probes/lifecycle` 反而继续**故意派发** `mouseOver`/`mouseOut` 当负控（它们现在什么也不该做） |
 | **修法（库侧，已落地）** | `UiNode` 增加 `wired:Array` + `listen(target, type, fn)`（登记三元组）+ `releaseListeners()`；`destroySubtree()` **先** `releaseListeners()` 再置空字段；全库 24 处监听器（含 `n.tf` 上的两个编辑事件）从裸 `addEventListener` 改为 `n.listen(...)`（16 个 widget 文件）。**STAGE 监听器不在此列**：它们属于某次手势，保留 widget 自己 teardown 里的显式 add/remove 对 |
 | **库侧绕行（第十五轮）** | hover **不再依赖这个缺口**：`UiApp.onStageMouseMove` + `nodeAt(e.target)`（沿命中目标**向上**找最近的已注册 backing）+ 祖先链置 hover；`nodeBackingBuilt`/`nodeBackingGone` 维护 `backing → UiNode` 注册表（并因此修掉「销毁的节点仍在 hover 链上 ⇒ 下一次移动对 `app == null` 的节点 `markPaint` = `#1009`」）。这条绕行是**永久的**，不是等编译器修好就撤：它比逐对象事件少悬挂 N 个监听器，而且**必须**用运行时命中测试，否则 hover 与 click 会分叉 |
 | **对编译器的主张** | 把对象的 `mouseOver`/`mouseOut`/`rollOver`/`rollOut` 补上（含 AIR 的两条时序契约：①移除对象的**下一帧**仍要投递 roll-out；②按下期间不投递 leave）。**这不只是补功能**：补上之后，「死节点上的监听器」这类缺陷会被任何 AOT 探针**当场具名抓到**，而不必依赖 `adl` |
+| **状态** | **✅ 已修（阶段二百七十五，v0.4.239）**。`src/emit.ts` 新增 `as_hover_target` 状态 + 六个助手（`as_hover_holds` / `as_hover_fire` / `as_hover_next` / `as_hover_move` / `as_hover_flush` / `as_hover_on_remove`），挂在五处：`Stage_dispatchMouse` 的 `mouseLeave` 分支、普通指针通知（`as_pick_hit` 之后）、`removeChild`、`Stage_dispatchFrame`（帧边界补发）、`gc_mark_user_roots`（两个永久根）。**库侧第十五轮的绕行保留**（它本来就比逐对象监听器更省，且命中判定必须与点击同源） |
+| **AIR 契约（真光标实测，`temp/g242526/mouse2-air.txt`）** | 进入：`rollOver`（`bubbles=false`，`eventPhase=2`，自目标**逐个向祖先**，**不含 Stage**）→ `mouseOver`（`bubbles=true`，**自内向外冒泡**）。离开：`mouseOut`（bubbles）→ `rollOut`（不冒泡，自内向外）。目标不变时**零事件**。**只对「指针不再位于其子树内」的节点发 leave**，**只对「指针原先不在其子树内」的节点发 enter**（`as_hover_holds` 就是这条判据，`anchor` 参数把「刚被移出显示树的那段祖先链」也算作「指针原先在里面」）。 |
+| **时序契约（实测）** | ① handle 从显示树摘掉的**下一拍**仍要对该（已脱离的）节点投递 leave；② 窗口退出时离开对的坐标是 `-1,-1`；③ 按下期间指针「属于」按下目标（本实现沿用它：拖动时不重算 leave）。`as_hover_flush` 的实现是「在记录的指针位置**重跑一次普通 transition**」，因此「移除后同一拍把 `mouseOver` 给新目标」自然成立，不需要单独的补发路径 |
+| **本轮证据** | AOT 对照探针 `temp/g242526/MouseAot.as` + `cmpmouse.cjs`：同一棵树、同一条 `steps2.txt` 坐标序列，**AIR rows=108 / AOT rows=108 / mismatches=4**，且**事件顺序、`type`、`target`、`currentTarget`、`bubbles`、`eventPhase` 逐行相同**；`examples/roll-over.as` 14 段断言（首入 / 进兄弟子树 / 钻两层 / 同目标零事件 / 逐层退 / 退回背景 / 换兄弟 / 跳到最深处 / 按住拖动 / 移除补离开 / 离开窗口 / 重新进入）⇒ `roll-over: OK`；`unit: display/RollOverContract` **12 条**源级断言（四事件顺序、冒泡位、零事件、两条 holds 判据、链止于 Stage、帧边界补发、GC 根） |
+| **残留分歧（如实登记）** | 那 4 行差异全是坐标：AIR 对「已脱离节点的补发离开对」报 `stageX/stageY = 3,3`（既不等于最后的窗内坐标，也不等于移除位置，AIR 自身无解释），我们报**真实指针位置** `60,60`。判定：**AIR 这条行为不可复现也无从解释**，我们取可解释的那个（真指针位置），不模仿。登记于此，不视为待修 |
 | **证据落盘 / 复现** | 库侧：`probes/lifecycle/`（10 种 kind × 5 种指针事件版本：节点销毁后派发不抛、`state.hover` 保持 0、无游离 `onClick`，同时证明活节点上这道闸**不改变行为**）；静态门 `tools/listener-wiring.cjs`（`kit/` 里禁止裸 `x.backing.addEventListener(`，且要求 `destroySubtree` 里有 `releaseListeners()`，扫到 0 处也算失败）；变异 `probes/lifecycle/mutation.cjs` **4/4**、`tools/mutation-listener-wiring.cjs` **3/3**。AIR 侧：`tools/air-sweep.cjs` 的**指针钻**（每页离开前悬停该页 3107 个叶子中的每一个，切页后**下一拍**投递 roll-out；实测 348 个悬停对象真的已销毁）——去掉 `releaseListeners()` 立刻 145 个 `#1009` |
 
 ---
 
-### G26 —— `Graphics.cubicCurveTo` 与 `Graphics.drawPath` **整条缺失**（AIR 有）⇒ 图标的曲线画不出来
+### G26 —— `Graphics.cubicCurveTo` 与 `Graphics.drawPath` **整条缺失**（AIR 有）⇒ 图标的曲线画不出来 ✅ 已修（阶段二百七十五，v0.4.239）
 
 | 项 | 内容 |
 |---|---|
@@ -506,8 +514,29 @@
 | **影响面（对使用者）** | ① 三段式贝塞尔（`C`/`S` 命令，Lucide/Material/Feather 绝大多数图标都有）**画不出来**；② 圆弧（`A` 命令）也画不出来，而且**不是同一个原因**：AIR 自己也没有 arc 方法，SVG 的弧必须先转成三次贝塞尔——所以「弧」这条路**同时**被缺失与缺三次堵死；③ `drawPath`（`GraphicsPath` 那套批量路径）同样不存在，作者无法用「命令数组 + 坐标数组」绕开前两条 |
 | **库侧处置（第十七轮，已落地并验收）** | 图标通道**只用引擎已有的二次曲线**：`M/L/H/V/Z` 直译，`Q/T` 直译，`C/S` 用**自适应细分转成二次段**（偏差上界取标准结论 `(√3/36)·|P0−3P1+3P2−P3|`，超过 **0.25 viewBox 单位**就二分），`A` **抛错并自报 G26**（不静默近似）。因为转换发生在 **AS3 侧**，两个臂（AOT 与 `adl`）跑的是同一串二次段 ⇒ **跨臂逐像素一致**，代价是相对原始 SVG 有一点点几何偏差（会被探针量出来钉住） |
 | **对编译器的主张** | ① `Graphics.cubicCurveTo(cx1,cy1,cx2,cy2,ax,ay)` + 桥里一行 `SkPath::cubicTo`（控件、包络、图标全受益）；② `Graphics.drawPath(commands, data, winding)`（批量路径，省掉每次 `moveTo/lineTo` 的 JS↔C 往返）。修好①之后，库侧的细分可以**保留**（它同时是 `A` 弧的正确接缝：弧先转三次，再交给引擎）；但「作者直接写 `C` 就得到原生三次」这件事只能靠编译器 |
-| **状态** | 库侧 ✅ 已绕行并验收（十七轮：`kit/asaot/ui/PathData.as` 解析 + 细分、`IconNode`/`icon()`/`kind/IconWidget` 绘制、`probes/widgets/icon` **57 项** 0 failures、变异 **6/6**、门 `51/51`）。编译器侧 ❌ **仍在**：`C`/`S` 仍要经过库内细分，`A` 仍不可用（未动 `as3compiler/`，按本工作区约定登记于此） |
+| **状态** | **两侧都已可用**。库侧 ✅ 十七轮绕行（保留：它同时是 `A` 弧的正确接缝）。编译器侧 ✅ **阶段二百七十五，v0.4.239**：`Graphics.cubicCurveTo` / `Graphics.drawPath` / `GraphicsPathCommand`（补 `NO_OP=0`）/ 新类 `GraphicsPathWinding` 全部落地，Skia 桥补 `sk_path_cubic_to` + `as_skia_path_cubic_to` |
+| **AIR 契约（adl 51.4.1 实测）** | 常量：`NO_OP=0 MOVE_TO=1 LINE_TO=2 CURVE_TO=3 WIDE_MOVE_TO=4 WIDE_LINE_TO=5 CUBIC_CURVE_TO=6`；`GraphicsPathWinding.EVEN_ODD="evenOdd"` / `NON_ZERO="nonZero"`，构造器不 public（只当常量袋）。签名：`cubicCurveTo.length == 6`、`drawPath.length == 3`（第三参默认 `evenOdd`）。错误：非法 winding ⇒ `ArgumentError #2008`「Error #2008: Parameter winding must be one of the accepted values.」；`data.length` 为**奇数** ⇒ `ArgumentError #2004`「Error #2004: One of the parameters is invalid.」——**两条都在画之前**抛。短数据 / 空数据 / `null` 向量 / 未知命令值 / `NO_OP` 均不抛 |
+| **紧包围盒（这条推翻了旧注释）** | AIR 的 `width/height` 是**曲线的紧包围盒**，不是控制点凸包：`moveTo(10,50)+cubicCurveTo(10,0, 90,0, 90,50)` ⇒ **80x37.5**（凸包会给 80x50）；`curveTo(10,0, 90,50)` ⇒ **80x25**。实现取**导数零点**（二次解一次方程，三次解 `A t²+B t+C`，`t∈(0,1)` 才取），纯 C 构建与 Skia 构建因此一致（`as_gpath_quad` / `as_gpath_cubic`） |
+| **像素口径（已对齐部分）** | `node cmpcell.cjs`（**阈值无关**的 coverage 积分）对齐 `pix6/7-air.bmp` 与 `pix6/7-aot.bmp`：`cell0` 平 API 填充、`cell2` `[MOVE,CUBIC,LINE]`（曲线鼓包计入填充）、`cell5` 同形**描边**、`cell4` `[MOVE,CUBIC]` **纯填充 = 0 ink**（**`drawPath` 独有**的怪癖，见下）、`pix7` 嵌套方块 `evenOdd` vs `nonZero`、wide 三命令给足 12 数字仍 0 |
+| **`drawPath` 的「单段曲线不填」怪癖（Pix8 定案）** | Pix8 七格把规则量清了：`[MOVE,LINE]` 填充 0（单条直线本就退化）；**`[MOVE,LINE,LINE]` 未闭合三角形填充 248226** ⇒ AIR **会**填未闭合轮廓；`[MOVE,CURVE]` / `[MOVE,CUBIC]` 填充 **0**；`[MOVE,CUBIC,CUBIC]` 填充 **232198**；平 API 的未闭合三角形同样 248226（与 `drawPath` 孪生格一致）。**决定性一格**：同样的单段三次曲线改走**平 API**（`moveTo` + `cubicCurveTo`）**会填** ⇒ 这不是渲染器规则、不是「未闭合不填」，而是 **`drawPath` 独有的指令流怪癖**：命令表只有 `MOVE_TO` + 一段曲线时不产生填充面（但**描边照画**，236 ink） |
+| **残留分歧（如实登记）** | ① **上面这个形状我们会多填一块**（`[MOVE,CUBIC]` AIR 0 / 我们 296310 的覆盖率积分）：要精确复刻得把「填充路径」与「描边路径」拆成两条 SkPath 再按轮廓分段投递（描边要画、填充要跳），为一段退化输入重写绘制路径的代价与回归面都不成正比 ⇒ **明确选择不复刻，登记为已知分歧**；② `cell5` 描边 coverage 我们比 AIR 低 **6.9%**（47510 → 44215）：曲线的**平顶处两侧都精确量到 2.00 设备像素宽**，缺口全在陡峭段，是 Flash 把细斜描边略微喂胖的光栅器风格差（与 AA 开关无关：开 AA 前 43860、开后 44215）；③ 其余各格在 1% 内（AA 阈值，非几何差） |
+| **本轮证据** | `examples/graphics-path.as` 六段（常量表 / `drawPath`==平 API 且 **80x37.5** / 二次曲线 **80x25** / `NO_OP` 透明 + 未知命令截断 80x0 + `WIDE_*` 0x0 + 空与 null 向量 / 两种 winding + 非法 `#2008` / 奇数长度 `#2004` / `drawPath` 扩展当前组）⇒ `graphics-path: OK`；`unit: render/GraphicsPath` **13 条**源级断言（常量值、winding 类形、两个签名、两处错误在画前、`NO_OP` continue、未知命令 break 保留已建几何、数据耗尽 break、三次走 cubic 桥不入二次近似、紧包围盒走极值而非控制点） |
 | **证据落盘 / 复现** | 两条**编译期**取证（上面两行原文，`node src/index.ts <file>.as` 即可复现）；库侧实证：`node tools/probe.cjs probes/widgets/icon` ⇒ **57 checks / 0 failures**（三次曲线 t=0.5 点画出来了、三档描边宽度精确、12-viewBox 缩放正确；`A`/未知命令/`icon()` 三个**负例**各自抛错并自报 G26）；变异 `probes/widgets/icon/mutation.cjs` ⇒ **6/6 CAUGHT**，每次按 sha256 逐字节还原。另附一条**推翻旧结论**的测量：`lineStyle` 的描边宽度在本后端**精确生效**（2/4/6/8/12 ⇒ 2/4/6/8/12 行，直线/二次曲线/圆 r=7,14,20/矩形一致），所以「描边不可用」不是 G26 的近亲，只是过期注释 |
+
+---
+
+## G27 —— Windows 上 `--package web` 直接 spawn 不了 `emcc`（POSIX 脚本 + `:` 拼的 PATH）
+
+| 项 | 内容 |
+|---|---|
+| **判定** | **工具链缺陷**（不是 AIR 语义缺口：AIR 没有「编译到浏览器」这个目标，所以这里对照的不是 `adl`，而是「同一台机器上 `emcc.bat --version` 明明能跑」） |
+| **症状** | `as-aot --air-app … --target wasm --package web` 在 Windows 上直接失败：`cannot build for --package web: emcc not found: C:/…/emsdk/upstream/emscripten/emcc`。**文案报「not found」而文件就在那里**，所以第一反应会去查路径，实际是**没法启动**（`spawnSync` 拿到 `ENOENT`/`EINVAL`） |
+| **根因（两处，都在 `src/build.ts`）** | ① `emccPath()` 固定返回 `<EMSDK_HOME>/upstream/emscripten/emcc`——那是一份 `#!/bin/sh` 脚本，Windows 没有 `/bin/sh`（实测 `spawnSync` ⇒ `ENOENT`），SDK 在同一目录里给的是 **`emcc.bat`**（直接 spawn 它 ⇒ `EINVAL`，Node 不肯在没有 shell 的情况下跑 `.bat`）与 `emcc.py`；② `webCompileEnv()` 用 **`:`** 拼 PATH（POSIX 分隔符），Windows 上等于交出一条无效的 PATH（而且 `emcc.bat` 还需要 `EMSDK_PYTHON`/`EM_CONFIG` 才跑得起来，这两个没人给） |
+| **影响面** | Windows 上 `--target wasm --package web` 这条路**完全不可用**；WASI（`--target wasm` raw）不受影响（走 clang），原生臂不受影响 |
+| **库侧处置（第十八轮，已落地并验收）** | 不动 `as3compiler/`，在**运行器侧**补一个**PE 转发器**：`tools/emcc-launcher.c`（手写 C，`clang -O2` 编成 4.5 KB 的 `emcc.exe`）——它读同目录 4 行的 `emcc-launcher.txt`（`EM_CONFIG` / `EMSDK_PYTHON` / `emcc.bat` 路径 / Windows 形状的 PATH），恢复这些环境变量后用 `cmd /c` 把 argv 原样转给 `emcc.bat`。`ui-demo/web-gallery.cjs` 把它编到 `.scratch/emcc-shim/upstream/emscripten/emcc.exe`，再把 `EMSDK_HOME` 指到那个 shim 根——**编译器看到的路径与它在 POSIX 上看到的完全同构**，一行代码没改。实测：`emcc 3.1.44`，`GalleryApp.{html,js,wasm}` 三次全部链接成功 |
+| **对编译器的主张** | `emccPath()` 在 `win32` 上要走**带了 shell 的 `cmd /c …\emcc.bat`**（光换成 `emcc.bat` 不够：实测直接 spawn ⇒ `EINVAL`），或 `emcc.py` + SDK 自带的 python；同时用 `path.delimiter` 拼 PATH、补上 `EM_CONFIG`/`EMSDK_PYTHON`。`webToolchainError()` 的文案应区分「文件不在」（`ENOENT`）与「在但起不来」（`EINVAL`/非零退出）——现在两种都报 `emcc not found`，正好把人往错方向带 |
+| **状态** | 库侧 ✅ 已绕行并验收（十八轮：`build.sh web` 全链路跑通，页面与原生臂的 `gallery-page0.png` 逐点同图；门 `tools/buildsh-web.cjs` **25 项**、变异 **6/6**）。编译器侧 ❌ **仍在**：Windows 上仍要过 shim；G27 修好之后 `.scratch/emcc-shim/` 与 `tools/emcc-launcher.c` 可以整体删除 |
+| **证据落盘 / 复现** | ① 一行取证（本机实测）：`node -e "const{spawnSync:s}=require('child_process');const e='<emsdk>/upstream/emscripten/';console.log(s(e+'emcc',['--version']).error.code, s(e+'emcc.bat',['--version']).error.code)"` ⇒ **`ENOENT EINVAL`**（同一份 SDK 里 `cmd /c emcc.bat --version` 正常输出 `emcc 3.1.44`）；② 绕行后成功：`cd ui-demo/air-gallery && ./build.sh web --no-serve`（exit 0，产物 `GalleryApp.{html,js,wasm,data}`；重跑产物逐字节可重现：两次首帧哈希均为 `1883718146`）；③ 门与变异：`node tools/buildsh-web.cjs` ⇒ **25 checks, 0 failures**，`node tools/mutation-buildsh-web.cjs` ⇒ **6/6 CAUGHT**（其中 M3 把 launcher 改成 `return 127`——文件仍是合法 PE、仍是 4.5 KB，只有真的去 spawn 才发现） |
 
 ---
 

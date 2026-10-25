@@ -491,12 +491,13 @@ M2 = 拖拽用画出来的短 thumb、M3 = `offsetX` 不进 scrollRect（旧缺�
 cd asaotui/ui-demo/air-gallery
 ./build.sh          # AIR 参考臂：mxmlc 编出 GalleryApp.swf，再 adl app.xml
 ./build.sh aot      # 我们的 AOT 臂：stage → as-aot --air-app → tour → 跑起来
+./build.sh web      # 浏览器臂：stage → as-aot --target wasm --package web → 起服务并打开
 ./build.sh swf      # 只编译（不弹窗、不出 exe）
 ./build.sh desc     # 不建：只报 --gpu 会用哪份描述符、带什么后端
-./build.sh clean    # 删两个臂的产物（**不删** gallery-page*.png，那是入库证据）
+./build.sh clean    # 删三个臂的产物（**不删** gallery-page*.png，那是入库证据；删掉 air-gallery-web/）
 ```
 
-两个臂读的是**同一个** `app.xml`（窗口尺寸/标题/`renderMode`/`requestedDisplayResolution` 的唯一真源）：
+三个臂读的是**同一个** `app.xml`（窗口尺寸/标题/`renderMode`/`requestedDisplayResolution` 的唯一真源）：
 `--air-app` 在建期读它，`adl` 在运行期读它，脚本本身不重复任何一个窗口参数。AOT 臂刻意**不重写构建配方**
 ——它就是 `run-gallery.cjs`（stage/编译/tour/量截图都在那儿），脚本只负责选臂。
 
@@ -555,6 +556,29 @@ HiDPI 无关的原因变红——本轮开工时工作树里正好躺着这样�
 两个消费臂本轮真跑过：`aot --gpu gl`（清单 `ASC_RENDER_GL=1`、41/41 页 PASS、源里带 `gl_glue.cc`）、
 `aot --gpu gpu`（`ASC_RENDER_D3D=1`、带 `d3d_glue.cc`）、`air --gpu gl`（`adl` 真开窗）。
 
+### 3.11b 第三条臂：`./build.sh web`（第十八轮）
+
+同一份 AS3 树编到**浏览器**：`./build.sh web`（stage → `as-aot --target wasm --package web` →
+起一个带 `application/wasm` 的静态服务器 → 打开）。它不复用 `run-gallery.cjs`：窗口由可执行文件
+开，页面不是 —— 没有进程、没有 `gallery.done`、也没有 `Stage.render`，所以有独立的运行器
+`ui-demo/web-gallery.cjs` 与独立的入口类 `demo/DocsWeb.as`（`DocsAir` 用了本编译器未实现的
+`UncaughtErrorEvent`，wasm 编不过；`DocsMain` 用 `Stage.render` 测试钩子）。
+
+底下撞到 **G27**：`as-aot` 直接 spawn `<EMSDK_HOME>/upstream/emscripten/emcc`（`#!/bin/sh` 脚本，
+PATH 还是 `:` 拼的 POSIX 形态）——Windows 上实测 `ENOENT`；换成 `emcc.bat` 是 `EINVAL`（Node 不肯裸跑
+.bat），只有 `cmd /c` 能跑。**编译器侧未动**（本工作区约定）：绕行是 `tools/emcc-launcher.c` 编出的
+4.5 KB PE 转发器 + `EMSDK_HOME` 指向 `.scratch/emcc-shim/`，G27 修好即可整体删除。
+
+「像不像」的测量（对照原生臂 `gallery-page0.png`，同为 1500×1050）：canvas 尺寸/标题相同、
+**48 点采样 44 点逐点相同**、最常见的 8 个颜色差 ≤0.9%（`#e8edf5` 18812 = 18812）、墨量差 1.1%；
+全图 5.1% 的像素差值 >32 且**全部落在文字上** —— 页面自带字体（wasm 读不到宿主字体）而原生臂用
+系统字体，字形栅格化与行内基线会差几像素。要逐字节相等，得两个臂共用同一个字体文件（本轮未做）。
+
+门 `tools/buildsh-web.cjs`（**25 项**，~5 s，不编译）驱动 `build.sh web --check`：真的 spawn 一次
+`emcc --version`（按 `as-aot` 的方式：无 shell、环境只有一个 PATH）、钉住**构建会 exec 的那个 argv**、
+钉「尺寸来自 app.xml 而不是写死的 1000×700」、钉三条拒绝（`--gpu`/未知 flag/指错的 `EMSDK_HOME`）、
+钉暂存目录仍在库外。变异 `tools/mutation-buildsh-web.cjs` **6/6 CAUGHT**。这道门**看不见**编译本身、
+看不见页面像素、也只在 Chromium 上开过 —— 三条都写在 `reviews/web-arm-2026-10-25.md` §6。
 ### 3.12 参考运行时门：为什么必须有一道门真跑 AIR（第十一轮补）
 
 前三轮的用户报告是同一个形状：**我们的 AOT 比 AIR 宽容**，于是库的错误在我们这里可以无声通过。
@@ -802,10 +826,10 @@ Codegen error at 12:13: undefined method 'drawPath' on class 'Graphics'
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **51** 道门：
+一条命令跑全部 **52** 道门：
 
 ```sh
-node tools/gates.cjs          # 51/51 PASS 才叫绿（定稿记录 reviews/gates-all-30.txt）
+node tools/gates.cjs          # 52/52 PASS 才叫绿（定稿记录 reviews/gates-all-31.txt）
 ```
 
 > 第十二轮补那次全量：**44/44 PASS**（`reviews/gates-all-26.txt`，exit 0），包括新门 `probe lifecycle`（9 项）

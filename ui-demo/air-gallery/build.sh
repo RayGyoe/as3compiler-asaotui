@@ -5,16 +5,31 @@
 #   ./build.sh           AIR reference arm: mxmlc the app, then `adl app.xml`
 #   ./build.sh air <page>  the same, landed straight on a catalog page (e.g. `select`)
 #   ./build.sh aot       our AOT arm: stage + compile it, then run the exe
+#   ./build.sh web       our WEB arm: stage + compile to wasm32 (Emscripten), then serve
 #   ./build.sh swf       compile the SWF and stop (no window, no exe)
-#   ./build.sh clean     delete what the two build arms produce
+#   ./build.sh clean     delete what the build arms produce
 #
-# WHY THERE ARE TWO ARMS
-# ----------------------
-# One tree of AS3, two runtimes: AIR is the REFERENCE (its pixels are what "correct"
-# means), and our AOT is what the toolkit exists for. This script makes "look at it"
-# a single command on either side, so a difference can be SEEN instead of argued
-# about. `run-gallery.cjs` stays the AOT arm's whole recipe (stage, build, tour,
-# measure) -- this script only selects the arm, it does not re-implement a build.
+# WHY THERE ARE THREE ARMS
+# ------------------------
+# One tree of AS3, THREE runtimes: AIR is the REFERENCE (its pixels are what "correct"
+# means), our native AOT is what the toolkit exists for, and the browser is the third
+# host the same source has to look right on (the compiler's `--target wasm --package
+# web`). This script makes "look at it" a single command on any of them, so a
+# difference can be SEEN instead of argued about. The runners stay the whole recipe
+# (`run-gallery.cjs` for native, `web-gallery.cjs` for the browser) -- this script only
+# selects the arm, it does not re-implement a build.
+#
+# WHY THE WEB ARM IS THE ODD ONE OUT
+# ----------------------------------
+# A window is opened by an executable; a page is not. So the web arm cannot reuse
+# `run-gallery.cjs` (no process to launch, no `.done` file to wait for, no
+# `Stage.render` to measure) and it gets its own runner -- see
+# `ui-demo/web-gallery.cjs` for the whole argument, including why the page is built
+# from its own staged app dir and why Windows needs an emcc launcher.
+#
+# `--gpu` does NOT apply here and is refused by name: in a browser the composition
+# backend is the browser's (canvas 2D or WebGL2), chosen by the compiler from
+# `<renderMode>` in the descriptor, not by a flag of this script.
 #
 # WHY THE AIR ARM HAS ITS OWN ENTRY CLASS
 # ---------------------------------------
@@ -27,10 +42,14 @@
 #
 # REQUIREMENTS
 # ------------
-#   node         both arms (mxmlc-check.cjs, stage-air.cjs, run-gallery.cjs)
+#   node         all arms (mxmlc-check.cjs, stage-air.cjs, run-gallery.cjs, web-gallery.cjs)
 #   AIR SDK      the AIR arm. Point AIRSDK_HOME at the SDK root -- or just have the
 #                SDK's bin/ on PATH; the root is then derived from adl/mxmlc.
-#   clang        the AOT arm (`--cc clang`; set ASC_CC to name another compiler).
+#   clang        the AOT arm (`--cc clang`; set ASC_CC to name another compiler), and
+#                the launcher the WEB arm needs on Windows (see below).
+#   Emscripten   the WEB arm. Point EMSDK_HOME at an emsdk root (the directory holding
+#                upstream/emscripten/emcc) -- `web-gallery.cjs` also looks in the
+#                workspace's build-tools/ so this box needs no variable.
 #
 # `app.xml` is the source of truth for the window (size, title, renderMode,
 # <requestedDisplayResolution>) on BOTH arms -- `--air-app` reads it for the AOT
@@ -95,17 +114,22 @@ say() { printf '[build] %s\n' "$*"; }
 die() { printf 'build.sh: %s\n' "$*" >&2; exit 2; }
 
 usage() {
-  printf 'usage: %s [air [page]|aot|swf|desc|clean] [--gpu <mode>]\n\n' "$(basename -- "$0")"
+  printf 'usage: %s [air [page]|aot|web|swf|desc|clean] [--gpu <mode>] [web flags]\n\n' "$(basename -- "$0")"
   printf '  air    (default) mxmlc the app, then run it under adl\n'
   printf '  air <page>     same, opened on that catalog page (select, combobox, ...)\n'
   printf '  aot    stage + compile with as-aot, then run the executable\n'
+  printf '  web    stage + compile to wasm32 (Emscripten), then serve the page\n'
   printf '  swf    compile the SWF only\n'
   printf '  desc   derive/show the descriptor this --gpu would build from, build nothing\n'
-  printf '  clean  remove the SWF / exe / generated C / tour evidence\n\n'
+  printf '  clean  remove the SWF / exe / generated C / web page / tour evidence\n\n'
   printf '  --gpu <mode>   what draws the window: cpu (default) | gpu | d3d12 | gl | direct\n'
   printf '                 Derives app.<mode>.xml from app.xml (never edits app.xml)\n'
   printf '                 and applies to the air and aot arms. gpu/direct use the\n'
   printf '                 platform backend (D3D12 on Windows); gl forces WGL/OpenGL.\n'
+  printf '                 Not available on the web arm (a browser composites itself).\n\n'
+  printf '  web flags:  --check       verify the Emscripten SDK + the flags, build nothing\n'
+  printf '              --no-serve    build only (open the page yourself over HTTP)\n'
+  printf '              --port <n>    port for the built-in static server (default 8080)\n'
 }
 
 # ---- the window's composition mode ---------------------------------------
@@ -288,6 +312,23 @@ run_aot() {
   ( cd "$DEMO" && "$NODE" "$@" )
 }
 
+# The web arm's argv. Built in one place for the same reason as aot_args: `--check`
+# prints what `web` would exec, and tools/buildsh-web.cjs pins that line.
+web_args() {
+  printf 'web-gallery.cjs'
+  [ "$WEB_CHECK" = 1 ] && printf ' --check'
+  [ "$WEB_SERVE" = 1 ] || printf ' --no-serve'
+  [ "$WEB_PORT" = "" ] || printf ' --port %s' "$WEB_PORT"
+  return 0
+}
+
+run_web() {
+  say 'web arm: ui-demo/web-gallery.cjs (stage -> as-aot --target wasm --package web -> serve)'
+  # ARGUMENTS, not environment -- see run_aot.
+  set -- $(web_args)
+  ( cd "$DEMO" && "$NODE" "$@" )
+}
+
 # `rm` is not guaranteed in this workspace's bash (measured: "command not found"), so
 # removal goes through node -- which both arms need anyway.
 clean() {
@@ -304,7 +345,12 @@ clean() {
                    "gallery.done", "gallery.txt", "src",
                    // the AIR driver file and the log it writes (tools/air-sweep.cjs
                    // reads that log; a stale one must not survive a clean)
-                   "air-mode.txt", "air-trace.txt"];
+                   "air-mode.txt", "air-trace.txt",
+                   // the whole web app dir: derived from app.xml + demo/** by
+                   // web-gallery.cjs, so nothing in it is worth keeping (and a stale
+                   // .js/.wasm pair is worse than useless -- a browser that reuses
+                   // them shows the previous build)
+                   "../air-gallery-web"];
     // `--gpu` derives extra descriptors from app.xml. app.xml itself is TRACKED and
     // never rewritten, so it is not a candidate.
     for (const n of fs.readdirSync(dir)) if (/^app\..+\.xml$/.test(n)) names.push(n);
@@ -327,11 +373,21 @@ clean() {
 ARM=
 PAGE=
 GPU=
+WEB_SERVE=1
+WEB_PORT=
+WEB_CHECK=0
 while [ $# -gt 0 ]; do
   case "$1" in
-    air|adl|aot|native|swf|compile|desc|clean) ARM=$1; shift ;;
+    air|adl|aot|native|web|swf|compile|desc|clean) ARM=$1; shift ;;
     --gpu)   [ $# -ge 2 ] || die '--gpu needs a value (cpu|gpu|d3d12|gl|direct)'; GPU=$2; shift 2 ;;
     --gpu=*) GPU=${1#--gpu=}; shift ;;
+    # web-arm flags. Accepted on any arm so a habitual `--no-serve` is not an error;
+    # `web` is the only arm that reads them.
+    --check)    WEB_CHECK=1; shift ;;
+    --no-serve) WEB_SERVE=0; shift ;;
+    --serve)    WEB_SERVE=1; shift ;;
+    --port)  [ $# -ge 2 ] || die '--port needs a number'; WEB_PORT=$2; shift 2 ;;
+    --port=*) WEB_PORT=${1#--port=}; shift ;;
     -h|--help|help) usage; exit 0 ;;
     -*)      printf 'build.sh: unknown option %s\n' "$1" >&2; usage >&2; exit 2 ;;
     *)
@@ -342,17 +398,25 @@ done
 ARM=${ARM:-air}
 
 if [ -n "$GPU" ]; then
+  # A browser page has no window backend to pick: the compiler derives its
+  # composition path from the descriptor's <renderMode>, and that is the one thing a
+  # flag here cannot honestly promise (canvas 2D vs WebGL2 is the whole range).
+  if [ "$ARM" = web ]; then
+    die '--gpu does not apply to the web arm: the browser composites for itself and the page is built from <renderMode> in app.xml (cpu = canvas 2D). Drop --gpu, or edit the descriptor'
+  fi
   gpu_mode "$GPU"
   case "$ARM" in
     air|adl|aot|native|desc) write_descriptor ;;
     # `swf` compiles the same SWF in every mode (<renderMode> is a run-time window
-    # setting), and `clean` must not create what it is about to delete.
+    # setting), `clean` must not create what it is about to delete, and `web` is
+    # refused above (a browser composites itself) so it never derives one either.
   esac
 fi
 
 case "$ARM" in
   air|adl)        run_air "$PAGE" ;;
   aot|native)     run_aot ;;
+  web)            run_web ;;
   desc)           desc ;;
   swf|compile)
     root=$(sdk_root) || die 'no AIR SDK found: set AIRSDK_HOME to the SDK root (mxmlc lives in $AIRSDK_HOME/bin)'
