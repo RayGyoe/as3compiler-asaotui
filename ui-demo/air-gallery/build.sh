@@ -25,7 +25,7 @@
 # `run-gallery.cjs` (no process to launch, no `.done` file to wait for, no
 # `Stage.render` to measure) and it gets its own runner -- see
 # `ui-demo/web-gallery.cjs` for the whole argument, including why the page is built
-# from its own staged app dir and why Windows needs an emcc launcher.
+# from its own staged app dir.
 #
 # `--gpu` does NOT apply here and is refused by name: in a browser the composition
 # backend is the browser's (canvas 2D or WebGL2), chosen by the compiler from
@@ -45,11 +45,12 @@
 #   node         all arms (mxmlc-check.cjs, stage-air.cjs, run-gallery.cjs, web-gallery.cjs)
 #   AIR SDK      the AIR arm. Point AIRSDK_HOME at the SDK root -- or just have the
 #                SDK's bin/ on PATH; the root is then derived from adl/mxmlc.
-#   clang        the AOT arm (`--cc clang`; set ASC_CC to name another compiler), and
-#                the launcher the WEB arm needs on Windows (see below).
+#   clang        the AOT arm (`--cc clang`; set ASC_CC to name another compiler).
 #   Emscripten   the WEB arm. Point EMSDK_HOME at an emsdk root (the directory holding
-#                upstream/emscripten/emcc) -- `web-gallery.cjs` also looks in the
-#                workspace's build-tools/ so this box needs no variable.
+#                upstream/emscripten/emcc, or emcc.bat on Windows) -- `web-gallery.cjs`
+#                also looks in the workspace's build-tools/ so this box needs no
+#                variable. Since as-aot v0.4.240 the compiler launches emcc itself on
+#                both platforms; this workspace needs no launcher of its own.
 #
 # `app.xml` is the source of truth for the window (size, title, renderMode,
 # <requestedDisplayResolution>) on BOTH arms -- `--air-app` reads it for the AOT

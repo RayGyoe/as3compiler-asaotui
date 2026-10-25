@@ -1,26 +1,24 @@
-MUTATION buildsh-web -- 6 mutations of the web arm
+MUTATION buildsh-web -- 7 mutations of the web arm
 gate before any mutation:
-  buildsh-web: 25 checks, 0 failures  (exit 0)
+  buildsh-web: 26 checks, 0 failures  (exit 0)
 
 M1  CAUGHT  the argv stops asking for the web package
      exit 1
      FAIL: the build asks for the web package
-     restore: byte-identical (39f2321fd9538fdd)
+     restore: byte-identical (372a1e9068e682fa)
 M2  CAUGHT  the entry class becomes DocsAir (cannot compile for wasm)
      exit 1
      FAIL: the entry class is demo.DocsWeb
      FAIL: not DocsAir/DocsMain (wasm cannot compile the first; the second drives Stage.render)
-     restore: byte-identical (39f2321fd9538fdd)
-M3  CAUGHT  the emcc launcher cannot run emcc any more (still a valid-looking file)
+     restore: byte-identical (372a1e9068e682fa)
+M3  CAUGHT  the check stops believing the compiler (a stub emcc that exits 1 passes)
      exit 1
-     FAIL: `build.sh web --check` exits 0
-     FAIL: the check reports PASS
-     FAIL: emcc is spawnable and answers --version
-     restore: byte-identical (ca7eac59c5302baa)
+     FAIL: an emcc that exists but exits nonzero is NOT reported as usable
+     restore: byte-identical (372a1e9068e682fa)
 M4  CAUGHT  the --gpu guard stops firing on the web arm (typo in the comparison)
      exit 1
      FAIL: `web --gpu gl` is refused with a reason
-     restore: byte-identical (aa418c5f7e9bbc90)
+     restore: byte-identical (7654fe95ccff0f5e)
 M5  CAUGHT  the generated web app dir loses its ignore rule (derived app.xml becomes committable)
      exit 1
      FAIL: ui-demo/air-gallery-web/app.xml is git-ignored
@@ -30,9 +28,13 @@ M5  CAUGHT  the generated web app dir loses its ignore rule (derived app.xml bec
 M6  CAUGHT  a wrong EMSDK_HOME falls back to the workspace SDK instead of failing
      exit 1
      FAIL: an EMSDK_HOME that is not an emsdk is an error, not a fallback
-     restore: byte-identical (39f2321fd9538fdd)
+     restore: byte-identical (372a1e9068e682fa)
+M7  CAUGHT  the runner reports an emcc outside the SDK again (the G27 shim is back)
+     exit 1
+     FAIL: the program it names is the SDK’s own upstream/emscripten/emcc.bat (nothing in between)
+     restore: byte-identical (372a1e9068e682fa)
 
 gate after restoring every file: exit 0
 
-MUTATION buildsh-web: 6/6 caught, 0 problem(s)
+MUTATION buildsh-web: 7/7 caught, 0 problem(s)
 RESULT: PASS

@@ -41,22 +41,28 @@
 // It is generated, gitignored, and re-created from the tracked sources on demand:
 // delete it whenever, the next `./build.sh web` rebuilds it.
 //
-// WINDOWS: THE EMCC LAUNCHER SHIM (compiler-gaps.md G27)
-// ------------------------------------------------------
-// `as-aot` spawns `$EMSDK_HOME/upstream/emscripten/emcc` DIRECTLY, with no shell
-// (src/build.ts::emccPath + spawnSync). On the SDK that path is a `#!/bin/sh`
-// wrapper -- a POSIX script Windows cannot CreateProcess -- so a web build on
-// Windows stops with "cannot build for --package web: emcc not found: ..." before
-// it reads a single flag, even though `emcc.bat` next to it works fine. The driver
-// also hands the child `env = { PATH: ... }` with POSIX ':' separators, which a
-// Windows PATH cannot parse, and throws the rest of the environment away
-// (EM_CONFIG, EMSDK_PYTHON).
+// WHY THERE IS NO EMCC SHIM ANY MORE (compiler-gaps.md G27, fixed in v0.4.240)
+// ---------------------------------------------------------------------------
+// When this arm landed, `as-aot --package web` spawned
+// `$EMSDK_HOME/upstream/emscripten/emcc` with no shell and handed the child an env
+// whose only entry was a ':'-joined PATH -- a POSIX wrapper Windows cannot
+// CreateProcess, and a PATH Windows cannot parse. This runner worked around it: it
+// compiled `tools/emcc-launcher.c` into a PE at `<shim>/upstream/emscripten/emcc.exe`
+// and pointed EMSDK_HOME at that shim tree.
 //
-// This runner therefore builds a 100-line PE launcher (tools/emcc-launcher.c) that
-// lives at `<shim>/upstream/emscripten/emcc.exe`, restores that environment from a
-// 4-line config file beside it, and forwards argv to `emcc.bat`. The compiler is
-// unchanged; `EMSDK_HOME` points at the shim tree. On macOS/Linux the SDK's own
-// `emcc` works and none of this happens.
+// v0.4.240 fixed the compiler instead: it picks `emcc.bat` on Windows and launches
+// it through cmd.exe, keeps the inherited environment, joins PATH with
+// path.delimiter, and supplies EMSDK_PYTHON/EM_CONFIG when the SDK has them
+// (src/build.ts::emccPath/spawnTool/webCompileEnv). The workaround is therefore
+// DELETED -- no launcher, no shim tree, no fabricated PATH. EMSDK_HOME is the SDK
+// itself, and the only thing this file tells the compiler is where it lives.
+//
+// What survives is the question the shim used to answer: "can the toolchain actually
+// start?". Answering it here by spawning emcc would be a second implementation of
+// the thing under test, free to drift from the compiler's -- which is exactly the
+// bug G27 was. `--check` asks the compiler instead
+// (`as-aot doctor --json --target wasm --package web`), so the verdict comes from
+// the code that will do the build, on the same platform branch.
 'use strict';
 
 const path = require('path');
@@ -69,9 +75,6 @@ const { descriptorWindow } = require('./air-run.cjs');
 const here = __dirname;                                   // asaotui/ui-demo/
 const UI = path.resolve(here, '..');                      // asaotui/
 const compilerDir = path.resolve(UI, '..', 'as3compiler');
-const clang = process.env.ASC_CC || 'clang';
-const shimHome = path.join(UI, '.scratch', 'emcc-shim');
-const launcherSrc = path.join(UI, 'tools', 'emcc-launcher.c');
 
 // The source roots the build compiles IN ADDITION to `<appDir>/src`. Kept in step
 // with stage-air.cjs's SHARED_ROOTS (that file prints them; this one has to pass
@@ -150,21 +153,27 @@ if (!win) {
 // The compiler treats a missing SDK as an error at build time; naming the reason
 // here -- before a 3 MB codegen pass -- is the difference between a two-second
 // failure and a two-minute one.
+//
+// The entry point is platform-exact, matching src/build.ts::emccPath(): `emcc.bat`
+// on Windows, `emcc` elsewhere. Accepting either spelling would let this function
+// bless an SDK whose only entry point the compiler then refuses to launch -- the
+// two names sit side by side in every SDK, so that is a distinction only a
+// different-platform copy can expose, and it fails loudly instead of at minute two.
+const EMCC_ENTRY = process.platform === 'win32' ? 'emcc.bat' : 'emcc';
 function findEmsdk() {
   const tried = [];
   const fromEnv = process.env.EMSDK_HOME || process.env.EMSDK || '';
+  const looksLikeEmsdk = (home) => fs.existsSync(path.join(home, 'upstream', 'emscripten', EMCC_ENTRY));
   if (fromEnv) {
     tried.push(fromEnv);
     // `EMSDK` may carry forward slashes; Windows accepts either.
-    if (fs.existsSync(path.join(fromEnv, 'upstream', 'emscripten', 'emcc'))
-      || fs.existsSync(path.join(fromEnv, 'upstream', 'emscripten', 'emcc.bat'))) return fromEnv;
+    if (looksLikeEmsdk(fromEnv)) return fromEnv;
     // An explicitly-named SDK that is not one is an ERROR, not a miss: falling
     // through to the workspace's copy would build the page with a DIFFERENT
     // toolchain than the one asked for, and nothing in the output would say so
     // (AGENTS.md 2.5). The search below is only for the case nobody named one.
     console.error('[web] EMSDK_HOME/EMSDK is set but is not an emsdk root: ' + fromEnv
-      + '\n      expected ' + path.join(fromEnv, 'upstream', 'emscripten', 'emcc')
-      + ' (or emcc.bat on Windows)');
+      + '\n      expected ' + path.join(fromEnv, 'upstream', 'emscripten', EMCC_ENTRY));
     process.exit(2);
   }
   // This workspace keeps the Skia source tree (and therefore the emsdk it built
@@ -176,97 +185,65 @@ function findEmsdk() {
   ]) {
     const p = path.join(workspace, rel);
     tried.push(p);
-    if (fs.existsSync(path.join(p, 'upstream', 'emscripten', 'emcc'))
-      || fs.existsSync(path.join(p, 'upstream', 'emscripten', 'emcc.bat'))) return p;
+    if (looksLikeEmsdk(p)) return p;
   }
   console.error('[web] no Emscripten SDK found. Looked at:\n  '
     + tried.join('\n  ')
     + '\n      Install one and point EMSDK_HOME at its root (the directory holding'
-    + '\n      upstream/emscripten/emcc), e.g.:  EMSDK_HOME=/path/to/emsdk ./build.sh web');
+    + '\n      upstream/emscripten/' + EMCC_ENTRY + '), e.g.:  EMSDK_HOME=/path/to/emsdk ./build.sh web');
   process.exit(2);
 }
 const emsdk = findEmsdk();
 console.log('[web] emsdk: ' + emsdk);
 
-// Windows needs the PE launcher (see the header). `clang` compiles it once; the
-// result is cached under .scratch/ and rebuilt when the source changes.
-function shimHomeForWindows() {
-  const em = path.join(shimHome, 'upstream', 'emscripten');
-  fs.mkdirSync(em, { recursive: true });
-  const exe = path.join(em, 'emcc.exe');
-  const src = launcherSrc;
-  if (!fs.existsSync(src)) {
-    console.error('[web] missing ' + src + ' (the Windows emcc launcher)');
-    process.exit(2);
-  }
-  const stale = !fs.existsSync(exe)
-    || fs.statSync(src).mtimeMs > fs.statSync(exe).mtimeMs;
-  if (stale) {
-    console.log('[web] building the emcc launcher (tools/emcc-launcher.c -> ' + path.relative(UI, exe) + ')');
-    const r = spawnSync(clang, ['-O2', '-o', exe, src], { encoding: 'utf8' });
-    if (r.status !== 0) {
-      console.error('[web] could not compile the emcc launcher with ' + clang + ':');
-      console.error((r.stdout || '') + (r.stderr || ''));
-      process.exit(2);
-    }
-  }
-  // The environment the compiler throws away: emcc.bat needs a python to run
-  // emcc.py with, the SDK's config (which itself is what tells emcc where clang,
-  // node and wasm-ld are), and a Windows-shaped PATH.
-  const w = (p) => p.replace(/\//g, '\\');
-  const python = [
-    'python/3.9.2-nuget_64bit/python.exe',
-  ].map((r) => path.join(emsdk, r)).find((p) => fs.existsSync(p));
-  const cfg = [
-    path.join(emsdk, '.emscripten'),            // EM_CONFIG
-    python || '',                               // EMSDK_PYTHON ('' = let emcc.bat find python)
-    path.join(emsdk, 'upstream', 'emscripten', 'emcc.bat'),
-    [
-      w(path.join(emsdk, 'upstream', 'bin')),
-      w(path.join(emsdk, 'upstream', 'emscripten')),
-      w(path.join(emsdk, 'node', '16.20.0_64bit')),
-      w(path.join(emsdk, 'node', '16.20.0_64bit', 'bin')),
-      'C:\\Windows\\System32',
-      'C:\\Windows',
-    ].filter(Boolean).join(';'),
-  ];
-  fs.writeFileSync(path.join(em, 'emcc-launcher.txt'), cfg.join('\n') + '\n');
-  return shimHome;
-}
-const isWindows = process.platform === 'win32';
-const emsdkHome = isWindows ? shimHomeForWindows() : emsdk;
-if (isWindows) console.log('[web] EMSDK_HOME -> the launcher shim (' + path.relative(UI, emsdkHome) + ')');
-
 // ---- --check ---------------------------------------------------------------
-// Prove the toolchain the way as-aot will use it -- spawn `<EMSDK_HOME>/upstream/
-// emscripten/emcc` with no shell and with ONLY a PATH in the environment -- and
-// print the argv the build would hand to as-aot. No compilation, no staging, ~1 s.
+// Print the argv the build would hand to as-aot, and ask the COMPILER whether the
+// web toolchain is usable. No compilation, no staging, ~1 s.
 //
 // This exists because BOTH failure modes of this arm are invisible from a file
-// listing: a `emcc` that cannot be spawned (the Windows gap this runner works
-// around) and a web build whose flags were assembled wrong (a native build of the
-// same app still looks perfect). tools/buildsh-web.cjs runs exactly this and pins
-// the printed argv, so the wiring is checked by the thing that consumes it.
+// listing: a toolchain that cannot be started, and a web build whose flags were
+// assembled wrong (a native build of the same app still looks perfect).
+// tools/buildsh-web.cjs runs exactly this and pins the printed argv, so the wiring
+// is checked by the thing that consumes it.
+//
+// The toolchain question is delegated on purpose. `as-aot doctor --json --target
+// wasm --package web` runs `webToolchainError()` -- the same function the build runs
+// before it starts -- which resolves `emccPath()` for this platform and launches it.
+// So "ok" here means a process started and answered, not that a file exists, and it
+// is the compiler's own platform branch that decided how to start it. (Before G27
+// was fixed this runner had to spawn emcc itself with a hand-built ':' PATH; that
+// was a copy of the broken logic, and a copy cannot outlive the bug it works around.)
 if (process.argv.includes('--check')) {
   let ok = true;
   const say = (label, value) => console.log('[web] check  ' + label + ': ' + value);
   const bad = (label, value) => { ok = false; console.log('[web] CHECK FAILED  ' + label + ': ' + value); };
 
-  // 1) the launcher/emcc itself, under the environment the compiler builds
-  const emcc = path.join(emsdkHome, 'upstream', 'emscripten', 'emcc');
-  // The PATH is assembled with ':' on purpose: that is exactly what the compiler's
-  // webCompileEnv() builds, and on Windows it produces a PATH the shell cannot use --
-  // which is precisely the condition the launcher has to survive. A check that used
-  // the platform's own delimiter would test an environment the build never has.
-  const compilerPath = [path.join(emsdkHome, 'upstream', 'emscripten'),
-    path.join(emsdkHome, 'upstream', 'bin'), process.env.PATH || ''].join(':');
-  const emccRun = spawnSync(emcc, ['--version'], { encoding: 'utf8', env: { PATH: compilerPath } });
-  if (emccRun.error || emccRun.status !== 0) {
-    bad('emcc', (emccRun.error && emccRun.error.code)
-      || ((emccRun.stderr || '') + (emccRun.stdout || '')).trim().split('\n')[0]
-      || ('exit ' + emccRun.status));
+  // 1) the toolchain, as the compiler judges it
+  say('emsdk', emsdk);
+  const doc = spawnSync(process.execPath, [path.join(compilerDir, 'src', 'index.ts'),
+    'doctor', '--json', '--target', 'wasm', '--package', 'web'], {
+    cwd: compilerDir,
+    encoding: 'utf8',
+    // The environment the build gives it: the caller's, plus the SDK to use. The
+    // compiler merges its own PATH on top (webCompileEnv) -- this file must not
+    // pre-chew that, or the check would be testing its own arithmetic.
+    env: { ...process.env, EMSDK_HOME: emsdk },
+  });
+  let web = null;
+  try {
+    web = (JSON.parse(doc.stdout || '').checks || []).find((c) => c.id === 'web.emsdk') || null;
+  } catch (e) { /* reported below */ }
+  if (!web) {
+    const first = ((doc.stderr || '') + (doc.stdout || '')).trim().split('\n')[0];
+    bad('emcc', 'as-aot doctor reported no web.emsdk check (exit ' + doc.status + ')'
+      + (first ? ': ' + first : ''));
+  } else if (web.status !== 'ok') {
+    bad('emcc', web.detail);
   } else {
-    say('emcc', (emccRun.stdout || '').trim().split('\n')[0]);
+    // `detail` is the PROGRAM the compiler will launch (emcc.bat on Windows), which
+    // is what makes a shim visible if one ever comes back: it would be a path
+    // outside $EMSDK_HOME/upstream/emscripten.
+    say('emcc', web.status + ' -- ' + web.detail);
   }
 
   // 2) the descriptor the page's canvas comes from, and the class that mounts it
@@ -371,7 +348,7 @@ if (serveOnly) {
     stdio: 'inherit',
     // EMSDK_HOME (not an inline `VAR=value` prefix: this workspace's shells drop
     // those across the bash -> node.exe boundary) plus whatever the caller had.
-    env: { ...process.env, EMSDK_HOME: emsdkHome },
+    env: { ...process.env, EMSDK_HOME: emsdk },
   });
   if (built.status !== 0) {
     console.error('[web] BUILD FAILED (exit ' + built.status + ')');

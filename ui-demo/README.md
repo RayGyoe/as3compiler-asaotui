@@ -73,32 +73,41 @@ with `--target wasm --package web`, and then serves that directory over HTTP —
 ```sh
 ./build.sh web                 # build, then open it (Ctrl-C stops the server)
 ./build.sh web --no-serve      # build only
-./build.sh web --check         # ~1 s: is the toolchain there, and is the argv right?
+./build.sh web --check         # ~0.3 s: the compiler says whether it can start emcc, and is the argv right?
 ./build.sh web --port 8090     # a different static-server port
 ./build.sh web --gpu gl        # REFUSED, with a reason: a browser composites itself
 ```
 
 Two things about it are worth knowing before changing it:
 
-- **Windows needs an `emcc` launcher.** `as-aot --package web` spawns
-  `<EMSDK_HOME>/upstream/emscripten/emcc` directly, with no shell and with a PATH-only
-  environment. In an emsdk that file is a `#!/bin/sh` script, so on Windows the spawn
-  cannot work — `compiler-gaps.md` **G27**. `web-gallery.cjs` compiles
-  `../tools/emcc-launcher.c` (a ~4.5 KB PE that restores `EM_CONFIG`/`EMSDK_PYTHON` and
-  forwards argv to `emcc.bat`) into `.scratch/emcc-shim/` and points `EMSDK_HOME` there.
-  The compiler is untouched; the day G27 is fixed the shim can be deleted.
+- **The toolchain question is put to the compiler, not re-answered here.** `as-aot
+  --package web` used to spawn `<EMSDK_HOME>/upstream/emscripten/emcc` directly, with no
+  shell and a PATH-only environment — a `#!/bin/sh` script on Windows, so the spawn could
+  not work (`compiler-gaps.md` **G27**). This runner used to stand a PE launcher
+  (`tools/emcc-launcher.c`, a shim tree under `.scratch/`) in front of it. as-aot
+  **v0.4.240** fixed the compiler instead (it launches `emcc.bat` through `cmd.exe`, keeps
+  the inherited environment, joins PATH with the platform delimiter), so **the shim is
+  gone**: `EMSDK_HOME` is the real SDK. `--check` now asks `as-aot doctor --json --target
+  wasm --package web`, i.e. the same `webToolchainError()` the build runs — a check that
+  spawned emcc itself would be a copy of the launch logic, free to drift from it, which
+  is exactly how G27 stayed invisible for a round.
 - **The page is the same page.** Measured against the native arm's
-  `gallery-page0.png`: a 48-point sample grid is identical at 44 points (the four that
-  differ are inside a text run — glyph antialiasing), and the eight most common colours
-  agree within 0.3% (`#e8edf5` 18,812 px on both). Clicking a nav item in the browser
-  changes the page like it does natively. That is the whole point of the arm: the same
-  AS3 tree, three runtimes, one picture.
+  `gallery-page0.png` (re-measured after v0.4.239 turned on Skia antialiasing, both arms
+  re-rendered): the 48-point sample grid (6 columns x 8 rows, cell centres) is identical
+  at **46 points**, total ink differs by **0.85%**, and seven of the eight most common
+  colours agree within 0.35%. The leftovers are all glyphs: the page ships its own font
+  (a wasm sandbox has no system fonts) while the native arm uses the system one, so text
+  rasterises a fraction of a pixel differently — the outlier is the button blue
+  `#2563eb` (−5.1%), whose pure-colour count is set by the label's coverage. Clicking a
+  nav item in the browser changes the page like it does natively. That is the whole point
+  of the arm: the same AS3 tree, three runtimes, one picture.
 
-`../tools/buildsh-web.cjs` pins the decision path `web` takes (toolchain spawnable,
-the argv, the size taken from `app.xml`, the refusals, and the generated dir staying
-git-ignored) without compiling anything, and `../tools/mutation-buildsh-web.cjs` (6/6)
-shows that gate goes red — including a mutant that leaves a perfectly good-looking
-`emcc.exe` on disk which can no longer run.
+`../tools/buildsh-web.cjs` pins the decision path `web` takes (the compiler can start
+emcc — and a stub `emcc.bat` that exits 1 must come back unusable — the argv, the size
+taken from `app.xml`, the refusals, and the generated dir staying git-ignored) without
+compiling anything, and `../tools/mutation-buildsh-web.cjs` (7/7) shows that gate goes
+red — including a mutant that puts an `emcc` back outside the SDK, i.e. the shape of the
+launcher this arm no longer needs.
 
 Nothing under `asaotui/seam/`, `layout-check/`, `diff-check/` or `air-check/` is
 modified or vendored; the seam is used read-only.

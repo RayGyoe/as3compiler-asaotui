@@ -2,14 +2,14 @@
 // the `build.sh web` arm can be wrong, and that it names the failure it is supposed
 // to name.
 //
-// The six mutations are the six mistakes this arm actually invites:
+// The seven mutations are the seven mistakes this arm actually invites:
 //   M1  `--package web` disappears from the argv (the compiler then builds a native
 //       executable or refuses; either way nothing says "web" was asked for)
 //   M2  the entry class becomes `demo.DocsAir` -- which does not compile for wasm at
 //       all (UncaughtErrorEvent), so this is the "it built yesterday" failure
-//   M3  the emcc launcher stops being able to run emcc (exit 127 at the top of main):
-//       the file is still on disk, still 40 KB, still named emcc.exe -- this is the
-//       mutation that proves the gate SPAWNS the toolchain instead of stat-ing it
+//   M3  `--check` stops believing the compiler: any doctor status passes, so the stub
+//       toolchain from the gate's A2 case (a 22-byte emcc.bat that exits 1) is
+//       reported as usable -- the file is there, the name is right, nothing ran
 //   M4  the `--gpu` guard stops firing (a one-letter typo in the arm comparison): the
 //       option is then silently accepted on an arm where it cannot mean anything
 //   M5  the .gitignore rule for the generated app dir is dropped: the `air-*` negations
@@ -17,10 +17,11 @@
 //       tracked descriptor can be committed
 //   M6  findEmsdk() stops erroring on an EMSDK_HOME that is not an emsdk and falls back
 //       to the workspace copy instead (builds with a toolchain nobody asked for)
+//   M7  the runner reports an emcc OUTSIDE the SDK again -- the shape of the G27
+//       workaround (a launcher shim tree in .scratch/ standing in front of emcc)
 //
-// Each file is restored in `finally` and compared by sha256, byte for byte. The
-// launcher is restored too, and its .exe is deliberately NOT touched: the build regenerates
-// it whenever the source is newer, so a restored source heals on the next run.
+// Each file is restored in `finally` and compared by sha256, byte for byte. Nothing
+// on disk is left over: M3's stub SDK is created and removed by the gate itself.
 //
 // USAGE (from asaotui/):   node tools/mutation-buildsh-web.cjs
 'use strict';
@@ -33,7 +34,6 @@ const { spawnSync } = require('child_process');
 const UI = path.resolve(__dirname, '..');
 const SH = 'ui-demo/air-gallery/build.sh';
 const WG = 'ui-demo/web-gallery.cjs';
-const LAUNCHER = 'tools/emcc-launcher.c';
 const GI = '.gitignore';
 const RESULTS = path.join(UI, 'reviews', 'mutation-buildsh-web.txt');
 
@@ -58,11 +58,11 @@ const MUTATIONS = [
   },
   {
     id: 'M3',
-    why: 'the emcc launcher cannot run emcc any more (still a valid-looking file)',
-    file: LAUNCHER,
-    find: 'int main(int argc, char **argv) {\n',
-    replace: 'int main(int argc, char **argv) {\n  return 127;\n',
-    expect: 'emcc is spawnable and answers --version',
+    why: 'the check stops believing the compiler (a stub emcc that exits 1 passes)',
+    file: WG,
+    find: "  } else if (web.status !== 'ok') {",
+    replace: "  } else if (web.status === 'never') {",
+    expect: 'an emcc that exists but exits nonzero is NOT reported as usable',
   },
   {
     id: 'M4',
@@ -86,9 +86,17 @@ const MUTATIONS = [
     id: 'M6',
     why: 'a wrong EMSDK_HOME falls back to the workspace SDK instead of failing',
     file: WG,
-    find: "      + ' (or emcc.bat on Windows)');\n    process.exit(2);\n",
-    replace: "      + ' (or emcc.bat on Windows)');\n",
+    find: "EMCC_ENTRY));\n    process.exit(2);\n",
+    replace: "EMCC_ENTRY));\n",
     expect: 'an EMSDK_HOME that is not an emsdk is an error, not a fallback',
+  },
+  {
+    id: 'M7',
+    why: 'the runner reports an emcc outside the SDK again (the G27 shim is back)',
+    file: WG,
+    find: "    say('emcc', web.status + ' -- ' + web.detail);",
+    replace: "    say('emcc', web.status + ' -- ' + path.join(UI, '.scratch', 'emcc-shim', 'upstream', 'emscripten', 'emcc.exe'));",
+    expect: 'the program it names is the SDK',
   },
 ];
 

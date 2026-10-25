@@ -6,12 +6,13 @@
 // PREVIOUS build off the server cache, and every one of those looks like a directory
 // with three files in it. Two specific ways to get there:
 //
-//   1) The toolchain is not really reachable. `as-aot --package web` spawns
-//      `<EMSDK_HOME>/upstream/emscripten/emcc` directly, with no shell, and hands it an
-//      env whose ONLY entry is a PATH. On this box that file is a `#!/bin/sh` script, so
-//      the spawn fails (compiler-gaps.md G27) and `web-gallery.cjs` stands a PE launcher
-//      in front of it. Whether that launcher works cannot be checked by looking at it:
-//      it is checked by spawning `emcc --version` through the same env the build uses.
+//   1) The toolchain is not really reachable. `as-aot --package web` launches emcc
+//      itself -- on Windows through cmd.exe, because the SDK's `emcc` is a POSIX
+//      wrapper (compiler-gaps.md G27, fixed in v0.4.240). Before that fix this gate
+//      had to spawn emcc through a hand-built environment and pinned the PE launcher
+//      this workspace stood in front of it. Both are gone: the question "can emcc
+//      start?" is now answered by the compiler (`as-aot doctor`), and the gate
+//      checks that answer instead of re-implementing it.
 //   2) The flags are assembled wrong. `--target wasm` without `--package web` builds a
 //      wasm executable nobody can open; `--package web` without `--target wasm` is
 //      refused by the compiler; a native main class compiles fine and produces a page
@@ -19,7 +20,10 @@
 //      UncaughtErrorEvent -- and DocsMain drives Stage.render, an AOT-only test hook).
 //
 // SO WHAT IS PINNED, exactly:
-//   A. the toolchain: `web --check` exits 0 and reports a real `emcc <version>`;
+//   A. the toolchain: `web --check` exits 0 and reports a program that STARTED and
+//      answered -- the one the compiler named, inside the SDK root, with nothing in
+//      between -- and the mirror image: an SDK whose emcc exists but exits nonzero is
+//      NOT reported as usable (a stub that looks like a toolchain must not pass);
 //   B. the argv: wasm target, web package, `demo.DocsWeb` and no other entry class,
 //      the web app dir's descriptor and output prefix, both shared class roots, and no
 //      native window backend;
@@ -33,11 +37,11 @@
 //      which the `air-*` negations in .gitignore would otherwise re-include.
 //
 // WHAT IT DOES NOT DO: compile anything. The full build takes ~3 minutes and its
-// product was measured by hand when the arm landed (page0 sample grid + colour
-// histogram against air-gallery/gallery-page0.png: 44/48 sample points identical, and
-// the 8 most common colours within 0.3% -- the differences are glyph antialiasing).
-// `--check` is the same decision path with the build left out, which is what a gate can
-// afford to run on every invocation.
+// product was measured by hand (page0 sample grid + colour histogram against
+// air-gallery/gallery-page0.png, re-measured after v0.4.239 turned antialiasing on in
+// both arms: 46/48 sample points identical, ink within 0.85%, and the leftovers are all
+// glyphs -- the page ships its own font). `--check` is the same decision path with the
+// build left out, which is what a gate can afford to run on every invocation (~0.3 s).
 //
 //   usage:    node tools/buildsh-web.cjs
 //   exit:     0 all checks pass, 1 some check failed
@@ -84,14 +88,46 @@ const r = buildsh(['web', '--check']);
 check(r.status === 0, '`build.sh web --check` exits 0', 'exit ' + r.status + '\n' + r.out.slice(-600));
 check(/check PASS/.test(r.out), 'the check reports PASS', r.out.slice(-400));
 
-// A1. emcc really ran. A version triple is the cheapest proof that a process started
-// and answered; "the file exists" would pass with a 0-byte emcc.
+// A1. The compiler must be able to start emcc. `--check` asks `as-aot doctor`, so the
+// verdict comes from the same function the build runs before it starts (and from the
+// same platform branch). "The file exists" would pass with a 0-byte emcc; a version
+// triple from our own spawn -- what this gate used to pin -- only proves a COPY of
+// the launch logic works, which is exactly how G27 stayed invisible for a round.
 const emccLine = r.lines.find((l) => /check\s+emcc:/.test(l)) || '';
-check(/\d+\.\d+\.\d+/.test(emccLine), 'emcc is spawnable and answers --version', emccLine || 'no emcc line');
-// ...and it must be the SHIM's emcc on Windows, because that is what the build uses.
-if (process.platform === 'win32') {
-  const home = r.lines.find((l) => /EMSDK_HOME ->/.test(l)) || '';
-  check(/launcher shim/.test(home), 'EMSDK_HOME points at the launcher shim on Windows', home || 'no EMSDK_HOME line');
+check(/check\s+emcc:\s+ok -- \S/.test(emccLine),
+  'the compiler can start emcc for a web build', emccLine || 'no emcc line');
+// ...and the program it named is the SDK's own entry point. This is the anti-shim
+// assertion: anything standing between the compiler and emcc lives OUTSIDE
+// $EMSDK_HOME/upstream/emscripten, so `path.relative` stops naming exactly that one file.
+{
+  const sdk = (r.lines.find((l) => /check\s+emsdk:/.test(l)) || '').split(/check\s+emsdk:\s*/)[1] || '';
+  const program = (emccLine.split(' -- ')[1] || '').trim();
+  const want = path.join('upstream', 'emscripten', process.platform === 'win32' ? 'emcc.bat' : 'emcc');
+  const rel = (sdk && program) ? path.relative(sdk.trim(), program) : '';
+  check(rel === want,
+    'the program it names is the SDK\u2019s own ' + want.replace(/\\/g, '/') + ' (nothing in between)',
+    'doctor named ' + (program || '?') + ' (SDK ' + (sdk || '?') + ')');
+}
+
+// A2. The mirror image, because a check that only ever sees a working toolchain
+// cannot tell "it works" from "I stopped looking". An SDK whose emcc EXISTS but exits
+// nonzero must come back unusable -- that is the G27 shape seen from the other side:
+// a stub that looks exactly like a toolchain in a directory listing.
+{
+  const fake = path.join(UI, '.scratch', 'fake-emsdk');
+  const em = path.join(fake, 'upstream', 'emscripten');
+  fs.mkdirSync(em, { recursive: true });
+  const entry = path.join(em, process.platform === 'win32' ? 'emcc.bat' : 'emcc');
+  fs.writeFileSync(entry, process.platform === 'win32' ? '@echo off\r\nexit /b 1\r\n' : '#!/bin/sh\nexit 1\n');
+  if (process.platform !== 'win32') fs.chmodSync(entry, 0o755);
+  try {
+    const f = buildsh(['web', '--check'], { EMSDK_HOME: fake, EMSDK: '' });
+    check(f.status !== 0 && /CHECK FAILED\s+emcc/.test(f.out),
+      'an emcc that exists but exits nonzero is NOT reported as usable',
+      'exit ' + f.status + '\n' + f.out.slice(-400));
+  } finally {
+    fs.rmSync(fake, { recursive: true, force: true });
+  }
 }
 
 // B. the argv, token by token. Pinning the whole line would fail on a path rename;

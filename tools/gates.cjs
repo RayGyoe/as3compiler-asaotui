@@ -462,24 +462,28 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // The third arm. A native build that goes wrong leaves no exe and is obvious; a web
 // build that goes wrong leaves `GalleryApp.html/.js/.wasm` which load, paint something
 // and look finished, so the arm needs an instrument rather than an eye. Two failures
-// are specific to it: the toolchain cannot be spawned (Windows: `emcc` is a POSIX shell
-// script -- compiler-gaps.md G27 -- so `web-gallery.cjs` fronts it with a PE launcher),
-// and the argv is assembled wrong (`--target wasm` without `--package web`, or a native
+// are specific to it: the toolchain cannot be started (on Windows the SDK's `emcc` is a
+// POSIX wrapper -- compiler-gaps.md G27 -- which this workspace once stood a PE
+// launcher in front of; as-aot v0.4.240 launches `emcc.bat` itself, so the launcher is
+// gone and the question is put to the compiler rather than re-implemented here), and
+// the argv is assembled wrong (`--target wasm` without `--package web`, or a native
 // main class, each of which compiles and produces a page that never mounts).
 // So the gate drives the arm's own decision path -- `bash build.sh web --check`: the
-// toolchain is really spawned (`emcc --version` through the PATH-only env that as-aot
-// will hand it), and the printed argv is the array the build EXECS (one definition, two
+// compiler says whether it can start emcc (via `as-aot doctor`, i.e. the same
+// `webToolchainError()` the build runs; a stub emcc that exits 1 must come back
+// unusable), and the printed argv is the array the build EXECS (one definition, two
 // consumers, not a description). ~5 s, no compiler, no window.
 // What it deliberately does not do is compile: that is ~3 minutes, and the product was
 // measured when the arm landed (48-point sample grid vs the native gallery-page0.png:
 // 44 identical, the four differences inside a text run; the 8 most common colours agree
 // within 0.3%). The half a fast gate cannot see is covered by that measurement, and the
 // half it CAN see is what rots silently.
-//   mutation: tools/mutation-buildsh-web.cjs (6/6: `--package web` dropped from the argv;
-//             the entry class switched to DocsAir; an emcc launcher that still looks
-//             like a 4.5 KB PE but exits 127; the --gpu refusal losing its arm
-//             comparison; the generated app dir losing its .gitignore rule; and a wrong
-//             EMSDK_HOME falling back to the workspace SDK instead of failing).
+//   mutation: tools/mutation-buildsh-web.cjs (7/7: `--package web` dropped from the argv;
+//             the entry class switched to DocsAir; `--check` believing any toolchain
+//             status; the --gpu refusal losing its arm comparison; the generated app dir
+//             losing its .gitignore rule; a wrong EMSDK_HOME falling back to the
+//             workspace SDK; and the runner naming an emcc outside the SDK again --
+//             the shape of the G27 shim).
 {
   const r = sh(process.execPath, ['tools/buildsh-web.cjs'], UI);
   const out = (r.stdout || '') + (r.stderr || '');

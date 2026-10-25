@@ -108,7 +108,7 @@
 > 样式面的 `grid`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
-生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**52 道门**）
+生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**52 道门**）
 
 ---
 
@@ -566,19 +566,42 @@ HiDPI 无关的原因变红——本轮开工时工作树里正好躺着这样�
 
 底下撞到 **G27**：`as-aot` 直接 spawn `<EMSDK_HOME>/upstream/emscripten/emcc`（`#!/bin/sh` 脚本，
 PATH 还是 `:` 拼的 POSIX 形态）——Windows 上实测 `ENOENT`；换成 `emcc.bat` 是 `EINVAL`（Node 不肯裸跑
-.bat），只有 `cmd /c` 能跑。**编译器侧未动**（本工作区约定）：绕行是 `tools/emcc-launcher.c` 编出的
-4.5 KB PE 转发器 + `EMSDK_HOME` 指向 `.scratch/emcc-shim/`，G27 修好即可整体删除。
+.bat），只有 `cmd /c` 能跑。当时**编译器侧未动**（本工作区约定）：绕行是 `tools/emcc-launcher.c` 编出的
+4.5 KB PE 转发器 + `EMSDK_HOME` 指向 `.scratch/emcc-shim/`。**G27 已在 v0.4.240 修掉，绕行于同日整体
+删除**（审计与删改清单见 §3.11c）。
 
-「像不像」的测量（对照原生臂 `gallery-page0.png`，同为 1500×1050）：canvas 尺寸/标题相同、
-**48 点采样 44 点逐点相同**、最常见的 8 个颜色差 ≤0.9%（`#e8edf5` 18812 = 18812）、墨量差 1.1%；
-全图 5.1% 的像素差值 >32 且**全部落在文字上** —— 页面自带字体（wasm 读不到宿主字体）而原生臂用
-系统字体，字形栅格化与行内基线会差几像素。要逐字节相等，得两个臂共用同一个字体文件（本轮未做）。
+「像不像」的测量（对照原生臂 `gallery-page0.png`，同为 1500×1050，v0.4.239 抗锯齿生效后重测）：
+canvas 尺寸/标题相同、**48 点采样（6 列×8 行格心）46 点逐点相同**、墨量差 0.85%。两个不同点与最大的
+颜色计数差（按钮蓝 `#2563eb` −5.1%，它的纯色像素数由标签字形的覆盖率决定）都出在文字上 —— 页面自带
+字体（wasm 读不到宿主字体）而原生臂用系统字体。要逐字节相等，得两个臂共用同一个字体文件（未做）。
 
-门 `tools/buildsh-web.cjs`（**25 项**，~5 s，不编译）驱动 `build.sh web --check`：真的 spawn 一次
-`emcc --version`（按 `as-aot` 的方式：无 shell、环境只有一个 PATH）、钉住**构建会 exec 的那个 argv**、
+门 `tools/buildsh-web.cjs`（**26 项**，~5 s，不编译）驱动 `build.sh web --check`：**问编译器能不能起
+emcc**（`as-aot doctor --json --target wasm --package web`，即构建开跑前同一个 `webToolchainError()`），
+并要求它报出的那个程序恰好是 `$EMSDK/upstream/emscripten/emcc(.bat)` —— **中间不许有东西**，这就是反 shim
+断言；反面另有一条「`emcc.bat` 存在但退出 1 必须被判不可用」。此外钉住**构建会 exec 的那个 argv**、
 钉「尺寸来自 app.xml 而不是写死的 1000×700」、钉三条拒绝（`--gpu`/未知 flag/指错的 `EMSDK_HOME`）、
-钉暂存目录仍在库外。变异 `tools/mutation-buildsh-web.cjs` **6/6 CAUGHT**。这道门**看不见**编译本身、
+钉暂存目录仍在库外。变异 `tools/mutation-buildsh-web.cjs` **7/7 CAUGHT**。这道门**看不见**编译本身、
 看不见页面像素、也只在 Chromium 上开过 —— 三条都写在 `reviews/web-arm-2026-10-25.md` §6。
+
+### 3.11c G27 修好之后的收口：绕行不是资产，是负债（第二十轮）
+
+G27 在编译器侧修掉（阶段二百七十六，v0.4.240：`emccPath()` 在 win32 选 `emcc.bat` 并经
+`cmd /d /s /c` 启动、`PATH` 用 `path.delimiter`、子进程环境继承宿主、诊断区分「不在」与「在但起不来」），
+库侧的绕行就**只剩成本**：多一份要维护的 C、多一层编译器看不见的路径、多一个只有本机能复现的环境。
+所以逐处撤除，而不是留着「反正不碍事」。
+
+| 当时的妥协编码 | 当时为什么只能那样 | 现在 |
+|---|---|---|
+| `tools/emcc-launcher.c` + `shimHomeForWindows()` + `EMSDK_HOME -> .scratch/emcc-shim` | 编译器 spawn 不了 `emcc`，只能造一个它认得的路径喂给它 | **整体删除**（含 `shimHome`/`launcherSrc`/`isWindows` 与 `.scratch/emcc-shim/`）；`EMSDK_HOME` 重新就是真 SDK |
+| `--check` 自己 spawn `emcc`，且**故意用 `:` 拼 PATH** 去复刻坏环境 | 只有复刻那个环境才会暴露 launcher 的生存条件 | 改问编译器（`doctor`），报告它**实际会启动的那个程序**。自己 spawn 等于把待测逻辑抄一份，抄件无法随原件修正 —— G27 正是这样躲过一轮的 |
+| `findEmsdk()` 接受 `emcc` **或** `emcc.bat` | 两个名字都在同一个目录里，谁先到谁赢 | **按平台只认一个**（win32 → `emcc.bat`），与 `emccPath()` 逐字对齐：拿错平台的 SDK 当场报错，而不是两分钟后由编译器报 |
+| 门 A1「`emcc --version` 能打出三连版本号」 | launcher 唯一可观测的证据 | 换成**正反两面**：编译器说 ok（且程序就在 `$EMSDK/upstream/emscripten/` 里）+ 一个**存在但退出 1** 的 `emcc.bat` 必须被判不可用 |
+| 变异 M3「launcher `return 127`」 | 证明门真去 spawn 而不是 stat | 换成「门不再相信编译器的结论」；另加 **M7**「又把 SDK 外面的 emcc 报出来」——即 shim 复辟的形状 |
+
+验收（本机 Windows，**全程不经 shim**）：`node tools/buildsh-web.cjs` ⇒ 26 checks / 0 failures；
+`node tools/mutation-buildsh-web.cjs` ⇒ 7/7 CAUGHT；真编译 `cd ui-demo/air-gallery && ./build.sh web --no-serve`
+⇒ exit 0（`GalleryApp.html/js/wasm/data`，wasm 7.02 MB），页面在真浏览器里真画出来（1600×1200 预览截图
+里是完整的 Getting started 页）。
 ### 3.12 参考运行时门：为什么必须有一道门真跑 AIR（第十一轮补）
 
 前三轮的用户报告是同一个形状：**我们的 AOT 比 AIR 宽容**，于是库的错误在我们这里可以无声通过。
