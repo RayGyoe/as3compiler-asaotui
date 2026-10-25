@@ -490,16 +490,18 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 
 // ---- 6b6: the docs app RUNS on the reference runtime, every page, popups open ----
 // The one gate that measures AIR at run time, and the reason it exists is the shape
-// of the last three user reports: our AOT is MORE FORGIVING than AIR, so a library
-// mistake AIR rejects can be invisible to the entire AOT suite. The case that forced
-// this gate: `setChildIndex` with an index >= numChildren throws RangeError #2006 on
-// AIR and CLAMPS on our runtime (compiler-gaps.md G24), so `Reconciler.fixDisplayOrder`
+// of the last three user reports: a runtime that is MORE FORGIVING than AIR lets a
+// library mistake through that AIR rejects, and the AOT suite cannot see it. The case
+// that forced this gate: `setChildIndex` with an index >= numChildren threw RangeError
+// #2006 on AIR and CLAMPED on our runtime (G24), so `Reconciler.fixDisplayOrder`
 // computing a display slot from a description index threw once per frame -- a frozen
 // select/combobox/datePicker page and a console stream -- while every AOT probe and a
-// 42-page screenshot sweep passed. The sweep visits all 42 pages of the catalog with
-// every openable popup flipped open (the lifted state), and fails on any error AIR
-// reports, on a short page list, and on a popup step that stopped taking effect.
-// ~20 s, one window. Exit 3 (no AIR SDK on this box) is reported as SKIP.
+// 42-page screenshot sweep passed. G24 and G25 were both fixed in v0.4.239; the gate
+// stays because "aligned once" is not "aligned", and AIR is also the reference for
+// error text, event ordering and text metrics. The sweep visits all 42 pages of the
+// catalog with every openable popup flipped open (the lifted state), and fails on any
+// error AIR reports, on a short page list, and on a popup step that stopped taking
+// effect. ~20 s, one window. Exit 3 (no AIR SDK on this box) is reported as SKIP.
 //   mutation: tools/mutation-air-sweep.cjs (5/5: the #2006 defect itself; a sweep that
 //             stops opening popups; a sweep that stops one page early; the #1009 defect
 //             (a torn-down node keeps its listeners); a drill that hovers thousands of
@@ -509,11 +511,11 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // so until then the sweep had NO pointer -- and `TypeError #1009` out of
 // `UiNode.setHover` walked straight through it: an event is delivered one beat AFTER
 // the frame that removed the node, so a listener left on a dead node's backing ran into
-// nulled fields. Our AOT never dispatches roll-over/roll-out at all (compiler-gaps.md
-// G25), so no AOT probe could see that class by construction. `DocsAir` now captures
-// every leaf of the page it is about to leave (3107 nodes over the catalog) and delivers
-// CLICK + MOUSE_DOWN one tick after the switch to the ones that really died (348 on the
-// first measured run), which is why this gate also grades `TEARDOWN` lines.
+// nulled fields. While G25 was open our AOT dispatched no roll events at all, so no AOT
+// probe could see that class by construction (G25 was fixed in v0.4.239). `DocsAir` now
+// captures every leaf of the page it is about to leave (3107 nodes over the catalog) and
+// delivers CLICK + MOUSE_DOWN one tick after the switch to the ones that really died
+// (348 on the first measured run), which is why this gate also grades `TEARDOWN` lines.
 //
 // (It graded `ROLL` lines until 2026-10-26, when the library stopped installing
 // per-object roll listeners -- hover is synthesized from one stage MOUSE_MOVE, the only

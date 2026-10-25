@@ -134,9 +134,9 @@ package asaot.ui
             // input's commit-on-blur all agree with what the runtime did.
             stage.addEventListener(FocusEvent.FOCUS_IN, onStageFocusIn);
             stage.addEventListener(FocusEvent.FOCUS_OUT, onStageFocusOut);
-            // Hover (see the synthesis block above). ONE listener, for the whole
-            // window: per-node roll listeners cannot work on a runtime that never
-            // dispatches a roll event.
+            // Hover (see the block above). ONE listener, for the whole window, on
+            // purpose -- and now that G25 is fixed the reason is no longer "roll events
+            // do not exist" but "one listener, sharing the click's hit test".
             stage.addEventListener(MouseEvent.MOUSE_MOVE, onStageMouseMove);
             stage.addEventListener(Event.MOUSE_LEAVE, onStageMouseLeave);
             this._running = true;
@@ -188,24 +188,30 @@ package asaot.ui
             this._needsPaint = true;
         }
 
-        // ---- pointer: hover is SYNTHESIZED here, not delivered (G25) ------
+        // ---- pointer: hover is DERIVED here, not received -----------------
         //
-        // The AOT runtime dispatches mouseDown / mouseUp / click / doubleClick /
-        // wheel / MOUSE_LEAVE and NEVER mouseOver or mouseOut -- the string does
-        // not occur in src/emit.ts at all (G25 in compiler-gaps.md). A per-object
-        // roll listener is therefore DEAD on our own builds and alive only under
-        // adl, which would make the two arms disagree about what hover means.
+        // G25 IS FIXED (v0.4.239): the runtime dispatches rollOver/rollOut/mouseOver/
+        // mouseOut per object, with AIR's ordering. This block is therefore NOT a
+        // workaround any more, and it stays for two reasons that are about this library:
         //
-        // MOUSE_MOVE is the one event both arms deliver, it BUBBLES, and when
-        // nothing is hit the runtime targets the stage. So hover is derived ONCE,
-        // here: hit target -> nearest registered backing -> that node plus every
-        // ANCESTOR of it. Ancestors because AIR's mouseOver bubbles -- a card with
-        // a hover background has to light while the pointer is over its children.
+        //   1. THE HIT TEST MUST BE THE CLICK'S. `as_pick_hit` is what routes a click;
+        //      deriving hover from rectangles computed here would be a SECOND rule, and
+        //      its failure mode -- a control that lights up but cannot be clicked -- is
+        //      invisible in every screenshot.
+        //   2. ONE LISTENER FOR THE WINDOW, NOT ONE PER NODE. The chain is recomputed
+        //      from the hit object's ancestry, so no node owns a listener that could
+        //      outlive it and run a closure over nulled fields.
         //
-        // The hit test stays the runtime's own (as_pick_hit, the one clicks use).
-        // Recomputing rectangles from the tree would be a SECOND hit rule, and its
-        // failure mode -- a control that lights up but cannot be clicked -- is
-        // invisible in every screenshot.
+        // MOUSE_MOVE bubbles and, when nothing is hit, targets the stage. Hit target ->
+        // nearest registered backing -> that node plus every ANCESTOR of it (ANCESTORS
+        // because AIR's mouseOver bubbles: a card with a hover background must light
+        // while the pointer is over its children).
+        //
+        // AND IT IS CHECKED AGAINST THE ENGINE. Since the fix, `probes/widgets/pointer`
+        // catches the runtime's OWN mouseOver at the stage and asserts its target lies
+        // inside the node this code hovers, and that rollOver reaches the entered node
+        // and its ancestors but no sibling subtree. "Our hover is the engine's hover"
+        // is a measurement there, not a claim here.
         private var _nodeOf:Dictionary;     // backing -> UiNode (identity lookup)
         private var _regCount:int;          // entries in _nodeOf (O(1) diagnostic)
         private var _hover:UiNode;          // deepest node under the pointer

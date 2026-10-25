@@ -162,9 +162,9 @@ function settle():void
 
 // ---- phase 1: HOVER --------------------------------------------------------
 // Through the REAL pointer path: the library derives hover from one stage
-// MOUSE_MOVE (roll events do not exist in our runtime -- G25), so a probe that
-// dispatched mouseOver at the backing would be testing a listener that is gone
-// and would pass while the whole app had no hover at all.
+// MOUSE_MOVE and the click's own hit test, so a probe that dispatched mouseOver at
+// the backing would be testing a listener that is gone (and would pass while the
+// whole app had no hover at all).
 // btnA's centre is (90,36); btnD's is (90,78).
 function phaseHover():void
 {
@@ -401,7 +401,7 @@ function clickLocal(n:UiNode, lx:Number, ly:Number):void
 }
 
 // A real pointer move at stage coordinates: the stage hit-tests, then UiApp derives
-// hover from the target (the runtime never dispatches mouseOver/mouseOut -- G25).
+// hover from the target (one listener, the click's own hit test).
 function send(x:Number, y:Number, type:String):void
 {
     try

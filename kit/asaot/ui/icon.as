@@ -4,9 +4,10 @@
 //   icon("M12 2 L22 22 L2 22 Z", { fill: true, stroke: false, size: [32, 32] })
 //
 // The path data is a STRING in SVG's `d` syntax (see PathData for exactly which
-// commands survive and which throw). It is validated by PARSING IT HERE, at describe
-// time: an unsupported command then throws at the author's call site, on the frame
-// they wrote it, instead of inside a paint pass where the stack says "draw".
+// commands are supported). It is validated by PARSING IT HERE, at describe time: a
+// malformed command -- or one the parser does not implement -- then throws at the
+// author's call site, on the frame they wrote it, instead of inside a paint pass where
+// the stack says "draw".
 //
 // `viewBox` is the data's own coordinate space (icon sets use 24). Anything but a
 // positive number throws -- the glyph would otherwise be scaled by zero or by NaN and
@@ -39,8 +40,9 @@ package asaot.ui
             }
         }
         // Parse once, now, so bad data fails at the call site (the result is dropped:
-        // the widget re-parses with the tolerance its render scale implies).
-        PathData.parse(n.path, 0.25);
+        // the widget re-parses when its box changes, because the cached commands are in
+        // scaled space).
+        PathData.parse(n.path);
         return n;
     }
 }

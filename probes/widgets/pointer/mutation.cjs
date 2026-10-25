@@ -19,6 +19,12 @@
 //   M5 a destroyed node stays the target   -> the next mouse move paints a node whose app
 //                                             is null (#1009 inside a mouse event, i.e.
 //                                             one console line thanks to the frame guard)
+//   M6 the probe stops listening to the engine -> the derived hover still passes every other
+//                                             check, so the one assertion that says "the
+//                                             engine's pointer agrees with ours" would be
+//                                             asleep: this is the fixture-blindness mutation,
+//                                             and it is why the engine half is a check and
+//                                             not a comment (G25 is fixed as of v0.4.239).
 //
 // Each mutated file is restored in `finally` and its sha256 compared byte-for-byte with
 // the pre-mutation hash: a mutation run can never leave the kit subtly altered.
@@ -87,6 +93,15 @@ const MUTATIONS = [
     find: '            if (this._hover != null && this.onChain(this._hover, n)) this.setHoverTarget(null);',
     replace: '            if (false && this._hover != null && this.onChain(this._hover, n)) this.setHoverTarget(null);',
     expect: "still the app's hover target",
+  },
+  {
+    id: 'M6',
+    file: 'probes/widgets/pointer/Main.as',
+    why: 'THE PROBE STOPS LISTENING TO THE ENGINE: every derived-hover check still passes, so the assertion '
+      + 'that the engine names the same node is never evaluated -- a blind half of the probe',
+    find: '    stage.addEventListener(MouseEvent.MOUSE_OVER, onEngineOver);',
+    replace: '    // (mutation) the engine is no longer listened to',
+    expect: 'the engine dispatched no mouseOver',
   },
 ];
 

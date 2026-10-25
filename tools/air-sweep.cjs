@@ -10,12 +10,14 @@
 //     page still rendered, and 41 screenshots of a render-only sweep looked fine;
 //   * `onChange()` called with no argument -- #1063 on AVM2 (both runtimes), handler
 //     never runs, only a console line;
-//   * `setChildIndex(child, index)` with `index >= numChildren` -- **AIR throws
-//     RangeError #2006 and aborts the frame; our runtime CLAMPS and carries on**
-//     (see asaotui/compiler-gaps.md G24). So the select / combobox / datePicker pages
-//     threw once per frame the moment a dropdown opened, and no AOT probe could see
-//     it: a clamped index happens to be the right place for the last child, so the
-//     picture was identical while the reference runtime was throwing.
+//   * `setChildIndex(child, index)` with `index >= numChildren` -- AIR throws
+//     RangeError #2006 and aborts the frame; our runtime USED TO CLAMP and carry on
+//     (G24 in asaotui/compiler-gaps.md, fixed in v0.4.239). The select / combobox /
+//     datePicker pages threw once per frame the moment a dropdown opened, and no AOT
+//     probe could see it: a clamped index happens to be the right place for the last
+//     child, so the picture was identical while the reference runtime was throwing.
+//     That is the shape of bug this gate exists for, and the reason it stays after the
+//     fix: aligning a runtime to AIR once does not keep it aligned.
 //
 // The AOT suite cannot close that class of difference by construction. This gate
 // closes it the other way round: run the real runtime, over the whole catalog, and
@@ -238,10 +240,9 @@ if (errors.length) failures.push(errors.length + ' runtime error(s) reported by 
 // while a real loss of coverage will.
 //
 // The line was called `ROLL` until 2026-10-26, when the library stopped installing
-// per-object roll listeners: hover is synthesized from one stage MOUSE_MOVE (the only
-// pointer event our AOT dispatches -- G25), so the drill now delivers CLICK +
-// MOUSE_DOWN to the torn-down backings. The invariant graded is the same one: a
-// display object that outlived its node must run NO handler.
+// per-object roll listeners: hover is derived from one stage MOUSE_MOVE, so the drill
+// now delivers CLICK + MOUSE_DOWN to the torn-down backings. The invariant graded is the
+// same one: a display object that outlived its node must run NO handler.
 const ROLL_FLOOR = 100;
 const rollLines = lines.filter((l) => l.startsWith('TEARDOWN '));
 const rollFails = lines.filter((l) => l.startsWith('TEARDOWNFAIL '));

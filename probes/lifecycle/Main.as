@@ -20,14 +20,15 @@
 //         at Function/UiNode.as$1::anonymous()
 //
 // -- once per click, on every page whose click tears down the control it was made on
-// (measured on adl 51.4.1: accordion 1x, dialog 4x, drawer 3x, menu 3x). Our own AOT
-// never dispatches roll-over/roll-out at all, so it never reproduced and every AOT
-// page stayed green (registered as G25 in compiler-gaps.md); the reference runtime
-// was the only place the bug showed up.
+// (measured on adl 51.4.1: accordion 1x, dialog 4x, drawer 3x, menu 3x). While G25 was
+// open our own AOT never dispatched roll-over/roll-out at all, so it never reproduced and
+// every AOT page stayed green; the reference runtime was the only place the bug showed
+// up. G25 was fixed in v0.4.239 (roll/mouse events now arrive with AIR's ordering), so an
+// AOT run CAN reach this class of bug now -- which is exactly why it is pinned here.
 //
-// 2026-10-26: the roll listeners are GONE -- hover is synthesized from one stage
-// MOUSE_MOVE listener (UiApp), because that is the only pointer event both arms
-// deliver. The hazard just moved, it did not disappear: the app now holds
+// 2026-10-26: the roll listeners are GONE -- hover is DERIVED from one stage MOUSE_MOVE
+// listener (UiApp), using the click's own hit test. That is a design choice, not a
+// workaround (see the note in UiApp), and the hazard just moved: the app now holds
 // backing -> node for the hit test, so a destroyed node can be reached through a
 // STALE REGISTRY ENTRY, and a destroyed node left in the hover chain would run
 // `app.markPaint` on a null app on the very next mouse move. Both are pinned here.
@@ -36,8 +37,9 @@
 // remaining UiNode ones, because a widget may add its own: menu's row-hover,
 // scrollView's bar hover):
 //   * dispatching mouseDown / mouseUp / click at a backing whose node is already
-//     destroyed throws NOTHING (mouseOver/mouseOut stay in the list as the
-//     negative control: nothing listens to them any more, in either arm);
+//     destroyed throws NOTHING. mouseOver/mouseOut are dispatched too, as the negative
+//     control: no library listener is attached to them, so if one of them ever starts
+//     throwing, something re-hooked hover per object without the teardown guard;
 //   * the destroyed node ignores the event in the stronger sense too: `state.hover`
 //     stays 0, and an author's `onClick` never runs;
 //   * destroying nodes does NOT grow the pointer registry (a stale entry keeps the
@@ -246,10 +248,11 @@ function liveTraffic():void
         return;
     }
     // Hover arrives through the REAL pointer path (one stage MOUSE_MOVE, the same
-    // call the window backend makes), not as a roll event at the backing: roll
-    // events do not exist in our runtime (G25), and this half of the probe exists
-    // so "destroyed nodes return early" cannot be satisfied by also breaking
-    // live ones. (110,26) is inside the 200x32 button at 10,10.
+    // call the window backend makes), not as a roll event at the backing: the library
+    // derives hover from the shared hit test, so a roll event at a backing would be the
+    // second definition this design exists to avoid. This half of the probe exists so
+    // "destroyed nodes return early" cannot be satisfied by also breaking live ones.
+    // (110,26) is inside the 200x32 button at 10,10.
     send(110, 26, "mouseMove");
     if (n.state.hover != 1)
     {

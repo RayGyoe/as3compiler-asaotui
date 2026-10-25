@@ -493,7 +493,7 @@
 | **为什么我们的 AOT 看不见**（**阶段二百七十五之前**的旧实现，现已补齐） | `src/emit.ts` 里曾 **`mouseOver` 字符串出现 0 次**（`rollOver` 只出现在注释里）：AOT 的鼠标派发只发 `mouseDown`/`mouseUp`/`click`/`wheel` 与 Stage 的 `mouseLeave`，**逐对象的 roll-over/roll-out 这对事件从未发出**（`_mouse_in` 只用来驱动 MovieClip 的按钮态，见 `emit.ts:17702-17713` 的实测注释与 `TODO.md` 的 rollOver/rollOut 残留项）⇒ 在我们的 AOT 上那个监听器**永不执行**，因此「执行到尸体上」也不可能发生 |
 | **影响面（对使用者）** | 用我们 AOT 编出来的应用，**`addEventListener(MouseEvent.MOUSE_OVER / MOUSE_OUT / ROLL_OVER / ROLL_OUT, …)` 永不触发** —— 作者自己挂的 hover 反馈在 AOT 上是死的，在 AIR 上是活的。**库不再踩这个坑**（第十五轮）：`UiApp` 只接**一个** stage `MOUSE_MOVE`（两个臂都派发、`bubbles=true`、没命中时 target 退化为 stage），命中判定**复用运行时的 `as_pick_hit`**（与点击同一套规则——自算矩形就是第二套规则，“亮着但点不到”正是它的后果），再经 `backing → UiNode` 的 `Dictionary` 把**整条祖先链**置 hover（对应 AIR 冒泡语义），`Mouse.cursor` 也随之按链推导。逐对象的 `MOUSE_OVER`/`MOUSE_OUT` 监听已从 `UiNode.createBacking` **移除**（留两个会说谎的来源没有意义），`probes/widgets/pointer`（23 项）钉住这条合成路径，`probes/lifecycle` 反而继续**故意派发** `mouseOver`/`mouseOut` 当负控（它们现在什么也不该做） |
 | **修法（库侧，已落地）** | `UiNode` 增加 `wired:Array` + `listen(target, type, fn)`（登记三元组）+ `releaseListeners()`；`destroySubtree()` **先** `releaseListeners()` 再置空字段；全库 24 处监听器（含 `n.tf` 上的两个编辑事件）从裸 `addEventListener` 改为 `n.listen(...)`（16 个 widget 文件）。**STAGE 监听器不在此列**：它们属于某次手势，保留 widget 自己 teardown 里的显式 add/remove 对 |
-| **库侧绕行（第十五轮）** | hover **不再依赖这个缺口**：`UiApp.onStageMouseMove` + `nodeAt(e.target)`（沿命中目标**向上**找最近的已注册 backing）+ 祖先链置 hover；`nodeBackingBuilt`/`nodeBackingGone` 维护 `backing → UiNode` 注册表（并因此修掉「销毁的节点仍在 hover 链上 ⇒ 下一次移动对 `app == null` 的节点 `markPaint` = `#1009`」）。这条绕行是**永久的**，不是等编译器修好就撤：它比逐对象事件少悬挂 N 个监听器，而且**必须**用运行时命中测试，否则 hover 与 click 会分叉 |
+| **库侧处置（第十五轮；十九轮复核后仍保留）** | hover **不依赖逐对象事件**：`UiApp.onStageMouseMove` + `nodeAt(e.target)`（沿命中目标**向上**找最近的已注册 backing）+ 祖先链置 hover；`nodeBackingBuilt`/`nodeBackingGone` 维护 `backing → UiNode` 注册表。**G25 修好后这条仍然是设计选择，不是绕行**：① 命中判定**必须**与 click 同源（`as_pick_hit`），否则 hover 与 click 会分叉——“亮着但点不到”在任何截图里都看不见；② 一个窗口一个监听器，比每个节点挂一对少 N 个可能晚于节点死去的闭包。**新增的约束**：既然引擎现在也会派发 `mouseOver`/`rollOver`，两者必须说同一件事 —— `probes/widgets/pointer` 在 stage 上接引擎自己的 `MOUSE_OVER`，拿**原始 `e.target`**（不经过 UiApp 的注册表）比对“它是否落在 app 认为 hover 的节点里”，并验证 `rollOver` 到达进入节点**及其祖先**、不到达兄弟子树。两边一旦分叉，该探针变红；变异 **6/6**（M6 把探针自己的引擎监听删掉，证明这一半不是摆设） |
 | **对编译器的主张** | 把对象的 `mouseOver`/`mouseOut`/`rollOver`/`rollOut` 补上（含 AIR 的两条时序契约：①移除对象的**下一帧**仍要投递 roll-out；②按下期间不投递 leave）。**这不只是补功能**：补上之后，「死节点上的监听器」这类缺陷会被任何 AOT 探针**当场具名抓到**，而不必依赖 `adl` |
 | **状态** | **✅ 已修（阶段二百七十五，v0.4.239）**。`src/emit.ts` 新增 `as_hover_target` 状态 + 六个助手（`as_hover_holds` / `as_hover_fire` / `as_hover_next` / `as_hover_move` / `as_hover_flush` / `as_hover_on_remove`），挂在五处：`Stage_dispatchMouse` 的 `mouseLeave` 分支、普通指针通知（`as_pick_hit` 之后）、`removeChild`、`Stage_dispatchFrame`（帧边界补发）、`gc_mark_user_roots`（两个永久根）。**库侧第十五轮的绕行保留**（它本来就比逐对象监听器更省，且命中判定必须与点击同源） |
 | **AIR 契约（真光标实测，`temp/g242526/mouse2-air.txt`）** | 进入：`rollOver`（`bubbles=false`，`eventPhase=2`，自目标**逐个向祖先**，**不含 Stage**）→ `mouseOver`（`bubbles=true`，**自内向外冒泡**）。离开：`mouseOut`（bubbles）→ `rollOut`（不冒泡，自内向外）。目标不变时**零事件**。**只对「指针不再位于其子树内」的节点发 leave**，**只对「指针原先不在其子树内」的节点发 enter**（`as_hover_holds` 就是这条判据，`anchor` 参数把「刚被移出显示树的那段祖先链」也算作「指针原先在里面」）。 |
@@ -512,16 +512,50 @@
 | **症状** | 想给库加一条**图标通道**（`icon(svgPathData)`，图标字体/矢量集都靠它）时发现：路径数据里的曲线段只有**二次**可画，**三次**与 `drawPath` 根本没有成员。<br>`Codegen error at 9:13: undefined method 'cubicCurveTo' on class 'Graphics'`<br>`Codegen error at 12:13: undefined method 'drawPath' on class 'Graphics'` |
 | **实测面** | `src/emit.ts` 里 `Graphics_` 发射的成员共 **17 个**：`ctor` / `moveTo` / `lineTo` / `curveTo` / `beginFill` / `endFill` / `lineStyle` / `beginBitmapFill` / `beginGradientFill` / `drawRect` / `drawRoundRect` / `drawCircle` / `drawEllipse` / `drawTriangles` / `clear`（另两个是内部助手）。全文 `cubicCurveTo` / `drawPath` 命中 **0**；Skia 桥（`as_skia_path_*`）也只有 `move_to` / `line_to` / `quad_to` / `close`，**没有 `cubic_to`** ⇒ 这不只是 AS3 面缺两个方法，C 桥也要加一行 |
 | **影响面（对使用者）** | ① 三段式贝塞尔（`C`/`S` 命令，Lucide/Material/Feather 绝大多数图标都有）**画不出来**；② 圆弧（`A` 命令）也画不出来，而且**不是同一个原因**：AIR 自己也没有 arc 方法，SVG 的弧必须先转成三次贝塞尔——所以「弧」这条路**同时**被缺失与缺三次堵死；③ `drawPath`（`GraphicsPath` 那套批量路径）同样不存在，作者无法用「命令数组 + 坐标数组」绕开前两条 |
-| **库侧处置（第十七轮，已落地并验收）** | 图标通道**只用引擎已有的二次曲线**：`M/L/H/V/Z` 直译，`Q/T` 直译，`C/S` 用**自适应细分转成二次段**（偏差上界取标准结论 `(√3/36)·|P0−3P1+3P2−P3|`，超过 **0.25 viewBox 单位**就二分），`A` **抛错并自报 G26**（不静默近似）。因为转换发生在 **AS3 侧**，两个臂（AOT 与 `adl`）跑的是同一串二次段 ⇒ **跨臂逐像素一致**，代价是相对原始 SVG 有一点点几何偏差（会被探针量出来钉住） |
-| **对编译器的主张** | ① `Graphics.cubicCurveTo(cx1,cy1,cx2,cy2,ax,ay)` + 桥里一行 `SkPath::cubicTo`（控件、包络、图标全受益）；② `Graphics.drawPath(commands, data, winding)`（批量路径，省掉每次 `moveTo/lineTo` 的 JS↔C 往返）。修好①之后，库侧的细分可以**保留**（它同时是 `A` 弧的正确接缝：弧先转三次，再交给引擎）；但「作者直接写 `C` 就得到原生三次」这件事只能靠编译器 |
-| **状态** | **两侧都已可用**。库侧 ✅ 十七轮绕行（保留：它同时是 `A` 弧的正确接缝）。编译器侧 ✅ **阶段二百七十五，v0.4.239**：`Graphics.cubicCurveTo` / `Graphics.drawPath` / `GraphicsPathCommand`（补 `NO_OP=0`）/ 新类 `GraphicsPathWinding` 全部落地，Skia 桥补 `sk_path_cubic_to` + `as_skia_path_cubic_to` |
+| **库侧处置（第十七轮，已于十九轮撤除）** | 当时图标通道**只用引擎已有的二次曲线**：`M/L/H/V/Z` 直译，`Q/T` 直译，`C/S` 用**自适应细分转成二次段**（偏差上界 `(√3/36)·|P0−3P1+3P2−P3|`，超过 **0.25 viewBox 单位**就二分），`A` **抛错并自报 G26**。当时写下的理由是「转换在 AS3 侧 ⇒ 两臂跑同一串二次段 ⇒ 跨臂逐像素一致」——那条理由成立，但**代价是真的**：每个三次段变成 1～8 个二次段，几何是近似的，`A` 直接不可用，`parse()` 还带一个只服务细分的 `tolerance` 参数 |
+| **库侧现状（第十九轮，2026-10-25 复核 G26 已修后）** | **细分与拒绝全部删除**：`C/S` 直发 `Graphics.cubicCurveTo`（一段一个命令，控制点原样透传），`A` 走 SVG 1.1 F.6.5/F.6.6 的端点→圆心参数化、按 **≤90°** 切段、每段一根 `4/3·tan(d/4)` 手柄（误差 ≤ **2.7e-4·r**，48px 图标上是四十分之一像素），`tolerance` 参数因此取消。语法面只剩「未知命令」会抛。**当时预测「修好之后细分可以保留」是错的**，实测后不成立：原生三次之后细分毫无价值，弧也不需要经过二次，直接转三次 |
+| **对编译器的主张** | ① `Graphics.cubicCurveTo(cx1,cy1,cx2,cy2,ax,ay)` + 桥里一行 `SkPath::cubicTo`（控件、包络、图标全受益）；② `Graphics.drawPath(commands, data, winding)`（批量路径，省掉每次 `moveTo/lineTo` 的 JS↔C 往返）。两条都已落地 |
+| **状态** | **两侧都已可用**。库侧 ✅ 十七轮绕行 → **十九轮撤除**（原生三次 + 弧转三次）。编译器侧 ✅ **阶段二百七十五，v0.4.239**：`Graphics.cubicCurveTo` / `Graphics.drawPath` / `GraphicsPathCommand`（补 `NO_OP=0`）/ 新类 `GraphicsPathWinding` 全部落地，Skia 桥补 `sk_path_cubic_to` + `as_skia_path_cubic_to` |
 | **AIR 契约（adl 51.4.1 实测）** | 常量：`NO_OP=0 MOVE_TO=1 LINE_TO=2 CURVE_TO=3 WIDE_MOVE_TO=4 WIDE_LINE_TO=5 CUBIC_CURVE_TO=6`；`GraphicsPathWinding.EVEN_ODD="evenOdd"` / `NON_ZERO="nonZero"`，构造器不 public（只当常量袋）。签名：`cubicCurveTo.length == 6`、`drawPath.length == 3`（第三参默认 `evenOdd`）。错误：非法 winding ⇒ `ArgumentError #2008`「Error #2008: Parameter winding must be one of the accepted values.」；`data.length` 为**奇数** ⇒ `ArgumentError #2004`「Error #2004: One of the parameters is invalid.」——**两条都在画之前**抛。短数据 / 空数据 / `null` 向量 / 未知命令值 / `NO_OP` 均不抛 |
 | **紧包围盒（这条推翻了旧注释）** | AIR 的 `width/height` 是**曲线的紧包围盒**，不是控制点凸包：`moveTo(10,50)+cubicCurveTo(10,0, 90,0, 90,50)` ⇒ **80x37.5**（凸包会给 80x50）；`curveTo(10,0, 90,50)` ⇒ **80x25**。实现取**导数零点**（二次解一次方程，三次解 `A t²+B t+C`，`t∈(0,1)` 才取），纯 C 构建与 Skia 构建因此一致（`as_gpath_quad` / `as_gpath_cubic`） |
 | **像素口径（已对齐部分）** | `node cmpcell.cjs`（**阈值无关**的 coverage 积分）对齐 `pix6/7-air.bmp` 与 `pix6/7-aot.bmp`：`cell0` 平 API 填充、`cell2` `[MOVE,CUBIC,LINE]`（曲线鼓包计入填充）、`cell5` 同形**描边**、`cell4` `[MOVE,CUBIC]` **纯填充 = 0 ink**（**`drawPath` 独有**的怪癖，见下）、`pix7` 嵌套方块 `evenOdd` vs `nonZero`、wide 三命令给足 12 数字仍 0 |
 | **`drawPath` 的「单段曲线不填」怪癖（Pix8 定案）** | Pix8 七格把规则量清了：`[MOVE,LINE]` 填充 0（单条直线本就退化）；**`[MOVE,LINE,LINE]` 未闭合三角形填充 248226** ⇒ AIR **会**填未闭合轮廓；`[MOVE,CURVE]` / `[MOVE,CUBIC]` 填充 **0**；`[MOVE,CUBIC,CUBIC]` 填充 **232198**；平 API 的未闭合三角形同样 248226（与 `drawPath` 孪生格一致）。**决定性一格**：同样的单段三次曲线改走**平 API**（`moveTo` + `cubicCurveTo`）**会填** ⇒ 这不是渲染器规则、不是「未闭合不填」，而是 **`drawPath` 独有的指令流怪癖**：命令表只有 `MOVE_TO` + 一段曲线时不产生填充面（但**描边照画**，236 ink） |
 | **残留分歧（如实登记）** | ① **上面这个形状我们会多填一块**（`[MOVE,CUBIC]` AIR 0 / 我们 296310 的覆盖率积分）：要精确复刻得把「填充路径」与「描边路径」拆成两条 SkPath 再按轮廓分段投递（描边要画、填充要跳），为一段退化输入重写绘制路径的代价与回归面都不成正比 ⇒ **明确选择不复刻，登记为已知分歧**；② `cell5` 描边 coverage 我们比 AIR 低 **6.9%**（47510 → 44215）：曲线的**平顶处两侧都精确量到 2.00 设备像素宽**，缺口全在陡峭段，是 Flash 把细斜描边略微喂胖的光栅器风格差（与 AA 开关无关：开 AA 前 43860、开后 44215）；③ 其余各格在 1% 内（AA 阈值，非几何差） |
 | **本轮证据** | `examples/graphics-path.as` 六段（常量表 / `drawPath`==平 API 且 **80x37.5** / 二次曲线 **80x25** / `NO_OP` 透明 + 未知命令截断 80x0 + `WIDE_*` 0x0 + 空与 null 向量 / 两种 winding + 非法 `#2008` / 奇数长度 `#2004` / `drawPath` 扩展当前组）⇒ `graphics-path: OK`；`unit: render/GraphicsPath` **13 条**源级断言（常量值、winding 类形、两个签名、两处错误在画前、`NO_OP` continue、未知命令 break 保留已建几何、数据耗尽 break、三次走 cubic 桥不入二次近似、紧包围盒走极值而非控制点） |
-| **证据落盘 / 复现** | 两条**编译期**取证（上面两行原文，`node src/index.ts <file>.as` 即可复现）；库侧实证：`node tools/probe.cjs probes/widgets/icon` ⇒ **57 checks / 0 failures**（三次曲线 t=0.5 点画出来了、三档描边宽度精确、12-viewBox 缩放正确；`A`/未知命令/`icon()` 三个**负例**各自抛错并自报 G26）；变异 `probes/widgets/icon/mutation.cjs` ⇒ **6/6 CAUGHT**，每次按 sha256 逐字节还原。另附一条**推翻旧结论**的测量：`lineStyle` 的描边宽度在本后端**精确生效**（2/4/6/8/12 ⇒ 2/4/6/8/12 行，直线/二次曲线/圆 r=7,14,20/矩形一致），所以「描边不可用」不是 G26 的近亲，只是过期注释 |
+| **证据落盘 / 复现** | 两条**编译期**取证（上面两行原文，`node src/index.ts <file>.as` 即可复现）；库侧实证：`node tools/probe.cjs probes/widgets/icon` ⇒ **66 checks / 0 failures**（三次曲线 t=0.5 点、**距最佳单二次逼近最远的那一点**（t=0.789，⚠️ 旧探针钉不住“被二次逼近”就是因为只采 t=0.5）、**双弧拼成的整圆**四个采样点、三档描边宽度、12-viewBox 缩放；`A` 已不再是负例，改为钉几何）；变异 `probes/widgets/icon/mutation.cjs` ⇒ **7/7 CAUGHT**（新增“三次被发成单二次”、“弧旗按数字读”两条），每次按 sha256 逐字节还原。另附一条**推翻旧结论**的测量：`lineStyle` 的描边宽度在本后端**精确生效**（2/4/6/8/12 ⇒ 2/4/6/8/12 行） |
+
+---
+
+### G24 / G25 / G26 修好之后的**库侧妥协编码审计**（2026-10-25，第十九轮）
+
+> 口径：缺口修好后，凡是为「这件事引擎做不到」而写的**近似、拒绝、自算、绕路**都必须重新判一次 ——
+> 要么撤掉换回原语，要么留下并写明它现在属于**设计选择**。留下却仍写着「因为引擎没有」的注释，
+> 是比缺陷更难查的谎言：注释会当作事实被后来的人引用。
+
+| 位置 | 修缺口之前做了什么 | 判定 | 本轮处置 |
+|---|---|---|---|
+| `kit/asaot/ui/PathData.as` 的 `C`/`S` | 自适应二分把三次段转成二次段（`(√3/36)·\|D\|` 上界，0.25 viewBox 单位容差） | **真妥协**（几何是近似的） | **删除细分**，直发 `Graphics.cubicCurveTo`，控制点原样透传 |
+| 同上，`A`（椭圆弧） | **抛错并自报 G26** | **真妥协**（整类图标不可用） | **实现**：SVG 1.1 F.6.5/F.6.6 端点→圆心，≤90° 一段，`4/3·tan(d/4)` 手柄，误差 ≤ 2.7e-4·r；两个弧标志按**单字符**读（紧凑写法 `011 1` 在真实数据里存在） |
+| 同上，`parse(data, tolerance)` | 容差只服务细分 | **死参数** | **取消第二参**，调用点 3 处跟改 |
+| `kit/asaot/ui/kind/IconWidget.as` | 只认 MOVE/LINE/QUAD/CLOSE | 结构妥协 | 增加 `CUBIC` 的缩放与 `replay`（→ `cubicCurveTo`），缓存键与注释同步 |
+| `kit/asaot/ui/IconNode.as` / `icon.as` | 注释写「引擎没有三次」「弧会抛」 | **过期注释** | 重写 |
+| `probes/widgets/icon` | 断言「`A` 抛错且消息里要有 G26」；三次只断言「被细分过」 | **把妥协钉成了契约** | 负例改为钉**几何**（双弧拼整圆 4 个采样点、紧凑弧标志）；三次改为钉 `CUBIC` 命令 + 控制点 + **距最佳单二次最远的那一点**（t=0.789 → (111,35)）；变异 I1/I4/I7 重指；57 → **66 checks**，6/6 → **7/7** |
+| `kit/asaot/ui/UiApp.as` 的 hover 块 | 「引擎从不派发 `mouseOver`，所以只能自己算」 | 结论对、**理由过期**；做法保留 | 保留合成 hover（命中必须与 click 同源 + 一窗口一监听器），注释换成这两条理由；新增**跨流一致性**断言（见 G25 行） |
+| `kit/asaot/ui/UiNode.as` 的 `createBacking` / `listen` 注释 | 「逐对象 roll 监听在我们自己的构建里是死的」 | 过期注释 | 重写；`listen()`/`releaseListeners()` 机制不动（它对任何后加的监听都成立） |
+| `probes/lifecycle` | 前提写「G25：AOT 不派发 roll，所以看不见」 | 过期注释（机制仍有效） | 重写前提；负控制（手工派发 `mouseOver`/`mouseOut`）保留，并说明它现在验的是「没人再按对象挂 hover」 |
+| `probes/widgets/interact`、`probes/widgets/callback` | 同上 | 过期注释 | 重写 |
+| `kit/asaot/ui/Reconciler.as` 的 `fixDisplayOrder` | 槽位计数器（当时为了绕开「越界被夹紧所以看不出错」） | **不是妥协，是正确的修法** | 代码不动；注释改为「现在运行时会替我们抛 `#2006`，计数器因此被运行时守卫」 |
+| `ui-demo/demo/DocsAir.as`、`tools/air-sweep.cjs`、`tools/gates.cjs` | 「我们的 AOT 比 AIR 宽容：夹紧 / 不派发 roll」 | 过期理由（门本身仍要留） | 重写为「AIR 是参考运行时；对齐过一次不等于一直对齐」 |
+| `kit/asaot/ui/kind/TableWidget.as` | 「gallery 的弹层就是这个 bug（G25 的兄弟）」 | 过期引用 | 改为直述（监听器晚于节点死去） |
+
+**刻意不做（并在此登记）的两处：**
+
+1. **填充仍走 `beginFill`，没有换成 `drawPath(..., "nonZero")`。** SVG 的默认填充规则是 nonzero，
+   `beginFill` 是 even-odd，所以自交 / 重叠子路径的**填充**图标理论上与源图不同。这不是
+   「当时不支持」的妥协（`beginFill` 一直有），换过去也不免费：`drawPath` 有一条**独有的怪癖**
+   （整条命令表 = `MOVE_TO` + 一段曲线时不产生填充面，见 G26 的 Pix8），而图标既要填充又要描边，
+   换过去得拆成两条路径。**没有真实图标数据踩到它之前不动**，登记在此，免得下次当成新发现。
+2. **hover 不改成逐对象 `mouseOver`/`mouseOut`。** 见上表 UiApp 行：这是设计选择，不是等待撤销的绕行。
 
 ---
 

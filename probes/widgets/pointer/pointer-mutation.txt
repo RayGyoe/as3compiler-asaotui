@@ -20,6 +20,10 @@ M5  CAUGHT  A DESTROYED NODE STAYS THE HOVER TARGET: the registry drops it, but 
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL a destroyed node is still the app's hover target;
      restore: byte-identical (684590b7f9040c77)
+M6  CAUGHT  THE PROBE STOPS LISTENING TO THE ENGINE: every derived-hover check still passes, so the assertion that the engine names the same node is never evaluated -- a blind half of the probe
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the engine dispatched no mouseOver at all on a pointer move; the engine's mouseOver target is not inside the hovered button; the engine's mouseOver target is not inside the hovered inner box;
+     restore: byte-identical (83a938a1b8304a08)
 
-MUTATION pointer: 5/5 caught, 0 problem(s)
+MUTATION pointer: 6/6 caught, 0 problem(s)
 RESULT: PASS

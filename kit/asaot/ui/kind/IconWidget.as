@@ -7,11 +7,15 @@
 // multiplied by the render scale -- an icon drawn at 48 from a 24 viewBox has a 4px
 // outline, which is what the source SVG means.
 //
+// CUBICS ARE NATIVE NOW. `C`/`S` in the data reach `cubicCurveTo` unchanged (one command
+// per segment) and SVG arcs arrive already converted, so this widget replays four
+// command kinds and approximates nothing. (Until compiler-gaps.md G26 was fixed the
+// engine had only a quadratic, and PathData subdivided; that code is gone.)
+//
 // THE COMMAND LIST IS CACHED, AND THE CACHE KEY INCLUDES THE RENDER SIZE. Parsing
-// allocates (one array per segment) and the cubic subdivision depends on the scale
-// (its tolerance is a quarter of a rendered pixel), so the cache is keyed on
-// data + viewBox + box + stroke width: a settled frame only replays. A resize does
-// reparse, which is correct -- the subdivision is supposed to get finer.
+// allocates (one array per segment), and the cached list is in SCALED space -- the
+// glyph is fitted into the box and the stroke width is a viewBox quantity -- so the key
+// is data + viewBox + box + stroke width: a settled frame only replays.
 //
 // Z IS A LINE BACK TO THE SUBPATH START. `Graphics` has no `closePath` -- not in this
 // subset and not in AIR's API either -- so the engine has nothing to close. Replaying
@@ -114,7 +118,7 @@ package asaot.ui.kind
             if (n.extra[SIG_KEY] == null || String(n.extra[SIG_KEY]) != sig)
             {
                 // Tolerance: a quarter of a RENDERED pixel, expressed in viewBox units.
-                var cmds:Array = PathData.parse(String(n.extra["ipath"]), 0.25 / scale);
+                var cmds:Array = PathData.parse(String(n.extra["ipath"]));
                 n.extra[CMDS_KEY] = scaleAll(cmds, scale, ox, oy);
                 n.extra[SIG_KEY] = sig;
             }
@@ -164,6 +168,12 @@ package asaot.ui.kind
                     out.push([op, ox + Number(c[1]) * scale, oy + Number(c[2]) * scale,
                         ox + Number(c[3]) * scale, oy + Number(c[4]) * scale]);
                 }
+                else if (op == PathData.CUBIC)
+                {
+                    out.push([op, ox + Number(c[1]) * scale, oy + Number(c[2]) * scale,
+                        ox + Number(c[3]) * scale, oy + Number(c[4]) * scale,
+                        ox + Number(c[5]) * scale, oy + Number(c[6]) * scale]);
+                }
                 else
                 {
                     out.push([op]);
@@ -193,6 +203,11 @@ package asaot.ui.kind
                 else if (op == PathData.QUAD)
                 {
                     g.curveTo(Number(c[1]), Number(c[2]), Number(c[3]), Number(c[4]));
+                }
+                else if (op == PathData.CUBIC)
+                {
+                    g.cubicCurveTo(Number(c[1]), Number(c[2]), Number(c[3]), Number(c[4]),
+                        Number(c[5]), Number(c[6]));
                 }
                 else
                 {

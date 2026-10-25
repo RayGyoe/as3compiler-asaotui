@@ -45,7 +45,7 @@
 // not have (same trick as SliderWidget / ScrollViewWidget). The closures live in
 // `n.extra` so they can be removed BY REFERENCE, and `teardown` removes them: a
 // stage listener pointing at a destroyed node's scratch bag is exactly the bug the
-// gallery's popups had (compiler-gaps G25's sibling).
+// gallery's popups had: a listener that outlived its node.
 package asaot.ui.kind
 {
     import asaot.ui.TableNode;

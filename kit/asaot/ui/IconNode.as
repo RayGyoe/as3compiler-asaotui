@@ -27,8 +27,10 @@
 // came from a build that predates this measurement; the icon probe pins the current
 // behaviour.) Caps and joins are round, which is what Lucide/Feather author with.
 //
-// CURVES: see PathData. This class only carries the data; the conversion of cubics to
-// the engine's quadratics (and the refusal of arcs) happens there.
+// CURVES. PathData translates the data into commands; this class only carries it. C and
+// S reach `Graphics.cubicCurveTo` unchanged, and an SVG arc is converted to cubics there
+// (AIR has no arc method either -- the conversion is part of reading SVG, not a
+// downgrade). Nothing in the path is approximated by a chord.
 //
 // SIZING. With no explicit size the intrinsic box IS the viewBox (24 by default), which
 // is the same "one unit = one pixel at 100%" convention the icon sets use.

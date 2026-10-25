@@ -4,8 +4,11 @@
 // absence the probe is supposed to see, so a green run after a mutation would mean the
 // probe is measuring nothing.
 //
-//   I1 the cubic is never subdivided -> one quadratic standing in for the whole cubic,
-//                                       i.e. a chord: the curve's own midpoint empties
+//   I1 the cubic is emitted as ONE QUADRATIC -> the best quadratic through the same ends
+//                                       still passes through t=0.5, so only the
+//                                       maximum-deviation sample and the command kind
+//                                       can see it (this is the approximation the class
+//                                       used to do on purpose, before G26)
 //   I2 the stroke width is not scaled -> a VIEWBOX width used as a device width, so an
 //                                       icon drawn at 2x has a half-thickness outline
 //   I3 the viewBox is ignored in fit  -> the glyph is laid out in a 24-unit box whatever
@@ -15,6 +18,8 @@
 //   I5 a relative command is absolute -> every offset in an "m/l/h/v" path is lost
 //   I6 the node's colour is ignored   -> the glyph takes the theme colour, so an icon
 //                                       cannot be the colour the author asked for
+//   I7 an arc flag is read as a number -> the compact form ("011 1", no separators) misreads
+//                                       its flags and then runs out of data
 //
 // Each mutated file is restored in `finally` and its sha256 compared byte-for-byte with
 // the pre-mutation hash: a mutation run can never leave the kit subtly altered.
@@ -38,11 +43,11 @@ const MUTATIONS = [
   {
     id: 'I1',
     file: 'kit/asaot/ui/PathData.as',
-    why: 'THE CUBIC IS NEVER SUBDIVIDED: one quadratic stands in for the whole cubic, so the curve the icon '
-      + 'data describes is drawn as a chord through it',
-    find: '            if (err <= this.tol || depth >= MAX_DEPTH)',
-    replace: '            if (true)',
-    expect: 'want a subdivided run',
+    why: 'THE CUBIC IS EMITTED AS ONE QUADRATIC: the shape still passes through t=0.5, so only the '
+      + 'command kind and the maximum-deviation sample can see that the curve was approximated',
+    find: '                    this.cubicTo(c1x, c1y, c22x, c22y, x, y);',
+    replace: '                    this.quadTo((3 * (c1x + c22x) - (this.cx + x)) / 4, (3 * (c1y + c22y) - (this.cy + y)) / 4, x, y);',
+    expect: 'pixel (111,35)',
   },
   {
     id: 'I2',
@@ -70,21 +75,9 @@ const MUTATIONS = [
     file: 'kit/asaot/ui/PathData.as',
     why: 'AN ARC BECOMES A CHORD: the silent approximation the class exists to refuse -- the data parses, '
       + 'paints, and is not the shape it says it is',
-    find: '                else if (c == "A")\n'
-      + '                {\n'
-      + '                    throw this.fail("the \'A\' (elliptical arc) command is not supported -- see compiler-gaps.md G26. "\n'
-      + '                        + "An arc has to go arc -> cubic -> quadratic, and the engine has no cubic; "\n'
-      + '                        + "drawing a chord instead would be a silent approximation. Use Q/T, or an arc-free icon set.");\n'
-      + '                }',
-    replace: '                else if (c == "A")\n'
-      + '                {\n'
-      + '                    this.num(); this.num(); this.num(); this.num(); this.num();\n'
-      + '                    x = this.num(); y = this.num();\n'
-      + '                    if (rel) { x += this.cx; y += this.cy; }\n'
-      + '                    this.lineTo(x, y);\n'
-      + '                    this.prevCmd = c;\n'
-      + '                }',
-    expect: 'did not throw naming G26',
+    find: '                    this.arcTo(arx, ary, arot, alarge, asweep, x, y);',
+    replace: '                    this.lineTo(x, y);',
+    expect: 'pixel (236,96)',
   },
   {
     id: 'I5',
@@ -106,6 +99,15 @@ const MUTATIONS = [
     find: 'if (!isNaN(own)) col = uint(own) & 0xFFFFFF;',
     replace: 'if (false) col = uint(own) & 0xFFFFFF;',
     expect: 'pixel (156,96) want #DC2626',
+  },
+  {
+    id: 'I7',
+    file: 'kit/asaot/ui/PathData.as',
+    why: 'AN ARC FLAG IS READ AS A NUMBER: the separated form still parses, but the compact form '
+      + '("a10 10 0 011 1") reads "011" as eleven and then has no numbers left',
+    find: '            if (ch == "1") { this.i++; return true; }',
+    replace: '            var fv:Number = this.num(); return fv > 0;',
+    expect: 'compact-flag arc did not parse',
   },
 ];
 

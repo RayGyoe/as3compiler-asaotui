@@ -375,7 +375,7 @@ function dragEnd():void
 }
 
 // The pointer is left ON the slider by the press above, and since the hover rewrite
-// (UiApp derives hover from ONE stage MOUSE_MOVE; G25) that is a REAL hover state, so
+// (UiApp derives hover from ONE stage MOUSE_MOVE) that is a REAL hover state, so
 // the bare track is tinted. Hand-derived: stateColor lifts the track 8% toward white
 // (PaintKit.HOVER_LIFT), and mixRGB(0xE5E7EB, 0xFFFFFF, 8) = 0xE7E9ED -- the exact
 // number this probe first tripped over, because nothing was ever hovered before.

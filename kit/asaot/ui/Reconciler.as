@@ -231,11 +231,13 @@ package asaot.ui
         // backing, so the last one lands at most on numChildren-1 (one lower when
         // `aboveContent` occupies the top).
         //
-        // This is also why no AOT probe ever saw it: our runtime CLAMPS an out-of-range
-        // index instead of throwing (asaotui/compiler-gaps.md G24), and a clamped
-        // index happens to be the right place for the LAST child -- the visible result
-        // was identical while the reference runtime threw. tools/air-sweep.cjs is the
-        // gate that runs the real runtime and pins this.
+        // This is also why no AOT probe saw it at the time: our runtime CLAMPED an
+        // out-of-range index instead of throwing (asaotui/compiler-gaps.md G24), and a
+        // clamped index happens to be the right place for the LAST child -- the visible
+        // result was identical while the reference runtime threw. G24 was fixed in
+        // v0.4.239 (an index past the end now raises RangeError #2006 on our builds too),
+        // so this counter is not only right by construction: the runtime now GUARDS it.
+        // tools/air-sweep.cjs stays the gate that runs the reference runtime.
         private function fixDisplayOrder(n:UiNode, next:Vector.<UiNode>):void
         {
             var slot:int = n.internalCount;

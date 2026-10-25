@@ -108,7 +108,7 @@
 > 样式面的 `grid`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
-生成日期：2026-10-25（第十七轮补：图标通道 `icon()` + G26 库侧绕行；顺带推翻"描边宽度不生效"的旧实测） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**51 道门**）
+生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**52 道门**）
 
 ---
 
@@ -587,8 +587,8 @@ PATH 还是 `:` 拼的 POSIX 形态）——Windows 上实测 `ENOENT`；换成 
 |---|---|---|---|
 | `toast({ tone: "info" })` | 抛（我们的 build 也抛） | 抛，但**帧守卫接住** ⇒ 屏幕停在上一棵树、只剩控制台一行 | 只能“真点一下”（第九轮：tour 新 stage） |
 | `onChange()` 少传参 | 抛 `#1063` | **同样抛**（语义对齐），同样被帧守卫吞掉 | 只能“真点一下”（§3.10） |
-| `setChildIndex(child, index >= numChildren)` | 抛 `RangeError #2006` | **静默夹紧**（`emit.ts:11635`） | 只能跑真 AIR（本节） |
-| 死节点上的 `mouseOut` | 抛 `TypeError #1009`（**晚一拍**才投递） | **根本不投递**（`emit.ts` 里 `mouseOver` 出现 0 次，即 G25） | 只能跑真 AIR，而且**要自己发指针事件**（第十二轮补的「指针钻」） |
+| `setChildIndex(child, index >= numChildren)` | 抛 `RangeError #2006` | ~~静默夹紧~~ → **同样抛**（G24 已修，v0.4.239） | 当时只能跑真 AIR；修好后 AOT 探针也能红 |
+| 死节点上的 `mouseOut` | 抛 `TypeError #1009`（**晚一拍**才投递） | ~~根本不投递~~ → **同样投递**（G25 已修，v0.4.239）；库侧仍用一条 stage `MOUSE_MOVE` 合成 hover | 当时只能跑真 AIR，而且**要自己发指针事件**（第十二轮补的「指针钻」）；现在 `probes/widgets/pointer` 还会把引擎自己的 `mouseOver` 与库的 hover 对账 |
 
 前两类是「两边都错、但只有交互才看得见」，第三类是**只有 AIR 才错** —— 它靠 AOT 探针在原理上就无解：
 夹紧后的显示序恰好等于正确显示序，像素一模一样。所以补了一道**反向**的门：不去猜 AOT 差在哪里，
@@ -806,6 +806,11 @@ Codegen error at 12:13: undefined method 'drawPath' on class 'Graphics'
 容差是**四分之一个渲染像素**，而细分发生在 AS3 侧 ⇒ AOT 与 `adl` 跑的是同一串二次段，**跨臂逐像素一致**。
 三次曲线的 t=0.5 点恰好是第一次二分的分割点，所以它是**精确**的——探针就采那一点（弦的话那里是空白）。
 
+> **已撤除（第十九轮）**：G26 在编译器侧修好（阶段二百七十五，v0.4.239）后，上表的「自适应细分」与「`A` 抛错」
+> **全部删除**：`C`/`S` 直发 `Graphics.cubicCurveTo`，`A` 改为 SVG 1.1 端点→圆心参数化再转三次段（≤90° 一段，
+> 误差 ≤ 2.7e-4·r），`tolerance` 参数随之取消。旧的 t=0.5 采样点留着，但它**不再能区分**“原生三次”与“细分后的三次”——
+> 能区分的是新增的 t=0.789 采样点（距最佳单二次逼近最远）。详见 §3.17b。
+
 #### 3.17.3 一条过期注释差点把方案堵死
 
 `AccordionWidget`/`SelectWidget`/`TableWidget`/`OverlayChrome`/`PaintKit` 五处都写着同一句实测结论：
@@ -823,6 +828,36 @@ Codegen error at 12:13: undefined method 'drawPath' on class 'Graphics'
 12-viewBox 的字形缩放从 4 变 2——但字形是**居中**的，缩放变小后路径**仍然落在同一条 y 上**，只有**描边厚度**变了。
 补一个 `(96,92)` 的采样点（8px 带的最上一行，缩错就变白）才咬住。
 **教训：变异漏了先怀疑夹具的采样点，而不是怀疑变异太弱——“居中”会把缩放错误藏起来。**
+
+### 3.17b 缺口修好之后：把当时的三处妥协编码撤掉（第十九轮补）
+
+G24 / G25 / G26 在编译器侧全部修好后（**阶段二百七十五，v0.4.239**），先把库侧当初为它们写的东西逐条审了一遍：
+**近似、拒绝、自算、绕路**，四条里凡是已无必要的都撤，凡是属于**设计选择**的都把注释改写过来。
+完整表格见 `compiler-gaps.md` 的「库侧妥协编码审计」；这里只记结论与代价：
+
+| 当时的妥协 | 为什么当时只能这样 | 现在 |
+|---|---|---|
+| 三次曲线**自适应二分转成二次段**（容差 0.25 渲染像素） | `Graphics.cubicCurveTo` 在 `emit.ts` 里不存在，Skia 桥也只有 `quad_to` | **删除**，一段一根 `cubicCurveTo` |
+| `A`（椭圆弧）**抛错并自报 G26** | 弧要先转三次，而三次跑不了；画成弦是静默错误 | **实现**：端点→圆心 → ≤90° 切段 → `4/3·tan(d/4)` 手柄 |
+| `parse(data, tolerance)` 的第二参 | 只服务细分 | **取消**（三处调用点跟改） |
+| hover 自己算（不依赖 `mouseOver`/`rollOver`） | 引擎根本不派发 | **保留**，但它现在是**设计选择**：命中必须与 click 同源，且一个窗口一个监听器 |
+| `Reconciler` 的槽位计数器 | 越界被静默夹紧，所以错法看不出 | **保留**（它本来就是正确修法），且现在运行时替我们抛 `#2006` |
+
+**两件“有意不做”已经登记**（`compiler-gaps.md` 同节）：① 填充仍走 `beginFill`（even-odd），没换成
+`drawPath(..., "nonZero")` —— 不是因为不支持，而是 `drawPath` 有一条「整表 = MOVE_TO + 一段曲线不填充」的
+独有怪癖，换过去得拆两条路径，**没有真实图标数据踩到它之前不动**；② hover 不改成逐对象事件（见上）。
+
+**代价与收获都在探针里**：`probes/widgets/icon` 从 57 → **66 checks**。旧的 t=0.5 采样点对“原生三次”与
+“细分后的三次”**无区分度**（那是分割点，两者重合），真正能咬住降阶的采样点是 t=0.789（距最佳单二次逼近
+最远，偏差 2.6e-3·边长）——所以降阶变异 I1 跃在 **(111,35)** 会直接变白。
+`A` 从负例变成**几何正例**：两条弧拼整圆，四个采样点必须按弧走（弦的话圆心是中空的）。
+变异 **6/6 → 7/7**（新增「弧旗按数字读」一条：紧凑写法 `a10 10 0 011 1` 是真实数据，按数字读会吃掉后面的坐标）。
+
+**G25 的额外一层**：以前 probe 只能证明“库的 hover 自己内部自洽”；现在引擎也会派发
+`mouseOver`/`rollOver`，于是 `probes/widgets/pointer` 在 stage 上接引擎自己的 `MOUSE_OVER`，
+拿**原始 `e.target`**（不经过 UiApp 的注册表）去比对“它是否落在 app 认为 hover 的节点里”，
+并验证 `rollOver` 到达进入节点**及其祖先**、不到达兄弟子树。**两套定义一旦分叉，探针变红** ——
+这条断言存在的理由，正是“两个臂语义不同”那一类缺陷在原理上依赖独立参考。变异 **6/6**（M6 删掉探针自己的引擎监听）。
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
@@ -871,7 +906,7 @@ node tools/gates.cjs          # 52/52 PASS 才叫绿（定稿记录 reviews/gate
 | 控件探针 ×5（第一批） | `node tools/probe.cjs probes/widgets/{chip,form,display,nav,anim}` | 19 / 41 / 48 / 41 / 14 checks，全 0 failures |
 | 控件探针 ×3（第二批） | `node tools/probe.cjs probes/widgets/{media,feedback,data}` | 43 / 43 / 77 checks，全 0 failures；变异 `tools/mutation-widget-probes.cjs`（media+feedback 4/4）、`probes/widgets/data/mutation.cjs`（**5/5**，含 M4 复现本轮修的层叠 bug、M5 复现本轮修的文本内边距缺陷） |
 | **浮层探针（第三批）** | `node tools/probe.cjs probes/widgets/overlay` | **65 checks**，0 failures（A 段全场景矩形 + 像素、B 段真事件路点击、C 段抽屉、D 段菜单高亮带、E 段**子菜单**、F 段**入场动画**：中间态 `alpha<1` 且 `backing.y != absY`，落地后 `isRunning==false` / `alpha==1` / 不再重画）；变异 `probes/widgets/overlay/mutation.cjs` **9/9**（其中 5 例是把真缺陷重新植入，1 例是子菜单的 parent-local 换算） |
-| **图标通道探针（第十七轮）** | `node tools/probe.cjs probes/widgets/icon` | **57 checks**，0 failures：三次曲线 t=0.5 点（弦的话是空白）、二次曲线顶点、填充三角形内外、**三档描边宽度**（2px/4px/12px，含 12-viewBox 缩放到 8px）、无 `size` 时盒子=viewBox；**负例**三个：`A` 弧抛错且自报 G26、未知命令抛错并带偏移、`icon()` 在 describe 期抛。变异 `probes/widgets/icon/mutation.cjs` **6/6**（不细分 ⇒ 弦；描边不缩放；忽略 viewBox；弧当弦；相对命令当绝对；忽略节点颜色），每次都按 sha256 逐字节还原 |
+| **图标通道探针（第十七轮，十九轮重钉）** | `node tools/probe.cjs probes/widgets/icon` | **66 checks**，0 failures：三次曲线 t=0.5 点（弦的话是空白）+ **t=0.789 点**（距最佳单二次逼近最远，细分/降阶都会变白）、二次曲线顶点、**两条弧拼成的整圆**四个采样点、填充三角形内外、**三档描边宽度**（2px/4px/12px，含 12-viewBox 缩放到 8px）、无 `size` 时盒子=viewBox；**负例**两个：未知命令抛错并带偏移、截断的弧参数抛错。变异 `probes/widgets/icon/mutation.cjs` **7/7**（三次降成二次；描边不缩放；忽略 viewBox；弧当弦；相对命令当绝对；忽略节点颜色；弧标志按数字读），每次都按 sha256 逐字节还原 |
 | **越界翻转探针（第四轮）** | `node tools/probe.cjs probes/widgets/flip` | **54 checks**，0 failures：竖向翻转（`popB` 到锚点上方、底边 156）、横向翻转（`popR` 的 `x=134`）、夹回窗口（`popR` 底边 256 = `H-4`）三件一起验；变异 `mutation.cjs` **5/5**（翻 / 自身高 / 横翻 / parent-local / 夹紧，各去一半） |
 | **交互探针（第四轮）** | `node tools/probe.cjs probes/widgets/interact` | **25 checks**，0 failures：7 个相位（disabled 惰性 / hover / press / 焦点环 / Tab+Shift+Tab / 文本回写+Enter 提交 / 运行时 disabled 翻转），像素全部手算（`#e0e7ff` → hover `#e2e9ff` → press `#c5cbe0`，焦点环 `#2563eb` 画在填充上）；变异 `mutation.cjs` **8/8** |
 | **动效探针（第五轮）** | `node tools/probe.cjs probes/widgets/motion` | **23 checks**，0 failures：pin 住 layout 字段动画（`sizer` 20→200 宽、`solves 4→9→20` 证明**每帧重解**）+ 浮层**退场**（入场 140 / 退场 120，落地才 `visible=false`），并含「**退场中强制重渲染**」相位（描述符一直 `visible:false` 也不能把表面提前藏起来）；变异 `mutation.cjs` **7/7** |

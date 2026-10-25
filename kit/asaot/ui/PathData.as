@@ -1,52 +1,54 @@
 // asaot.ui.PathData -- SVG path data ("M4 12 H20") into a flat command list.
 //
-// WHY THIS IS IN THE LIBRARY AND NOT IN THE COMPILER. The engine has `moveTo`,
-// `lineTo` and a QUADRATIC `curveTo` -- no cubic and no `drawPath` (compiler-gaps.md
-// G26). Icon sets are authored as SVG paths, and the overwhelming majority of their
-// curves are CUBIC, so something has to bridge the two. Doing it here, in AS3, means
-// both arms (our AOT and `adl`) run the SAME subdivision and therefore draw the SAME
-// pixels: a difference between the arms would be a difference between two runs of one
-// program, which is not possible.
+// WHY THIS IS IN THE LIBRARY AND NOT IN THE COMPILER. SVG is the format icon sets are
+// authored in, and `Graphics` is the format the engine draws; something has to translate.
+// Doing it here, in AS3, means both arms (our AOT and `adl`) run the SAME translation
+// and therefore draw the SAME pixels: a difference between the arms would be a
+// difference between two runs of one program, which is not possible.
+//
+// HISTORY, BECAUSE IT CHANGED THE SHAPE OF THIS FILE. Until compiler-gaps.md G26 was
+// fixed the engine had `moveTo` / `lineTo` / a QUADRATIC `curveTo` and nothing else, so
+// C and S were APPROXIMATED by subdividing the cubic into quadratic segments, and A
+// (elliptical arc) had to THROW -- it needs a cubic step the engine did not have. That
+// was the honest thing to do with the tools available, and it is now gone: the engine
+// draws cubics, so C and S are emitted as cubics (exact, one command each) and A is
+// converted to cubics and drawn. No command in the SVG grammar is approximated any more.
 //
 // WHAT IS SUPPORTED, AND WHAT THROWS
 // ----------------------------------
 //   M m  L l  H h  V v  Z z      exact (straight segments)
 //   Q q  T t                     exact (the engine's own quadratic + reflection)
-//   C c  S s                     converted to quadratics, see below
-//   A a                          THROWS. An SVG arc is not a bezier; the standard route
-//                                is arc -> cubic -> quadratic, and the cubic step is
-//                                the one the engine lacks. Refusing is the honest
-//                                outcome: silently drawing a straight chord for an
-//                                arc is exactly the "looks like it works" failure this
-//                                project refuses. Use Q/T, or a circle, or a filled
-//                                icon set whose data has no arcs.
+//   C c  S s                     exact (Graphics.cubicCurveTo)
+//   A a                          exact to within 2.7e-4 of the radius, see below
 //   anything else                THROWS, with the offset.
 //
-// CUBIC -> QUADRATIC IS A MEASUREMENT, NOT A GUESS. A cubic B with controls
-// P0..P3 is replaced by the quadratic with the same endpoints and control
-// (3(P1+P2) - (P0+P3)) / 4; the standard bound on the deviation is
-//     (sqrt(3)/36) * |P0 - 3 P1 + 3 P2 - P3|   ~=   0.0481 * |D|.
-// If that bound is above the tolerance the cubic is split in half (de Casteljau) and
-// both halves are tried again, so the emitted quads are within `tol` of the real
-// curve. The split point of the FIRST subdivision is the cubic's own t = 0.5 point,
-// so the mid-point of a curve is exact to the pixel -- which is what the icon probe
-// asserts.
+// THE ARC IS THE ONE PLACE A CURVE IS STILL APPROXIMATED, AND IT HAS TO BE. AIR's
+// Graphics has no arc either (this is not a gap in our compiler: the SVG arc is simply
+// not an API that existed), so "arc" must become beziers. SVG 1.1 F.6.5 gives the
+// endpoint -> centre parameterisation used below, and F.6.6 the radius correction. The
+// sweep is split into pieces of at most 90 degrees and each piece is one cubic with the
+// standard 4/3 * tan(d/4) handle; for a 90-degree piece that is within 2.7e-4 * r of the
+// true arc, i.e. a fortieth of a pixel on a 48px icon, which is why there is no
+// tolerance parameter any more -- the error is far below anything a raster can show.
 //
-// The tolerance is passed in VIEWBOX units by the caller, which knows the render
-// scale: IconWidget asks for 0.25 / scale, i.e. a quarter of a rendered pixel at any
-// size.
+// FLAGS ARE READ ONE CHARACTER AT A TIME. The SVG grammar allows an arc's two flags to
+// be written without separators ("a1 1 0 011 1"), and icon files in the wild use it. A
+// general "read a number" would turn "011" into eleven and then misparse the rest of the
+// path, so `flag()` takes exactly one '0' or '1'.
 package asaot.ui
 {
     public class PathData
     {
         // Op codes of the returned commands. Each entry is an Array:
         //   MOVE / LINE  [op, x, y]
-        //   QUAD         [op, cx, cy, x, y]      (control point first, like curveTo)
+        //   QUAD         [op, cx, cy, x, y]            (control point first, like curveTo)
+        //   CUBIC        [op, c1x, c1y, c2x, c2y, x, y] (like cubicCurveTo)
         //   CLOSE        [op]
         public static const MOVE:int = 1;
         public static const LINE:int = 2;
         public static const QUAD:int = 3;
         public static const CLOSE:int = 4;
+        public static const CUBIC:int = 5;
 
         // Offsets into a command array, so callers never index by magic numbers.
         public static const X:int = 1;
@@ -54,16 +56,10 @@ package asaot.ui
         public static const CX:int = 1;
         public static const CY:int = 2;
 
-        // Recursion stops here whatever the tolerance says: an icon that needs more
-        // than this many halves has a degenerate control polygon (P1 == P2 in the
-        // middle of a straight line), and 2^8 quads would be a bug, not detail.
-        private static const MAX_DEPTH:int = 8;
-
         private var src:String;
         private var i:int;
         private var len:int;
         private var out:Array;
-        private var tol:Number;
         private var cx:Number;          // current point
         private var cy:Number;
         private var sx:Number;          // subpath start (the target of Z)
@@ -74,21 +70,20 @@ package asaot.ui
         private var c2y:Number;
         private var prevCmd:String;     // for the S/T reflection rules
 
-        public function PathData(data:String, tolerance:Number)
+        public function PathData(data:String)
         {
             this.src = data == null ? "" : data;
             this.i = 0;
             this.len = this.src.length;
             this.out = [];
-            this.tol = tolerance > 0 ? tolerance : 0.25;
             this.cx = 0; this.cy = 0; this.sx = 0; this.sy = 0;
             this.qcx = 0; this.qcy = 0; this.c2x = 0; this.c2y = 0;
             this.prevCmd = "";
         }
 
-        public static function parse(data:String, tolerance:Number = 0.25):Array
+        public static function parse(data:String):Array
         {
-            return new PathData(data, tolerance).run();
+            return new PathData(data).run();
         }
 
         public function run():Array
@@ -196,7 +191,7 @@ package asaot.ui
                     var c22y:Number = this.num();
                     x = this.num(); y = this.num();
                     if (rel) { c1x += this.cx; c1y += this.cy; c22x += this.cx; c22y += this.cy; x += this.cx; y += this.cy; }
-                    this.cubic(this.cx, this.cy, c1x, c1y, c22x, c22y, x, y, 0);
+                    this.cubicTo(c1x, c1y, c22x, c22y, x, y);
                     this.c2x = c22x; this.c2y = c22y;
                     this.prevCmd = c;
                 }
@@ -216,15 +211,23 @@ package asaot.ui
                         r1x = 2 * this.cx - this.c2x;
                         r1y = 2 * this.cy - this.c2y;
                     }
-                    this.cubic(this.cx, this.cy, r1x, r1y, s2x, s2y, x, y, 0);
+                    this.cubicTo(r1x, r1y, s2x, s2y, x, y);
                     this.c2x = s2x; this.c2y = s2y;
                     this.prevCmd = c;
                 }
                 else if (c == "A")
                 {
-                    throw this.fail("the 'A' (elliptical arc) command is not supported -- see compiler-gaps.md G26. "
-                        + "An arc has to go arc -> cubic -> quadratic, and the engine has no cubic; "
-                        + "drawing a chord instead would be a silent approximation. Use Q/T, or an arc-free icon set.");
+                    // rx ry x-axis-rotation large-arc-flag sweep-flag x y
+                    var arx:Number = this.num();
+                    var ary:Number = this.num();
+                    var arot:Number = this.num();
+                    var alarge:Boolean = this.flag();
+                    var asweep:Boolean = this.flag();
+                    x = this.num(); y = this.num();
+                    // The radii and the rotation are NOT relative: only the end point is.
+                    if (rel) { x += this.cx; y += this.cy; }
+                    this.arcTo(arx, ary, arot, alarge, asweep, x, y);
+                    this.prevCmd = c;
                 }
                 else
                 {
@@ -257,35 +260,106 @@ package asaot.ui
             this.qcx = qx; this.qcy = qy;
         }
 
+        private function cubicTo(c1x:Number, c1y:Number, c2x:Number, c2y:Number,
+                                 x:Number, y:Number):void
+        {
+            this.out.push([CUBIC, c1x, c1y, c2x, c2y, x, y]);
+            this.cx = x; this.cy = y;
+        }
+
         private function closeSubpath():void
         {
             this.out.push([CLOSE]);
             this.cx = this.sx; this.cy = this.sy;
         }
 
-        // Cubic -> quadratics, recursively. See the header for the bound.
-        private function cubic(x0:Number, y0:Number, x1:Number, y1:Number,
-                              x2:Number, y2:Number, x3:Number, y3:Number, depth:int):void
+        // ---- the one approximation: SVG arc -> cubics (SVG 1.1 F.6.5 / F.6.6) ----
+
+        private function arcTo(rxIn:Number, ryIn:Number, rotDeg:Number,
+                              large:Boolean, sweep:Boolean, x:Number, y:Number):void
         {
-            var dx:Number = x0 - 3 * x1 + 3 * x2 - x3;
-            var dy:Number = y0 - 3 * y1 + 3 * y2 - y3;
-            var err:Number = 0.0481 * Math.sqrt(dx * dx + dy * dy);
-            if (err <= this.tol || depth >= MAX_DEPTH)
+            var x0:Number = this.cx;
+            var y0:Number = this.cy;
+            // F.6.2: identical endpoints mean the arc is omitted, not drawn as a dot.
+            if (x0 == x && y0 == y) return;
+            var rx:Number = Math.abs(rxIn);
+            var ry:Number = Math.abs(ryIn);
+            // F.6.6: a zero radius degenerates to the straight line, which is what the
+            // author asked for ("no curvature here"), not an error.
+            if (rx == 0 || ry == 0) { this.lineTo(x, y); return; }
+
+            var phi:Number = rotDeg * Math.PI / 180;
+            var cosP:Number = Math.cos(phi);
+            var sinP:Number = Math.sin(phi);
+            // Step 1: the chord's midpoint in the ellipse's own (unrotated) frame.
+            var hdx:Number = (x0 - x) / 2;
+            var hdy:Number = (y0 - y) / 2;
+            var x1p:Number =  cosP * hdx + sinP * hdy;
+            var y1p:Number = -sinP * hdx + cosP * hdy;
+            // Step 2/F.6.6: radii too small to span the endpoints are SCALED UP, not
+            // clamped -- that is the spec's answer and it keeps the arc joinable.
+            var lam:Number = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+            if (lam > 1)
             {
-                var qx:Number = (3 * (x1 + x2) - (x0 + x3)) / 4;
-                var qy:Number = (3 * (y1 + y2) - (y0 + y3)) / 4;
-                this.quadTo(qx, qy, x3, y3);
-                return;
+                var sl:Number = Math.sqrt(lam);
+                rx = rx * sl;
+                ry = ry * sl;
             }
-            // de Casteljau at t = 0.5.
-            var ax:Number = (x0 + x1) / 2, ay:Number = (y0 + y1) / 2;
-            var bx:Number = (x1 + x2) / 2, by:Number = (y1 + y2) / 2;
-            var ccx:Number = (x2 + x3) / 2, ccy:Number = (y2 + y3) / 2;
-            var dx1:Number = (ax + bx) / 2, dy1:Number = (ay + by) / 2;
-            var dx2:Number = (bx + ccx) / 2, dy2:Number = (by + ccy) / 2;
-            var mx:Number = (dx1 + dx2) / 2, my:Number = (dy1 + dy2) / 2;
-            this.cubic(x0, y0, ax, ay, dx1, dy1, mx, my, depth + 1);
-            this.cubic(mx, my, dx2, dy2, ccx, ccy, x3, y3, depth + 1);
+            // Step 3: the centre, in the same frame ...
+            var rx2:Number = rx * rx;
+            var ry2:Number = ry * ry;
+            var num:Number = rx2 * ry2 - rx2 * y1p * y1p - ry2 * x1p * x1p;
+            var den:Number = rx2 * y1p * y1p + ry2 * x1p * x1p;
+            var coef:Number = num > 0 && den > 0 ? Math.sqrt(num / den) : 0;
+            if (large == sweep) coef = -coef;
+            var cxp:Number =  coef * rx * y1p / ry;
+            var cyp:Number = -coef * ry * x1p / rx;
+            // ... and back in user space.
+            var ccx:Number = cosP * cxp - sinP * cyp + (x0 + x) / 2;
+            var ccy:Number = sinP * cxp + cosP * cyp + (y0 + y) / 2;
+            // Step 4: start angle and sweep, as signed angles on the unit circle.
+            var ux:Number = (x1p - cxp) / rx;
+            var uy:Number = (y1p - cyp) / ry;
+            var vx:Number = (-x1p - cxp) / rx;
+            var vy:Number = (-y1p - cyp) / ry;
+            var th0:Number = Math.atan2(uy, ux);
+            var dth:Number = Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+            if (!sweep && dth > 0) dth = dth - 2 * Math.PI;
+            else if (sweep && dth < 0) dth = dth + 2 * Math.PI;
+
+            // At most 90 degrees per cubic: the 4/3*tan(d/4) handle is within 2.7e-4 of
+            // the radius there and gets worse fast beyond it.
+            var n:int = int(Math.ceil(Math.abs(dth) / (Math.PI / 2)));
+            if (n < 1) n = 1;
+            var d:Number = dth / n;
+            var k:Number = 4 / 3 * Math.tan(d / 4);
+            for (var i:int = 0; i < n; i++)
+            {
+                var a0:Number = th0 + i * d;
+                var a1:Number = a0 + d;
+                var cs0:Number = Math.cos(a0);
+                var sn0:Number = Math.sin(a0);
+                var cs1:Number = Math.cos(a1);
+                var sn1:Number = Math.sin(a1);
+                // Point on the ellipse, rotated into user space.
+                var px0:Number = ccx + rx * cs0 * cosP - ry * sn0 * sinP;
+                var py0:Number = ccy + rx * cs0 * sinP + ry * sn0 * cosP;
+                var px1:Number = ccx + rx * cs1 * cosP - ry * sn1 * sinP;
+                var py1:Number = ccy + rx * cs1 * sinP + ry * sn1 * cosP;
+                // d(point)/d(angle), same frame: the handle is k times this.
+                var dx0:Number = -rx * sn0 * cosP - ry * cs0 * sinP;
+                var dy0:Number = -rx * sn0 * sinP + ry * cs0 * cosP;
+                var dx1:Number = -rx * sn1 * cosP - ry * cs1 * sinP;
+                var dy1:Number = -rx * sn1 * sinP + ry * cs1 * cosP;
+                // The last segment is snapped to the COMMAND's end point: the
+                // trigonometry is accurate to ~1e-15, but an icon is drawn from the
+                // data, so the data's own numbers are what the caller asked for.
+                var ex:Number = i == n - 1 ? x : px1;
+                var ey:Number = i == n - 1 ? y : py1;
+                this.cubicTo(px0 + k * dx0, py0 + k * dy0,
+                             px1 - k * dx1, py1 - k * dy1,
+                             ex, ey);
+            }
         }
 
         // ---- scanning ----------------------------------------------------
@@ -334,6 +408,16 @@ package asaot.ui
                 while (exp < 0) { v = v / 10; exp++; }
             }
             return v;
+        }
+
+        // One arc flag: EXACTLY one character, never a number. See the header.
+        private function flag():Boolean
+        {
+            this.skip();
+            var ch:String = this.src.charAt(this.i);
+            if (ch == "1") { this.i++; return true; }
+            if (ch == "0") { this.i++; return false; }
+            throw this.fail("expected an arc flag (0 or 1), found '" + ch + "'");
         }
 
         private function fail(msg:String):Error

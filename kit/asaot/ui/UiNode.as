@@ -254,14 +254,13 @@ package asaot.ui
             {
                 this.internalCount = this.internalCount - 1;
             }
-            // Hover is NOT wired here, on purpose. Our AOT runtime never dispatches
-            // mouseOver/mouseOut (G25 in compiler-gaps.md), so a per-object roll
-            // listener would work under adl and be dead in our own builds -- two
-            // different definitions of hover depending on which arm you run.
-            // UiApp derives hover from ONE stage MOUSE_MOVE listener using the same
-            // pick test the click uses (see its "hover is SYNTHESIZED" block), so
-            // both arms run the same code. What stays here is what the stub cannot
-            // express: press and click belong to the object under the pointer.
+            // Hover is NOT wired here, on purpose. G25 was fixed in v0.4.239, so roll
+            // events DO arrive now -- and hover still stays in UiApp, derived from ONE
+            // stage MOUSE_MOVE with the same pick test the click uses (see its "hover is
+            // DERIVED" block). Two definitions of "under the pointer" is how a control
+            // ends up lighting up and not being clickable. What stays here is what a
+            // shared listener cannot express: press and click belong to the object under
+            // the pointer.
             //
             // CLICK IS INSTALLED FOR EVERY KIND, unlike press: click is a property
             // of a display object (any element may carry a handler), while
@@ -293,8 +292,12 @@ package asaot.ui
         // was torn down. Measured on adl 51.4.1 -- TypeError #1009 on every click that
         // tore down the control it was made on (accordion 1x, dialog 4x, drawer 3x,
         // menu 3x), at `UiNode/setHover` and at every widget handler that reads the
-        // nulled scratch bag. Our own AOT never dispatches roll-over/roll-out at all
-        // (G25 in compiler-gaps.md), so no AOT gate could see it.
+        // nulled scratch bag.
+        //
+        // The AOT could not see that class of bug while G25 was open (no roll events at
+        // all); the guard predates the fix, `probes/lifecycle` pins it now, and a
+        // per-object roll listener added later inherits the same protection by going
+        // through this method.
         //
         // `target` is the backing for pointer events and the node's TextField for the
         // editing ones. STAGE listeners are deliberately NOT wired here: they belong to

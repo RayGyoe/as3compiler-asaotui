@@ -57,11 +57,13 @@
 // openable demo is covered without editing this file.
 //
 // `sweep` is `tools/air-sweep.cjs`: the ONLY gate that runs the REFERENCE runtime. It
-// exists because our AOT is deliberately more forgiving than AIR in places
-// (`setChildIndex` clamps an out-of-range index instead of throwing #2006 -- see
-// asaotui/compiler-gaps.md), so a library mistake AIR rejects and we tolerate is
-// invisible to the whole AOT suite. One run of the real runtime over every page is the
-// cheap way to notice it.
+// exists because AIR is the authority we align to -- error numbers, error TEXT, event
+// ordering, text metrics -- and because "we measured that contract once" is not the same
+// as "we still implement it". Two gaps in this very file's history were found only here:
+// `setChildIndex` clamping an out-of-range index instead of throwing #2006 (G24) and the
+// runtime never dispatching roll events (G25); both were fixed in v0.4.239, and the gate
+// is what keeps them fixed. One run of the real runtime over every page is the cheap way
+// to notice the next one.
 //
 // WHY THE RUN LOG IS A FILE AND NOT trace()
 // -----------------------------------------
@@ -332,10 +334,11 @@ package demo
         // If the node was torn down in between, the listener used to run into a nulled
         // field.
         //
-        // 2026-10-26: the library no longer installs per-object ROLL listeners. Our AOT
-        // runtime never dispatches mouseOver/mouseOut (G25), so hover is synthesized
-        // from ONE stage MOUSE_MOVE and both arms run the same code. The hazard did not
-        // go away, it moved: a backing still carries its DOWN/UP/CLICK listeners until
+        // 2026-10-26: the library no longer installs per-object ROLL listeners. Hover is
+        // DERIVED from ONE stage MOUSE_MOVE using the click's own hit test, so both arms
+        // run the same code -- which is a design choice, not a workaround: G25 was fixed
+        // in v0.4.239 and roll events do arrive now. The hazard did not go away, it
+        // moved: a backing still carries its DOWN/UP/CLICK listeners until
         // destroySubtree takes them off, and AIR can deliver to a removed object. So the
         // drill CAPTURES every leaf of both trees (main + overlay) before the page
         // switch, then delivers CLICK + MOUSE_DOWN one tick later to the ones that

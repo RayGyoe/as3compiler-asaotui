@@ -5,19 +5,31 @@
 //
 // WHY THIS PROBE EXISTS
 // ---------------------
-// Our AOT runtime never dispatches mouseOver/mouseOut -- the string does not occur in
-// src/emit.ts at all (G25 in compiler-gaps.md). Until 2026-10-26 every node hung its
-// hover off exactly those two events, so EVERY hover state in the library was dead on
-// our own builds while it worked under adl: 41 gallery pages, every AOT probe and every
-// pixel comparison were green, because nothing ever asked the pointer to move.
+// Hover is DERIVED, not received: UiApp listens for ONE stage MOUSE_MOVE, asks the
+// runtime's own hit test which object is under the pointer, and lights that node plus
+// its ancestors. The alternative -- a listener per node on mouseOver/mouseOut -- is what
+// the library did until 2026-10-26, and it was dead on our own builds because the AOT
+// runtime never dispatched those events (G25 in compiler-gaps.md); 41 gallery pages,
+// every AOT probe and every pixel comparison were green, because nothing ever asked the
+// pointer to move.
 //
-// The fix is one stage MOUSE_MOVE listener in UiApp (the event both arms deliver, which
-// bubbles and falls back to the stage), the runtime's own hit test, and a backing ->
-// node registry. This probe pins what that rewrite must keep true:
+// G25 IS FIXED NOW (v0.4.239) and the derivation still stands -- for two reasons that
+// are about the library, not about the engine: hover MUST use the same pick test the
+// click uses (a control that lights up but cannot be clicked is invisible in every
+// screenshot), and one listener for the window beats one per node. What changes is that
+// the claim "our hover is the engine's hover" is now CHECKABLE: the engine dispatches
+// mouseOver/rollOver, so this probe asserts that the node the app hovers is the node the
+// engine says the pointer is over. If the two ever disagree, this file goes red instead
+// of quietly shipping a second opinion.
+//
+// What that rewrite must keep true:
 //
 //   * hover reaches the NODE UNDER THE POINTER (not the stage, not the first child);
 //   * it also reaches every ANCESTOR -- AIR's mouseOver bubbles, so a card with a
 //     hover background must light while the pointer is over the card's children;
+//   * the ENGINE AGREES: `MouseEvent.MOUSE_OVER` (bubbling, caught at the stage) names
+//     the same node, and `rollOver` reaches the entered node AND its ancestors while
+//     never reaching a sibling subtree;
 //   * moving between two nodes clears the one left behind, in the SAME move (no frame
 //     of double-hover);
 //   * leaving the window (MOUSE_LEAVE) clears everything, cursor included;
@@ -31,10 +43,12 @@
 import asaot.ui.*;
 import asaot.ui.style.*;
 import flash.display.BitmapData;
+import flash.display.DisplayObject;
 import flash.display.Stage;
 import flash.display.StageAlign;
 import flash.display.StageScaleMode;
 import flash.events.Event;
+import flash.events.MouseEvent;
 import flash.filesystem.File;
 import flash.filesystem.FileMode;
 import flash.filesystem.FileStream;
@@ -53,6 +67,20 @@ var failures:String = "";
 // The model. `showBtn` exists so a node can be DESTROYED while it is hovered: that is
 // the one path a synthesized hover can walk that the old event listeners could not.
 var st:Object = { showBtn: true, clicks: 0 };
+
+// What the ENGINE says the pointer is over. `overTarget` is the raw `e.target` of its
+// own bubbling mouseOver -- deliberately NOT translated through UiApp's registry, because
+// a check that reuses the code under test proves nothing. `isInside()` compares it
+// against a node's backing directly (display-list ancestry), so if the app ever resolved
+// the hover to the wrong node this probe disagrees with it.
+//
+// The two roll counters show that rollOver is per-object and reaches ancestors: the card
+// must get one when the pointer enters its CHILD, and must NOT get one when the pointer
+// is over the button, which is a sibling subtree.
+var overTarget:DisplayObject = null;
+var overCount:int = 0;
+var cardRolls:int = 0;
+var innerRolls:int = 0;
 
 class PointerProbe extends View
 {
@@ -121,6 +149,12 @@ function settle():void
     var bd:BitmapData = new BitmapData(W, H, true, 0xFF000000);
     bd.draw(stage);
     writeBmp(OUT + ".bmp", bd);
+    // The engine's own account of the pointer. MOUSE_OVER bubbles, so the stage is the
+    // one place that sees every entry; ROLL_OVER does not bubble, so each node that is
+    // meant to observe it listens for itself.
+    stage.addEventListener(MouseEvent.MOUSE_OVER, onEngineOver);
+    app.findByKey("card").backing.addEventListener(MouseEvent.ROLL_OVER, onCardRoll);
+    app.findByKey("inner").backing.addEventListener(MouseEvent.ROLL_OVER, onInnerRoll);
     setTimeout(phaseHoverButton, 250);
 }
 
@@ -129,10 +163,20 @@ function phaseHoverButton():void
 {
     stageMark("hover button");
     // btn rect (10,78,120,32) -> (70,94) is its middle.
+    var cardBefore:int = cardRolls;
     send(70, 94);
     var btn:UiNode = app.findByKey("btn");
     expect(btn.state.hover == 1, "the button under the pointer is not hovered");
     expect(app.getHover() == btn, "the app's hover target is not the button");
+    // THE ENGINE AGREES. This is the check that could not exist before G25 was fixed:
+    // the app derived `btn` from the MOUSE_MOVE target, and the engine's own mouseOver
+    // must name the same node. Two definitions of "under the pointer" that drift apart
+    // is exactly the failure mode the derived hover was accused of.
+    expect(overCount > 0, "the engine dispatched no mouseOver at all on a pointer move");
+    expect(isInside(overTarget, btn), "the engine's mouseOver target is not inside the hovered button");
+    expect(!isInside(overTarget, app.findByKey("card")), "the engine says the pointer is inside the card while the button is hovered");
+    // …and the button is NOT in the card's subtree, so the card must not roll.
+    expect(cardRolls == cardBefore, "the card received rollOver while the pointer was over a sibling subtree");
     // Ancestors bubble exactly like AIR's mouseOver.
     expect(app.findByKey("root").state.hover == 1, "the root (an ancestor) did not get the bubbled hover");
     expect(app.findByKey("card").state.hover == 0, "a SIBLING of the button got the hover");
@@ -155,6 +199,12 @@ function phaseHoverInner():void
     // The card is NOT the hit target, it is an ancestor -- and it must light, because a
     // card's hover background is how a whole card reacts to its children.
     expect(card.state.hover == 1, "the card (an ancestor of the inner box) did not get the bubbled hover");
+    // The engine's rollOver is per-object over the entered chain: both the inner box AND
+    // its ancestor card get one, and `overNode` still names the inner box.
+    expect(innerRolls >= 1, "rollOver never reached the node the pointer entered");
+    expect(cardRolls >= 1, "rollOver never reached the ANCESTOR of the node the pointer entered");
+    expect(isInside(overTarget, inner), "the engine's mouseOver target is not inside the hovered inner box");
+    expect(!isInside(overTarget, app.findByKey("btn")), "the engine still says the pointer is inside the button that was left behind");
     expect(app.findByKey("btn").state.hover == 0, "the button stayed hovered after the pointer left it");
     expect(app.findByKey("root").state.hover == 1, "the root lost its hover while the pointer is still inside it");
     expect(Mouse.cursor == "ibeam", "an explicit cursor:\"ibeam\" did not reach Mouse.cursor (got " + Mouse.cursor + ")");
@@ -237,6 +287,31 @@ function finish():void
 {
     writeText(OUT + ".done", failures == "" ? "PASS" : "FAIL " + failures);
 }
+
+// ---- the engine's side of the pointer ------------------------------------
+
+function onEngineOver(e:MouseEvent):void
+{
+    overCount = overCount + 1;
+    overTarget = e.target as DisplayObject;
+}
+
+// Is the engine's target inside `n`'s backing? Display-list ancestry only -- no registry,
+// no app state.
+function isInside(target:DisplayObject, n:UiNode):Boolean
+{
+    if (target == null || n == null || n.backing == null) return false;
+    var d:DisplayObject = target;
+    while (d != null)
+    {
+        if (d == n.backing) return true;
+        d = d.parent;
+    }
+    return false;
+}
+
+function onCardRoll(e:MouseEvent):void { cardRolls = cardRolls + 1; }
+function onInnerRoll(e:MouseEvent):void { innerRolls = innerRolls + 1; }
 
 // ---- helpers --------------------------------------------------------------
 
