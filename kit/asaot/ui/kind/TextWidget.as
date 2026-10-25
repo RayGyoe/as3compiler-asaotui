@@ -120,6 +120,7 @@ package asaot.ui.kind
                 }
             }
             PaintKit.paintBox(n, s, PaintKit.w1(n), PaintKit.h1(n));
+            PaintKit.decorate(n);
         }
 
         public function click(n:UiNode):Boolean { return false; }

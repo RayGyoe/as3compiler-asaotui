@@ -2,9 +2,17 @@
 //
 // This is the only style group that cascades from parent to child (design doc
 // section 2.3): fontFamily/fontSize/fontWeight/fontStyle/color/leading/
-// letterSpacing/textAlign/whiteSpace/textOverflow. Everything else in `Style`
-// (size, padding, flex, decoration) is NOT inherited -- making layout properties
-// inherit would be the classic "looks right" flexbox trap the doc warns about.
+// letterSpacing/textAlign/whiteSpace/textOverflow/textDecoration. Everything else
+// in `Style` (size, padding, flex, decoration) is NOT inherited -- making layout
+// properties inherit would be the classic "looks right" flexbox trap the doc warns
+// about.
+//
+// `textDecoration` (2026-10-26) is the DECORATION LINE under/through/over a run:
+// "none" | "underline" | "line-through" | "overline". It is ours to draw, because
+// `TextFormat.underline` exists in AIR but our renderer never paints it -- see
+// PaintKit.decorate for the geometry and compiler-gaps.md G28 for the gap. One
+// value at a time (no CSS-style combination): the library draws one line per text
+// line and a second band is not a capability anyone asked for.
 //
 // The unset sentinel is `NaN` for numbers and `null` for strings, so a partial
 // refinement only overrides the components it actually sets.
@@ -35,6 +43,9 @@ package asaot.ui.style
         // "clip" (default) | "ellipsis". Ellipsis applies to a single unwrapped
         // line; see TextWidget for why a wrapped one is not truncated here.
         public var textOverflow:String;
+        // "none" (default) | "underline" | "line-through" | "overline".
+        // Self-drawn from the field's own line metrics -- see PaintKit.decorate.
+        public var textDecoration:String;
 
         public function TextStyle():void
         {
@@ -48,6 +59,7 @@ package asaot.ui.style
             this.textAlign = null;
             this.whiteSpace = null;
             this.textOverflow = null;
+            this.textDecoration = null;
         }
 
         public static function fromAny(o:Object):TextStyle
@@ -69,6 +81,7 @@ package asaot.ui.style
             if (o.textAlign != null) t.textAlign = String(o.textAlign);
             if (o.whiteSpace != null) t.whiteSpace = strEnum(String(o.whiteSpace), "whiteSpace", "nowrap, normal");
             if (o.textOverflow != null) t.textOverflow = strEnum(String(o.textOverflow), "textOverflow", "clip, ellipsis");
+            if (o.textDecoration != null) t.textDecoration = strEnum(String(o.textDecoration), "textDecoration", "none, underline, line-through, overline");
             return t;
         }
 
@@ -77,7 +90,8 @@ package asaot.ui.style
         // happen, and nothing on screen says why (AGENTS.md 2.5).
         private static function strEnum(v:String, field:String, accepted:String):String
         {
-            if (v == "nowrap" || v == "normal" || v == "clip" || v == "ellipsis") return v;
+            if (v == "nowrap" || v == "normal" || v == "clip" || v == "ellipsis"
+                || v == "none" || v == "underline" || v == "line-through" || v == "overline") return v;
             throw new Error("asaot.ui: " + field + " \"" + v + "\" is not supported (accepted: " + accepted + ")");
         }
 
@@ -100,6 +114,7 @@ package asaot.ui.style
             out.textAlign = this.textAlign != null ? this.textAlign : parent.textAlign;
             out.whiteSpace = this.whiteSpace != null ? this.whiteSpace : parent.whiteSpace;
             out.textOverflow = this.textOverflow != null ? this.textOverflow : parent.textOverflow;
+            out.textDecoration = this.textDecoration != null ? this.textDecoration : parent.textDecoration;
         }
 
         // A node's inherited projection: copy the components that cascade.
@@ -115,6 +130,7 @@ package asaot.ui.style
             out.textAlign = this.textAlign;
             out.whiteSpace = this.whiteSpace;
             out.textOverflow = this.textOverflow;
+            out.textDecoration = this.textDecoration;
         }
     }
 }

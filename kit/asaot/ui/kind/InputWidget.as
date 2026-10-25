@@ -225,6 +225,7 @@ package asaot.ui.kind
                 ph.defaultTextFormat = pf;
                 ph.text = n.placeholder;
             }
+            PaintKit.decorate(n);
         }
 
         public function click(n:UiNode):Boolean { return false; }

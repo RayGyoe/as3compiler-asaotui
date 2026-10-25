@@ -1,7 +1,7 @@
 {
   "_comment": "HAND-COMPUTED expectations for probes/widgets/imaging/Main.as. Never regenerate these by running the probe.",
   "_derivation": {
-    "geometry": "Window 320x240. Root is a column with padding 10, gap 8, and children are not stretched, so every child starts at x=10 and they stack from y=10. pic size [60,20] -> 10,10,60,20. fit size [80,20] -> 10, 10+20+8=38, 80,20. bad size [40,40] -> 10, 38+20+8=66, 40,40. auto has NO size: with no src yet it measures as the 64x64 placeholder at 10, 66+40+8=114; after fixture.png (16x16) lands it re-measures to 10,114,16,16 -- which is what the rects below pin.",
+    "geometry": "Window 320x320. Root is a column with padding 10, gap 8, and children are not stretched, so every child starts at x=10 and they stack from y=10. pic size [60,20] -> 10,10,60,20. fit size [80,20] -> 10, 10+20+8=38, 80,20. bad size [40,40] -> 10, 38+20+8=66, 40,40. cov size [24,48] comes AFTER auto (which is 64x64 before its src loads and 16x16 after), so the rect pinned below is the post-load one: 10, 66+40+8+64+8=... no: auto shrinks to 16 tall, so cov = 10, 114+16+8=138, 24,48. auto has NO size: with no src yet it measures as the 64x64 placeholder at 10,114; after fixture.png (16x16) lands it re-measures to 10,114,16,16 -- which is what the rects below pin.",
     "points": [
       "(20,20) is in pic's left half (10..40) -- fixture.png's left half is pure red, and 'stretch' fills the 60x20 box exactly.",
       "(50,20) is in pic's right half (40..60) -- pure blue.",
@@ -11,24 +11,82 @@
       "(30,85) is the middle of the failed box (10,66,40,40) -> white: nothing is painted for an error.",
       "(12,120) and (24,120) are inside auto's 16x16 (10..26 x, 114..130 y): left half red (10..18), right half blue (18..26)."
     ],
-    "not_pinned": "the callback arities, the poll counts, the IOError number/sentence, UiNode.loadError and the 64x64 placeholder assertion are asserted inside Main.as and reported through <OUT>.done. They are STATE the program produces, so pinning them here would be copying the program's own output; the geometry above is arithmetic on fixture.png's 16x16 and the root's layout constants."
+    "not_pinned": "the callback arities, the poll counts, the IOError number/sentence, UiNode.loadError and the 64x64 placeholder assertion are asserted inside Main.as and reported through <OUT>.done. They are STATE the program produces, so pinning them here would be copying the program's own output; the geometry above is arithmetic on fixture.png's 16x16 and the root's layout constants. The cover window is asserted inside Main.as too: the 16x16 fixture scaled 3x into the 24x48 box shows source x 4..12, which the runtime expresses in the bitmap's OWN units as scrollRect (4,0,8,16) -- asserted as that exact rect plus three pixels (top-left and bottom-left red, right half blue) because it is arithmetic on the fixture and the box, not a program output."
   },
   "w": 320,
-  "h": 240,
+  "h": 320,
   "rects": {
-    "pic": [10, 10, 60, 20],
-    "fit": [10, 38, 80, 20],
-    "bad": [10, 66, 40, 40],
-    "auto": [10, 114, 16, 16]
+    "pic": [
+      10,
+      10,
+      60,
+      20
+    ],
+    "fit": [
+      10,
+      38,
+      80,
+      20
+    ],
+    "bad": [
+      10,
+      66,
+      40,
+      40
+    ],
+    "auto": [
+      10,
+      114,
+      16,
+      16
+    ],
+    "cov": [
+      10,
+      138,
+      24,
+      48
+    ]
   },
   "points": [
-    { "x": 20, "y": 20, "rgb": "#ff0000" },
-    { "x": 50, "y": 20, "rgb": "#0000ff" },
-    { "x": 15, "y": 48, "rgb": "#ffffff" },
-    { "x": 45, "y": 48, "rgb": "#ff0000" },
-    { "x": 55, "y": 48, "rgb": "#0000ff" },
-    { "x": 30, "y": 85, "rgb": "#ffffff" },
-    { "x": 12, "y": 120, "rgb": "#ff0000" },
-    { "x": 24, "y": 120, "rgb": "#0000ff" }
+    {
+      "x": 20,
+      "y": 20,
+      "rgb": "#ff0000"
+    },
+    {
+      "x": 50,
+      "y": 20,
+      "rgb": "#0000ff"
+    },
+    {
+      "x": 15,
+      "y": 48,
+      "rgb": "#ffffff"
+    },
+    {
+      "x": 45,
+      "y": 48,
+      "rgb": "#ff0000"
+    },
+    {
+      "x": 55,
+      "y": 48,
+      "rgb": "#0000ff"
+    },
+    {
+      "x": 30,
+      "y": 85,
+      "rgb": "#ffffff"
+    },
+    {
+      "x": 12,
+      "y": 120,
+      "rgb": "#ff0000"
+    },
+    {
+      "x": 24,
+      "y": 120,
+      "rgb": "#0000ff"
+    }
   ]
 }

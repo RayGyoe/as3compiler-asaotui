@@ -21,12 +21,21 @@
 //   5. textArea   -- multi-line: `rows` lines tall, and Return INSERTS. The decisive
 //                    half is the negative: Enter must NOT commit (in a single-line
 //                    field it does), so onCommit stays empty until the blur.
+//   6. decoration -- `textDecoration: "underline" | "line-through"` drawn by US (the
+//                    runtime's renderer never paints TextFormat.underline; see
+//                    compiler-gaps G28), from the field's own line metrics. The
+//                    assertion is geometric and glyph-independent: the string is
+//                    "H    H", the sample point sits in the four-space GAP where no
+//                    glyph can put ink, so "this pixel is the text colour" can only
+//                    mean the LINE, and "one row above/below is white" can only mean
+//                    it is one pixel thick. Where it lands is derived from
+//                    getLineMetrics here, in the probe, NOT copied from the kit.
 //
 // Hand arithmetic (window 460x520, root column, padding 20, gap 12, alignItems
 // flex-start, white, text 12px):
 //
 //   sh (20,20,120,60)   gr (20,92,160,40)   92 = 20 + 60 + 12
-//   then ref / wr / el / ta, each auto-height, in that order.
+//   then ref / wr / el / ta / ul / stn, each auto-height, in that order.
 //
 //   sh's shadow is the box offset by (0,8): it covers y 28..88, so y=84 is inside it
 //   and y=14 is above it (white). x=80 is the box's own mid-column.
@@ -44,6 +53,7 @@ import flash.filesystem.FileMode;
 import flash.filesystem.FileStream;
 import flash.geom.Rectangle;
 import flash.text.TextField;
+import flash.text.TextLineMetrics;
 import flash.utils.ByteArray;
 import flash.utils.setTimeout;
 
@@ -54,6 +64,8 @@ var OUT:String = 'textfx';
 // 90 characters: ~540px at 12px, so it wraps to three lines at 200px and is far too
 // long for the 120px ellipsis box.
 var S:String = "The quick brown fox jumps over the lazy dog while the compiler measures every single line.";
+// The decorated string: see UL_S for why the gap matters.
+var DEC:String = "H    H";
 
 var st:Object = {
     changed: 0,
@@ -89,6 +101,15 @@ class TextFxProbe extends View
     private static const AREA:StyleRefinement = StyleRefinement.from({
         size: [220, null]
     });
+    // "H    H": two capitals with four spaces between them. At 24px the gap is wide
+    // enough (>= 20px) to sample INSIDE it, where the glyphs cannot reach -- that is
+    // what makes "is this pixel the line?" a question about the decoration alone.
+    private static const UL_S:StyleRefinement = StyleRefinement.from({
+        text: { fontSize: 24, color: 0x111827, textDecoration: "underline" }
+    });
+    private static const ST_S:StyleRefinement = StyleRefinement.from({
+        text: { fontSize: 24, color: 0x111827, textDecoration: "line-through" }
+    });
 
     public function TextFxProbe():void { super(); }
 
@@ -108,7 +129,9 @@ class TextFxProbe extends View
                     st.last = t;
                     st.changed = int(st.changed) + 1;
                 },
-                onCommit: function (t:String):void { st.committed = t; } })
+                onCommit: function (t:String):void { st.committed = t; } }),
+            text(DEC, { key: "ul", style: UL_S, ariaName: "" }),
+            text(DEC, { key: "stn", style: ST_S, ariaName: "" })
         ]);
     }
 }
@@ -277,6 +300,83 @@ function phaseArea():void
         fail("onChange ran " + int(st.changed) + " times for 5 edits");
 }
 
+// ==================== phase 5: the decoration lines =========================
+// The geometry is re-derived HERE from the field's own metrics (getLineMetrics),
+// which is the anchor the kit also uses: the renderer paints the paragraph at (2,2)
+// inside the field and each line box is one (ascent+descent+leading) stride lower.
+// If the kit's rule changes, these numbers do not follow it -- they disagree, which
+// is the point of writing the formula twice.
+var DEC_INSET:Number = 2;       // AIR's field text inset (the renderer's 2.0)
+var DEC_STRIKE:Number = 0.36;   // of the ascent, above the baseline
+
+function phaseDecor(bd:BitmapData):void
+{
+    var ul:UiNode = node("ul");
+    var stn:UiNode = node("stn");
+    if (ul == null || stn == null) { fail("ul/stn missing"); return; }
+    if (ul.tf == null || stn.tf == null) { fail("a decorated node has no field"); return; }
+
+    var lm:TextLineMetrics = ul.tf.getLineMetrics(0);
+    var lm2:TextLineMetrics = stn.tf.getLineMetrics(0);
+    var asc:Number = Number(lm.ascent);
+    if (!(asc > 0)) { fail("the decorated line reports ascent " + asc); return; }
+    var topAbs:Number = ul.absY + ul.tf.y + DEC_INSET;
+    var x0:int = Math.round(ul.absX + ul.tf.x + lm.x);
+    var w:int = Math.round(lm.width);
+    // Inside the four-space gap: the first H is ~17px wide at 24px, the run is ~62px,
+    // so x0+30 is in the middle of nothing.
+    var gapX:int = x0 + 30;
+
+    // ---- underline: one row under the baseline, spanning the LINE (not the box) ---
+    var ulY:int = Math.round(topAbs + asc + 1);
+    var onLine:uint = pixel(bd, gapX, ulY);
+    if (onLine != 0x111827)
+        fail("no underline at (" + gapX + "," + ulY + "): " + hex(onLine) + " not #111827");
+    if (pixel(bd, gapX, ulY - 1) != 0xFFFFFF)
+        fail("the underline is thicker than 1px upward: (" + gapX + "," + (ulY - 1) + ") is "
+            + hex(pixel(bd, gapX, ulY - 1)));
+    if (pixel(bd, gapX, ulY + 1) != 0xFFFFFF)
+        fail("the underline is thicker than 1px downward: (" + gapX + "," + (ulY + 1) + ") is "
+            + hex(pixel(bd, gapX, ulY + 1)));
+    // The line starts where the LINE starts (the field's 2px inset), not at x=0 of the
+    // node -- a full-width rule would also be "an underline" to a looser probe.
+    if (pixel(bd, x0 - 1, ulY) != 0xFFFFFF)
+        fail("the underline starts before the line: (" + (x0 - 1) + "," + ulY + ") is "
+            + hex(pixel(bd, x0 - 1, ulY)));
+    if (pixel(bd, x0 + w + 3, ulY) != 0xFFFFFF)
+        fail("the underline runs past the line's advance width: (" + (x0 + w + 3) + "," + ulY + ") is "
+            + hex(pixel(bd, x0 + w + 3, ulY)));
+
+    // ---- line-through: inside the glyph band, so only the GAP can prove it ------
+    var stY:int = Math.round(stn.absY + stn.tf.y + DEC_INSET + Number(lm2.ascent)
+        - Number(lm2.ascent) * DEC_STRIKE);
+    var stX:int = Math.round(stn.absX + stn.tf.x + lm2.x) + 30;
+    var onStrike:uint = pixel(bd, stX, stY);
+    if (onStrike != 0x111827)
+        fail("no line-through at (" + stX + "," + stY + "): " + hex(onStrike) + " not #111827");
+    if (pixel(bd, stX, stY - 3) != 0xFFFFFF)
+        fail("the line-through is not a thin line: (" + stX + "," + (stY - 3) + ") is "
+            + hex(pixel(bd, stX, stY - 3)));
+    if (pixel(bd, stX, stY + 3) != 0xFFFFFF)
+        fail("the line-through is not a thin line: (" + stX + "," + (stY + 3) + ") is "
+            + hex(pixel(bd, stX, stY + 3)));
+
+    // ---- the negative: an undecorated node has no line where this one does -----
+    var ref:UiNode = node("ref");
+    if (ref != null)
+    {
+        var rlm:TextLineMetrics = ref.tf.getLineMetrics(0);
+        var refY:int = Math.round(ref.absY + ref.tf.y + DEC_INSET + Number(rlm.ascent) + 1);
+        var refX:int = Math.round(ref.absX + ref.tf.x + rlm.x) + 6;
+        // #ref is "The quick..." -- the pixel under its baseline must stay white.
+        if (pixel(bd, refX, refY) != 0xFFFFFF)
+            fail("an UNDECORATED node drew a line at (" + refX + "," + refY + "): "
+                + hex(pixel(bd, refX, refY)));
+        say("decor: ulY=" + ulY + " asc=" + asc + " x0=" + x0 + " w=" + w
+            + " strikeY=" + stY + " refY=" + refY);
+    }
+}
+
 // ==================== phase 4: blur commits ================================
 function phaseBlur():void
 {
@@ -304,6 +404,7 @@ function ready():void
     phaseSurface(bd);
     phaseText();
     phaseArea();
+    phaseDecor(bd);
     setTimeout(function ():void { phaseBlur(); setTimeout(finish, 240); }, 240);
 }
 
@@ -312,7 +413,7 @@ function finish():void
     var bd:BitmapData = frame();
     phaseSurface(bd);
     var lines:String = "";
-    var names:Array = ["root", "sh", "gr", "ref", "wr", "el", "ta"];
+    var names:Array = ["root", "sh", "gr", "ref", "wr", "el", "ta", "ul", "stn"];
     for (var i:int = 0; i < names.length; i++)
     {
         var m:UiNode = node(names[i]);

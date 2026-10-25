@@ -116,6 +116,7 @@ package asaot.ui.kind
                 g2.endFill();
             }
             if (n.tf != null && s.text.color >= 0) n.tf.textColor = uint(s.text.color);
+            PaintKit.decorate(n);
         }
 
         public function click(n:UiNode):Boolean

@@ -15,6 +15,13 @@
 //
 // `selectedIndex` is a DECORATION: a selection change raises only
 // Dirty.M_PAINT and never reflows.
+//
+// KEYBOARD (2026-10-26): the list is ONE tab stop and the arrows walk its rows --
+// the ARIA listbox model, and the same shape TreeWidget/VirtualListWidget use. The
+// two directions are CLAMPED, not wrapped: a listbox stops at its ends (a tree wraps
+// because moving off the last row of a tree is a spatial question, not a sequence
+// one). Enter is deliberately NOT consumed -- UiApp's default activation then runs the
+// node's own onClick, which is the container's handler, not a row's.
 package asaot.ui.kind
 {
     import asaot.ui.ListNode;
@@ -23,11 +30,12 @@ package asaot.ui.kind
     import asaot.ui.PaintKit;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
+    import asaot.ui.WidgetKeys;
 
     import flash.display.Shape;
     import flash.events.MouseEvent;
 
-    public class ListWidget implements Widget
+    public class ListWidget implements Widget, WidgetKeys
     {
         private static const SEL_KEY:String = "sel";   // previous selected index
         private static const HIT_KEY:String = "hit";   // 1 when the last click hit a row
@@ -103,6 +111,17 @@ package asaot.ui.kind
             g.endFill();
         }
 
+        // How many rows there are: the non-divider children. Allocation-free.
+        private function rowCount(n:UiNode):int
+        {
+            var c:int = 0;
+            for (var i:int = 0; i < n.children.length; i++)
+            {
+                if (n.children[i].kind != "divider") c = c + 1;
+            }
+            return c;
+        }
+
         // The sel-th non-divider child, or null. Allocation-free.
         private function rowAt(n:UiNode, sel:int):UiNode
         {
@@ -142,11 +161,55 @@ package asaot.ui.kind
             if (target < 0) return;
 
             n.extra[HIT_KEY] = 1;
-            // Do NOT write n.extra[SEL_KEY]: payload must observe the change and
-            // raise Dirty.M_PAINT (same reason as TabsWidget.onClickX).
-            if (n.binding != null) n.binding.set(target);
+            this.select(n, target);
+        }
+
+        // ---- keyboard -------------------------------------------------------
+        // Up/Down move one row, Home/End jump to the ends. The current row is the one
+        // payload last APPLIED (`extra[sel]`), never the binding: an author who has not
+        // rendered yet still gets the arrow to move from what is on screen.
+        public function onKey(n:UiNode, keyCode:int, shift:Boolean):Boolean
+        {
+            var count:int = this.rowCount(n);
+            if (count == 0) return false;
+            if (keyCode != 38 && keyCode != 40 && keyCode != 36 && keyCode != 35) return false;
+
+            var cur:int = this.currentIndex(n);
+            var next:int;
+            if (keyCode == 36) next = 0;
+            else if (keyCode == 35) next = count - 1;
+            else if (cur < 0 || cur >= count) next = keyCode == 40 ? 0 : count - 1;
+            else next = keyCode == 40 ? cur + 1 : cur - 1;
+            if (next < 0) next = 0;
+            if (next >= count) next = count - 1;
+            // Consumed even when nothing moves: at the last row the key must not fall
+            // through to a scrolling ancestor.
+            if (next != cur) this.select(n, next);
+            return true;
+        }
+
+        // The row the keys move FROM. The BINDING wins when there is one: it is the
+        // freshest intent, and payload has not run yet inside the frame that received
+        // the key -- two keys in one frame (a held arrow, a fast repeat) must step
+        // twice. Without a binding, fall back to what payload last APPLIED, i.e. what
+        // is actually on screen.
+        private function currentIndex(n:UiNode):int
+        {
+            if (n.binding != null)
+            {
+                var bv:* = n.binding.get();
+                if (bv != null) return int(Number(bv));
+            }
+            return int(Number(n.extra[SEL_KEY]));
+        }
+        // The ONE write path, shared by the click and the keys. Do NOT write
+        // n.extra[SEL_KEY] here: payload must observe the change and raise
+        // Dirty.M_PAINT (same reason as TabsWidget.onClickX).
+        private function select(n:UiNode, idx:int):void
+        {
+            if (n.binding != null) n.binding.set(idx);
             n.app.markPaint(n);
-            if (n.onChange != null) n.onChange(target);
+            if (n.onChange != null) n.onChange(idx);
             n.app.invalidate(Dirty.VALUE);
         }
     }

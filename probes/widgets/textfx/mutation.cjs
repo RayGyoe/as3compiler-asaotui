@@ -83,6 +83,35 @@ const MUTATIONS = [
     replace: '            if (keyCode == 27 || keyCode == 13)',
     expect: 'the field holds',
   },
+  {
+    id: 'M6',
+    file: 'kit/asaot/ui/kind/TextWidget.as',
+    why: 'THE DECORATION IS NEVER DRAWN: textDecoration is parsed, cascaded and then never reaches the '
+      + 'shape, so an underline run looks exactly like a plain one -- a property assertion would still pass',
+    find: '            PaintKit.decorate(n);',
+    replace: '            // PaintKit.decorate(n);',
+    expect: 'no underline at',
+  },
+  {
+    id: 'M7',
+    file: 'kit/asaot/ui/PaintKit.as',
+    why: 'LINE-THROUGH IS DRAWN WHERE THE UNDERLINE GOES: the strike rule collapses into the underline rule, '
+      + 'so the one line it does draw is in the wrong place -- and the probe\'s accent-insensitive text '
+      + 'still has a line, which is why it samples the STRIKE node separately',
+    find: '                else ly = top + acc + asc - asc * STRIKE_RATIO;',
+    replace: '                else ly = top + acc + asc + 1;',
+    expect: 'no line-through at',
+  },
+  {
+    id: 'M8',
+    file: 'kit/asaot/ui/PaintKit.as',
+    why: 'THE RULE IGNORES THE LINE\'S LEFT EDGE: the decoration is drawn from the field\'s origin instead '
+      + 'of from the line box\'s `lm.x`, so a centred or inset run gets a rule that starts too early -- a '
+      + 'line that is still "an underline" to any assertion that only counts ink',
+    find: '                g.drawRect(Math.round(tf.x + lm.x), Math.round(ly), Math.max(1, Math.round(lm.width)), 1);',
+    replace: '                g.drawRect(Math.round(tf.x), Math.round(ly), Math.max(1, Math.round(lm.width)), 1);',
+    expect: 'starts before the line',
+  },
 ];
 
 function runProbe() {
@@ -112,14 +141,22 @@ for (const m of MUTATIONS) {
   const file = path.join(UI, m.file);
   const before = fs.readFileSync(file, 'utf8');
   const beforeHash = sha(file);
-  if (before.indexOf(m.find) < 0) {
+  // THE ANCHOR'S LINE ENDINGS MUST MATCH THE FILE'S. This kit is mixed: the repo
+  // pins only *.bat in .gitattributes, so a file rewritten by an editor with the
+  // other convention silently stopped matching a multi-line `find` written with
+  // \n -- and the runner then reported SKIPPED, which reads like "nothing to do"
+  // instead of "this mutation no longer exists". Resolve to whatever the file uses.
+  const nl = before.indexOf('\r\n') >= 0 ? '\r\n' : '\n';
+  const find = m.find.replace(/\r?\n/g, nl);
+  const repl = m.replace.replace(/\r?\n/g, nl);
+  if (before.indexOf(find) < 0) {
     line(m.id + '  SKIPPED -- anchor text not found in ' + m.file
       + ' (the file drifted; fix the mutation, do not ignore it)');
     broken++;
     continue;
   }
   try {
-    fs.writeFileSync(file, before.split(m.find).join(m.replace));
+    fs.writeFileSync(file, before.split(find).join(repl));
     const r = runProbe();
     const out = (r.stdout || '') + (r.stderr || '');
     const verdict = /RESULT: (PASS|FAIL)/.exec(out);

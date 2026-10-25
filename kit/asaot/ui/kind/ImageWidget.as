@@ -58,6 +58,7 @@ package asaot.ui.kind
     import flash.display.Shape;
     import flash.events.Event;
     import flash.events.IOErrorEvent;
+    import flash.geom.Rectangle;
     import flash.net.URLRequest;
 
     public class ImageWidget implements Widget
@@ -286,15 +287,42 @@ package asaot.ui.kind
             }
             else if (mode != "none")
             {
-                // "fit": contain, preserving aspect. Never upscales past the box on
-                // either axis, so one factor for both is the whole algorithm.
-                var k:Number = Math.min(w / sw, h / sh);
+                // One factor for both axes, then the BOX decides which of the two modes
+                // this is: min() leaves margins ("fit"), max() overflows ("cover").
+                var k:Number = mode == "cover" ? Math.max(w / sw, h / sh) : Math.min(w / sw, h / sh);
                 if (!(k > 0)) k = 1;
                 dw = sw * k;
                 dh = sh * k;
             }
             b.width = dw;
             b.height = dh;
+            if (mode == "cover")
+            {
+                // CLIP, don't just let it hang out: a scrollRect of the content box's
+                // SIZE, offset to the CENTRE of the scaled bitmap, so the overflow is
+                // cut on all four sides. The runtime anchors the window on the object's
+                // own box (local 0,0) and slides the CONTENT by -x/-y, so the visible
+                // part ends up at the object's origin -- which is why x/y are 0 here
+                // instead of the -dx/2 centring the other modes use.
+                //
+                // THE RECT IS IN THE BITMAP'S OWN UNSCALED SPACE, not the box's: the
+                // renderer clips through the object's matrix, and setting `b.width`
+                // re-expresses the object as a scale of its SOURCE pixels. A 16x16
+                // bitmap stretched to 48x48 has 16 local units across, so a 24-unit
+                // window would be 72 device pixels wide -- which is exactly what the
+                // first version did, and the picture vanished (measured in
+                // probes/widgets/imaging: 3 cover pixels read #ffffff). Divide by the
+                // uniform factor k and the local rect is the box in source units.
+                var k2:Number = dw / sw;
+                if (!(k2 > 0)) k2 = 1;
+                b.scrollRect = new Rectangle(((dw - w) / 2) / k2, ((dh - h) / 2) / k2, w / k2, h / k2);
+                b.x = 0;
+                b.y = 0;
+                return;
+            }
+            // Leaving "cover" must drop the window: a scrollRect left behind would clip
+            // the next mode to a box it never asked for.
+            if (b.scrollRect != null) b.scrollRect = null;
             b.x = (w - dw) / 2;
             b.y = (h - dh) / 2;
         }

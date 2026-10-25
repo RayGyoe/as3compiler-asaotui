@@ -51,8 +51,8 @@ const MUTATIONS = [
     why: '"fit" CONTAINS WITH max(): 16x16 into an 80x20 box becomes 80x80 and spills out of the box on the '
       + 'short axis, so the pixel just left of the contained area is painted instead of showing the '
       + 'background',
-    find: '                var k:Number = Math.min(w / sw, h / sh);',
-    replace: '                var k:Number = Math.max(w / sw, h / sh);',
+    find: '                var k:Number = mode == "cover" ? Math.max(w / sw, h / sh) : Math.min(w / sw, h / sh);',
+    replace: '                var k:Number = mode != "cover" ? Math.max(w / sw, h / sh) : Math.min(w / sw, h / sh);',
     expect: 'fit painted outside the contained image',
   },
   {
@@ -81,6 +81,35 @@ const MUTATIONS = [
     find: '            if (mode == "stretch")',
     replace: '            if (false && mode == "stretch")',
     expect: "pic's left half is not red",
+  },
+  {
+    id: 'M6',
+    file: 'kit/asaot/ui/kind/ImageWidget.as',
+    why: '"cover" CONTAINS INSTEAD OF FILLING: max() becomes min(), so the 16x16 keeps a 16x16 size in a '
+      + '24x48 box and the whole mode is a no-op that still looks like a picture',
+    find: 'var k:Number = mode == "cover" ? Math.max(w / sw, h / sh) : Math.min(w / sw, h / sh);',
+    replace: 'var k:Number = Math.min(w / sw, h / sh);',
+    expect: 'cover did not scale uniformly',
+  },
+  {
+    id: 'M7',
+    file: 'kit/asaot/ui/kind/ImageWidget.as',
+    why: 'THE WINDOW IS WRITTEN IN THE BOX\'S UNITS INSTEAD OF THE BITMAP\'S: the scrollRect is clipped '
+      + 'through the object\'s own matrix, so a 24-unit window on a 3x bitmap is 72 device px wide and the '
+      + 'picture is cropped to nothing (measured: the first version of this read #ffffff everywhere)',
+    find: 'new Rectangle(((dw - w) / 2) / k2, ((dh - h) / 2) / k2, w / k2, h / k2)',
+    replace: 'new Rectangle((dw - w) / 2, (dh - h) / 2, w, h)',
+    expect: 'cover window is',
+  },
+  {
+    id: 'M8',
+    file: 'kit/asaot/ui/kind/ImageWidget.as',
+    why: 'LEAVING "cover" KEEPS THE WINDOW: the next scale mode inherits a crop it never asked for, so a '
+      + '"fit" after a "cover" is silently cut to the old box (the exact stale-state failure the arrange '
+      + 'comment warns about)',
+    find: '            if (b.scrollRect != null) b.scrollRect = null;',
+    replace: '            if (false) b.scrollRect = null;',
+    expect: 'the scrollRect survived a switch to fit',
   },
 ];
 
@@ -111,14 +140,22 @@ for (const m of MUTATIONS) {
   const file = path.join(UI, m.file);
   const before = fs.readFileSync(file, 'utf8');
   const beforeHash = sha(file);
-  if (before.indexOf(m.find) < 0) {
+  // THE ANCHOR'S LINE ENDINGS MUST MATCH THE FILE'S. This kit is mixed: the repo
+  // pins only *.bat in .gitattributes, so a file rewritten by an editor with the
+  // other convention silently stopped matching a multi-line `find` written with
+  // \n -- and the runner then reported SKIPPED, which reads like "nothing to do"
+  // instead of "this mutation no longer exists". Resolve to whatever the file uses.
+  const nl = before.indexOf('\r\n') >= 0 ? '\r\n' : '\n';
+  const find = m.find.replace(/\r?\n/g, nl);
+  const repl = m.replace.replace(/\r?\n/g, nl);
+  if (before.indexOf(find) < 0) {
     line(m.id + '  SKIPPED -- anchor text not found in ' + m.file
       + ' (the file drifted; fix the mutation, do not ignore it)');
     broken++;
     continue;
   }
   try {
-    fs.writeFileSync(file, before.split(m.find).join(m.replace));
+    fs.writeFileSync(file, before.split(find).join(repl));
     const r = runProbe();
     const out = (r.stdout || '') + (r.stderr || '');
     const verdict = /RESULT: (PASS|FAIL)/.exec(out);

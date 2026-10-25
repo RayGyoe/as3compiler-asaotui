@@ -171,6 +171,7 @@ package asaot.ui.kind
                 n.tf.y = by + padV;
                 n.tf.textColor = 0xFFFFFF;
             }
+            PaintKit.decorate(n);
         }
 
         // The style's padding wins when the author set it; otherwise the bubble's own

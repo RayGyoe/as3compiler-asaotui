@@ -81,6 +81,7 @@ package asaot.ui.kind
             var ch:Number = n.absH - PaintKit.borderV(s.borderWidths) - PaintKit.padV(s.padding);
             n.tf.x = PaintKit.insetX(n) + (cw - tw) / 2;
             n.tf.y = PaintKit.insetY(n) + (ch - th) / 2;
+            PaintKit.decorate(n);
         }
 
         public function click(n:UiNode):Boolean { return false; }

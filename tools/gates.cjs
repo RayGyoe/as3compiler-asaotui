@@ -153,16 +153,56 @@
 //                NOTE the probe's onChange deliberately does NOT invalidate: the
 //                field owes the screen its own repaint, and an author-side invalidate
 //                would hide that.
-//   textfx 18 -- probes/widgets/textfx/mutation.cjs: 5/5, one per surface of the batch
-//                that added boxShadow, gradient fills, wrap, ellipsis and textArea.
-//                The shadow one is the whole point of the pixel assertion: the filter
-//                list is built and then NOT handed to the display object, which leaves
-//                every property correct and the screen unchanged. The gradient one is
-//                the silent fallback the kit refuses for radial (it throws) -- painting
-//                the first stop as a solid keeps the left edge dark and only the ramp
-//                check sees it. The last is the contract inversion: a text area that
-//                CONSUMES Return still compiles, still renders, and quietly reverts the
-//                field instead of inserting a line break.
+//   textfx 18 -- probes/widgets/textfx/mutation.cjs: 8/8. Three of them are boxShadow,
+//                gradient fills and the textArea/Return contract inversion: the filter
+//                list is built and then NOT handed to the display object (every property
+//                correct, screen unchanged); the radial fallback the kit refuses -- painting
+//                the first stop as a solid keeps the left edge dark and only the ramp check
+//                sees it; and a text area that CONSUMES Return still compiles, still renders,
+//                and quietly reverts the field instead of inserting a line break.
+//                The three new ones are textDecoration (G28's workaround, so they pin the
+//                WORKAROUND and not a compiler defect): PaintKit.decorate(n) never called
+//                (the property is parsed, cascaded and never reaches the shape -- a model
+//                assertion would still pass); line-through drawn where the underline goes
+//                (one line, wrong place, which is why the probe samples the STRIKE node
+//                separately); and the rule drawn from the field's origin instead of the
+//                line box's `lm.x` (an inset or centred run gets a rule that starts too
+//                early -- still "an underline" to any check that only counts ink).
+//   keys 36   -- probes/widgets/keys/mutation.cjs: 4/4, one per way a keyboard list can
+//                be wrong while its model is right: list Down at the last row WRAPS
+//                (it must clamp -- ARIA listbox is a sequence, a ring is for tree/tabs);
+//                tabs Left from 0 CLAMPS (it must wrap -- a tab strip is a ring); the
+//                virtual table selects a row it never scrolls into the mounted window
+//                (index valid, model moved, nothing on screen); and the key writes the
+//                widget's private `extra[SEL_KEY]` instead of the Binding (the picture
+//                still moves, so only the author model sees it -- and it is the split
+//                that later makes payload stop repainting, because it can no longer
+//                observe the change).
+//   accordion 18 -- probes/widgets/accordion/mutation.cjs: 4/4, all on the NEW multi mode
+//                (`openIndices`), which single mode cannot exercise: the header fill
+//                ignores the open SET and highlights "the first section"; the factory
+//                mounts only the first open panel (a section listed as open with no
+//                content on screen); a toggle REPLACES the set with the clicked index
+//                (single mode wearing a multi name -- every "the set changed" assertion
+//                still passes, which is why the probe names the members); and the
+//                exclusive-option guard is gone, so `mode:"multi"` + `activeIndex` is
+//                accepted and one of the two states is silently ignored (nothing on
+//                screen changes -- only the THROW assertion can see it).
+//                NOTE how two of these were found: the runner refuses to call a SKIPPED
+//                anchor a pass, and both A4 and K4 were skipping because their anchors
+//                spanned text that had moved or that held AS3-escaped quotes. A mutation
+//                that never ran is a mutation that certified nothing.
+//   imaging 31 -- probes/widgets/imaging/mutation.cjs: 8/8. The first five are the older
+//                batch (the src/onLoad arm, the "fit" factor, the failure placeholder);
+//                M6-M8 are the "cover" mode added on top: max() becomes min() so cover
+//                CONTAINS instead of filling (the whole mode degrades to a no-op that
+//                still looks like a picture); the scrollRect window is written in the
+//                BOX's units instead of the bitmap's (the renderer clips through the
+//                object's own matrix, so a 24-unit window on a 3x bitmap is 72 device
+//                pixels and the picture is cropped to nothing -- measured, the first
+//                version of this read #ffffff everywhere); and leaving "cover" never
+//                clears the window, so the next scale mode inherits a crop it did not ask
+//                for (exactly the stale-state failure the arrange comment warns about).
 //   gallery teardown -- ui-demo/mutation-gallery-teardown.cjs: 2/2, and both are
 //                defects the SIX-page tour found and no probe could (a probe never
 //                destroys an overlay tree): dropping the WidgetTeardown hook leaves
@@ -275,7 +315,14 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // `icon` (SVG path data: cubic subdivision, stroke scaling, and the
                  // refusals an arc and a junk command must get) joined with the icons
                  // batch; it is the only probe in the kit that drives a PARSER.
-                 'widgets/icon']) {
+                 'widgets/icon',
+                 // `keys` (the three keyboard navigations: list/table CLAMP, tabs WRAP, and
+                 // the virtual table's reveal) and `accordion` (single vs multi open state,
+                 // the mutual-exclusion THROWs, and the header fill following the SET).
+                 // Both exist because those behaviours have no pointer path at all: a click
+                 // probe can only ever press row 0, and single-mode accordion can only
+                 // ever have one panel open.
+                 'widgets/keys', 'widgets/accordion']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);

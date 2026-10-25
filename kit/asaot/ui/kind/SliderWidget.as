@@ -141,6 +141,7 @@ package asaot.ui.kind
                 g2.endFill();
             }
             if (n.tf != null && s.text.color >= 0) n.tf.textColor = uint(s.text.color);
+            PaintKit.decorate(n);
         }
 
         // The press is the whole gesture (see the file comment), so a CLICK -- which

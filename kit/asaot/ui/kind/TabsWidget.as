@@ -23,6 +23,11 @@
 // and read `MouseEvent.localX`. The division by the segment pitch yields the
 // index. `click(n)` still returns TRUE so the click is consumed and the author's
 // `onClick` does not also fire.
+//
+// KEYBOARD (2026-10-26): the strip is one TAB STOP and Left/Right move by one,
+// WRAPPING (the ARIA tablist model: a strip is a ring, so "one left of the first"
+// is the last). Home/End jump to the ends. Both paths end in `choose()`, so a key
+// and a click cannot disagree about what a selection change is.
 package asaot.ui.kind
 {
     import asaot.ui.TabsNode;
@@ -31,6 +36,7 @@ package asaot.ui.kind
     import asaot.ui.PaintKit;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
+    import asaot.ui.WidgetKeys;
     import asaot.ui.style.Style;
 
     import asaot.ui.LayoutConstants;
@@ -39,13 +45,14 @@ package asaot.ui.kind
     import flash.events.MouseEvent;
     import flash.text.TextField;
 
-    public class TabsWidget implements Widget
+    public class TabsWidget implements Widget, WidgetKeys
     {
         // n.extra keys (plain property reads in paint: zero allocation).
         private static const TFS_KEY:String = "tfs";       // Array of TextField
         private static const LABELS_KEY:String = "labs";   // previous labels copy
         private static const SEL_KEY:String = "sel";       // previous selected index
-        private static const GAP_KEY:String = "gap";       // resolved segment gap
+        private static const GAP_KEY:String = "gap";
+        private static const DEC_KEY:String = "dec";       // resolved segment gap
 
         // Segment colours. Selected/unselected are deliberately far apart so a
         // mis-wired index shows up as an exact-pixel failure, not a subtle shade.
@@ -228,6 +235,37 @@ package asaot.ui.kind
                     tf.y = y0 + (ch - tf.textHeight) / 2;
                 }
             }
+            this.decorateLabels(n, tfs, s);
+        }
+
+        // Tab labels are TextFields this widget owns (they live in `extra`, not in
+        // `n.tf`), so the shared PaintKit.decorate cannot reach them: ONE Shape collects
+        // every label's decoration line and is created on first use, i.e. LAST, above the
+        // labels it decorates.
+        private function decorateLabels(n:UiNode, tfs:Array, s:Style):void
+        {
+            var mode:String = (s == null || s.text == null) ? null : s.text.textDecoration;
+            var had:Object = n.extra[DEC_KEY];
+            var sh:Shape = had == null ? null : Shape(had);
+            if (mode == null || mode == "none")
+            {
+                if (sh != null) sh.graphics.clear();
+                return;
+            }
+            if (sh == null)
+            {
+                sh = new Shape();
+                n.backing.addChild(sh);
+                n.extra[DEC_KEY] = sh;
+            }
+            var g:Object = sh.graphics;
+            g.clear();
+            var color:uint = PaintKit.textColorOf(s);
+            for (var i:int = 0; i < tfs.length; i++)
+            {
+                var tf:TextField = TextField(tfs[i]);
+                if (tf != null) PaintKit.drawDecorInto(g, tf, mode, color);
+            }
         }
 
         // The click's x -> index is handled by the listener added in `build`; the
@@ -247,11 +285,48 @@ package asaot.ui.kind
             var idx:int = int((e.localX - x0) / (segW + gap));
             if (idx < 0) idx = 0;
             if (idx >= count) idx = count - 1;
+            this.choose(n, idx);
+        }
 
-            // Do NOT write n.extra[SEL_KEY] here: payload is the single writer of
-            // that key, so it can SEE the change and raise Dirty.M_PAINT. Writing
-            // it here would make the next payload a no-op and the selection would
-            // never repaint.
+        // ---- keyboard -------------------------------------------------------
+        public function onKey(n:UiNode, keyCode:int, shift:Boolean):Boolean
+        {
+            var tfs:Array = n.extra[TFS_KEY] as Array;
+            var count:int = tfs == null ? 0 : tfs.length;
+            if (count == 0) return false;
+            if (keyCode != 37 && keyCode != 39 && keyCode != 36 && keyCode != 35) return false;
+
+            var cur:int = this.currentIndex(n);
+            if (cur < 0 || cur >= count) cur = 0;
+            var next:int;
+            if (keyCode == 36) next = 0;
+            else if (keyCode == 35) next = count - 1;
+            else if (keyCode == 39) next = (cur + 1) % count;
+            else next = (cur - 1 + count) % count;
+            if (next != cur) this.choose(n, next);
+            return true;
+        }
+
+        // The row the keys move FROM. The BINDING wins when there is one: it is the
+        // freshest intent, and payload has not run yet inside the frame that received
+        // the key -- two keys in one frame (a held arrow, a fast repeat) must step
+        // twice. Without a binding, fall back to what payload last APPLIED, i.e. what
+        // is actually on screen.
+        private function currentIndex(n:UiNode):int
+        {
+            if (n.binding != null)
+            {
+                var bv:* = n.binding.get();
+                if (bv != null) return int(Number(bv));
+            }
+            return int(Number(n.extra[SEL_KEY]));
+        }
+        // The ONE write path, shared by the click and the keys. Do NOT write
+        // n.extra[SEL_KEY] here: payload is the single writer of that key, so it can
+        // SEE the change and raise Dirty.M_PAINT. Writing it here would make the next
+        // payload a no-op and the selection would never repaint.
+        private function choose(n:UiNode, idx:int):void
+        {
             if (n.binding != null) n.binding.set(idx);
             n.app.markPaint(n);
             if (n.onChange != null) n.onChange(idx);

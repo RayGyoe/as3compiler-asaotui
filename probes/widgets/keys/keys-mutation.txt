@@ -1,0 +1,25 @@
+baseline (unmutated): RESULT: PASS
+
+K1  CAUGHT  LIST WRAPS INSTEAD OF CLAMPING: a listbox is a SEQUENCE (ARIA listbox: the ends are walls), soDown on the last row must stay there. Sliding to 0 is the tab-strip answer, and the probe assertsthe pixel AND the model, so both would move.
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL list Down at the end -> 0 not 4 (must clamp);
+     restore: byte-identical (7acaeddcf56778a0)
+K2  CAUGHT  TABS CLAMP INSTEAD OF WRAPPING: a strip is a RING, so Left on the first segment goes to the last.This is the exact inversion of K1 -- same code shape, different structure -- which is why the twowidgets are mutated separately rather than trusted to share a rule.
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL tabs Left from 0 -> 0 not 2 (must wrap); tabs Left from 0 -> 0 not 2 (final state);
+     FAIL  pixel (220,183) want #2563eb got #e5e7eb
+     restore: byte-identical (0c78c94cee2d96f4)
+K3  CAUGHT  THE VIRTUAL TABLE DOES NOT REVEAL THE ROW IT SELECTED: the index is valid and the model moves,but the row is outside the mounted window, so nothing on screen shows the selection. Invisible toevery property assertion -- the probe reads TableNode.firstRow and the author offset.
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL virtual table firstRow is 0 not 2 (5-4+1); virtual table scroll offset is 0 not 40 (2*20);
+     FAIL  pixel (270,442) want #dbeafe got #ffffff
+     restore: byte-identical (25110188969883b7)
+K4  CAUGHT  THE KEY WRITES THE WIDGET PRIVATE SLOT INSTEAD OF THE BINDING: the picture would still move(payload reads extra[sel]), so only the author model shows it -- and the second write path is theone that later makes payload stop repainting, because it can no longer SEE the change.
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL list End -> 0 not 4; list Down at the end -> 0 not 4 (must clamp); list burst Down+End -> 0 not 4;
+     FAIL  pixel (205,25) want #f9fafb got #dbeafe
+     FAIL  pixel (205,155) want #dbeafe got #f9fafb
+     restore: byte-identical (7acaeddcf56778a0)
+
+MUTATION keys: 4/4 caught, 0 problem(s)
+RESULT: PASS

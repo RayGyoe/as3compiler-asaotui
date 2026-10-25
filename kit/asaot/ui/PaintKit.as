@@ -29,6 +29,7 @@ package asaot.ui
     import flash.geom.Matrix;
     import flash.text.TextField;
     import flash.text.TextFormat;
+    import flash.text.TextLineMetrics;
 
     public class PaintKit
     {
@@ -373,6 +374,100 @@ package asaot.ui
         public static function paintBox(n:UiNode, s:Style, w:Number, h:Number):void
         {
             if (n.shapeA != null) drawBoxFor(n, n.shapeA, s, w, h);
+        }
+
+        // ---- text decoration ------------------------------------------------
+        //
+        // `TextFormat.underline` is a real AIR field and our runtime carries it, but the
+        // RENDERER never paints it (the HTML run emitter drops it with "underline not
+        // yet modeled", and the plain-text path never had it either -- see
+        // compiler-gaps.md G28). So a decoration line is drawn HERE, from the field's
+        // own line metrics. `getLineMetrics` is a real API in this runtime (measured
+        // against adl: ascent/descent/leading per line, and `x` is the line's left edge
+        // INCLUDING the 2 px text inset plus any alignment shift), which is what makes it
+        // the right anchor: there is no second text model to drift from the painted one.
+        //
+        // GEOMETRY. The renderer paints the paragraph at (2, 2) inside the field, and
+        // the stride between lines is (ascent + descent + leading) -- the same rule that
+        // makes a multi-line field report textHeight = n*(asc+desc) + lead*(n-1). So:
+        //     line top    = field.y + 2 + sum of the heights of the lines before it
+        //     baseline    = line top + ascent
+        //     underline   = baseline + 1      (one pixel under the glyphs)
+        //     line-through= baseline - 0.36 * ascent   (the ~0.3 em browsers use,
+        //                                    spelled in the ascent we actually have)
+        //     overline    = line top + 1
+        // Snapped to whole pixels BEFORE drawing: a 1 px line on a fractional y is
+        // antialiased over two rows, which is neither what AIR draws nor something a
+        // probe can pin.
+        //
+        // AIR PARITY: the LINE's existence and roughly its place are what we claim. The
+        // exact pixel row is OUR text metric family (AGENTS.md 1.5's measurement
+        // exception) -- we do not inherit AIR's underline placement, we define it here.
+        public static const DECOR_KEY:String = "decor";
+        private static const TEXT_INSET:Number = 2;      // AIR's field text inset (renderer: 2.0)
+        private static const STRIKE_RATIO:Number = 0.36; // of the ascent, above the baseline
+
+        public static function decorate(n:UiNode):void
+        {
+            if (n == null || n.extra == null) return;
+            var s:Style = n.resolved;
+            var mode:String = (s == null || s.text == null) ? null : s.text.textDecoration;
+            var sh:Shape = n.extra[DECOR_KEY] as Shape;
+            // Clearing on the way OUT matters: this Shape survives between frames, so a
+            // node that stops being underlined must lose the line, not keep the last one.
+            if (mode == null || mode == "none" || n.tf == null)
+            {
+                if (sh != null) sh.graphics.clear();
+                return;
+            }
+            if (sh == null)
+            {
+                sh = new Shape();
+                // Created lazily and added LAST, i.e. in FRONT of the field it decorates:
+                // a decoration drawn behind the text would be covered by the field's own
+                // background.
+                n.backing.addChild(sh);
+                n.extra[DECOR_KEY] = sh;
+            }
+            var g:Object = sh.graphics;
+            g.clear();
+            drawDecorInto(g, n.tf, mode, textColorOf(s));
+        }
+
+        // The geometry half, so a widget that owns SEVERAL fields (TabsWidget's segment
+        // labels) can draw them all into one Shape instead of one Shape per label.
+        public static function drawDecorInto(g:Object, tf:TextField, mode:String, color:uint):void
+        {
+            if (g == null || tf == null) return;
+            if (mode == null || mode == "none") return;
+            var lines:int = tf.numLines;
+            var top:Number = tf.y + TEXT_INSET;
+            var acc:Number = 0;
+            for (var i:int = 0; i < lines; i++)
+            {
+                var lm:TextLineMetrics = tf.getLineMetrics(i);
+                if (lm == null) return;   // out-of-range would throw; numLines bounds it
+                var asc:Number = lm.ascent;
+                var ly:Number;
+                if (mode == "underline") ly = top + acc + asc + 1;
+                else if (mode == "overline") ly = top + acc + 1;
+                else ly = top + acc + asc - asc * STRIKE_RATIO;
+                acc = acc + lm.height;
+                // A line with no advance width (an empty run, a trailing newline) has
+                // nothing to decorate -- drawing a 1 px dot there would be an artefact.
+                if (!(lm.width > 0)) continue;
+                g.beginFill(color, 1.0);
+                g.drawRect(Math.round(tf.x + lm.x), Math.round(ly), Math.max(1, Math.round(lm.width)), 1);
+                g.endFill();
+            }
+        }
+
+        // The colour the decoration is drawn in: the run's own text colour, and black
+        // when the style left it unset (the same fallback formatFor uses for the fill).
+        public static function textColorOf(s:Style):uint
+        {
+            if (s == null || s.text == null || isNaN(s.text.color) || s.text.color < 0) return 0x000000;
+            return uint(s.text.color);
         }
     }
 }

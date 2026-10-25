@@ -13,6 +13,11 @@
 // list/checkbox/radio/slider. A click on body row i selects it, writes back
 // through the Binding, and calls `onSelect(i)` (-1 = no row selected).
 //
+// KEYBOARD: the table is ONE tab stop (`tabEnabled`) and Up/Down/PageUp/PageDown/
+// Home/End move the body selection -- see TableWidget.onKey. Under `virtual` a move
+// that leaves the mounted window also scrolls it (through `onScroll`, like the
+// wheel), because an unmounted row cannot be highlighted.
+//
 // SORTING is the AUTHOR'S, not the widget's. A header click only decides WHAT to
 // ask for (`onSort(columnKey, descending)`); the state lives in the author's model
 // and comes back as `sortColumn`/`sortDescending` on the next render, where the
@@ -112,7 +117,7 @@ package asaot.ui
             super("table");
             if (!registered) { registered = true; Widgets.register("table", new TableWidget()); }
             this.role = "table";
-            this.tabEnabled = false;
+            this.tabEnabled = true;    // one stop for the table; arrows walk the body rows
             this.columns = null;
             this.rows = null;
             this.cellText = null;

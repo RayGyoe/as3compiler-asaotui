@@ -163,6 +163,23 @@ package asaot.ui
         }
 
         var rowH:StyleRefinement = n.rowHeight > 0 ? StyleRefinement.from({ height: n.rowHeight }) : null;
+        // A WINDOWED table's rows must not be squeezed. The window mounts one row past
+        // the viewport (the partial row a non-multiple body shows), so its content is
+        // taller than its box BY DESIGN and the clip is what hides the extra -- but a
+        // flex item shrinks by default, so the engine compressed every row instead
+        // (measured 2026-10-26 on probes/widgets/keys: rowHeight 20 inside a 100 px box
+        // came out 16.5 px). That silently broke the contract this file's window
+        // arithmetic is written against -- offsetY/rowHeight is a ROW index -- and made
+        // the painted rows disagree with firstRow.
+        //
+        // A MIN, not `flexShrink: 0`: see virtualList.as, where this exact trap is
+        // recorded from the other side -- a style carrying only `flexShrink` reaches the
+        // engine as setFlex(0, 0, 0, UNDEFINED), i.e. "flex: 1 with a zero basis", and
+        // every row collapses to ZERO height (observed here first: six children, all
+        // 0 tall). A non-virtual table keeps the shrinking: it has no clip, and a
+        // squeezed table beats one spilling over its siblings.
+        if (n.virtual && rowH != null)
+            rowH = rowH.withPatch(StyleRefinement.from({ minSize: [null, n.rowHeight] }));
         var headBg:StyleRefinement = StyleRefinement.from({ background: TableNode.HEAD_BG });
         // Patching rowH (rather than passing both keys: OptionSupport.applyOpts
         // reads EITHER `opts.style` OR the shorthand keys, never both) keeps the

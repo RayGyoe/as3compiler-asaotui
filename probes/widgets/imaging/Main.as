@@ -27,12 +27,21 @@
 //   4. THE COMPLETION CALLBACKS KEEP THEIR ARITY: `onLoad()` takes nothing,
 //      `onError(msg)` takes one (tools/callback-arity.cjs grades the declaration side;
 //      this probe EXECUTES them, which is the side that throws #1063).
+//   5. "cover" IS A CROP, NOT AN OVERFLOW. A 16x16 into a 20x60 box must scale by
+//      max(20/16, 60/16) = 3.75 on BOTH axes (60x60, aspect kept) and then show only
+//      the middle 20px column of that 60px picture -- written as a scrollRect window
+//      of exactly the content box, offset to (60-20)/2 = 20. Both halves are asserted:
+//      the WINDOW (a number arithmetic can produce) and the PIXELS (the picture really
+//      is cropped: with "fit" the same box would leave white above and below a 20x20
+//      image). Then the mode is flipped to "fit" on the live node and the window must
+//      be GONE, or the next mode is clipped to a box it never asked for.
 //
 // THE FIXTURE is `fixture.png`, written by a 20-line script (this runtime has no PNG
 // encoder): 16x16, left half pure red, right half pure blue. Two colours, no gradients,
 // so "did the pixels land, and where" is a single pixel read.
 import asaot.ui.*;
 import asaot.ui.style.*;
+import flash.display.Bitmap;
 import flash.display.BitmapData;
 import flash.display.Stage;
 import flash.display.StageAlign;
@@ -45,7 +54,7 @@ import flash.utils.ByteArray;
 import flash.utils.setTimeout;
 
 var W:int = 320;
-var H:int = 240;
+var H:int = 320;
 var OUT:String = 'imaging';
 
 var checks:int = 0;
@@ -53,12 +62,12 @@ var failures:String = "";
 
 // What the callbacks actually delivered. `loaded` counts onLoad; `err` is onError's one
 // argument; `src` starts null so the auto-sized image can arrive LATE (see above).
-var st:Object = { loaded: 0, err: null, polls: 0, src: null };
+var st:Object = { loaded: 0, err: null, polls: 0, src: null, cover: "cover" };
 
 class ImagingProbe extends View
 {
     private static const ROOT:StyleRefinement = StyleRefinement.from({
-        flexDirection: "column", padding: 10, gap: 8, size: [320, 240],
+        flexDirection: "column", padding: 10, gap: 8, size: [320, 320],
         background: 0xFFFFFF
     });
     // 60x20 for a 16x16 picture, so "stretch" and "fit" cannot both fill the box: 3.75x
@@ -66,6 +75,11 @@ class ImagingProbe extends View
     private static const PIC:StyleRefinement = StyleRefinement.from({ size: [60, 20] });
     private static const FIT:StyleRefinement = StyleRefinement.from({ size: [80, 20] });
     private static const BAD:StyleRefinement = StyleRefinement.from({ size: [40, 40] });
+    // 24x48 against a 16x16 picture: cover scales by max(24/16, 48/16) = 3 on BOTH axes
+    // (48x48, aspect kept) and the visible column is source x 4..12, so the fixture's
+    // red/blue seam (source x=8) lands at box x=12. All integers -- 4/8/16 pop out of
+    // the arithmetic instead of out of the program.
+    private static const COVER:StyleRefinement = StyleRefinement.from({ size: [24, 48] });
 
     public function ImagingProbe():void { super(); }
 
@@ -93,6 +107,11 @@ class ImagingProbe extends View
                 key: "auto", src: st.src,
                 onLoad: function ():void { st.loaded = st.loaded + 1; },
                 onError: function (msg:String):void { st.err = "auto: " + msg; }
+            }),
+            image({
+                key: "cov", src: "fixture.png", scaleMode: String(st.cover), style: COVER,
+                onLoad: function ():void { st.loaded = st.loaded + 1; },
+                onError: function (msg:String):void { st.err = "cov: " + msg; }
             })
         ]);
     }
@@ -133,7 +152,7 @@ function poll():void
 function phaseReady():void
 {
     stageMark("loads settled after " + st.polls + " poll(s)");
-    expect(st.loaded == 2, "expected 2 successful loads before phase B, got " + st.loaded);
+    expect(st.loaded == 3, "expected 3 successful loads before phase B, got " + st.loaded);
 
     // ---- 3: the failure path speaks -----------------------------------
     expect(st.err != null, "onError never ran for a missing file");
@@ -154,6 +173,7 @@ function phaseReady():void
     expect(rectOf(app.findByKey("pic")) == "10,10,60,20", "pic rect " + rectOf(app.findByKey("pic")));
     expect(rectOf(app.findByKey("fit")) == "10,38,80,20", "fit rect " + rectOf(app.findByKey("fit")));
     expect(rectOf(app.findByKey("bad")) == "10,66,40,40", "bad rect " + rectOf(app.findByKey("bad")));
+    expect(rectOf(app.findByKey("cov")) == "10,186,24,48", "cov rect " + rectOf(app.findByKey("cov")));
 
     // ---- 1b: now let the picture arrive, on a node that is already laid out
     stageMark("phase B: src appears late");
@@ -167,12 +187,12 @@ function phaseReady():void
 function pollAuto():void
 {
     st.polls = st.polls + 1;
-    if (st.loaded < 3 && st.polls < 40)
+    if (st.loaded < 4 && st.polls < 40)
     {
         setTimeout(pollAuto, 300);
         return;
     }
-    expect(st.loaded == 3, "the late src never loaded (" + st.loaded + " successes)");
+    expect(st.loaded == 4, "the late src never loaded (" + st.loaded + " successes)");
     // The one that can only be right if COMPLETE re-measured.
     expect(rectOf(app.findByKey("auto")) == "10,114,16,16",
         "auto (no size) is " + rectOf(app.findByKey("auto")) + ", not the loaded 16x16");
@@ -180,7 +200,8 @@ function pollAuto():void
         "pic " + rectOf(app.findByKey("pic")) + "\n"
         + "fit " + rectOf(app.findByKey("fit")) + "\n"
         + "bad " + rectOf(app.findByKey("bad")) + "\n"
-        + "auto " + rectOf(app.findByKey("auto")) + "\n");
+        + "auto " + rectOf(app.findByKey("auto")) + "\n"
+        + "cov " + rectOf(app.findByKey("cov")) + "\n");
     // One more frame so the re-measure reaches the display list before it is read.
     setTimeout(capture, 250);
 }
@@ -204,7 +225,67 @@ function capture():void
     // auto: 16x16 at 10,114, red left / blue right, 1:1 (no scale mode given).
     expect(pixelIs(bd, 12, 120, 255, 0, 0), "auto's left half is not red: " + pixelText(bd, 12, 120));
     expect(pixelIs(bd, 24, 120, 0, 0, 255), "auto's right half is not blue: " + pixelText(bd, 24, 120));
-    setTimeout(finish, 100);
+    // ---- 5: cover crops instead of overflowing --------------------------
+    coverChecks(bd);
+    setTimeout(coverExit, 250);
+}
+
+function coverChecks(bd:BitmapData):void
+{
+    var cov:UiNode = app.findByKey("cov");
+    if (cov == null) { expect(false, "cov missing"); return; }
+    var bm:Bitmap = Bitmap(cov.extra["bmp"]);
+    if (bm == null || bm.bitmapData == null) { expect(false, "cov has no bitmap"); return; }
+    // Uniform scale, aspect kept: 48x48 for a 24x48 box (a stretch would be 24x48).
+    expect(bm.width == 48 && bm.height == 48,
+        "cover did not scale uniformly: " + bm.width + "x" + bm.height + ", not 48x48");
+    // The window, in the bitmap's OWN units (3x scale -> 16 units across): the 24px box
+    // is 8 source units wide, centred on the 16-unit picture, so x=4 and y=0.
+    var sr:Rectangle = bm.scrollRect;
+    expect(sr != null, "cover set no scrollRect -- the overflow is not clipped");
+    expect(sr != null && sr.x == 4 && sr.y == 0 && sr.width == 8 && sr.height == 16,
+        "cover window is " + (sr == null ? "null" : sr.x + "," + sr.y + "," + sr.width + "," + sr.height)
+            + ", not 4,0,8,16");
+    expect(bm.x == 0 && bm.y == 0, "cover moved the bitmap to " + bm.x + "," + bm.y + ", not 0,0");
+    // The pixels: the 8-unit window covers source x 4..12, so the fixture's seam (source
+    // x=8) sits at box x=12. Left red, right blue, and the TOP of the box is painted --
+    // a "fit" into 24x48 would put a 24x24 with 12px of white above it.
+    var cx:int = int(cov.absX);
+    var cy:int = int(cov.absY);
+    expect(pixelIs(bd, cx + 3, cy + 2, 255, 0, 0), "cover's top-left is not red: " + pixelText(bd, cx + 3, cy + 2));
+    expect(pixelIs(bd, cx + 20, cy + 24, 0, 0, 255), "cover's right half is not blue: " + pixelText(bd, cx + 20, cy + 24));
+    expect(pixelIs(bd, cx + 3, cy + 45, 255, 0, 0), "cover's bottom-left is not red: " + pixelText(bd, cx + 3, cy + 45));
+    stageMark("cover: window " + sr.x + "," + sr.y + "," + sr.width + "," + sr.height);
+}
+
+// Leaving "cover" must drop the window and letterbox like any other "fit".
+function coverExit():void
+{
+    var cov:UiNode = app.findByKey("cov");
+    if (cov == null) { finish(); return; }
+    // The VIEW is the source of truth: reflow re-runs render(), so poking the node's own
+    // ImageNode would be overwritten by the description the view still holds.
+    st.cover = "fit";
+    app.invalidate(Dirty.STRUCTURE);
+    app.reflow();
+    setTimeout(function ():void
+    {
+        var bm:Bitmap = Bitmap(cov.extra["bmp"]);
+        expect(bm != null && bm.scrollRect == null,
+            "the scrollRect survived a switch to fit -- the next mode is clipped to it");
+        expect(bm != null && bm.width == 24 && bm.height == 24,
+            "fit after cover is " + (bm == null ? "MISSING" : bm.width + "x" + bm.height) + ", not 24x24");
+        var bd:BitmapData = new BitmapData(W, H, true, 0xFF000000);
+        bd.draw(stage);
+        var cx:int = int(cov.absX);
+        var cy:int = int(cov.absY);
+        // A 24x24 centred in the 24x48 box starts 12px down: above it the root's white.
+        expect(pixelIs(bd, cx + 3, cy + 2, 255, 255, 255), "fit still fills the top: " + pixelText(bd, cx + 3, cy + 2));
+        expect(pixelIs(bd, cx + 3, cy + 24, 255, 0, 0), "fit's left half is not red: " + pixelText(bd, cx + 3, cy + 24));
+        expect(pixelIs(bd, cx + 20, cy + 24, 0, 0, 255), "fit's right half is not blue: " + pixelText(bd, cx + 20, cy + 24));
+        writeBmp(OUT + ".bmp", bd);
+        finish();
+    }, 250);
 }
 
 function finish():void

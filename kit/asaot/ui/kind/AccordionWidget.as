@@ -16,6 +16,14 @@
 // of `extra[ACT]`, so it can see the change and raise Dirty.M_PAINT for the open
 // header's fill). The panel itself is added/removed by the reconciler from the
 // description, which is what re-runs layout.
+//
+// MULTI MODE (2026-10-26) is the same machinery with an ARRAY instead of one index:
+// `extra[open]` is a COPY of the open set that payload maintains (so a change of
+// identity with the same contents does not repaint every frame -- the author's array
+// is rebuilt per render), and a click writes a NEW array back through the binding,
+// in ascending order, with the clicked section toggled. `onToggle(i)` reports the
+// CLICKED index in multi mode (there is no single "now open" index to report); the
+// author reads the array for the resulting state.
 package asaot.ui.kind
 {
     import asaot.ui.AccordionNode;
@@ -30,7 +38,9 @@ package asaot.ui.kind
 
     public class AccordionWidget implements Widget
     {
-        private static const ACT_KEY:String = "act";    // open section (-1 = none)
+        private static const ACT_KEY:String = "act";    // single: open section (-1 = none)
+        private static const OPEN_KEY:String = "open";  // multi: copy of the open set
+        private static const MULTI_KEY:String = "mult"; // 1 when the node is in multi mode
         private static const HIT_KEY:String = "hit";    // 1 when the last click hit a header
 
         private static const ROLE_HEADER:String = "button";
@@ -43,6 +53,8 @@ package asaot.ui.kind
             n.shapeA = new Shape();
             n.backing.addChild(n.shapeA);
             n.extra[ACT_KEY] = -1;
+            n.extra[OPEN_KEY] = [];
+            n.extra[MULTI_KEY] = 0;
             n.extra[HIT_KEY] = 0;
 
             var self:AccordionWidget = this;
@@ -57,6 +69,23 @@ package asaot.ui.kind
             // UiNode has no dedicated onToggle slot; reuse onChange (Function(Number),
             // the same contract as the other selectable controls).
             n.onChange = a.onToggle;
+
+            var multi:Boolean = a.mode == "multi";
+            n.extra[MULTI_KEY] = multi ? 1 : 0;
+            if (multi)
+            {
+                var list:Array = a.openIndices;
+                if (a.binding != null)
+                {
+                    list = AccordionNode.asIndices(a.binding.get());
+                }
+                if (!this.sameOpen(n.extra[OPEN_KEY] as Array, list))
+                {
+                    n.extra[OPEN_KEY] = this.copyOpen(list);
+                    n.dirty |= Dirty.M_PAINT;
+                }
+                return false;
+            }
 
             var av:Number = a.activeIndex;
             if (a.binding != null)
@@ -97,6 +126,8 @@ package asaot.ui.kind
             if (n.shapeA == null) return;
 
             var act:int = int(Number(n.extra[ACT_KEY]));
+            var multi:Boolean = Number(n.extra[MULTI_KEY]) != 0;
+            var openSet:Array = n.extra[OPEN_KEY] as Array;
             var g:Object = n.shapeA.graphics;
 
             // A header background AND a hairline under it, both drawn as FILLS: a filled
@@ -115,7 +146,8 @@ package asaot.ui.kind
                 var c:UiNode = n.children[i];
                 if (c.role != ROLE_HEADER) continue;
                 k = k + 1;
-                g.beginFill(k == act ? AccordionNode.OPEN_BG : AccordionNode.HEADER_BG, 1.0);
+                var isOpen:Boolean = multi ? AccordionNode.isOpen(openSet, k) : (k == act);
+                g.beginFill(isOpen ? AccordionNode.OPEN_BG : AccordionNode.HEADER_BG, 1.0);
                 g.drawRect(c.absX - n.absX, c.absY - n.absY, c.absW, c.absH);
                 g.endFill();
                 g.beginFill(AccordionNode.RULE, 1.0);
@@ -149,6 +181,11 @@ package asaot.ui.kind
             if (target < 0) return;
 
             n.extra[HIT_KEY] = 1;
+            if (Number(n.extra[MULTI_KEY]) != 0)
+            {
+                this.toggleMulti(n, target);
+                return;
+            }
             // Single-open: the open header closes (toggle), any other opens.
             var next:int = (target == act) ? -1 : target;
             // Do NOT write n.extra[ACT_KEY] here: payload must observe the change
@@ -157,6 +194,67 @@ package asaot.ui.kind
             n.app.markPaint(n);
             if (n.onChange != null) n.onChange(next);
             n.app.invalidate(Dirty.VALUE);
+        }
+
+        private function toggleMulti(n:UiNode, target:int):void
+        {
+            var was:Array = n.extra[OPEN_KEY] as Array;
+            var next:Array = [];
+            // Rebuilt in ASCENDING order: the array the author sees has one canonical
+            // spelling whatever order they handed us, so `[2,0]` and `[0,2]` do not
+            // look like a change on the next payload.
+            // `k` counts HEADERS, not children: the open panels are children too, so a
+            // children index is not a section index (the same walk paint/onClickY do).
+            var k:int = -1;
+            for (var i:int = 0; i < n.children.length; i++)
+            {
+                if (n.children[i].role != ROLE_HEADER) continue;
+                k = k + 1;
+                var on:Boolean = AccordionNode.isOpen(was, k);
+                if (k == target) on = !on;
+                if (on) next.push(k);
+            }
+            if (n.binding != null) n.binding.set(next);
+            n.app.markPaint(n);
+            if (n.onChange != null) n.onChange(target);
+            n.app.invalidate(Dirty.VALUE);
+        }
+
+        // Element-wise, order-insensitive comparison against the copy we kept. Without
+        // it every render would look like a change (the author's array is a fresh
+        // object each pass) and the accordion would repaint forever.
+        private function sameOpen(have:Array, want:Array):Boolean
+        {
+            var a:Array = have == null ? [] : have;
+            var b:Array = want == null ? [] : want;
+            if (a.length != b.length) return false;
+            for (var i:int = 0; i < a.length; i++)
+            {
+                if (!this.hasIndex(b, int(Number(a[i])))) return false;
+            }
+            return true;
+        }
+
+        private function hasIndex(list:Array, v:int):Boolean
+        {
+            for (var i:int = 0; i < list.length; i++)
+            {
+                if (list[i] == null) continue;
+                if (int(Number(list[i])) == v) return true;
+            }
+            return false;
+        }
+
+        private function copyOpen(list:Array):Array
+        {
+            var out:Array = [];
+            if (list == null) return out;
+            for (var i:int = 0; i < list.length; i++)
+            {
+                if (list[i] == null) continue;
+                out.push(int(Number(list[i])));
+            }
+            return out;
         }
     }
 }

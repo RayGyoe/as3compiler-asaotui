@@ -22,9 +22,11 @@
 // would otherwise lose the shorthand -- OptionSupport.applyOpts takes either
 // `opts.style` OR the shorthand keys, never both (see OptionSupport.applyOpts).
 //
-// Keyboard: there is NO focus/Tab layer in the toolkit (STATUS.md section 3.1),
-// so this control is deliberately tabEnabled = false and the widget does not
-// pretend to read arrow keys.
+// Keyboard: the strip is ONE tab stop (`tabEnabled`, the ARIA tablist model) and
+// Left/Right walk it with wraparound; Home/End jump to the ends. See TabsWidget.onKey.
+// The ring exists since the library grew `WidgetKeys`; the note this file carried
+// until 2026-10-26 -- "there is NO focus/Tab layer in the toolkit" -- described the
+// toolkit before that layer landed and was only true of the widget, not of UiApp.
 package asaot.ui
 {
     import asaot.ui.kind.TabsWidget;
@@ -44,7 +46,7 @@ package asaot.ui
             super("tabs");
             if (!registered) { registered = true; Widgets.register("tabs", new TabsWidget()); }
             this.role = "tablist";
-            this.tabEnabled = false;   // no keyboard layer exists; see the file header
+            this.tabEnabled = true;    // one stop for the strip; Left/Right walk the segments
             this.labels = [];
             this.selectedIndex = 0;
             this.gap = NaN;

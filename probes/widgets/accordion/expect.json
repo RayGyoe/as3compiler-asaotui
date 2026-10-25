@@ -1,0 +1,24 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/accordion/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "Window 300x420. Root is a column with padding 10 and gap 10, children not stretched: m is size [280,150] -> 10,10,280,150; s is size [280,90] -> 10, 10+150+10=170, 280,90. Only the two explicit sizes and the root are pinned: a header's height is padding + one text line, i.e. a font metric, so the panels' y values are reported by the probe but deliberately not stated here.",
+    "points": [
+      "(5,5) is inside the root's 10px padding -> the root's own white.",
+      "(5,165) is in the 10px gap between m (ends at y=160) and s (starts at y=170) -> white.",
+      "(150,300) is below s (which ends at y=260) and inside the root -> white."
+    ],
+    "not_pinned": "The header fills (#DBEAFE open / #F3F4F6 closed) are sampled in Main.as at each header's own midpoint, because their y is a font metric; what makes them a contract is that the probe samples THREE headers of a multi accordion with two open, so any implementation that fills one index (the first, or the last) fails. Everything else -- which panels are mounted, the order-insensitive [2,0] set, the canonical ascending write-back, the onToggle index, and the four refused option combinations -- is program state and is reported through <OUT>.done."
+  },
+  "w": 300,
+  "h": 420,
+  "rects": {
+    "root": [0, 0, 300, 420],
+    "m": [10, 10, 280, 150],
+    "s": [10, 170, 280, 90]
+  },
+  "points": [
+    { "x": 5, "y": 5, "rgb": "#ffffff" },
+    { "x": 5, "y": 165, "rgb": "#ffffff" },
+    { "x": 150, "y": 300, "rgb": "#ffffff" }
+  ]
+}

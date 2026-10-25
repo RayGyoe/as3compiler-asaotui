@@ -13,14 +13,32 @@
 // caller then calls preventDefault(), which is what stops the runtime's own
 // default action for that key.
 //
-// The widget decides which keys mean anything to it. The keys that exist:
-//   menu   -- Up/Down move the active row, Enter activates it, Right opens a
-//             submenu, Left closes it, Escape closes the menu
-//   select -- Up/Down move the active row, Enter/Space activates the trigger,
-//             Escape closes the dropdown
-//   dialog -- Escape calls onClose
-//   drawer -- Escape calls onClose
-//   input  -- Enter commits, Escape reverts to the last committed value
+// The widget decides which keys mean anything to it. The keys that exist today --
+// kept HERE, in one place, because "which control answers to which arrow" is the
+// one part of this contract a reader cannot guess from the interface:
+//   menu        -- Up/Down move the active row (wrap), Enter/Space activate it,
+//                  Escape closes the menu
+//   select      -- Up/Down move the active row (wrap), Enter/Space activate it,
+//                  Escape closes the dropdown, Down/Enter opens it when shut
+//   combobox    -- as select, plus typing (the field owns the text)
+//   datePicker  -- Left/Right walk days (wrap), Up/Down a week, Enter/Space pick,
+//                  Escape closes; when shut, Enter/Space/Down open it
+//   dialog / drawer / popover / toastHost (PanelShell)
+//               -- Escape calls onClose
+//   input       -- Enter commits, Escape reverts to the last committed value
+//                  (Space and the arrows belong to the field)
+//   textArea    -- Escape reverts; Enter is NOT consumed (it inserts a newline)
+//   tree        -- Up/Down walk the flat row list (wrap), Left/Right collapse/expand,
+//                  Home/End, Enter/Space select
+//   virtualList -- Up/Down one row, PageUp/PageDown one window, Home/End
+//   list        -- Up/Down one row (CLAMPED at the ends), Home/End
+//   table       -- Up/Down one body row (clamped), PageUp/PageDown one window,
+//                  Home/End; under `virtual` a move also scrolls the window
+//   tabs        -- Left/Right one segment (WRAP: a strip is a ring), Home/End
+//
+// WRAP vs CLAMP is not taste: a tree/tab strip/menu is a RING or a spatial structure,
+// so leaving one end enters the other; a list/grid is a SEQUENCE, and its ends are
+// walls (the ARIA listbox/grid model). Each widget's onKey says which and why.
 package asaot.ui
 {
     public interface WidgetKeys

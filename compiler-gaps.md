@@ -575,6 +575,21 @@
 
 ---
 
+## G28 —— `TextFormat.underline` / HTML `<u>` **只被解析、不被绘制**
+
+| 项 | 内容 |
+|---|---|
+| 现象（我方实测） | 给 `TextField` 的 `defaultTextFormat.underline = true`（或 `htmlText` 里的 `<u>`）后，**文字照常出现在正确位置，颜色/字号/粗斜体都对，只是没有那条线**。`probes/widgets/textfx` 的装饰相位在「本应是横线的那一行」取到 `#ffffff`（同一行在库自绘之后是 `#111827`）—— 即**渲染器从未画过它**，不是我方取样点的问题 |
+| 代码事实 | `src/emit.ts:20901-20903`：`as_tf_html_emit_run(... bool underline)` 的第一句就是 `(void)underline; // underline not yet modeled by the TextStyle subset`。`TextFormat.underline` 字段本身是**存在**的（构造见 `:20124`，`equals`/`clone`/`reset` 都带上它，`:21269`/`:21283`/`:21293`）—— 所以「设得上、读得回、复制得走」，**唯独布局与绘制路径没有任何一处读它** |
+| 判定 | **遗留欠账**（AIR 有、我们无）。分类依据：`flash.text.TextFormat.underline` 是 AIR 的**已定义属性**，AIR 会渲染它 ⇒ 属对齐缺口，不是「AIR 没有所以算增强」。⚠️ 诚实标注证据等级：**我方行为已实测**（上面的探针像素），**AIR 侧本次未跑 `adl` 逐像素对照** ——「有 API 却不渲染」与 AIR 的名声不符，故按欠账记，立案时先补一次 `adl` 实测 |
+| 影响面 | 纯文本表现层。**布局不受影响**（行高/断行不因下划线变化），所以既不影响命中测试，也不影响任何几何断言 —— 这也正是它一直没被发现的原因：**每一个属性断言都是对的** |
+| 库侧处置（第三十一轮，2026-10-25） | **不走 `TextFormat.underline`**，改用 `getLineMetrics()` **逐行自绘**：`TextStyle.textDecoration`（取 `none` / `underline` / `line-through` / `overline`，默认 `none`，随 `inheritFrom`/`copy` 级联）→ `PaintKit.decorate(n)` 在 14 个 kind 的 `paint()` 末尾画。**为什么自绘是对的而不是绕行**：`getLineMetrics` 与文字绘制同源（同一套排版结果），所以线画在第几行、从哪个 x 起、有多宽，都跟字形**同一次**布局算出来；等编译器补上 underline 只是把 1px 线的工作交接回去，库侧的形状与像素位置不变 |
+| 对编译器的主张 | ① `as_tf_html_emit_run` 把 `underline` 落到 run 上（现有 run 表已经是「begin, end, TextFormat」三元组，直接 `f->underline` 置 true 即可，不必加字段）；② `as_tf_paragraph`/绘制阶段按行画 1px 线（`getLineMetrics` 已有 `x/width/ascent/descent`，与 AIR 的落点一致）；③ `htmlText` 的 `<u>` **已经**解析到那个 bool（`:21193` `strcmp(nm,"u")==0`），缺的只是「传下去 + 画出来」 |
+| 证据落盘 | `probes/widgets/textfx`（**18 checks**：shadow/gradient/wrap/ellipsis/textArea 之外，新增 `underline` 与 `line-through` 的像素断言 —— 在**字形够不到的四空格空隙**里取样，并用同页一个无装饰节点做负例，才排除「这段像素其实是字形」）；变异 `probes/widgets/textfx/mutation.cjs` **8/8**（M6 不画、M7 画错位置、M8 忽略行首 `lm.x`） |
+| 附带的增强（AIR 没有对应物） | `line-through` 与 `overline` **不在** `TextFormat` 里（AIR 的 TextFormat 无 strikethrough 属性）⇒ 这两档是**增强**，按 AGENTS.md §1.5 的要求 **opt-in**（默认 `none`，不写就与 AIR 同构）且**不静默**（未知拼写直接 THROW） |
+
+---
+
 ## 2 不是缺口：已澄清 / 已关闭
 
 | 事项 | 结论 | 证据 |

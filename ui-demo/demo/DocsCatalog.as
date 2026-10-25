@@ -67,7 +67,7 @@ package demo
 
                 new DocPage("tabs", "tabs", 6, "A strip that writes its index back through a Binding."),
                 new DocPage("breadcrumb", "breadcrumb", 6, "A trail of crumbs; the last one is current."),
-                new DocPage("accordion", "accordion", 6, "Headers that open one panel at a time."),
+                new DocPage("accordion", "accordion", 6, "Headers that open one panel -- or several, with mode: 'multi'."),
 
                 new DocPage("progress", "progress", 7, "A determinate bar with a label."),
                 new DocPage("spinner", "spinner", 7, "An indeterminate ring."),

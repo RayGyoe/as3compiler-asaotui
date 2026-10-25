@@ -111,6 +111,7 @@ package asaot.ui.kind
                 n.tf.y = PaintKit.insetY(n) + (ch - n.state.measuredH) / 2;
                 n.tf.textColor = fg;
             }
+            PaintKit.decorate(n);
         }
 
         public function click(n:UiNode):Boolean { return false; }

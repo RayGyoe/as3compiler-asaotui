@@ -46,6 +46,13 @@
 // `n.extra` so they can be removed BY REFERENCE, and `teardown` removes them: a
 // stage listener pointing at a destroyed node's scratch bag is exactly the bug the
 // gallery's popups had: a listener that outlived its node.
+//
+// KEYBOARD (2026-10-26): the table is ONE tab stop and the arrows walk the BODY rows
+// -- Up/Down one row, PageUp/PageDown one window, Home/End the ends, all CLAMPED
+// (a grid stops at its ends). Under `virtual` the selected row is also brought INTO
+// THE WINDOW, through the same `request()` the wheel uses, because the rows are not
+// mounted: a highlight on row 40 of 200 that never scrolls there is a selection
+// nobody can see. Both the click and the keys end in `select()`.
 package asaot.ui.kind
 {
     import asaot.ui.TableNode;
@@ -54,6 +61,7 @@ package asaot.ui.kind
     import asaot.ui.PaintKit;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
+    import asaot.ui.WidgetKeys;
     import asaot.ui.WidgetTeardown;
 
     import flash.display.DisplayObject;
@@ -63,7 +71,7 @@ package asaot.ui.kind
     import flash.geom.Point;
     import flash.geom.Rectangle;
 
-    public class TableWidget implements Widget, WidgetTeardown
+    public class TableWidget implements Widget, WidgetKeys, WidgetTeardown
     {
         public static const DEFAULT_H:Number = 200;   // same viewport default as vlist
         public static const MIN_COL_W:Number = 24;    // narrowest a drag may leave a column
@@ -378,11 +386,70 @@ package asaot.ui.kind
             target = target + int(Number(n.extra[FIRST_KEY]));
 
             n.extra[HIT_KEY] = 1;
-            // Do NOT write n.extra[SEL_KEY]: payload must observe the change and
-            // raise Dirty.M_PAINT (same reason as TabsWidget.onClickX).
-            if (n.binding != null) n.binding.set(target);
+            this.select(n, target);
+        }
+
+        // ---- keyboard -------------------------------------------------------
+        // The COUNT comes from the description (`TableNode.rowCount`, published by the
+        // factory after sorting), not from the mounted children: under `virtual` the
+        // children are one window of a longer list, and the selection is an ABSOLUTE
+        // row index for exactly that reason.
+        public function onKey(n:UiNode, keyCode:int, shift:Boolean):Boolean
+        {
+            var t:TableNode = n.desc as TableNode;
+            if (t == null) return false;
+            var count:int = t.rowCount;
+            if (count <= 0) return false;
+            if (keyCode != 38 && keyCode != 40 && keyCode != 36 && keyCode != 35
+                && keyCode != 33 && keyCode != 34) return false;
+
+            var cur:int = this.currentIndex(n);
+            var fit:int = t.visibleRows > 0 ? t.visibleRows : 1;
+            var next:int;
+            if (keyCode == 36) next = 0;
+            else if (keyCode == 35) next = count - 1;
+            else if (cur < 0 || cur >= count) next = keyCode == 38 ? count - 1 : 0;
+            else if (keyCode == 33) next = cur - fit;
+            else if (keyCode == 34) next = cur + fit;
+            else next = keyCode == 40 ? cur + 1 : cur - 1;
+            if (next < 0) next = 0;
+            if (next >= count) next = count - 1;
+            if (next != cur) this.select(n, next);
+            if (t.virtual) this.reveal(n, t, next, fit);
+            return true;
+        }
+
+        // The row the keys move FROM. The BINDING wins when there is one: it is the
+        // freshest intent, and payload has not run yet inside the frame that received
+        // the key -- two keys in one frame (a held arrow, a fast repeat) must step
+        // twice. Without a binding, fall back to what payload last APPLIED, i.e. what
+        // is actually on screen.
+        private function currentIndex(n:UiNode):int
+        {
+            if (n.binding != null)
+            {
+                var bv:* = n.binding.get();
+                if (bv != null) return int(Number(bv));
+            }
+            return int(Number(n.extra[SEL_KEY]));
+        }
+        // Bring `sel` into the mounted window, by the least it can move: only when the
+        // row is outside it, and then only far enough to touch the near edge.
+        private function reveal(n:UiNode, t:TableNode, sel:int, fit:int):void
+        {
+            var first:int = t.firstRow;
+            if (sel >= first && sel < first + fit) return;
+            this.request(n, sel < first ? sel : sel - fit + 1);
+        }
+
+        // The ONE write path, shared by the click and the keys. Do NOT write
+        // n.extra[SEL_KEY]: payload must observe the change and
+        // raise Dirty.M_PAINT (same reason as TabsWidget.onClickX).
+        private function select(n:UiNode, idx:int):void
+        {
+            if (n.binding != null) n.binding.set(idx);
             n.app.markPaint(n);
-            if (n.onChange != null) n.onChange(target);
+            if (n.onChange != null) n.onChange(idx);
             n.app.invalidate(Dirty.VALUE);
         }
 

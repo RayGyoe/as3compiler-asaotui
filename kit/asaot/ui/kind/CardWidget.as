@@ -86,6 +86,7 @@ package asaot.ui.kind
             n.tf.x = PaintKit.insetX(n);
             n.tf.y = PaintKit.insetY(n);
             if (s.text.color >= 0) n.tf.textColor = uint(s.text.color);
+            PaintKit.decorate(n);
         }
 
         public function click(n:UiNode):Boolean { return false; }

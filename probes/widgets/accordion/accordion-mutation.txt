@@ -1,0 +1,21 @@
+baseline (unmutated): RESULT: PASS
+
+A1  CAUGHT  THE HEADER FILL IGNORES THE SET: paint highlights "the first section" instead of every open one,so with [0,2] open the picture shows one highlight. This is the classic "state is right, the paintreads something else" split -- invisible to a model assertion.
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL header 2 fill at (13,118) want #dbeafe got #f3f4f6;
+     restore: byte-identical (af3ba39e07b932b9)
+A2  CAUGHT  THE FACTORY MOUNTS ONLY THE FIRST OPEN PANEL: `openIndices` is accepted and even painted, but asection can be "open" with no content on screen -- the exact half-implementation a mode flag issupposed to rule out.
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL pc (section 2 of the open set) is missing;
+     restore: byte-identical (50081e751564f273)
+A3  CAUGHT  A TOGGLE REPLACES THE SET WITH THE CLICKED INDEX: this is single mode wearing a multi name --clicking B closes A and C. Every model assertion about "the set changed" would still pass, which iswhy the probe asserts the three members by name.
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL after opening section 1 the set is 1, not three members; opening section 1 CLOSED another section; section 0 was toggled off but its panel is still mounted; closing section 0 closed another section: 0; closing section 2 from [2,0] left 2, not [0]; section 2 is closed in the array but its panel is mounted; section 0 is open in the array but its panel is not mounted;
+     restore: byte-identical (af3ba39e07b932b9)
+A4  CAUGHT  THE EXCLUSIVE-OPTION GUARD IS GONE: `mode:"multi"` + `activeIndex` is accepted, and one of the twostates is silently ignored -- AGENTS.md 2.5 exactly. Nothing on screen changes, so only the THROWassertion can see it.
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL mode multi + activeIndex did NOT throw;
+     restore: byte-identical (50081e751564f273)
+
+MUTATION accordion: 4/4 caught, 0 problem(s)
+RESULT: PASS

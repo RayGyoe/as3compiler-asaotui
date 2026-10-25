@@ -2,6 +2,7 @@
 // of N", each with its own chrome.
 package demo
 {
+    import asaot.ui.AccordionNode;
     import asaot.ui.Node;
     import asaot.ui.accordion;
     import asaot.ui.breadcrumb;
@@ -83,13 +84,13 @@ package demo
 
             if (id == "accordion") return [
                 new DocSection("One panel at a time", [
-                    "Headers are row children with role \"button\" -- the ARIA shape, and also how the",
+                    "Headers are row children with role 'button' -- the ARIA shape, and also how the",
                     "widget tells a header from a panel, so no key parsing or index arithmetic."
                 ], [
                     "accordion([",
-                    "    { title: \"General\",  content: column({}, [ ... ]) },",
-                    "    { title: \"Advanced\", content: column({}, [ ... ]) }",
-                    "], { key: \"a\", size: [320, 168], gap: 1, activeIndex: model.open,",
+                    "    { title: 'General',  content: column({}, [ ... ]) },",
+                    "    { title: 'Advanced', content: column({}, [ ... ]) }",
+                    "], { key: 'a', size: [320, 168], gap: 1, activeIndex: model.open,",
                     "     onToggle: function (i:int):void { model.open = i; } })"
                 ], 196, function ():Node
                 {
@@ -118,6 +119,48 @@ package demo
                 {
                     return text("activeIndex: " + int(m.num("acc.i", 0)),
                         { style: DocsDemo.MONO, ariaName: "" });
+                }),
+
+                new DocSection("Several open at once", [
+                    "mode 'multi' takes openIndices -- an ARRAY of open sections -- where single mode",
+                    "takes one activeIndex. The two are mutually exclusive and passing the wrong one",
+                    "THROWS, so a page cannot believe it is remembering a set that nothing reads."
+                ], [
+                    "accordion(secs, { mode: 'multi', openIndices: model.openSet, gap: 1,",
+                    "     onToggle: function (i:int):void { model.openSet = toggled(model.openSet, i); } })",
+                    "// single: activeIndex (one int)   multi: openIndices (a set)"
+                ], 176, function ():Node
+                {
+                    var open:Array = m.val("acc.set", [0, 2]) as Array;
+                    var secs3:Array = [
+                        { title: "One", content: text("opened by the set", { style: DocsDemo.LABEL, ariaName: "" }) },
+                        { title: "Two", content: text("independent of One", { style: DocsDemo.LABEL, ariaName: "" }) },
+                        { title: "Three", content: text("closing One keeps Two", { style: DocsDemo.LABEL, ariaName: "" }) }
+                    ];
+                    var shown:String = "";
+                    for (var q2:int = 0; q2 < open.length; q2++)
+                    {
+                        shown = shown + (q2 > 0 ? ", " : "") + int(open[q2]);
+                    }
+                    return column({ gap: 4 }, [
+                        accordion(secs3, { key: "demoAccM", gap: 1,
+                            style: StyleRefinement.from({ size: [340, 150] }),
+                            mode: "multi",
+                            openIndices: open,
+                            onToggle: function (i:int):void
+                            {
+                                // Rebuilt in INDEX ORDER, the way the widget does it: a set whose
+                                // contents depend on click order makes "the same set" untestable.
+                                var wasOpen:Boolean = AccordionNode.isOpen(open, i);
+                                var next:Array = [];
+                                for (var k:int = 0; k < 3; k++)
+                                {
+                                    if (k == i ? !wasOpen : AccordionNode.isOpen(open, k)) next.push(k);
+                                }
+                                m.put("acc.set", next);
+                            } }),
+                        text("openIndices: [" + shown + "]", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 

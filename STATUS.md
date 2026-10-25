@@ -104,11 +104,13 @@
 > 判据：新探针 `probes/widgets/icon`（**57 项**，含三次曲线 t=0.5 点、三档描边宽度、viewBox 缩放，以及
 > `A`/未知命令/工厂抛错三个**负例**）+ 变异 **6/6**；文档站新增 `icon` 页；门 50 → **51 道**。
 >
-> 仍然缺的是：`accordion` 多开、
-> 样式面的 `grid`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
+> 仍然缺的是：样式面的 `grid`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
+> （`accordion` 多开已在第二十二轮落地，见 §3.17d；`image` 的 `cover`、`list`/`table`/`tabs` 的键盘导航、
+> 文字装饰同为该轮内容。）
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
-生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**52 道门**）
+生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`；第二十二轮补：四件「有槽位没行为」的空缺（`list`/`table`/`tabs` 键盘导航、
+`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**52 道门**）
 
 ---
 
@@ -159,13 +161,13 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | `tabs(labels, opts)` | `TabsNode` | 横向分段；**分段是控件自算**，见 §3.1.1 |
 | `list(items, builder, opts)` | `ListNode` | 真容器（每行一个真实 UiNode）；**无虚拟滚动——万级用 `virtualList`** |
 | `image(opts)` | `ImageNode` | 位图控件；源二选一：`bitmapData`（调用者已有像素）或 **`src`（控件自己持 `Loader`，异步）**；
-`scaleMode`: `fit`/`stretch`/`none`（**未知值抛错**）；`onLoad()`/`onError(msg)`、失败进 `UiNode.loadError` |
+`scaleMode`: `fit`/`stretch`/`none`/**`cover`**（**未知值抛错**；`cover` 用 `scrollRect` 开窗裁剪，窗口按缩放系数折算）；`onLoad()`/`onError(msg)`、失败进 `UiNode.loadError` |
 | `scrollView(opts, children)` | `ScrollViewNode` | **真裁剪**滚动容器（引擎 `scrollRect`）；竖向滚轮；视口用 `setMinMax(min)` 阻断子收缩；**`stickToBottom`**（日志式贴底 + 离开末尾就脱钩）、纵/横滚动条（`probes/widgets/scrollbar` 44 项 / `stick` 15 项） |
 | `spinner(opts)` | `SpinnerNode` | 不定进度圆环；`diameter`/`thickness`/`tone`/`spin`/`phase`；**环画成填充带（描边宽度不被遵守）** |
 | `skeleton(opts)` | `SkeletonNode` | 占位骨架；`variant`: `text`/`circle`/`rect` + `lines`/`barHeight`/`gap`/`tone` |
 | `tooltip(text, opts)` | `TooltipNode` | 气泡提示；`arrow`: `up`/`down`/`left`/`right`/`none`；标签**自绘居中**，尺寸可留 auto（自带内边距） |
 | `table(columns, rows, opts)` | `TableNode` | 表头 + 数据行；`rowHeight`/`stripes`/`grid`/`selectedIndex`/`onSelect`；**`sortColumn`/`sortDescending`/`onSort(col, desc)`**（秩序归模型，循环 升/降/-1）、**`resizable`/`onColumnResize(idx, w)`**（只 1px 预览，release 报一次，从不回写 `columns`）、**`virtual`/`offsetY`/`onScroll(y)`**（header 不滚、body = `height - rowHeight`）；网格/条纹/选中一律**画成填充**；另画一个**全透明命中矩形**（否则空单元格点不到） |
-| `accordion(sections, opts)` | `AccordionNode` | 单开手风琴；`activeIndex`（`-1` = 全关）/`onToggle`；**header 刻意无背景**（高亮由容器画，子节点在前） |
+| `accordion(sections, opts)` | `AccordionNode` | 手风琴；`mode`: `single`（默认，`activeIndex`，`-1` = 全关）/`multi`（`openIndices`，一组）；两者互斥、错配抛错；`onToggle(i)` 报被点击的 index；**header 刻意无背景**（高亮由容器画，子节点在前） |
 | `breadcrumb(items, opts)` | `BreadcrumbNode` | 面包屑；`onNavigate(index)`/`separator`/`currentIndex`；末项与分隔符都不可导航 |
 | `pagination(page, pageCount, opts)` | `PaginationNode` | 翻页器；`windowSize` 槽位窗口、省略号原型 `-1`、`onSelect`/`page` |
 | `overlay(children, opts)` | `BoxNode` | **浮层宿主**（第二棵树的根）：`size:[100%,100%]`、`position:absolute`、置顶；子序列 = 堆叠序（**无 z-index**） |
@@ -188,7 +190,6 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 
 | 类别 | 缺什么 | 影响的界面 |
 |---|---|---|
-| 选择 | `accordion` 多开（树/日期/可输入下拉/可排序表格已落地） | 手风琴多开 |
 | 无障碍 | `role`/`ariaName` 仍只是字段（无消费者） | 屏幕阅读器 |
 
 **⇒ 现在能舒适写出的是「多页表单 / 设置页 / 列表详表 / 万级滚动列表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互 /
@@ -228,7 +229,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 |---|---|
 | **虚拟滚动** | ✅ `virtualList`（第五轮）：**只有窗口内的行是 UiNode**（1000 项、视口 150、行高 20 ⇒ **9 个**节点）；作者持有数据，控件只报 `onScroll(offset)`，作者写回模型后重渲染。✅ `table` 的 `virtual:true`（第十六轮）同契约（窗口 + 一行半行、`onScroll(y)`）。⚠️ `list`/`tree` 仍是「每行一个真实 UiNode」——要万级就用 `virtualList` |
 | **视口裁剪 / 滚动** | ✅ `scrollView` 用引擎 `scrollRect` 做**真裁剪**、接管滚轮，并**自绘滚动条**（第七轮）：纵/横双轴、thumb 拖动、轨道点击翻一屏、`scrollbarX/Y` 的 `auto`/`always`/`never`、没有竖向可滚时滚轮**回落横向**。条是**覆盖层**（画在内容之上、不参与布局，所以不改变任何矩形）。仍无：惯性/动量、弹性回弹、键盘翻页。`list` 本身仍不裁剪（超出自身高度的行会溢出），要滚动就套一层 `scrollView` |
-| **键盘 / 焦点** | ⚠️ 部分是：焦点环/`Enter`/`Space`/`Esc` 已通（见 §3.1），但 `tabs` 还没接**方向键**、`list` 还没接**上下键选中**（两者仍只看鼠标点击）；`list` 的行也没进 Tab 环 |
+| **键盘 / 焦点** | ✅ 焦点环/`Enter`/`Space`/`Esc`（§3.1）+ **`list`/`table`/`tabs` 的方向键导航**（第二十二轮）：`list`/`table` CLAMP（Up/Down/Home/End/PageUp/PageDown，virtual 表选中后把行滚进窗口）、`tabs` WRAP（Left/Right/Home/End）；三者 `tabEnabled` 已进 Tab 环。⚠️ `tree` 的行仍是「展开/折叠 + 上下键」，`grid` 类控件没有 |
 | **tabs 分段的布局来源** | ⚠️ 分段是控件**自算**（`from n.absW` 的整数等分），**不是**引擎摆的子节点；`list` 的行**是**引擎摆的真实子节点 |
 | **tabs 的 gap 来源** | ⚠️ `TabsWidget.payload` 先读 `opts.gap`，回落到 `n.resolved.gapX`（已解算值）。若一次重排**恰好只改了 gap**，分段 pitch 会用上一帧的 gap 一帧（`Reconciler` 是「先 resolve 后 payload」，payload 改方向会在同帧重解，见 §3.3） |
 | **list 选择高亮** | ✅ 由 `list` 自身在 `shapeA`（子件之下）画高亮条；行本身需透明才能看见 |
@@ -260,7 +261,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 46 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 54 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -916,12 +917,35 @@ G24 / G25 / G26 在编译器侧全部修好后（**阶段二百七十五，v0.4.
 `gates-all-32.txt`，即 G27 收口那次），以及 `README.md` 的缺口行里 G24/G26 仍标着“❌ 仍在”——它们和
 G25/G27 一样已在 v0.4.239 / v0.4.240 修完。
 
+### 3.17d 四件「有槽位、没行为」的空缺（第二十二轮）
+
+这一轮**不加控件**，只把四处**早就存在、却做不到事**的槽位补上。它们的共同点是「API 面早就在，
+表现层没人读」——所以模型断言、矩形断言全是绿的，屏幕上却是另一回事；四处也因此都是
+**探针在结构上看不见**的缺件。
+
+| 空白 | 事实（补之前） | 现在 | 钉子 / 变异 |
+|---|---|---|---|
+| **键盘导航** | `WidgetKeys` 接口第三轮就定了，实现者 8 个；`list`/`table`/`tabs` **只认鼠标点击**（§3.1 第 231 行自己写着「tabs 还没接方向键、list 还没接上下键」） | 三者都 `implements WidgetKeys`（实现者 11 个）：`list`/`table` 用 **CLAMP**（Up/Down/Home/End/PageUp/PageDown），`tabs` 用 **WRAP**（Left/Right/Home/End）—— 不是口味差异：listbox/grid 是**序列**（ARIA 语义），tab strip 是**环**。**端点也消费按键**（夹紧在端部时仍返回 true），否则键会落到滚动祖先。virtual table 选中后 `reveal()` 把行滚进**已挂载窗口**（否则 index 对、模型动了、屏幕上什么都没有）。三者 `tabEnabled = true` 才进 Tab 环 | `probes/widgets/keys`（**36 项**）；变异 **4/4**（list 端部回绕、tabs 端部夹紧、virtual 不 reveal、键写 `extra` 而不写 Binding） |
+| **`accordion` 多开** | `AccordionNode` 自述「Single-open is the only mode … `multi` is NOT implemented」；`openIndices` 传进来会被**静默忽略** | `mode` 收 `single`/`multi`：multi 走 `openIndices`（一组），single 走 `activeIndex`（一个），**两者互斥、错配直接抛**（AGENTS.md §2.5）。集合**升序重建**、比较与顺序无关；`onToggle(i)` 报被点击的那个 index。header 的 key 带上**本 accordion 的 key 前缀**（同页两处 accordion 过去都出 `h0`，`findByKey` 只会拿到先来的那个） | `probes/widgets/accordion`（**18 项**，含 4 组拒绝组合）；变异 **4/4**（填色只认 `k==0`；工厂只挂第一个 open panel；toggle 用 `[target]` 替换集合；互斥 guard 改 `if (false)`） |
+| **`image` 的 `cover`** | `scaleMode` 只有 `fit`/`stretch`/`none`，`cover` **直接抛错** | `cover` = 等比放大到**铺满**再裁剪，用 `scrollRect` 开窗。两个坑都是实测出来的：① 窗口必须**除以缩放系数**（renderer 把窗口 clip 在对象自身矩阵里，24 单位的盒子在 3x 图上等于 72 设备像素 ⇒ 图被裁没，三个采样点全 `#ffffff`）；② **退出 cover 必须清 `scrollRect`**，否则下一个模式继承一个没人要的裁剪 | `probes/widgets/imaging`（**31 项**，含窗口矩形 + 三点像素 + 退出 cover 的复检）；变异 **8/8**（新增 max→min、窗口单位、退出不清窗口） |
+| **下划线 / 删除线 / 上划线** | `TextFormat.underline` 设得上、读得回、`clone` 得走，**绘制路径没有一处读它**（`as_tf_html_emit_run` 第一句就是 `(void)underline`）⇒ 登记 **G28** | 不走 `TextFormat.underline`，改用 `getLineMetrics()` **逐行自绘**：`TextStyle.textDecoration`（`none`/`underline`/`line-through`/`overline`，默认 `none`，随 `inheritFrom`/`copy` 级联），`PaintKit.decorate(n)` 在 14 个 kind 的 `paint()` 末尾画。`getLineMetrics` 与字形**同源**，所以线画在第几行、从哪个 x 起、多宽，都跟字形出自同一次布局 | `probes/widgets/textfx`（**18 项**：装饰相位在**字形够不到的四空格空隙**取样，并用同页一个无装饰节点做负例）；变异 **8/8**（M6 不画、M7 画错位置、M8 忽略行首 `lm.x`） |
+
+一条方法论，比这四件本身更值钱：**「属性对、屏幕错」这一类缺陷，探针必须在只有那条行为才会
+改变像素的地方取样** —— 键盘（只有按键才动）、multi（只有两个 panel 同时开才出现的填色）、
+cover（只有裁剪窗口对了才对的三点像素）、装饰（只有横线那一行才会变色的空隙）。四次都是先写
+模型断言、发现全绿，才把采样点挪过去的。
+
+另一条：**变异机自己也会假绿**。本轮两个变异（A4、K4）报的是 `SKIPPED -- anchor text not found`，
+原因一个是锚点跨了「后来被搬走的注释」、一个是锚点在 JS 单引号串里写 `\"` 而文件里真的是
+反斜杠加引号 —— 两者都没跑，汇总却仍叫「4 个变异」。修法：锚点不跨注释/转义符，且换行符
+**按目标文件的实际行尾**解析（本仓库 `.gitattributes` 只钉 `*.bat`，文件是混的）。
+
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **52** 道门：
+一条命令跑全部 **54** 道门：
 
 ```sh
-node tools/gates.cjs          # 52/52 PASS 才叫绿（定稿记录 reviews/gates-all-32.txt）
+node tools/gates.cjs          # 54/54 PASS 才叫绿（定稿记录 reviews/gates-all-33.txt）
 ```
 
 > 第十二轮补那次全量：**44/44 PASS**（`reviews/gates-all-26.txt`，exit 0），包括新门 `probe lifecycle`（9 项）

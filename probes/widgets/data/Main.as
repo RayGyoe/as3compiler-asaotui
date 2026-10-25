@@ -329,8 +329,8 @@ function restCheck():void
     // The accordion's open header is filled with OPEN_BG, a closed one with the
     // header background; the panel behind is the author's own colour.
     var acc:UiNode = node("acc");
-    var h0:UiNode = node("h0");
-    var h1:UiNode = node("h1");
+    var h0:UiNode = node("acc:h0");
+    var h1:UiNode = node("acc:h1");
     var p0:UiNode = node("p0");
     if (acc != null && h0 != null && h1 != null)
     {
@@ -372,7 +372,7 @@ function afterRow():void
 
     // Click the second header: section 1 opens.
     var acc:UiNode = node("acc");
-    var h1:UiNode = node("h1");
+    var h1:UiNode = node("acc:h1");
     if (acc != null && h1 != null) clickLocal(acc, 30, (h1.absY - acc.absY) + int(h1.absH / 2));
     setTimeout(afterOpen, 300);
 }
@@ -388,8 +388,8 @@ function afterOpen():void
 
     var b:BitmapData = frame();
     var acc:UiNode = node("acc");
-    var h0:UiNode = node("h0");
-    var h1:UiNode = node("h1");
+    var h0:UiNode = node("acc:h0");
+    var h1:UiNode = node("acc:h1");
     var p1:UiNode = node("p1");
     if (acc != null && h0 != null && h1 != null)
     {
@@ -411,7 +411,7 @@ function afterClose():void
 
     // Re-open section 0 so the trailing state is the documented one.
     var acc:UiNode = node("acc");
-    var h0:UiNode = node("h0");
+    var h0:UiNode = node("acc:h0");
     if (acc != null && h0 != null) clickLocal(acc, 30, (h0.absY - acc.absY) + int(h0.absH / 2));
     setTimeout(afterReopen, 300);
 }

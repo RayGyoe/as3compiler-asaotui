@@ -28,13 +28,19 @@
 //   * `bitmapData` wins over `src` when both are set: the caller who hands over
 //     pixels is not asking for a network fetch.
 //
-// SCALE MODES ARE THREE, AND UNKNOWN ONES THROW. "fit" (contain, the default),
-// "stretch" (fill the box, aspect ignored) and "none" (1:1, centred). There is no
-// "cover": covering means CLIPPING what falls outside the box, and clipping is the
-// scrollView's job -- a scale mode this widget could not honour without one, so it is
-// refused instead of quietly rendering as "fit". (The docs page used to name
-// "letterbox"/"zoom"; both fell into the contain branch and "zoom" -- which reads as
-// cover -- did not zoom. Unknown values throw now; the page was re-derived to fit.)
+// SCALE MODES ARE FOUR, AND UNKNOWN ONES THROW. "fit" (contain, the default),
+// "stretch" (fill the box, aspect ignored), "none" (1:1, centred) and "cover"
+// (fill the box, aspect preserved, the overflow CLIPPED).
+//
+// "cover" landed on 2026-10-26, along with the machinery that makes it honest: the
+// widget writes a `scrollRect` window of exactly the content box onto the Bitmap, so
+// the overflow is really clipped rather than painted outside its own box (and the
+// clip is part of the parent's render fingerprint, so a resize repaints). The note
+// this file carried before that -- "clipping is the scrollView's job, so a cover
+// mode is refused" -- described the toolkit before `scrollRect` was used for a
+// single object; the scrollView owns a viewport of a SUBTREE, which is a different
+// problem. "letterbox"/"zoom" still throw: both used to fall into the contain
+// branch, and "zoom" (which reads as cover) did not zoom at all.
 //
 // ARITY IS PART OF THE CONTRACT (see UiNode's payload block, AVM2 throws #1063):
 //   onLoad()          -- no arguments. Fired once per successful load.
@@ -51,9 +57,8 @@ package asaot.ui
         public var bitmapData:BitmapData;
         // A URL or a file path for Loader.load; null when the pixels are supplied.
         public var src:String;
-        // "fit" (contain, the default) | "stretch" | "none" (1:1, centred).
-        // There is no "fill"/cover: covering a box means clipping, which is the
-        // scrollView's job, not a scale mode this widget can honour without one.
+        // "fit" (contain, the default) | "stretch" | "none" (1:1, centred) |
+        // "cover" (fill, aspect preserved, clipped to the content box).
         public var scaleMode:String;
         public var smooth:Boolean;
         // See the arity block in the header.
@@ -68,8 +73,8 @@ package asaot.ui
         // where the author still has a call site to fix.
         public static function checkScaleMode(v:String):String
         {
-            if (v == "fit" || v == "stretch" || v == "none") return v;
-            throw new Error("asaot.ui: scaleMode \"" + v + "\" is not supported (accepted: fit, stretch, none)");
+            if (v == "fit" || v == "stretch" || v == "none" || v == "cover") return v;
+            throw new Error("asaot.ui: scaleMode \"" + v + "\" is not supported (accepted: fit, stretch, none, cover)");
         }
 
         public function ImageNode():void

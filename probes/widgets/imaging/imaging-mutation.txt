@@ -5,32 +5,45 @@ M1  CAUGHT  COMPLETE DOES NOT RE-MEASURE: the paint bit alone never re-solves a 
      FAIL  program verdict: FAIL auto (no size) is 10,114,64,64, not the loaded 16x16;
      FAIL  rect auto[w] want 16 got 64
      FAIL  rect auto[h] want 16 got 64
-     restore: byte-identical (b8e446f2df7a4847)
+     FAIL  rect cov[y] want 138 got 186
+     restore: byte-identical (169cd0fdf856a688)
 M2  CAUGHT  "fit" CONTAINS WITH max(): 16x16 into an 80x20 box becomes 80x80 and spills out of the box on the short axis, so the pixel just left of the contained area is painted instead of showing the background
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL pic's right half is not blue: #6f008f a=255; fit painted outside the contained image: #ff0000 a=255; the failed image painted something: #ff0000 a=255;
+     FAIL  program verdict: FAIL pic's right half is not blue: #6f008f a=255; fit painted outside the contained image: #ff0000 a=255; the failed image painted something: #ff0000 a=255; cover did not scale uniformly: 24x24, not 48x48; cover window is 0,-8,16,32, not 4,0,8,16; cover's top-left is not red: #ffffff a=255; cover's right half is not blue: #ffffff a=255; cover's bottom-left is not red: #ffffff a=255; fit after cover is 48x48, not 24x24; fit still fills the top: #ff0000 a=255;
      FAIL  pixel (50,20) want #0000ff got #6f008f
      FAIL  pixel (15,48) want #ffffff got #ff0000
      FAIL  pixel (30,85) want #ffffff got #ff0000
-     restore: byte-identical (b8e446f2df7a4847)
+     restore: byte-identical (169cd0fdf856a688)
 M3  CAUGHT  A FAILED LOAD NEVER REACHES UiNode.loadError: the author callback still fires, but nothing on the node says the image is broken, so a re-describe repaints a silent blank box forever
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL UiNode.loadError did not receive the message: null;
-     restore: byte-identical (b8e446f2df7a4847)
+     restore: byte-identical (169cd0fdf856a688)
 M4  CAUGHT  THE LOADED BITMAP IS NOT ADOPTED: the job succeeds, the callbacks run, and the widget keeps measuring the placeholder -- "bytes arrived, nothing displayed"
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL auto (no size) is 10,114,64,64, not the loaded 16x16; pic's left half is not red: #0000ff a=255; pic's right half is not blue: #ffffff a=255; fit painted outside the contained image: #ff0000 a=255; fit's left half is not red: #ffffff a=255; fit's right half is not blue: #ffffff a=255;
+     FAIL  program verdict: FAIL auto (no size) is 10,114,64,64, not the loaded 16x16; pic's left half is not red: #0000ff a=255; pic's right half is not blue: #ffffff a=255; fit painted outside the contained image: #ff0000 a=255; fit's left half is not red: #ffffff a=255; fit's right half is not blue: #ffffff a=255; cov has no bitmap; the scrollRect survived a switch to fit -- the next mode is clipped to it; fit after cover is MISSING, not 24x24; fit still fills the top: #ff0000 a=255; fit's left half is not red: #ffffff a=255; fit's right half is not blue: #ffffff a=255;
      FAIL  rect auto[w] want 16 got 64
      FAIL  rect auto[h] want 16 got 64
-     FAIL  pixel (20,20) want #ff0000 got #0000ff
-     ... and 4 more
-     restore: byte-identical (b8e446f2df7a4847)
+     FAIL  rect cov[y] want 138 got 186
+     ... and 5 more
+     restore: byte-identical (169cd0fdf856a688)
 M5  CAUGHT  "stretch" IS IGNORED: the picture is contained instead of filled, so the 40x40 box shows a 20x20 image in its middle -- a scale mode that is parsed, accepted and not applied
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL pic's left half is not red: #ffffff a=255; pic's right half is not blue: #ffffff a=255;
      FAIL  pixel (20,20) want #ff0000 got #ffffff
      FAIL  pixel (50,20) want #0000ff got #ffffff
-     restore: byte-identical (b8e446f2df7a4847)
+     restore: byte-identical (169cd0fdf856a688)
+M6  CAUGHT  "cover" CONTAINS INSTEAD OF FILLING: max() becomes min(), so the 16x16 keeps a 16x16 size in a 24x48 box and the whole mode is a no-op that still looks like a picture
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL cover did not scale uniformly: 24x24, not 48x48; cover window is 0,-8,16,32, not 4,0,8,16; cover's top-left is not red: #ffffff a=255; cover's right half is not blue: #ffffff a=255; cover's bottom-left is not red: #ffffff a=255;
+     restore: byte-identical (169cd0fdf856a688)
+M7  CAUGHT  THE WINDOW IS WRITTEN IN THE BOX'S UNITS INSTEAD OF THE BITMAP'S: the scrollRect is clipped through the object's own matrix, so a 24-unit window on a 3x bitmap is 72 device px wide and the picture is cropped to nothing (measured: the first version of this read #ffffff everywhere)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL cover window is 12,0,24,48, not 4,0,8,16; cover's top-left is not red: #0000ff a=255; cover's right half is not blue: #ffffff a=255; cover's bottom-left is not red: #0000ff a=255;
+     restore: byte-identical (169cd0fdf856a688)
+M8  CAUGHT  LEAVING "cover" KEEPS THE WINDOW: the next scale mode inherits a crop it never asked for, so a "fit" after a "cover" is silently cut to the old box (the exact stale-state failure the arrange comment warns about)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the scrollRect survived a switch to fit -- the next mode is clipped to it; fit's right half is not blue: #ffffff a=255;
+     restore: byte-identical (169cd0fdf856a688)
 
-MUTATION imaging: 5/5 caught, 0 problem(s)
+MUTATION imaging: 8/8 caught, 0 problem(s)
 RESULT: PASS

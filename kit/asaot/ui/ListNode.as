@@ -11,6 +11,11 @@
 // checkbox/radio/slider. A click on row i selects it, writes back through the
 // Binding, and calls `onSelect(i)`.
 //
+// KEYBOARD: the list is a single TAB STOP (tabEnabled, the ARIA listbox model) and
+// Up/Down/Home/End move the selection -- see ListWidget.onKey. Which is also why
+// `tabEnabled` is true: the Tab ring is how a node receives keys at all (UiApp owns
+// the ring and hands the focused node's widget every unconsumed KEY_DOWN).
+//
 // OUT OF SCOPE (registered in STATUS.md section 3.1, not silently stubbed):
 // virtualised scrolling and viewport clipping. Every item becomes a real UiNode
 // and every row is laid out, so a 10k-item list would build 10k nodes. That is
@@ -36,7 +41,7 @@ package asaot.ui
             super("list");
             if (!registered) { registered = true; Widgets.register("list", new ListWidget()); }
             this.role = "list";
-            this.tabEnabled = false;
+            this.tabEnabled = true;    // one stop for the whole list; arrows walk the rows
             this.items = null;
             this.builder = null;
             this.separator = false;
