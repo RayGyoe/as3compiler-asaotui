@@ -107,6 +107,39 @@ package demo
                             { style: StyleRefinement.from({ size: [180, null],
                                 text: { textOverflow: "ellipsis", fontSize: 12 } }), ariaName: "" })
                     ]);
+                }),
+
+                new DocSection("Underline, strikethrough, overline", [
+                    "textDecoration draws a rule under, through or over EVERY line, from the line metrics the",
+                    "layout pass already produced -- so the rule and the glyphs cannot disagree about where a line",
+                    "is, and a wrapped run carries a rule per line rather than one long line across the wrap.",
+                    "It is NOT TextFormat.underline. That property can be set, read back and cloned, and the paint",
+                    "path never looks at it (compiler-gaps.md G28), so the library draws the rule itself.",
+                    "strikethrough and overline are ADDITIONS: AIR's TextFormat has no property for either. An",
+                    "unknown value THROWS rather than silently drawing nothing."
+                ], [
+                    "text(\"underlined\", { style: { text: { textDecoration: \"underline\" } } })",
+                    "text(\"struck out\", { style: { text: { textDecoration: \"line-through\" } } })",
+                    "text(\"overlined\",  { style: { text: { textDecoration: \"overline\" } } })"
+                ], 132, function ():Node
+                {
+                    return column({ gap: 10 }, [
+                        text("underlined with textDecoration: \"underline\"",
+                            { style: StyleRefinement.from({ text: { fontSize: 14,
+                                color: 0x1F2937, textDecoration: "underline" } }), ariaName: "" }),
+                        text("struck out with \"line-through\"",
+                            { style: StyleRefinement.from({ text: { fontSize: 14,
+                                color: 0x1F2937, textDecoration: "line-through" } }), ariaName: "" }),
+                        text("overlined with \"overline\"",
+                            { style: StyleRefinement.from({ text: { fontSize: 14,
+                                color: 0x1F2937, textDecoration: "overline" } }), ariaName: "" }),
+                        // Wrapped: one rule PER LINE, each starting at that line's own left
+                        // edge -- the reason the rule is derived from line metrics.
+                        text("A wrapped run gets a rule on every line it occupies, not one rule",
+                            { style: StyleRefinement.from({ size: [300, null], text: {
+                                fontSize: 12, color: 0x64748B, whiteSpace: "normal",
+                                textDecoration: "underline" } }), ariaName: "" })
+                    ]);
                 })
             ];
 

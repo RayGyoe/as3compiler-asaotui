@@ -5,6 +5,7 @@ package demo
     import asaot.ui.AccordionNode;
     import asaot.ui.Node;
     import asaot.ui.accordion;
+    import asaot.ui.button;
     import asaot.ui.breadcrumb;
     import asaot.ui.column;
     import asaot.ui.row;
@@ -48,6 +49,34 @@ package demo
                 {
                     return text("Click a segment: the band moves, the tree does not.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                new DocSection("Keyboard: Left / Right WRAP", [
+                    "Press \"Focus it\", then Left / Right. A tab strip is a RING, not a sequence: Right on the",
+                    "last tab goes to the FIRST and Left on the first goes to the last, where a list would stop",
+                    "at the end. Home and End jump to the ends, and the ends are the first and last tab, not a",
+                    "dead stop before them.",
+                    "This is the one place the keyboard deliberately differs between kinds, because the shapes",
+                    "differ -- a strip has no end, a listbox does (ARIA tabs wrap; a listbox selection clamps)."
+                ], [
+                    "app.focusNode(app.findByKey(\"myTabs\"));   // tabs sets tabEnabled",
+                    "// Left/Right: (i + 1) % n and (i + n - 1) % n -- nothing to configure"
+                ], 96, function ():Node
+                {
+                    return column({ gap: 6 }, [
+                        tabs(["Overview", "Members", "Billing"], { key: "demoTabsKeys", gap: 6,
+                            style: StyleRefinement.from({ size: [340, 32] }),
+                            selectedIndex: int(m.num("tabs.k", 0)),
+                            onChange: function (i:int):void { m.put("tabs.k", i); } }),
+                        row({ gap: 8, alignItems: "center" }, [
+                            button({ label: "Focus it", key: "focusTabs", onClick: function ():void
+                            {
+                                view.getApp().focusNode(view.getApp().findByKey("demoTabsKeys"));
+                            } }),
+                            text("index " + int(m.num("tabs.k", 0)) + "  (Right on Billing comes back to Overview)",
+                                { style: DocsDemo.MONO, ariaName: "" })
+                        ])
+                    ]);
                 })
             ];
 
@@ -129,7 +158,7 @@ package demo
                     "accordion(secs, { mode: 'multi', openIndices: model.openSet, gap: 1,",
                     "     onToggle: function (i:int):void { model.openSet = toggled(model.openSet, i); } })",
                     "// single: activeIndex (one int)   multi: openIndices (a set)"
-                ], 176, function ():Node
+                ], 236, function ():Node
                 {
                     var open:Array = m.val("acc.set", [0, 2]) as Array;
                     var secs3:Array = [
@@ -144,7 +173,7 @@ package demo
                     }
                     return column({ gap: 4 }, [
                         accordion(secs3, { key: "demoAccM", gap: 1,
-                            style: StyleRefinement.from({ size: [340, 150] }),
+                            style: StyleRefinement.from({ size: [340, 212] }),
                             mode: "multi",
                             openIndices: open,
                             onToggle: function (i:int):void
@@ -160,6 +189,25 @@ package demo
                                 m.put("acc.set", next);
                             } }),
                         text("openIndices: [" + shown + "]", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Every header has its own key", [
+                    "A header is a row child with role button and a key of its own, prefixed with the key of",
+                    "the accordion that owns it: demoAccM:h0, demoAccM:h1, demoAccM:h2 above.",
+                    "The prefix is not decoration. findByKey documents a key as unique across the whole tree,",
+                    "and two accordions on one page used to hand out h0 twice -- the lookup could only ever",
+                    "find the first one, so the second accordion was unreachable from any test or any a11y pass."
+                ], [
+                    "// the key of header i of the accordion keyed \"side\": side:h0, side:h1, ...",
+                    "app.findByKey(\"side:h1\")"
+                ], 76, function ():Node
+                {
+                    return column({ gap: 2 }, [
+                        text("demoAccM:h0    demoAccM:h1    demoAccM:h2",
+                            { style: DocsDemo.MONO, ariaName: "" }),
+                        text("a second accordion keyed side would own side:h0 -- no collision.",
+                            { style: DocsDemo.LABEL, ariaName: "" })
                     ]);
                 })
             ];

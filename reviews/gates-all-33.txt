@@ -32,11 +32,11 @@
 [PASS] gallery tour: 43 component pages (incl. the overlay tree), hand-computed rects (PASS)  (exit 0)
 [PASS] gallery kind coverage: all registered widgets are shown (37/37)  (exit 0)
 [PASS] docs demos pass only options the factories read (0 unknown)  (exit 0)
-[PASS] author callbacks carry their documented argument (22 calls / 111 handlers) (0 violations)  (exit 0)
-[PASS] AIR arm (build.sh default) compiles under mxmlc (100304 B SWF)  (exit 0)
+[PASS] author callbacks carry their documented argument (22 calls / 119 handlers) (0 violations)  (exit 0)
+[PASS] AIR arm (build.sh default) compiles under mxmlc (103111 B SWF)  (exit 0)
 [PASS] build.sh --gpu selects renderMode + backend, app.xml untouched (29 checks, 0 failures)  (exit 0)
 [PASS] build.sh web: toolchain spawned, argv pinned, refusals, staged dir untracked (26 checks, 0 failures)  (exit 0)
-[PASS] docs app on AIR (adl): every page, popups open, pointer drill, no runtime error (43/43 pages, 10/10 popups, 0 errors, 491/3485 destroyed)  (exit 0)
+[PASS] docs app on AIR (adl): every page, popups open, pointer drill, no runtime error (43/43 pages, 10/10 popups, 0 errors, 589/3595 destroyed)  (exit 0)
 [PASS] kit listeners are all releasable (UiNode.listen + destroySubtree) (33 wired, 0 raw)  (exit 0)
 [PASS] G13 air-app reach: closure keeps 5/5, both faces build+run (PASS)  (exit 0)
 [PASS] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (PASS)  (exit 0)
@@ -48,9 +48,10 @@
 [PASS] G20 setTextFormat replaces the range (AOT vs AIR) (PASS (12 relational cases; both arms treat a repeated range format as a replacement))  (exit 0)
 [PASS] G21 getTextFormat reads the run table (AOT vs AIR) (PASS (30 cases; both arms agree and the emitted getTextFormat is range-aware))  (exit 0)
 [PASS] G22 closure statics initialise (AOT vs AIR, emitted C audited) (PASS (10 cases; both arms agree and every static read carries its _cinit() guard))  (exit 0)
-[PASS] Vector vs Array throughput, both runtimes (AOT ratio 0.09x)  (exit 0)
+[PASS] Vector vs Array throughput, both runtimes (AOT ratio 0.17x)  (exit 0)
 [PASS] style fromAny is total: 19 cases, AOT vs AIR (PASS (19 cases; both arms agree with the hand-derived answers))  (exit 0)
 [PASS] Array(x) wraps on both runtimes (8 cases, AOT vs AIR) (AGREE)  (exit 0)
 [PASS] fingerprint porcelain parsing: no dropped records (PASS)  (exit 0)
+
 ==== 54/54 gates PASS ====
 RESULT: PASS

@@ -17,6 +17,7 @@ package demo
     import asaot.ui.style.StyleRefinement;
 
     import flash.display.BitmapData;
+    import flash.geom.Rectangle;
 
     public final class DocsFeedback
     {
@@ -24,6 +25,10 @@ package demo
         // (the widget compares the BitmapData it was given last frame, and a fresh
         // bitmap per render would reload the texture every frame).
         private static var SRC8:BitmapData = null;
+
+        // The band the cover demo crops: two halves, so a crop is a visible fact
+        // rather than a guess about which pixels survived.
+        private static var BAND:BitmapData = null;
 
         // The glyph data, written as an author would copy it out of an icon set. Kept in
         // one place so the two sizes in a row are provably the SAME data.
@@ -247,11 +252,12 @@ package demo
                 }),
 
                 new DocSection("Scale modes", [
-                    "There are three: `fit` contains the picture and pads (the default), `stretch` fills the",
-                    "box and ignores the aspect, `none` draws it 1:1, centred. An unknown mode THROWS at",
-                    "describe time -- a silent fallback to `fit` would leave a picture the wrong size with",
-                    "nothing on screen saying why. There is no cover/fill: covering means clipping what falls",
-                    "outside the box, and clipping belongs to a scrollView's viewport, not to a scale mode."
+                    "There are four: `fit` contains the picture and pads (the default), `stretch` fills the",
+                    "box and ignores the aspect, `none` draws it 1:1, centred, and `cover` fills the box and",
+                    "CROPS. An unknown mode THROWS at describe time -- a silent fallback to `fit` would",
+                    "leave a picture the wrong size with nothing on screen saying why. `letterbox` and",
+                    "`zoom` throw too: both used to fall into the contain branch, so `zoom` (which reads",
+                    "as cover) did not zoom at all."
                 ], [
                     "image({ bitmapData: SRC, scaleMode: \"none\" })   // 1:1, centred"
                 ], 76, function ():Node
@@ -261,6 +267,37 @@ package demo
                         image({ key: "imgC", bitmapData: SRC8, scaleMode: "none",
                             style: StyleRefinement.from({ size: [64, 64], background: 0xF3F4F6 }) }),
                         text("fit / stretch / none", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("cover: fill the box, then crop", [
+                    "`cover` scales until the picture COVERS the box and clips the overflow -- the opposite of",
+                    "`fit`, which contains the whole picture and pads. Both keep the aspect ratio; only one of",
+                    "them may throw pixels away.",
+                    "The clip is a `scrollRect` on the bitmap, and the window is in the BITMAP's own units: the",
+                    "renderer clips through the object's own matrix, so a window measured in box pixels is a",
+                    "window divided by the scale factor too -- the first version asked for a box-sized window on",
+                    "a 3x picture and cropped to nothing. Leaving cover CLEARS the window, because a stale crop",
+                    "is invisible right up until the next mode inherits it.",
+                    "One source (a 16x8 two-tone band), one 96x96 box, both modes below."
+                ], [
+                    "image({ bitmapData: BAND, scaleMode: \"cover\", style: { size: [96, 96] } })",
+                    "// k = max(96/16, 96/8) = 12 -> drawn 192x96; window w = 96/12 = 8 source units,",
+                    "// centred at ((192 - 96) / 2) / 12 = 4 -- so source x 4..12 is what survives"
+                ], 132, function ():Node
+                {
+                    ensureBand();
+                    return row({ gap: 14, alignItems: "center" }, [
+                        column({ gap: 2 }, [
+                            image({ key: "imgFit", bitmapData: BAND, scaleMode: "fit",
+                                style: StyleRefinement.from({ size: [96, 96], background: 0xF3F4F6 }) }),
+                            text("fit", { style: DocsDemo.MONO, ariaName: "" })
+                        ]),
+                        column({ gap: 2 }, [
+                            image({ key: "imgCover", bitmapData: BAND, scaleMode: "cover",
+                                style: StyleRefinement.from({ size: [96, 96], background: 0xF3F4F6 }) }),
+                            text("cover", { style: DocsDemo.MONO, ariaName: "" })
+                        ])
                     ]);
                 }),
 
@@ -291,6 +328,13 @@ package demo
         {
             if (SRC8 != null) return;
             SRC8 = new BitmapData(8, 8, false, 0x2563EB);
+        }
+
+        private static function ensureBand():void
+        {
+            if (BAND != null) return;
+            BAND = new BitmapData(16, 8, false, 0xDC2626);
+            BAND.fillRect(new Rectangle(8, 0, 8, 8), 0x2563EB);
         }
     }
 }

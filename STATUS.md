@@ -110,7 +110,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`；第二十二轮补：四件「有槽位没行为」的空缺（`list`/`table`/`tabs` 键盘导航、
-`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**52 道门**）
+`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**54 道门**）
 
 ---
 
@@ -126,7 +126,7 @@
 | L3 控件库 | ✅ **40 个工厂 / 35 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**35 个 kind 全部上了画廊**（第七页 Advanced），由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 画廊是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
 | L3 样式面 | ✅ **33 字段** | 见 §3.2；仅剩 `grid` 刻意缺席（`cursor` 第十五轮已落地） |
 | L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入退场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、**入场 140ms / 退场 120ms**；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**）+ `probes/widgets/motion` **23 项**（变异 **7/7**） |
-| L3 组合能力 | ✅ **42 页组件文档站** | `ui-demo/demo/Docs*.as`（17 个文件）+ `ui-demo/run-gallery.cjs`：左侧 9 组 / 42 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
+| L3 组合能力 | ✅ **43 页组件文档站** | `ui-demo/demo/Docs*.as`（17 个文件）+ `ui-demo/run-gallery.cjs`：左侧 9 组 / 43 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
 | L3 可访问性 | ⚠️ 半成品 | `role`/`ariaName` **仍只是字段**（无消费者）；但 `Control.tabEnabled` 现在真被 Tab 环读（`UiApp.collectFocus`）、`Element.disabled` 真阻断点击与导航 |
 
 ---
@@ -939,6 +939,44 @@ cover（只有裁剪窗口对了才对的三点像素）、装饰（只有横线
 原因一个是锚点跨了「后来被搬走的注释」、一个是锚点在 JS 单引号串里写 `\"` 而文件里真的是
 反斜杠加引号 —— 两者都没跑，汇总却仍叫「4 个变异」。修法：锚点不跨注释/转义符，且换行符
 **按目标文件的实际行尾**解析（本仓库 `.gitattributes` 只钉 `*.bat`，文件是混的）。
+
+### 3.17e 同一轮的下半场：文档站把四件事**演**出来（第二十二轮补）
+
+上一节把四处空位补上了，但**只有探针看得见**：`probes/` 是给变异机用的，读者打开文档站
+读到的仍是「键盘导航：已支持」这一句话。所以同一轮又给四个页面各加了节，每节都是
+**说明 + 能上手试的 demo + 产生它的源码**（源码与 demo 同一次 render，不会漂移）：
+
+| 页面 | 新增 | 上手方式 |
+|---|---|---|
+| `list` | 「Keyboard: the arrows move the selection」 | 按 **Focus it** 再按 Up/Down/Home/End；末行仍停住 ⇒ CLAMP 可见 |
+| `table` | 「Keyboard: arrows, Home/End, PageUp/PageDown」+「A virtual table reveals the row it selects」 | 同上；virtual 那张 200 行表按 Down 到窗口边缘后 `onScroll` 的偏移开始走，End 直接到底（`of 4312` 是 `200*22 - (110-22)`） |
+| `tabs` | 「Keyboard: Left / Right WRAP」 | 在 Billing 上按 Right 回到 Overview —— 列表会停、条带会绕，两个形状的差别一眼可见 |
+| `accordion` | 「Every header has its own key」 | 页面上方就是 multi 示范（One/Three 同开）；这一节说清 `demoAccM:h0` 的前缀为何不是装饰 |
+| `image` | 「cover: fill the box, then crop」 | 同一个 16×8 双色带、同一个 96×96 盒子，`fit` 上下留白、`cover` 铺满并裁掉两侧 —— 顺手把上一版写在「Scale modes」里的那句 **「There is no cover/fill」** 删掉（它当时是对的，现在是错的） |
+| `text` | 「Underline, strikethrough, overline」 | 三条线 + 一条**换行**的长句：换行后每行各自一条线，这是「线来自 `getLineMetrics`」的直接证据 |
+
+键盘 demo 都带一个 **Focus it** 按钮，而不是写「点一下再按方向键」：AIR 的 `mouseDown`
+**不会**把焦点给一个普通 Sprite（只有 `TextField` 会给，编译器的 `as_focus_from_mouse_down`
+就是这么实测下来的），所以「点一下就能按方向键」在我们的运行时里是假的。焦点来自 Tab 环
+或 `app.focusNode()`，demo 直接调后者并把这件事写进正文。
+
+三件在写 demo 时才暴露的事，都比 demo 本身值钱：
+
+1. **我们的编译器接受尾逗号，mxmlc 不接受。** 生成小节时 `"…",` 一律带逗号，我们的前端
+   照单全收、AOT 跑得通、`run-gallery` 也 PASS，只有 AIR 臂的 `mxmlc` 报错。它报的位置还是
+   **下一个元素**（`应为 BRACKET_CLOSE，而实际为"new"` 指向 `new DocSection(...)`），真正
+   缺逗号的那一行在它上面 25 行。没有那道门，这个文件会以「AOT 绿」的状态合进去，
+   而 AIR 臂从此编不过。
+2. **tour 的「子件不许跑出自己的块」看不见控件自己的溢出。** multi 示范里 accordion 给了
+   150px，三个 header 加两个展开面板要 160px：面板画到盒子外面，而所有块级断言仍是绿的
+   （溢出的东西没出 demo 面）。改成 212px 并同步 `demoH`。
+3. **`button` 收的是 `(opts)`，不是 `(label, opts)`。** 写成 `button("Focus it", {...})` 时
+   前端报的是**外层那句** `return column({...}, [...])` 的参数过多（`expected 1, got 2`
+   指向 `column`），一眼看去像是 `column` 的问题。写新 demo 前先读工厂签名，比猜错误信息快。
+
+验收：`node ui-demo/run-gallery.cjs` → `PASS`（43 页、`badPages=0`、`overflowingBlocks=0`、
+8 张 1500×1050 截图）；`node tools/mxmlc-check.cjs … ` → `OK: compiled by AIR -- 103111 bytes`；
+`node tools/gates.cjs` → **54/54 PASS**。
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 

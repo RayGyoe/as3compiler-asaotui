@@ -59,6 +59,10 @@ icudtl.dat
 /layout-check/*.c
 /probes/**/*.c
 /ui-demo/*.c
+# 早期版本的 run-gallery 把截图与 tour 日志写在 ui-demo/ 根下；现在写在
+# ui-demo/air-gallery*/（§5 里作为证据入库）。根下那批是残骸，每跑一次 gate 都可能复活。
+/ui-demo/gallery-page*.png
+/ui-demo/gallery.txt
 # 例外：G11 的三份历史产物是**证据**且被 G11 门当输入读（`sha16()` / `readFileSync`）
 !probes/g11-nondeterminism/artifact-*.c
 #

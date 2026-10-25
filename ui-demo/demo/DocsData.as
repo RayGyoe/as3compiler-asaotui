@@ -5,6 +5,7 @@ package demo
 {
     import asaot.ui.Node;
     import asaot.ui.box;
+    import asaot.ui.button;
     import asaot.ui.column;
     import asaot.ui.list;
     import asaot.ui.row;
@@ -66,6 +67,41 @@ package demo
                 {
                     return text("row " + int(m.num("li.row", 1)) + " is selected in the list above.",
                         { style: DocsDemo.MONO, ariaName: "" });
+                }),
+
+                new DocSection("Keyboard: the arrows move the selection", [
+                    "Press \"Focus it\", then Up / Down / Home / End. A key goes to whatever holds FOCUS, and AIR",
+                    "does not focus a plain Sprite on mouseDown -- only a TextField is focused by a click -- so a",
+                    "widget is reached with Tab (list sets tabEnabled) or, as here, programmatically.",
+                    "A list is a SEQUENCE, the ARIA listbox shape, so the ends CLAMP: Down on the last row stays",
+                    "there and still CONSUMES the key, which is what stops the press from falling through to",
+                    "whatever scrolls the page.",
+                    "There is no second copy of the selection: a key calls the same select() a click calls."
+                ], [
+                    "app.focusNode(app.findByKey(\"myList\"));   // or Tab, once it is a tab stop",
+                    "// list implements WidgetKeys -- there is nothing to switch on"
+                ], 150, function ():Node
+                {
+                    return column({ gap: 6 }, [
+                        list(PEOPLE, function (item:Object, i:int):Node
+                        {
+                            return text(String(item), { key: "k" + i, style: DocsDemo.LABEL_B,
+                                                        ariaName: "" });
+                        }, { key: "demoListKeys", itemHeight: ROW_H, separator: true,
+                             style: StyleRefinement.from({ size: [260, ROW_H * 4] }),
+                             selectedIndex: int(m.num("li.krow", 0)),
+                             onSelect: function (i:int):void { m.put("li.krow", i); } }),
+                        row({ gap: 8, alignItems: "center" }, [
+                        button({ label: "Focus it", key: "focusList", onClick: function ():void
+                        {
+                            // Tab reaches the same node: this is the ring, called directly.
+                            view.getApp().focusNode(view.getApp().findByKey("demoListKeys"));
+                        } }),
+                            text("row " + int(m.num("li.krow", 0)) + " of " + (PEOPLE.length - 1)
+                                + "  (Up/Down clamp at the ends)",
+                                { style: DocsDemo.MONO, ariaName: "" })
+                        ])
+                    ]);
                 })
             ];
 
@@ -100,6 +136,37 @@ package demo
                 {
                     return text("selected row: " + int(m.num("tb.row", 0)),
                         { style: DocsDemo.MONO, ariaName: "" });
+                }),
+
+                new DocSection("Keyboard: arrows, Home/End, PageUp/PageDown", [
+                    "Same contract as the list, plus a PAGE step, which moves by the rows the BODY can show",
+                    "rather than by one. The selection is always a data row: the header is not a row and can",
+                    "never be selected, so Home goes to the first row under the header, not to the header."
+                ], [
+                    "table(cols, rows, { selectedIndex: model.row, onSelect: onRow })",
+                    "// the keys call the same select() the click does -- one write path"
+                ], 182, function ():Node
+                {
+                    var rows:Array = [];
+                    for (var i:int = 0; i < 4; i++)
+                        rows.push({ name: String(NAMES[i]), qty: (i + 1) * 3 });
+                    return column({ gap: 10 }, [
+                        table([{ key: "name", title: "Name", width: 150 },
+                               { key: "qty", title: "Qty" }], rows,
+                            { key: "demoTableKeys", rowHeight: ROW_H, stripes: true,
+                              style: StyleRefinement.from({ size: [340, ROW_H * 5] }),
+                              selectedIndex: int(m.num("tb.krow", 0)),
+                              onSelect: function (r:int):void { m.put("tb.krow", r); } }),
+                        row({ gap: 8, alignItems: "center" }, [
+                        button({ label: "Focus it", key: "focusTable", onClick: function ():void
+                        {
+                            // Tab reaches the same node: this is the ring, called directly.
+                            view.getApp().focusNode(view.getApp().findByKey("demoTableKeys"));
+                        } }),
+                            text("row " + int(m.num("tb.krow", 0)) + "  (PageUp/PageDown step by a page)",
+                                { style: DocsDemo.MONO, ariaName: "" })
+                        ])
+                    ]);
                 }),
 
                 // SORTING. The arrow is a fact about the MODEL (`sortColumn`), which is why
@@ -189,6 +256,42 @@ package demo
                           style: StyleRefinement.from({ size: [340, 110] }),
                           offsetY: m.num("tb.off", 0),
                           onScroll: function (y:Number):void { m.put("tb.off", y); } });
+                }),
+
+                new DocSection("A virtual table reveals the row it selects", [
+                    "With virtual: true only the mounted window exists, so a key can select a row that is not on",
+                    "screen: the index is valid, the model moved, and NOTHING changed -- a state no property",
+                    "assertion can see. So the widget REVEALS it: it reports the offset that brings the row into",
+                    "the window through onScroll, and the next render mounts it there.",
+                    "Press Down and watch the offset start stepping once the window edge is reached; End jumps to",
+                    "the last of the two hundred rows, and the offset to the very bottom."
+                ], [
+                    "table(cols, rows, { virtual: true, rowHeight: 22, offsetY: model.off,",
+                    "                    onScroll: function (y:Number):void { model.off = y; } })",
+                    "// Down at the window edge -> onScroll(y + rowHeight): the row comes INTO view"
+                ], 152, function ():Node
+                {
+                    var rows:Array = [];
+                    for (var i:int = 0; i < 200; i++) rows.push({ i: i });
+                    return column({ gap: 6 }, [
+                        table([{ key: "i", title: "row" }], rows,
+                            { key: "demoTableKeysVirt", rowHeight: 22, virtual: true,
+                              style: StyleRefinement.from({ size: [340, 110] }),
+                              offsetY: m.num("tb.koff", 0),
+                              selectedIndex: int(m.num("tb.kvis", 0)),
+                              onScroll: function (y:Number):void { m.put("tb.koff", y); },
+                              onSelect: function (r:int):void { m.put("tb.kvis", r); } }),
+                        row({ gap: 8, alignItems: "center" }, [
+                        button({ label: "Focus it", key: "focusTableVirt", onClick: function ():void
+                        {
+                            // Tab reaches the same node: this is the ring, called directly.
+                            view.getApp().focusNode(view.getApp().findByKey("demoTableKeysVirt"));
+                        } }),
+                            text("row " + int(m.num("tb.kvis", 0)) + "  (window at offset "
+                                + int(m.num("tb.koff", 0)) + " of " + ((200 * 22) - 88) + ")",
+                                { style: DocsDemo.MONO, ariaName: "" })
+                        ])
+                    ]);
                 })
             ];
 
