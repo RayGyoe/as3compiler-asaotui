@@ -16,6 +16,8 @@
 // natural height); at >0 every row is pinned, which is what a probe wants.
 package asaot.ui
 {
+    import asaot.ui.kind.VirtualListWidget;
+    import asaot.ui.style.Fill;
     import asaot.ui.style.StyleRefinement;
 
     public function tree(items:Array, opts:Object = null):Node
@@ -31,11 +33,13 @@ package asaot.ui
             if (opts.rowHeight != null) n.rowHeight = Number(opts.rowHeight);
             if (opts.onToggle != null) n.onToggle = (opts.onToggle as Function);
             if (opts.onSelect != null) n.onSelect = (opts.onSelect as Function);
+            if (opts.virtual != null) n.virtual = Boolean(opts.virtual);
+            if (opts.offsetY != null) n.offsetY = Number(opts.offsetY);
+            if (opts.onScroll != null) n.onScroll = (opts.onScroll as Function);
         }
 
         var base:String = n.key == null ? "tree" : String(n.key);
         var rows:Array = [];
-        var kids:Array = [];
 
         // Frames are { list, i, depth }. Only open branches push a frame, so the walk
         // is exactly "the visible subtree", in document order.
@@ -56,12 +60,76 @@ package asaot.ui
             var open:Boolean = branch && TreeNode.holds(n.expanded, key);
 
             var left:Number = OverlayChrome.TREE_PAD + int(f.depth) * OverlayChrome.TREE_INDENT;
+            // The row SPEC is collected first and materialised second: under `virtual`
+            // the window is not known until the flatten finishes (it needs the total
+            // row count), and creating nodes we would immediately discard is exactly
+            // the work virtualisation exists to avoid.
+            rows.push({ key: key, label: label, depth: int(f.depth), left: left,
+                        branch: branch, open: open });
+
+            if (open) stack.push({ list: children, i: 0, depth: int(f.depth) + 1 });
+        }
+
+        n.rows = rows;
+        n.rowCount = rows.length;
+
+        var first:int = 0;
+        var last:int = rows.length - 1;
+        if (n.virtual)
+        {
+            if (!(n.rowHeight > 0))
+            {
+                throw new Error("asaot.ui.tree: `virtual: true` needs a positive `rowHeight` (got "
+                    + n.rowHeight + "). The window is row-granular: without a row height"
+                    + " there is no definition of which rows are visible.");
+            }
+            var vh:Number = VirtualListWidget.viewportHeight(n.style);
+            if (!(vh > 0))
+            {
+                throw new Error("asaot.ui.tree: `virtual: true` needs an explicit point height"
+                    + " on the tree (style.size/height, e.g. [240, 300]). The window has to"
+                    + " know how many rows fit before layout runs.");
+            }
+            var fit:int = int(Math.ceil(vh / n.rowHeight));
+            if (fit < 1) fit = 1;
+            var maxFirst:int = rows.length - fit;
+            if (maxFirst < 0) maxFirst = 0;
+            var off:Number = isNaN(n.offsetY) ? 0 : n.offsetY;
+            first = int(Math.round(off / n.rowHeight));
+            if (first > maxFirst) first = maxFirst;
+            if (first < 0) first = 0;
+            n.offsetY = first * n.rowHeight;
+            n.firstRow = first;
+            n.visibleRows = fit;
+            last = first + fit;   // +1: the partial row
+            if (last > rows.length - 1) last = rows.length - 1;
+        }
+
+        var kids:Array = [];
+        for (var r:int = first; r <= last; r++)
+        {
+            var spec:Object = rows[r];
+            // AN ALPHA-0 FILL ON EVERY ROW, and it is not decoration: the hit test is
+            // BOUNDS-based (as_pick_hit in the runtime), so a row that paints nothing is
+            // only clickable where its LABEL happens to be. Without this line the twisty
+            // strip -- the whole point of OverlayChrome.TREE_HIT -- cannot be clicked by a
+            // mouse at all, and neither can the empty right half of a short label.
             var rowStyle:StyleRefinement = StyleRefinement.from({
                 height: n.rowHeight > 0 ? n.rowHeight : OverlayChrome.TREE_ROW_H,
-                padding: [0, 0, 0, left]
+                background: Fill.fromArgb(0, 0, 0, 0),
+                padding: [0, 0, 0, Number(spec.left)]
             });
             rowStyle = OverlayChrome.TREE_ROW.withPatch(rowStyle);
-            if (n.selectedKey != null && n.selectedKey == key)
+            if (n.virtual)
+            {
+                // Both halves, for the reason virtualList.as records: `height` alone is
+                // overridden by the flexbox solve when the window overflows, and
+                // `flexShrink: 0` encodes as a zero basis and collapses the row.
+                rowStyle = rowStyle.withPatch(StyleRefinement.from({
+                    minSize: [null, n.rowHeight]
+                }));
+            }
+            if (n.selectedKey != null && n.selectedKey == String(spec.key))
             {
                 rowStyle = rowStyle.withPatch(StyleRefinement.from({
                     background: OverlayChrome.ITEM_SELECTED
@@ -73,17 +141,14 @@ package asaot.ui
             // with box() stays a column however row-like its style looks -- the label
             // then sits CENTERED by alignItems instead of at the indent. That is exactly
             // how this probe first caught it (label at x=142, not 42).
-            var rowNode:Node = row({ key: base + ":t" + key, style: rowStyle, ariaName: label });
-            rowNode.addChild(text(label, { key: base + ":t" + key + ":l",
+            var rowKey:String = String(spec.key);
+            var rowNode:Node = row({ key: base + ":t" + rowKey, style: rowStyle,
+                                     ariaName: String(spec.label) });
+            rowNode.addChild(text(String(spec.label), { key: base + ":t" + rowKey + ":l",
                                           style: OverlayChrome.TREE_TEXT, ariaName: "" }));
             kids.push(rowNode);
-            rows.push({ key: key, label: label, depth: int(f.depth),
-                        branch: branch, open: open });
-
-            if (open) stack.push({ list: children, i: 0, depth: int(f.depth) + 1 });
         }
 
-        n.rows = rows;
         OptionSupport.addChildren(n, kids);
         return n;
     }

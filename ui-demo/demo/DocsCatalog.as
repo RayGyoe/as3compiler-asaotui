@@ -2,15 +2,15 @@
 // group, and what each one says about itself.
 //
 // TWO HALVES, ON PURPOSE:
-//   * `pages()` is CHEAP and always available: 42 tiny data objects. The sidebar
+//   * `pages()` is CHEAP and always available: one tiny data object per page. The sidebar
 //     reads it on every render, and it must not construct a single widget.
 //   * `sections(view, id)` builds the selected page's examples on demand. That is
 //     where the factories are actually CALLED -- one page at a time, and only for
 //     the page on screen.
 //
-// WHY data objects and not 41 classes: a page is a title, a blurb and a list of
+// WHY data objects and not one class per page: a page is a title, a blurb and a list of
 // sections, and the sections need the live model (a demo reports into it). Making
-// each page a class would add 41 files that differ only in their bodies.
+// each page a class would add files that differ only in their bodies.
 //
 // The coverage gate (tools/kind-coverage.cjs) scans this tree for factory CALLS,
 // so a component that is registered but never documented is a red gate, not a
@@ -53,9 +53,12 @@ package demo
                 new DocPage("checkbox", "checkbox", 3, "A boolean with a label. Bound or plain."),
                 new DocPage("radio", "radio", 3, "One of N in a named group."),
                 new DocPage("toggle", "toggle", 3, "A switch: the `switch` kind, spelled around the keyword."),
+                new DocPage("numberInput", "numberInput", 3, "A number in a box: steppers, a clamp range and a step."),
 
                 new DocPage("slider", "slider", 4, "A value dragged along a track."),
+                new DocPage("rangeSlider", "rangeSlider", 4, "Two thumbs on one track: a low and a high value."),
                 new DocPage("select", "select", 4, "A list of options behind a trigger."),
+                new DocPage("multiSelect", "multiSelect", 4, "A select whose menu stays open and reports each toggle."),
                 new DocPage("combobox", "combobox", 4, "A select whose options are filtered by typing."),
                 new DocPage("datePicker", "datePicker", 4, "A calendar panel behind a trigger."),
                 new DocPage("pagination", "pagination", 4, "Page numbers with ellipses, as chips."),

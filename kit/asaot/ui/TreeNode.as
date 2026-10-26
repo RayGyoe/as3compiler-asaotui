@@ -14,6 +14,12 @@
 // `rows` IS WRITTEN BY THE FACTORY and read by TreeWidget: it is the only place that
 // knows which row index means which item key, and routing a click back to a key
 // needs exactly that. Each entry is a plain object { key, label, depth, branch, open }.
+//
+// VIRTUAL MODE (2026-10-26). The rows list is ALWAYS the full flattened subtree; only
+// the MOUNTED children are a window of it. That split is what makes the widget's
+// absolute row index possible (click/keys index `rows`, the mounted slice is
+// `rows[firstRow ..]`), and it is why `firstRow`/`visibleRows` are published here
+// rather than kept inside the widget.
 package asaot.ui
 {
     import asaot.ui.kind.TreeWidget;
@@ -27,6 +33,14 @@ package asaot.ui
         public var onToggle:Function;   // Function(key:String)  -- the author flips `expanded`
         public var onSelect:Function;   // Function(key:String)
         public var rowHeight:Number;    // 0 = rows size themselves
+
+        // ---- virtual mode (see the header) ----------------------------------
+        public var virtual:Boolean;
+        public var offsetY:Number;      // row-granular; the factory snaps it
+        public var onScroll:Function;   // function (offsetY:Number)
+        public var firstRow:int;        // index into `rows` of the first MOUNTED row
+        public var visibleRows:int;     // rows that fit, ignoring the +1 partial row
+        public var rowCount:int;        // rows.length, published for probes
 
         private static var registered:Boolean = false;
 
@@ -43,6 +57,12 @@ package asaot.ui
             this.onToggle = null;
             this.onSelect = null;
             this.rowHeight = 0;
+            this.virtual = false;
+            this.offsetY = 0;
+            this.onScroll = null;
+            this.firstRow = 0;
+            this.visibleRows = 0;
+            this.rowCount = 0;
         }
 
         // Is `key` in the key list? A tiny linear scan instead of an object map:

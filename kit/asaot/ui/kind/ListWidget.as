@@ -22,6 +22,15 @@
 // because moving off the last row of a tree is a spatial question, not a sequence
 // one). Enter is deliberately NOT consumed -- UiApp's default activation then runs the
 // node's own onClick, which is the container's handler, not a row's.
+//
+// VIRTUAL MODE (2026-10-26). The factory mounts one window of rows, so this widget
+// gains exactly four things: a PURE clip (`scrollRect = (0,0,w,h)` -- the rows are
+// already positioned inside the viewport because only the window was mounted, unlike
+// ScrollViewWidget which SLIDES its content with `(0, offsetY, w, h)`), a WHEEL that
+// reports `onScroll`, an ABSOLUTE index for both the click and the keys (`firstIndex`
+// is added back, or a scrolled list would select the wrong record), and REVEAL (a
+// selection moved past the window asks for a scroll, because a highlight on an
+// unmounted row is a selection nobody can see).
 package asaot.ui.kind
 {
     import asaot.ui.ListNode;
@@ -34,10 +43,19 @@ package asaot.ui.kind
 
     import flash.display.Shape;
     import flash.events.MouseEvent;
+    import flash.geom.Rectangle;
 
     public class ListWidget implements Widget, WidgetKeys
     {
         private static const SEL_KEY:String = "sel";   // previous selected index
+        private static const VIRT_KEY:String = "lv";    // 1 while the list is windowed
+        private static const FIRST_KEY:String = "lf";   // first MOUNTED index
+        private static const OFF_KEY:String = "lo";     // row-aligned offset reported
+        private static const CNT_KEY:String = "lc";     // total rows
+        private static const RH_KEY:String = "lh";      // row height
+        private static const FIT_KEY:String = "lfit";   // rows that fit
+        private static const CLIP_KEY:String = "clip";  // applied [w,h] pair
+        private static const WHEEL_STEP:int = 3;
         private static const HIT_KEY:String = "hit";   // 1 when the last click hit a row
 
         private static const SEL_BG:uint = 0xDBEAFE;   // selected-row highlight
@@ -46,10 +64,19 @@ package asaot.ui.kind
         {
             n.shapeA = new Shape();   // background + selected-row highlight
             n.backing.addChild(n.shapeA);
+            n.extra[VIRT_KEY] = 0;
+            n.extra[FIRST_KEY] = 0;
+            n.extra[OFF_KEY] = 0;
+            n.extra[CNT_KEY] = 0;
+            n.extra[RH_KEY] = 0;
+            n.extra[FIT_KEY] = 0;
+            n.extra[CLIP_KEY] = null;
 
             var self:ListWidget = this;
             n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onClickY(n, e); });
+            n.listen(n.backing, MouseEvent.MOUSE_WHEEL,
+                function (e:MouseEvent):void { self.onWheel(n, e); });
         }
 
         public function payload(n:UiNode, desc:Node):Boolean
@@ -59,6 +86,12 @@ package asaot.ui.kind
             // UiNode has no dedicated onSelect slot; reuse onChange (same
             // Function(Number) contract as the other selectable controls).
             n.onChange = l.onSelect;
+            n.extra[VIRT_KEY] = l.virtual ? 1 : 0;
+            n.extra[FIRST_KEY] = l.firstIndex;
+            n.extra[OFF_KEY] = l.offsetY;
+            n.extra[CNT_KEY] = l.count;
+            n.extra[RH_KEY] = l.itemHeight;
+            n.extra[FIT_KEY] = l.visibleCount;
 
             var sv:Number = l.selectedIndex;
             if (l.binding != null)
@@ -95,12 +128,19 @@ package asaot.ui.kind
 
         public function paint(n:UiNode):void
         {
-            PaintKit.paintBox(n, n.resolved, PaintKit.w1(n), PaintKit.h1(n));
+            var w:Number = PaintKit.w1(n);
+            var h:Number = PaintKit.h1(n);
+            PaintKit.paintBox(n, n.resolved, w, h);
+            if (Number(n.extra[VIRT_KEY]) != 0) this.applyClip(n, w, h);
             if (n.shapeA == null) return;
 
             var sel:int = int(Number(n.extra[SEL_KEY]));
             if (sel < 0) return;
-            var child:UiNode = rowAt(n, sel);
+            // Under `virtual` the selected index is ABSOLUTE and only a mounted row has
+            // a rect to paint: sel - first, and nothing at all when it is off-window.
+            var idx:int = sel;
+            if (Number(n.extra[VIRT_KEY]) != 0) idx = sel - int(Number(n.extra[FIRST_KEY]));
+            var child:UiNode = rowAt(n, idx);
             if (child == null) return;
 
             // Highlight in LOCAL coordinates (the backing's origin is the list's
@@ -112,8 +152,12 @@ package asaot.ui.kind
         }
 
         // How many rows there are: the non-divider children. Allocation-free.
+        // Under `virtual` the mounted children are ONE WINDOW, so the only honest
+        // count is the description's total -- a keys handler that walked the mounted
+        // rows would stop at the last visible record.
         private function rowCount(n:UiNode):int
         {
+            if (Number(n.extra[VIRT_KEY]) != 0) return int(Number(n.extra[CNT_KEY]));
             var c:int = 0;
             for (var i:int = 0; i < n.children.length; i++)
             {
@@ -159,8 +203,16 @@ package asaot.ui.kind
                 if (e.localY >= top && e.localY < bot) { target = rowIdx; break; }
             }
             if (target < 0) return;
+            // ABSOLUTE row index: the mounted slice starts at `firstIndex`, and a
+            // window-relative index would select the wrong record after any scroll.
+            if (Number(n.extra[VIRT_KEY]) != 0) target = target + int(Number(n.extra[FIRST_KEY]));
 
             n.extra[HIT_KEY] = 1;
+            // A ROW CLICK IS ALSO A FOCUS CLAIM. The runtime focuses nothing for a
+            // non-TextField press, and UiApp mirrors that by dropping the library
+            // focus -- so without this line the arrow keys die on the first click and
+            // a user has to Tab back into the list they are pointing at.
+            n.app.focusNode(n);
             this.select(n, target);
         }
 
@@ -185,7 +237,75 @@ package asaot.ui.kind
             // Consumed even when nothing moves: at the last row the key must not fall
             // through to a scrolling ancestor.
             if (next != cur) this.select(n, next);
+            if (Number(n.extra[VIRT_KEY]) != 0) this.reveal(n, next);
             return true;
+        }
+
+        // ---- virtual scrolling -----------------------------------------------
+        private function applyClip(n:UiNode, w:Number, h:Number):void
+        {
+            var applied:Array = n.extra[CLIP_KEY] as Array;
+            if (applied == null) { applied = [0, 0]; n.extra[CLIP_KEY] = applied; }
+            if (applied[0] == w && applied[1] == h) return;
+            // PURE clip: only the window was mounted and those rows are already inside
+            // the viewport, so there is nothing to slide (see the class header).
+            n.backing.scrollRect = new Rectangle(0, 0, w, h);
+            applied[0] = w;
+            applied[1] = h;
+        }
+
+        private function onWheel(n:UiNode, e:MouseEvent):void
+        {
+            if (Number(n.extra[VIRT_KEY]) == 0) return;
+            var rh:Number = Number(n.extra[RH_KEY]);
+            if (!(rh > 0)) return;
+            var d:Number = e.delta;
+            if (isNaN(d)) d = 0;
+            if (d == 0) return;
+            // Positive delta scrolls toward the START (Stage.dispatchWheel) -- the same
+            // convention as ScrollViewWidget / VirtualListWidget / table.
+            var rows:int = d > 0 ? -WHEEL_STEP : WHEEL_STEP;
+            this.request(n, int(Number(n.extra[OFF_KEY]) / rh) + rows);
+            e.stopPropagation();
+        }
+
+        // Bring `sel` into the window by the least it can move: only when it is outside,
+        // and then only far enough to touch the near edge.
+        private function reveal(n:UiNode, sel:int):void
+        {
+            var first:int = int(Number(n.extra[FIRST_KEY]));
+            var fit:int = int(Number(n.extra[FIT_KEY]));
+            if (fit < 1) fit = 1;
+            if (sel >= first && sel < first + fit) return;
+            this.request(n, sel < first ? sel : sel - fit + 1);
+        }
+
+        // Every scroll path ends here: an INDEX in, a row-aligned offset out.
+        private function request(n:UiNode, firstWanted:int):void
+        {
+            var rh:Number = Number(n.extra[RH_KEY]);
+            if (!(rh > 0)) return;
+            var count:int = int(Number(n.extra[CNT_KEY]));
+            var fit:int = int(Number(n.extra[FIT_KEY]));
+            if (fit < 1) fit = 1;
+            var maxFirst:int = count - fit;
+            if (maxFirst < 0) maxFirst = 0;
+            var f:int = firstWanted;
+            if (f > maxFirst) f = maxFirst;
+            if (f < 0) f = 0;
+            var y:Number = f * rh;
+            // Already there: do not call back. An `onScroll` that fires on every wheel
+            // notch at the end of the list would re-render the author's tree for
+            // nothing, on every bounce.
+            if (y == Number(n.extra[OFF_KEY])) return;
+            n.extra[OFF_KEY] = y;
+            var l:ListNode = n.desc == null ? null : ListNode(n.desc);
+            if (l != null)
+            {
+                l.offsetY = y;
+                if (l.onScroll != null) l.onScroll(y);
+            }
+            n.app.markPaint(n);
         }
 
         // The row the keys move FROM. The BINDING wins when there is one: it is the

@@ -209,6 +209,17 @@
 //                version of this read #ffffff everywhere); and leaving "cover" never
 //                clears the window, so the next scale mode inherits a crop it did not ask
 //                for (exactly the stale-state failure the arrange comment warns about).
+//   inputs 50  -- tools/mutation-widget-inputs.cjs: 8/8, one per assertion a resting
+//                bitmap cannot see. The +1 partial row (six mounted rows become five and
+//                the list still scrolls); the viewport clip (the mounted-but-offscreen row
+//                paints #606060 under the edge); the ABSOLUTE click index (a scrolled list
+//                reports row 0 for a click on row 3); the focus claim a row click makes
+//                (End after a click never reaches the list -- found by WRITING the probe,
+//                not by reading the code); reveal() as a no-op (End selects the last row
+//                and leaves the window behind); clamp() without its upper bound (PageUp
+//                to 25 when max is 10); the stepper strip (a press on the painted `+`
+//                lands in the text field); and a multi-select toggle that closes the menu
+//                (the gesture becomes a single-select and still LOOKS like a picker).
 //   gallery teardown -- ui-demo/mutation-gallery-teardown.cjs: 2/2, and both are
 //                defects the SIX-page tour found and no probe could (a probe never
 //                destroys an overlay tree): dropping the WidgetTeardown hook leaves
@@ -328,7 +339,12 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // Both exist because those behaviours have no pointer path at all: a click
                  // probe can only ever press row 0, and single-mode accordion can only
                  // ever have one panel open.
-                 'widgets/keys', 'widgets/accordion']) {
+                 'widgets/keys', 'widgets/accordion',
+                 // `inputs` is the batch probe for numberInput / rangeSlider / multiSelect
+                 // plus `virtual: true` on list and tree. It is the only probe that drives a
+                 // WINDOW (mounted rows are a COUNT, not a pixel), and its teeth are
+                 // tools/mutation-widget-inputs.cjs (8/8).
+                 'widgets/inputs']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);

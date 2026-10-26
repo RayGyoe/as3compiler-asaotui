@@ -1,0 +1,39 @@
+baseline probes/widgets/inputs: RESULT: PASS  (50 checks)
+
+M1  CAUGHT  the window drops its +1 partial row -> six mounted rows become five, and the probe counts them
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the virtual list mounts 5 rows, not 6; the list window is vl:r0,vl:r1,vl:r2,vl:r3,vl:r4; the list window is 0..4 not 0..5; after the wheel the window is 3..7 not 3..8; the window after the wheel is vl:r3,vl:r4,vl:r5,vl:r6,vl:r7;
+     FAIL  rect vl:r5: not reported by the probe
+     restore: byte-identical (3b1649354f3642ca)
+M2  CAUGHT  the list stops clipping to the viewport -> the mounted-but-offscreen row 5 paints (#606060)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL (30,216) is #606060 -- row 5 painted below the viewport (the clip is missing);
+     FAIL  pixel (30,216) want #ffffff got #606060
+     restore: byte-identical (8f34269c73822dfd)
+M3  CAUGHT  a click reports its WINDOW-relative row instead of the absolute index -> row 3 becomes row 0
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the click selected 0 not the absolute row 3;
+     restore: byte-identical (8f34269c73822dfd)
+M4  CAUGHT  a row click stops claiming focus -> the End key after a click never reaches the list
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL End reported 3 not 199; End selected 3 not 199; End left the window at 3 not 195 (no reveal);
+     restore: byte-identical (8f34269c73822dfd)
+M5  CAUGHT  reveal() becomes a no-op -> End moves the selection but leaves the window where it was
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL End left the window at 3 not 195 (no reveal);
+     restore: byte-identical (8f34269c73822dfd)
+M6  CAUGHT  clamp() forgets the upper bound -> PageUp takes the value to 25 instead of stopping at max 10
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL PageUp reported 25 not 10 (clamped); blurring left the model at 90 not 10; onCommit reported 90 not 10; the field shows '90' not '10'; garbage input moved the model to 90 (it must stay 10); the field shows '90' not '10' (revert); an unparseable field still called onCommit with 90;
+     restore: byte-identical (6d22ff022e3e2066)
+M7  CAUGHT  the stepper strip shrinks from 20pt to 2pt -> a press on the visible `+` lands in the text field
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the + stepper reported -1 not 7 (5+2); the field shows '5' not '7'; Down reported 3 not 5;
+     restore: byte-identical (d75530895f639007)
+M8  CAUGHT  a multi-select toggle closes the menu -> the gesture becomes a single-select
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL onOpenChange fired 1 time(s) on a toggle (it must stay open); Space asked to close the multi-select;
+     restore: byte-identical (0fa6e0d82daf7f6b)
+
+MUTATION inputs: 8/8 caught, 0 problem(s)
+RESULT: PASS

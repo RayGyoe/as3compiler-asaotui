@@ -3,11 +3,11 @@
 > 回答一个问题：**「UI 库写完了吗？」**
 >
 > 结论：**深水区做透了，表面层补齐了三批（控件集 + 多页 App + 组件目录页 + 浮层系统 + 交互动线），但还不是一个完整工具箱。**
-> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 37 个 kind / 43 个工厂**（第二批 media/feedback/data 九件、
+> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 40 个 kind / 46 个工厂**（第二批 media/feedback/data 九件、
 > 第三批**浮层六件 dialog/drawer/popover/menu/toast/select**、第五批**列表虚拟化 `virtualList` + 选择三件**
 > `tree`/`combobox`/`datePicker` 均已落地）；
-> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**47 页 / 10 组**，每页两个 live 示例 + 产生它的源码），
-> 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**37/37**，变异 3/3）；
+> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**50 页 / 10 组**，每页两个 live 示例 + 产生它的源码），
+> 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**40/40**，变异 3/3）；
 > **浮层走第二棵保留树**（`View.renderOverlay()` + `UiApp.overlayRoot`），主树因此不再为弹层重解布局。
 > 第四轮（2026-10-24）补的是**交互动线**：`disabled` + `hover/pressed/focused` 四态绘制、`textField` 编辑回写、
 > **键盘/焦点管线（Tab 环 / Esc / 方向键 / Enter / Space）**、浮层的**越界翻转 + 子菜单 + 入场动画**。
@@ -110,7 +110,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`；第二十二轮补：四件「有槽位没行为」的空缺（`list`/`table`/`tabs` 键盘导航、
-`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）） · 对应 `kit/` **163 个 .as** · 一次性验收：`node tools/gates.cjs`（**54 道门**）
+`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）） · 对应 `kit/` **172 个 .as** · 一次性验收：`node tools/gates.cjs`（**55 道门**）
 
 ---
 
@@ -123,15 +123,15 @@
 | L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 28 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
 | L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表 |
 | L2 动画 | ✅ **样式 5 字段 + layout 字段 + 浮层入/退场** | 样式 `paint` 字段：`opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`；样式 **`layout` 字段**：`width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y)——写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停（`probes/widgets/anim` 14 项 + `probes/widgets/motion` 23 项）；显示对象级：`OverlayMotion`（入场 140ms ease-out / **退场 120ms ease-in**，墙钟，每帧从引擎读基准，不累加），见 §3.4 |
-| L3 控件库 | ✅ **43 个工厂 / 37 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**37 个 kind 全部上了文档站**，由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 文档站是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
+| L3 控件库 | ✅ **46 个工厂 / 40 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**40 个 kind 全部上了文档站**，由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 文档站是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
 | L3 样式面 | ✅ **33 字段** | 见 §3.2；仅剩 `grid` 刻意缺席（`cursor` 第十五轮已落地） |
 | L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入退场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、**入场 140ms / 退场 120ms**；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**）+ `probes/widgets/motion` **23 项**（变异 **7/7**） |
-| L3 组合能力 | ✅ **47 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 47 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
+| L3 组合能力 | ✅ **50 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 50 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
 | L3 可访问性 | ⚠️ 半成品 | `role`/`ariaName` **仍只是字段**（无消费者）；但 `Control.tabEnabled` 现在真被 Tab 环读（`UiApp.collectFocus`）、`Element.disabled` 真阻断点击与导航 |
 
 ---
 
-## 2 作者可见 API 全清单（163 个文件里**只有这些**）
+## 2 作者可见 API 全清单（172 个文件里**只有这些**）
 
 复核命令：
 
@@ -149,19 +149,25 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | `label(content, opts)` | `TextNode` | `text` 的别名 |
 | `button(opts)` | `ButtonNode` | 标签 + 点击（`label`/`onClick` 在 opts 里） |
 | `textField(opts)` | `TextInput` | 单行输入，可绑定 `value`；**编辑回写**（`Event.CHANGE` → `Binding`/`onChange`），`Enter` 或失焦提交 `onCommit`，`Esc` 回滚；**占位符是独立文本层**（不再往编辑框里写 ghost text） |
+| `textArea(opts)` | `TextAreaNode` | 多行编辑框：`rows`/`value`（可 Binding）；**Enter 插入换行**（与 `textField` 的「Enter 提交」相反，独立 kind 而不是一个布尔开关） |
 | `checkbox(opts)` | `CheckboxNode` | 可绑定 `checked` |
 | `radio(label, opts)` | `RadioNode` | 单选；`opts.selected` 收 boolean **或** `Binding`；`opts.group` 只是名字 |
 | `toggle(label, opts)` | `SwitchNode` | 开关（**工厂名是 `toggle`**，`switch` 是保留字） |
 | `slider(label, opts)` | `SliderNode` | 可绑定 `value`；拖动改值 |
+| `numberInput(label, opts)` | `NumberInputNode` | 数字框 + 右端步进器：`value`（可 Binding）/`min`/`max`/`step`/`decimals`/`onChange`/`onCommit`；**唯一写点 `commit()`**（clamp→round→回调），打不进字的文本**回滚而不是当 0**，`step` 不作用于栅格 |
+| `rangeSlider(label, opts)` | `RangeSliderNode` | 一轨双拇指：`value`/`value2`（倒置时**工厂里交换**，不是抛错）/`step`/`onRange(lo, hi)`；**故意不给 Binding**（一个 range 是两个值） |
 | `progress(label, opts)` | `ProgressNode` | 可绑定 `value`（只读展示） |
 | `chip(label, opts)` | `ChipNode` | 可点击小标签（tone: neutral/info/danger） |
 | `badge(label, opts)` | `BadgeNode` | 纯展示标签 |
 | `avatar(name, opts)` | `AvatarNode` | 首字母圆形头像 |
 | `divider(opts)` | `DividerNode` | 1px 分隔线（`orientation`） |
+| `icon(path, opts)` | `IconNode` | 图标：`path` 是 SVG `d` 字符串（**describe 时就解析**：坏命令/未实现命令当场抛，而不是画笔里抛）、`size`/`color`/`fill`/`stroke`/`strokeWidth`、`viewBox` 是数据自己的坐标空间（非正数抛错） |
 | `tabs(labels, opts)` | `TabsNode` | 横向分段；**分段是控件自算**，见 §3.1.1 |
-| `list(items, builder, opts)` | `ListNode` | 真容器（每行一个真实 UiNode）；**无虚拟滚动——万级用 `virtualList`** |
+| `list(items, builder, opts)` | `ListNode` | 真容器（每行一个真实 UiNode）；**`virtual: true`** 时只挂窗口（本轮补：需显式点高 + `itemHeight`，`separator` 被拒，`offsetY`/`onScroll(y)`，行对齐由工厂 snap+clamp）；不然万级走 `virtualList` |
 | `image(opts)` | `ImageNode` | 位图控件；源二选一：`bitmapData`（调用者已有像素）或 **`src`（控件自己持 `Loader`，异步）**；
 `scaleMode`: `fit`/`stretch`/`none`/**`cover`**（**未知值抛错**；`cover` 用 `scrollRect` 开窗裁剪，窗口按缩放系数折算）；`onLoad()`/`onError(msg)`、失败进 `UiNode.loadError` |
+| `tree(items, opts)` | `TreeNode` | 扁平化行列表（展开分支的子件作为**同一节点**的行，靠 `depth` 缩进）：`expanded`/`selectedKey`/`onToggle(key)`/`onSelect(key)`；`rowHeight` 可选；**`virtual: true` + `offsetY`/`onScroll(y)`** 只挂窗口（本轮补） |
+| `virtualList(opts)` | `VirtualListNode` | 只有窗口的万级列表：`itemCount`/`itemHeight`/`offsetY` + `onScroll(y)` |
 | `scrollView(opts, children)` | `ScrollViewNode` | **真裁剪**滚动容器（引擎 `scrollRect`）；竖向滚轮；视口用 `setMinMax(min)` 阻断子收缩；**`stickToBottom`**（日志式贴底 + 离开末尾就脱钩）、纵/横滚动条（`probes/widgets/scrollbar` 44 项 / `stick` 15 项） |
 | `spinner(opts)` | `SpinnerNode` | 不定进度圆环；`diameter`/`thickness`/`tone`/`spin`/`phase`；**环画成填充带（描边宽度不被遵守）** |
 | `skeleton(opts)` | `SkeletonNode` | 占位骨架；`variant`: `text`/`circle`/`rect` + `lines`/`barHeight`/`gap`/`tone` |
@@ -176,6 +182,9 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | `popover(opts, children)` | `PopoverNode` | 锚定气泡；`anchorKey` + `placement`: `top`/`bottom`/`left`/`right` + `offset`；点外面关闭 |
 | `menu(opts)` | `MenuNode` | 锚定行列表（继承 popover 的锚定与关闭）；`items`: 字符串或 `{label,value}`、`selectedIndex`/`onSelect`；**`submenuIndex` 可挂子菜单**（子菜单是 `menu` 工厂产出的普通 anchored popover，父菜单不必自己定位） |
 | `select(opts)` | `SelectNode` | 下拉选择；trigger 无边框，菜单是 trigger 的绝对子；`value`/`items`/`onChange` |
+| `combobox(opts)` | `ComboBoxNode` | 可输入下拉：`options`/`query`/`onQuery(q)`/`onChange`；**过滤归作者**（库不猜匹配规则），`query` 只是投影 |
+| `datePicker(opts)` | `DatePickerNode` | 日期选择：月历恒为 **6 周**（面板高度不随月份跳）、`<`/`>` 翻月、空格子也有 key；`value`/`onChange` |
+| `multiSelect(opts)` | `MultiSelectNode` | 多选下拉：**菜单在每次勾选后保持打开**，`values`（数组）归作者、widget 永不改写，`onToggle(index)`/`onOpenChange(open)` |
 | `toast(opts)` | `ToastNode` | 轻提示；`open`/`message`/`tone`(default/success/danger)/`duration`/`onClose`/`width` |
 | `toastHost(opts, children)` | `BoxNode` | 吐司堆：右下角、`gap 8`、后进在下；`toast` 必须放在它里面才能堆 |
 
@@ -186,14 +195,15 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 `Reconciler`、`UiNode`、`UiApp`（`getOverlayRoot`/`overlayDisplay`）、`View`（`render`/`renderOverlay`/`tick`）、
 `Anim`/`Ease`/`Tween`/`AnimState`。
 
-### 2.1 仍缺的控件（对照常见工具箱）
+### 2.1 仍缺的（对照常见工具箱）
 
 | 类别 | 缺什么 | 影响的界面 |
 |---|---|---|
 | 无障碍 | `role`/`ariaName` 仍只是字段（无消费者） | 屏幕阅读器 |
 
-**⇒ 现在能舒适写出的是「多页表单 / 设置页 / 列表详表 / 万级滚动列表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互 /
-树形设置 / 日期选择 / 可输入下拉 / 可排序可调列宽可虚拟化的表格」，写不出「图标字体 + 内建无障碍」类界面。**
+**⇒ 现在能舒适写出的是「多页表单 / 设置页 / 列表详表 / 万级滚动列表（`list`/`tree`/`table` 都能只挂窗口）/
+带图与骨架的异步页 / 弹层与菜单驱动的交互 / 树形设置 / 日期选择 / 可输入下拉 / 数字与区间录入 / 多选列表」，
+写不出「图标字体 + 内建无障碍」类界面。**
 （浮层六件落地后，`dialog`/`drawer`/`popover`/`menu`/`select`/`toast` 都已可用，手算断言探针：`probes/widgets/overlay`，**65 项**。）
 
 ---
@@ -261,7 +271,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 54 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 55 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -713,6 +723,7 @@ wrap 宽度置 NaN / 截断条件置 false / Enter 加入消费集），且每�
 | `probes/widgets/pointer`（23 项，变异 **5/5**） | 叶子亮 / **祖先亮** / 兄弟不亮 / 换目标同一拍清旧的 / `MOUSE_LEAVE` 全清 + `Mouse.cursor` 回 `auto` / hover **不 reflow** / 撤销后注册表 −1 且下一次移动仍可用 |
 | `probes/widgets/lifecycle`（9 项） | 销毁前后注册表计数；**仍然派发** `mouseOver`/`mouseOut` 当负控（它们现在什么也不该做） |
 | `probes/widgets/interact`（25 项） | 禁用控件不吃 hover、离开后清干净 |
+| `probes/widgets/inputs`（**50 项**，变异 **8/8**） | 三个输入控件 + `list`/`tree` 的窗口：mounted 行数、`firstIndex/lastIndex`、纯裁剪像素、绝对行号的点击/键盘、`reveal`、四条拒绝 |
 
 **第二件：`image()` 的 `src`**。控件自己持 `Loader`（`COMPLETE`→采纳 Bitmap 并**重新测量**、
 `IO_ERROR`→写 `UiNode.loadError` 并调 `onError(msg)`，**不画任何自造的错误 chrome**）。
@@ -885,7 +896,7 @@ G24 / G25 / G26 在编译器侧全部修好后（**阶段二百七十五，v0.4.
 
 ### 3.17c 文档站上公网：`gh-pages`（第二十一轮）
 
-47 页文档站此前只有一条看的路：克隆 5.4 GB 仓库 + 同级的 5.4 GB 编译器 + 编四分钟。现在
+50 页文档站此前只有一条看的路：克隆 5.4 GB 仓库 + 同级的 5.4 GB 编译器 + 编四分钟。现在
 <https://raygyoe.github.io/as3compiler-asaotui/> 直接打开就是它——`web` 臂的产物放在 `gh-pages` 分支。
 
 先澄清一个常见误解：**`ui-demo/` 的示例代码从来没有被忽略**。`ui-demo/demo/` 20 个 `.as`、`README.md`、
@@ -978,9 +989,64 @@ cover（只有裁剪窗口对了才对的三点像素）、装饰（只有横线
 8 张 1500×1050 截图）；`node tools/mxmlc-check.cjs … ` → `OK: compiled by AIR -- 103111 bytes`；
 `node tools/gates.cjs` → **54/54 PASS**。
 
+### 3.18 输入类三件 + `list`/`tree` 虚拟化（第三十四轮）
+
+**加了什么**：`numberInput`（数字框 + 右端步进器）、`rangeSlider`（一轨双拇指）、`multiSelect`
+（勾选后**菜单不关**的下拉），以及 `list`/`tree` 的 **`virtual: true`**（只挂窗口）。三个新控件
+都**没有动任何共享文件**（`Widgets.as`/`UiNode.as`/`Reconciler.as` 一行未改）：各自在 `*Node` 的
+构造器里 `Widgets.register(...)`，用 `private static var registered:Boolean` 守卫。
+
+#### 3.18.1 虚拟化的契约是**抄**来的，不是新造的
+
+`virtual: true` + `offsetY` + `onScroll(y)` 与 `virtualList`/`table.virtual` 完全同构：作者持模型，
+kit 只挂窗口。四条硬规则（每条都有探针断言）：
+
+| 规则 | 为什么 |
+|---|---|
+| mounted = `fit + 1`（`fit = ceil(视口高/行高)`） | 非整数倍视口底部那半行是**真的**，漏了会留白条（变异 M1：去掉 `+1`，六行变五行，探针当场红） |
+| 裁剪是**纯裁剪** `scrollRect=(0,0,w,h)` | 只挂了窗口、行本来就在视口内，所以不该像 `scrollView` 那样**滑动**；缺了它第 6 行会画到视口外（变异 M2：像素 `(30,216)` 变 `#606060`） |
+| `selectedIndex`/`actRow` 是**绝对行号** | 滚动后 `click`/方向键必须 `+ firstIndex`、画笔必须 `- firstIndex`，否则选错记录（变异 M3：点击报 0 而不是 3） |
+| `reveal` 保证选中行**不留在未挂载处** | End 选中第 199 行时窗口必须跟着走（变异 M5：`reveal` 空转 ⇒ 选择对了、窗口没动） |
+
+**主动拒绝两件**（`THROW`，不静默近似）：`separator: true`（窗口算术是行粒度，行间细线改变 offset 的量纲 ⇒
+每屏漂一行）、视口高度不是显式点值（窗口必须在布局**之前**知道能放几行）。负例断言写在探针 phase 6。
+
+#### 3.18.2 探针逼出的两个**库级缺陷**
+
+1. **行点不到**：命中测试走**绘制内容**而不是布局矩形，而 tree 的行只画了文字 ⇒ 在 `x=30`（文字右侧）
+   点下去命中链直接落到根节点。证法是把命中链打出来（`DIAG row1 backing chain={null:0,20,18x16}`），
+   修法是每行 `background: Fill.fromArgb(0,0,0,0)` **铺满整行** —— alpha 0 的填充照样吃鼠标，这正是
+   Flash 时代做隐形点击区的经典手法（记在 `compiler-gaps.md` §2，**不是**缺口）。
+2. **点一次就丢键盘**：`mouseDown` 落在非 `TextField` 上会把 `stage.focus` 置空 ⇒ UiApp 的 `FOCUS_OUT`
+   把库焦点丢掉，于是「点一行再按 End」什么都不发生。修法是三个控件在**自己的**点击处理里
+   `n.app.focusNode(n)` 重新 claim（`ListWidget.onClickY` / `TreeWidget.onClickAt` / `NumberInputWidget.onPress`）。
+   ⚠️ 探针最初是**显式** `focus("vl")` 再按键，把这个缺陷挡住了 —— 把那一行删掉、让**点击本身**负责焦点，
+   变异 M4 才有牙（`End reported 3 not 199`）。**探针里多余的一行 setup，等于一条被藏起来的契约。**
+
+#### 3.18.3 另外两条只有写探针才会遇到的语义
+
+- **`select()` 是「作者的回声」**：它只调 `onChange` + `invalidate(Dirty.VALUE)`，**从不写回** `selectedIndex`。
+  所以探针断言必须 `setTimeout(..., 350)` 去读**下一帧**的 desc，回调里还要 `view.invalidate(Dirty.ALL)`
+  并把模型喂回 `selectedIndex:`/`selectedKey:`。同步读状态是错的。
+- **tree 的 End ≠ list 的 End**：`TreeWidget.onKey` 的 36/35 只移动 **ACTIVE band**，选中要靠 `Enter`；
+  `ListWidget` 的 36/35 直接 select。探针不能把 list 语义钉到 tree 上。
+
+#### 3.18.4 判据与验收
+
+| 项 | 结果 |
+|---|---|
+| `probes/widgets/inputs`（新门） | **50 checks / 0 failures**：三个控件 + 两个窗口 + 四条拒绝 + 三个手算像素点 |
+| 变异 `tools/mutation-widget-inputs.cjs` | **8/8 全中**，每条都红在 `expect` 指名的断言上，`finally` 还原后 sha256 逐字节一致 |
+| 文档站 | `numberInput`（2 节）/ `rangeSlider`（2 节）/ `multiSelect`（2 节）+ `list`/`tree` 各一节虚拟化 ⇒ **50 页**；`kind-coverage` **40/40**；`callback-arity` **0 违规** |
+| AIR 臂 | `mxmlc` **OK: 124985 bytes**（新增的 5 个 API 全是合法纯 AS3） |
+| 画廊 | `pages=50 nodes=8796 badPages=0 overflowingBlocks=0` → **PASS** |
+| 门 | **55/55 PASS**（日志 `reviews/gates-all-35.txt`） |
+
+**这一批最值得记的一条**：两个库级缺陷都**不是**「功能没写」，而是「写好了但摸不到 / 按下去没反应」。
+位图、矩形、`kind-coverage` 全都看不见它们 —— 只有**真的按坐标点一下、再真的敲一个键**才看得见。
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **54** 道门：
+一条命令跑全部 **55** 道门：
 
 ```sh
 node tools/gates.cjs          # 54/54 PASS 才叫绿（定稿记录 reviews/gates-all-33.txt）
@@ -1016,8 +1082,8 @@ node tools/gates.cjs          # 54/54 PASS 才叫绿（定稿记录 reviews/gate
 | **参考运行时扫全站（第十一轮补，G24）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` | **41/41 页 × 10/10 弹层 × 0 runtime error**（`mxmlc` 编 → `adl` 跑 → 读应用自己写的 `air-trace.txt`）；变异 `tools/mutation-air-sweep.cjs` **5/5**（把槽位计数改回 `internalCount + i` ⇒ `#2006`；去掉「打开弹层」⇒ `OPENED` 缺；少走一页 ⇒ `visited 40/41`；去掉 `releaseListeners()` ⇒ 145 个 `#1009`；只悬停不投递 ⇒ 指针钻 `0/41`） |
 | **指针钻：死节点上的 roll-out（第十二轮补，G25）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` + `node tools/listener-wiring.cjs` + `node tools/probe.cjs probes/lifecycle` | `air-sweep` 行末报 **3107 node(s) hovered and 348 of them destroyed**、0 errors（每页离开前悬停该页每个叶子，切页**下一拍**投递 `mouseOut`）；静态扫描 **29 wired / 0 raw**；探针 **9 项** 0 failures；变异 4/4 + 3/3 |
 | **滑块拖拽 + 回调参数（第九轮补）** | `node tools/probe.cjs probes/widgets/callback` + `node tools/callback-arity.cjs` | **24 checks**，0 failures（只点**未绑定**控件：checkbox/toggle/radio + 滑块的按下→拖动→越界夹紧→松手→松手后移动无效→纯点击）；变异 `probes/widgets/callback/mutation.cjs` **8/8**；静态门 15 调用 / 81 声明 / **0 违规**，变异 `tools/mutation-callback-arity.cjs` **6/6** |
-| **多页 App（组件文档站，47 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **47 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
-| **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **37/37** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
+| **多页 App（组件文档站，50 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **50 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
+| **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **40/40** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
 | **高分辨率（HiDPI）自证** | `cd asaotui/ui-demo && node check-dpi.cjs` | `standard` 700×560(1×) vs `high` 1050×840(1.5×)，且两次 tour 文本**逐字节相同** |
 | **单页登录 App** | `cd asaotui/ui-demo && node build-and-run.cjs` | 8 项手算断言 + `750×563` 截图（1.5×）+ `RESULT: PASS` |
 | **`--air-app` 闭包回归钉（G13，已修）** | `node probes/reach-freefn/run.cjs` | 默认闭包 kept **5/5** 且默认面**能建能跑**（修前是：红 + `unknown superclass 'Base' of 'p_Leaf'`） |
@@ -1064,17 +1130,18 @@ node tools/gates.cjs          # 54/54 PASS 才叫绿（定稿记录 reviews/gate
   第 14 个（翻转定位读到上一帧的 parent 尺寸）要靠**先开窗再缩窗**才看得见；
   第 15 个（入场动画在手泵帧的 tour 里永不落地）要靠**截图**才看得见——而它把所有矩形断言全部躲过去了。
   这条经验比这些 bug 本身更值钱：**探针要配一个真实应用，而且要真的看图。**
-- **表面层（控件集 / 组件目录页 / 浮层系统）**：五批共 37 kind / 43 工厂已落地并有手算探针；
+- **表面层（控件集 / 组件目录页 / 浮层系统）**：五批共 40 kind / 46 工厂已落地并有手算探针；
   仍缺的见 §2.1。当前可交付上限约「多页表单 / 设置页 / 列表详表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互」。
 
 ### 补齐优先级建议
 
-1. **剩余虚拟化**（§3.1.1）——`scrollView` 已能真裁剪，`virtualList` 与 `table` 的 `virtual` 已落地，
-   但 `list`/`tree` 仍对每个 item 建真实节点（万级列表会建万级节点）。
-2. **布局动画**（§3.4）——需要先定义「布局动画为什么要重解布局」；浮层的**退场**动画也卡在这里。
-3. **选择类控件**（§2.1）——`datePicker`/`tree`/`combobox`。其中 `combobox` 只差「输入框 + 过滤列表」这一层，
-   而 §3.1 的编辑回写管线是它的前置（已通）。
-4. **浮层的 `z-index` / 堆叠策略**（§3.6）——现在「子序列 = 堆叠序」够用，但多弹层叠加时作者没有表达力。
+1. **布局动画**（§3.4）——需要先定义「布局动画为什么要重解布局」；浮层的**退场**动画也卡在这里。
+2. **浮层的 `z-index` / 堆叠策略**（§3.6）——现在「子序列 = 堆叠序」够用，但多弹层叠加时作者没有表达力。
+3. **无障碍**（§2.1 唯一登记项）——`role`/`ariaName` 有字段、没有消费者。
+
+> 已经从这里划掉的：`list`/`tree` 的虚拟化（本轮，只挂窗口）、`numberInput`/`rangeSlider`/`multiSelect`、
+> `tree`/`combobox`/`datePicker` 三件选择类控件。数字不手写：工厂数由
+> `kit/asaot/ui/*.as` 里「有自己的同名 public 工厂函数」计得（46），kind 数由 `tools/kind-coverage.cjs` 计得（40/40）。
 
 > 本表所有「缺」项均为**登记**；对 `as3compiler/` 本轮是**零改动**（上一轮的两个编译阻塞补丁
 > 已随上游提交消失，见 §3.7）：

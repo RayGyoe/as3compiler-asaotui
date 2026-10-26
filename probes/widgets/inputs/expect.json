@@ -1,0 +1,36 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/inputs/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "560x640 window; root column with padding 16, gap 10, alignItems flex-start. Children in order qty (32), rng (44), vl (100), tr (100), ms (34).",
+    "stacking": "qty 16..48; rng 58..102; vl 112..212; tr 222..322; ms 332..366; the dropdown is absolute so it leaves the flow at 366.",
+    "drop": "220 wide (the factory pins it), 88 tall = 3 menu rows of 26 + MENU_PANEL padding [4,4] + a 1px border on each side.",
+    "window": "Both the list and the tree are 100 tall with rowHeight 20 => ceil(100/20) = 5 rows fit and 6 are mounted (the partial row is real). The final frame is written AFTER the probe resets both offsets to 0, so it shows r0..r5 again.",
+    "clip": "r5 spans y 212..232, i.e. entirely below the viewport (112..212): it is MOUNTED (rects.txt lists it) and must not be painted.",
+    "points": [
+      "(30,120) is 8px inside vl row 0 -> #101010 (0x101010 * 1).",
+      "(30,200) is inside row 4 (192..212) -> #505050 (0x101010 * 5).",
+      "(30,216) is below the viewport's bottom edge (212) and above the tree (222): the root's white shows through. Row 5 IS mounted there and would be #606060 without the scrollRect clip."
+    ],
+    "not_pinned": "Everything that needs a mid-run state (the +2 stepper, PageUp clamping at 10, the garbage revert, the crossed range thumbs, the multi-select toggle staying open, the wheel windows 3..8 / a2..a7 and both End reveals) is asserted in Main.as and reported through <OUT>.done; expect.json can only describe the final frame."
+  },
+  "w": 560,
+  "h": 640,
+  "rects": {
+    "root": [0, 0, 560, 640],
+    "qty": [16, 16, 220, 32],
+    "rng": [16, 58, 220, 44],
+    "vl": [16, 112, 240, 100],
+    "vl:r0": [16, 112, 240, 20],
+    "vl:r4": [16, 192, 240, 20],
+    "vl:r5": [16, 212, 240, 20],
+    "tr": [16, 222, 240, 100],
+    "tr:ta0": [16, 242, 240, 20],
+    "ms": [16, 332, 220, 34],
+    "ms:drop": [16, 366, 220, 88]
+  },
+  "points": [
+    { "x": 30, "y": 120, "rgb": "#101010" },
+    { "x": 30, "y": 200, "rgb": "#505050" },
+    { "x": 30, "y": 216, "rgb": "#ffffff" }
+  ]
+}

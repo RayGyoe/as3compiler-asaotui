@@ -69,6 +69,39 @@ package demo
                         { style: DocsDemo.MONO, ariaName: "" });
                 }),
 
+                new DocSection("virtual: true -- only the window exists", [
+                    "virtual turns the list into a WINDOW: the factory mounts ceil(height / itemHeight)",
+                    "rows plus one (the partial row at the bottom is real), and it must be told which",
+                    "row the window starts on. offsetY is that start, row-aligned; onScroll hands you",
+                    "the next one -- the author stores it and re-renders, the same contract as",
+                    "virtualList and table. selectedIndex stays an ABSOLUTE index, not a window one.",
+                    "It refuses separator: true (a hairline changes the row pitch, so the window would",
+                    "drift one row per screen) and an auto height (the window has to know the size",
+                    "BEFORE layout runs)."
+                ], [
+                    "list(items, build, { virtual: true, itemHeight: 26, offsetY: model.first,",
+                    "                     style: { size: [260, 260] },",
+                    "                     onScroll: function (y:Number):void { model.first = y; } })"
+                ], 120, function ():Node
+                {
+                    var many:Array = [];
+                    for (var i:int = 0; i < 200; i++) many.push("row " + i);
+                    var off:Number = m.num("vl.off", 0);
+                    return column({ gap: 8 }, [
+                        list(many, function (item:Object, idx:int):Node
+                        {
+                            return text(String(item), { key: "v" + idx, style: DocsDemo.LABEL_B,
+                                                        ariaName: "" });
+                        }, { key: "demoVirt", virtual: true, itemHeight: ROW_H, offsetY: off,
+                             style: StyleRefinement.from({ size: [260, ROW_H * 4] }),
+                             selectedIndex: int(m.num("vl.sel", 0)),
+                             onScroll: function (y:Number):void { m.put("vl.off", y); },
+                             onSelect: function (k:int):void { m.put("vl.sel", k); } }),
+                        text("window starts at row " + int(off / ROW_H) + " of 200",
+                            { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
+                }),
+
                 new DocSection("Keyboard: the arrows move the selection", [
                     "Press \"Focus it\", then Up / Down / Home / End. A key goes to whatever holds FOCUS, and AIR",
                     "does not focus a plain Sprite on mouseDown -- only a TextField is focused by a click -- so a",
@@ -336,6 +369,35 @@ package demo
                         style: StyleRefinement.from({ size: [260, ROW_H * 5] }),
                         onToggle: function (k:String):void { m.put("tr.exp", k == m.val("tr.exp", "src") ? "" : k); },
                         onSelect: function (k:String):void { m.put("tr.sel", k); } });
+                }),
+
+                new DocSection("virtual: true -- the same window, over rows", [
+                    "A tree flattens to a row array first (one row per visible item, branches only while",
+                    "open) and then mounts the window like a list, so rows.length is still the FULL",
+                    "flattened count: an absolute index keeps working after a scroll, and a key that",
+                    "moves the highlight off the window scrolls it back into view by itself.",
+                    "Expanding or collapsing changes rows.length, so the factory re-snaps offsetY."
+                ], [
+                    "tree(FILES, { virtual: true, rowHeight: 26, offsetY: model.first,",
+                    "              style: { size: [260, 260] },",
+                    "              onScroll: function (y:Number):void { model.first = y; } })"
+                ], 120, function ():Node
+                {
+                    var wide:Array = [];
+                    for (var i:int = 0; i < 40; i++)
+                    {
+                        wide.push({ key: "w" + i, label: "file " + i });
+                    }
+                    return column({ gap: 8 }, [
+                        tree([{ key: "w", label: "src", children: wide }],
+                            { key: "demoVirtTree", virtual: true, rowHeight: ROW_H,
+                              expanded: ["w"], offsetY: m.num("vt.off", 0),
+                              style: StyleRefinement.from({ size: [260, ROW_H * 4] }),
+                              selectedKey: m.val("vt.sel", ""),
+                              onScroll: function (y:Number):void { m.put("vt.off", y); },
+                              onSelect: function (k:String):void { m.put("vt.sel", k); } }),
+                        text("41 rows, 5 mounted", { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
                 }),
 
                 new DocSection("Expansion is the author's", [

@@ -608,6 +608,8 @@
 
 | 事项 | 结论 | 证据 |
 |---|---|---|
+| **「透明容器 / 纯文字行点不到」是缺口吗** | **不是缺口：这是 AIR 的命中语义**。命中测试走的是**画出来的东西**（`as_pick_hit_m` 逆序下探子件的绘制目录 + `mouseEnabled`/`mouseChildren` + `_scroll_rect` 裁剪），**不是布局矩形**。AIR 同理 —— 反过来，「alpha 0 的填充仍然吃鼠标」正是 Flash 时代做**隐形点击区**的经典写法，我们两臂都自洽 | **实测（2026-10-26，`probes/widgets/inputs`）**：`tree` 每一行只画了文字，`DIAG row1 backing chain={null:0,20,18x16}` ⇒ 在 `x=30`（文字右侧）点下去命中链直接落到根 `{null:0,0,560x640}`，行永远选不中；把每行 style 加上 `background: Fill.fromArgb(0, 0, 0, 0)` 铺满整行后，同一坐标命中 `tr:ta1`。⚠️ 库侧代价：这个 alpha-0 填充是**契约的一部分**（见 `kit/asaot/ui/tree.as` 行 style 的注释），不是装饰 —— 拿掉它，探针的 tree 点击断言当场红（本轮最初那条红就是这么来的） |
+| **命中测试用 bbox 而不是逐形状** | **疑似保真差异，未实测，故不入 G 清单**：我们按「绘制目录里的边界盒」判定，AIR 按**填充几何**判定 ⇒ 一个三角形/圆角的填充在我们这里整块 bbox 都算命中（更宽松，方向是「多点得中」而不是「点不中」）。UI 场景里几乎不可见，但**不能凭直觉断言 AIR 也一样** | 要判清需一条探针：画一个三角形 `beginFill` + `moveTo/lineTo`，在 bbox 内、三角形外派发 `dispatchMouse`，两臂对照命中目标（AIR 侧靠 `hitTestPoint`）。**证据到手前不立案** |
 | **AS3 无 FFI**（纯 AS3 源调不到 C 函数） | **是我方设计前提，不是缺口**。正因如此，UI 库坚持纯 AS3 就**不需要** FFI。若将来要把布局换成 native Yoga，才需要「内建类 implements 用户 `.as` 接口」 | `as3compiler/docs/zh-cn/enhancements.md` E11（未排期） |
 | **内建类 implements 用户 `.as` 接口** | **已实测通过**（正例 `x=120`、`is` 为真；反证报 `does not implement method 'bogus'`）⇒ 若走 native 路径，架构也无需回退 | [`reviews/probe-builtin-implements-user-iface-2026-10-22.md`](reviews/probe-builtin-implements-user-iface-2026-10-22.md) |
 | **`System.exit` 是否 AIR 也没有** | **不是「也没有」**：用真 AIR（51.4.1）判清，AIR **有** `exit(code:uint):void` ⇒ 归 G1（欠账），不是「平台边界」 | `air-check/SystemExitProbe.as` |

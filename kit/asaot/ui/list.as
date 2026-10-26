@@ -40,10 +40,20 @@ package asaot.ui
             if (opts.onSelect != null) n.onSelect = (opts.onSelect as Function);
             if (opts.separator != null) n.separator = Boolean(opts.separator);
             if (opts.itemHeight != null) n.itemHeight = Number(opts.itemHeight);
+            if (opts.virtual != null) n.virtual = Boolean(opts.virtual);
+            if (opts.offsetY != null) n.offsetY = Number(opts.offsetY);
+            if (opts.onScroll != null) n.onScroll = (opts.onScroll as Function);
+        }
+
+        var count:int = items == null ? 0 : items.length;
+        n.count = count;
+        if (n.virtual)
+        {
+            ListNode.mountWindow(n, items, builder, count);
+            return n;
         }
 
         var kids:Array = [];
-        var count:int = items == null ? 0 : items.length;
         var hRef:StyleRefinement = null;
         if (n.itemHeight > 0) hRef = StyleRefinement.from({ height: n.itemHeight });
         // A hairline between rows. `width` is intentionally NOT set: in a column

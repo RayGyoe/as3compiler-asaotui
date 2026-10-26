@@ -6,6 +6,8 @@ package demo
 {
     import asaot.ui.Node;
     import asaot.ui.button;
+    import asaot.ui.numberInput;
+    import asaot.ui.rangeSlider;
     import asaot.ui.checkbox;
     import asaot.ui.column;
     import asaot.ui.radio;
@@ -249,6 +251,97 @@ package demo
                         slider("Zoom " + int(m.num("sl.zoom", 1.0) * 100) + "%", { key: "slZoom",
                             value: m.num("sl.zoom", 1.0),
                             onChange: function (n:Number):void { m.put("sl.zoom", n); } })
+                    ]);
+                })
+            ];
+
+            if (id == "numberInput") return [
+                new DocSection("A number, with steppers", [
+                    "The right 20pt of the box is the STEPPER strip (upper half adds, lower half",
+                    "subtracts); everything to its left is a real textField, so typing, selection and",
+                    "the caret behave exactly like the single-line field on the previous page.",
+                    "step is what the steppers AND the arrow keys move by, and every write is CLAMPED",
+                    "into [min, max] before any callback sees it."
+                ], [
+                    "numberInput(\"Qty\", { key: \"qty\", value: 4, min: 0, max: 99, step: 2,",
+                    "                     onChange: function (v:Number):void { model.qty = v; },",
+                    "                     onCommit: function (v:Number):void { save(v); } })"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        numberInput("Qty", { key: "numQty", value: m.num("num.qty", 4),
+                            min: 0, max: 99, step: 2,
+                            style: StyleRefinement.from({ size: [180, 32] }),
+                            onChange: function (v:Number):void { m.put("num.qty", v); },
+                            onCommit: function (v:Number):void { m.put("num.commit", v); } }),
+                        text("model " + m.num("num.qty", 4) + " - committed "
+                                + m.val("num.commit", "-"),
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Typing commits; junk reverts", [
+                    "onChange fires on every accepted change, onCommit on Enter or on blur. Text that",
+                    "does not parse is REVERTED to the model -- never NaN, never 0 -- because a number",
+                    "field that invented a value would silently overwrite what the author stored.",
+                    "decimals rounds every write, including the value the author passed in."
+                ], [
+                    "numberInput(\"Price\", { value: 12.5, min: 0, max: 1000, step: 0.5, decimals: 2,",
+                    "                     onChange: function (v:Number):void { model.price = v; } })"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        numberInput("Price", { key: "numPrice", value: m.num("num.price", 12.5),
+                            min: 0, max: 1000, step: 0.5, decimals: 2,
+                            style: StyleRefinement.from({ size: [180, 32] }),
+                            onChange: function (v:Number):void { m.put("num.price", v); } }),
+                        text("type letters, then click away: the field comes back",
+                            { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
+                })
+            ];
+
+            if (id == "rangeSlider") return [
+                new DocSection("Two thumbs, one track", [
+                    "A range is TWO numbers, so there is no Binding: the contract is onRange(lo, hi) and",
+                    "each one is a 0..1 position on the track. A thumb cannot be dragged past its",
+                    "partner -- the pair is clamped against itself, so lo never exceeds hi -- and the",
+                    "widget reports both values on every move, not a delta."
+                ], [
+                    "rangeSlider(\"Price\", { value: model.lo, value2: model.hi, step: 0.05,",
+                    "                         onRange: function (lo:Number, hi:Number):void {",
+                    "                             model.lo = lo; model.hi = hi;",
+                    "                         } })"
+                ], 96, function ():Node
+                {
+                    var lo:Number = m.num("rng.lo", 0.2);
+                    var hi:Number = m.num("rng.hi", 0.75);
+                    return row({ gap: 12, alignItems: "center" }, [
+                        rangeSlider("Price", { key: "rngDemo", value: lo, value2: hi, step: 0.05,
+                            style: StyleRefinement.from({ size: [220, 44] }),
+                            onRange: function (a:Number, b:Number):void
+                            {
+                                m.put("rng.lo", a); m.put("rng.hi", b);
+                            } }),
+                        text(int(lo * 100) + " - " + int(hi * 100),
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Normalised once, in the factory", [
+                    "value and value2 are clamped into 0..1 and SWAPPED when they arrive backwards, at",
+                    "construction time. Doing that in the widget instead would leave the first painted",
+                    "frame -- the one before any interaction -- showing an inverted band.",
+                    "The arrow keys move the thumb nearest the focus, step at a time."
+                ], [
+                    "// value: 0.9, value2: 0.1  renders as 0.1 .. 0.9, not as a broken track",
+                    "rangeSlider(\"Reversed\", { value: 0.9, value2: 0.1 })"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        rangeSlider("Reversed", { key: "rngSwap", value: 0.9, value2: 0.1,
+                            style: StyleRefinement.from({ size: [220, 44] }) }),
+                        text("0.1 .. 0.9", { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];

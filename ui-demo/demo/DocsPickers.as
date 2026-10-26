@@ -11,6 +11,7 @@ package demo
     import asaot.ui.column;
     import asaot.ui.combobox;
     import asaot.ui.datePicker;
+    import asaot.ui.multiSelect;
     import asaot.ui.pagination;
     import asaot.ui.row;
     import asaot.ui.select;
@@ -21,6 +22,8 @@ package demo
     {
         private static const CITIES:Array = ["Amsterdam", "Berlin", "Cairo", "Delhi", "Lisbon"];
         private static const PLANS:Array = ["Free", "Team", "Business"];
+        private static const TAGS:Array = ["Alpha", "Beta", "Gamma"];
+
         public static function sections(view:DocsView, id:String):Array
         {
             var m:DocsModel = view.model;
@@ -97,6 +100,52 @@ package demo
                 ], 76, function ():Node
                 {
                     return text("A combobox costs one textField plus one box per option.",
+                        { style: DocsDemo.LABEL, ariaName: "" });
+                })
+            ];
+
+            if (id == "multiSelect") return [
+                new DocSection("A select that stays open", [
+                    "values is an Array the AUTHOR owns: the widget reports the clicked INDEX through",
+                    "onToggle(i) and never edits the array itself. The menu stays open after a toggle --",
+                    "one that closed on every pick would be a select -- so it closes on Escape, on a",
+                    "second click on the trigger, or when the author hands back open: false.",
+                    "The trigger summary lists the picked labels in OPTION order, or the placeholder."
+                ], [
+                    "multiSelect({ key: \"tags\", width: 220, open: model.tagsOpen,",
+                    "              options: [\"Alpha\", \"Beta\", \"Gamma\"], values: model.tags,",
+                    "              onToggle: function (i:int):void { toggleTag(model, i); },",
+                    "              onOpenChange: function (o:Boolean):void { model.tagsOpen = o; } })"
+                ], 96, function ():Node
+                {
+                    var picked:Array = [];
+                    for (var i:int = 0; i < TAGS.length; i++)
+                    {
+                        if (m.bool("ms." + TAGS[i], i == 1)) picked.push(TAGS[i]);
+                    }
+                    return row({ gap: 12, alignItems: "center" }, [
+                        multiSelect({ key: "demoMs", width: 200, open: m.bool("ms.open", false),
+                            options: TAGS, values: picked, placeholder: "Pick some",
+                            onToggle: function (j:int):void {
+                                var name:String = String(TAGS[j]);
+                                m.put("ms." + name, !m.bool("ms." + name, j == 1));
+                            },
+                            onOpenChange: function (o:Boolean):void { m.put("ms.open", o); } }),
+                        text("values: " + picked.length + " of " + TAGS.length,
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Nothing inside the widget", [
+                    "There is no tick state, no summary string and no open flag stored in the widget:",
+                    "all three are rebuilt from values + options on every render. That is why a toggle",
+                    "shows up on the next frame without the widget having to repaint itself."
+                ], [
+                    "// the widget paints the check mark into the row's 26pt left padding --",
+                    "// the row style owns the space, so no glyph ever sits on the label"
+                ], 76, function ():Node
+                {
+                    return text("Click the trigger above, then pick two: the menu stays open.",
                         { style: DocsDemo.LABEL, ariaName: "" });
                 })
             ];
