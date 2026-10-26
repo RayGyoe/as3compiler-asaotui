@@ -11,11 +11,11 @@ M2  CAUGHT  A GRADIENT PAINTS ITS FIRST STOP AS A SOLID: the exact silent fallba
 M3  CAUGHT  THE WRAP WIDTH IS DROPPED AT MEASURE TIME: whiteSpace "normal" is accepted and then measured as one line, so the node publishes a single-line height and the text overflows its box
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the wrapped node is 12 tall, under 2.5 lines (12 each) -- it did not wrap;
-     restore: byte-identical (700d05ac1f1a3c0f)
+     restore: byte-identical (f9e0e7f47b20d47a)
 M4  CAUGHT  TRUNCATION IS SKIPPED AT PAINT TIME: textOverflow "ellipsis" is parsed, accepted and then not applied, so a 90-character run is drawn into a 120px box
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the ellipsis node still holds all 90 characters; the truncated run holds no U+2026: 'The quick brown fox jumps over the lazy dog while the compiler measures every single line.'; the ellipsised run is 496px wide, past its 120px box;
-     restore: byte-identical (700d05ac1f1a3c0f)
+     restore: byte-identical (f9e0e7f47b20d47a)
 M5  CAUGHT  THE TEXT AREA CONSUMES RETURN: the single-line contract (Enter commits) leaks into the multi-line one, which both suppresses the newline the runtime would insert and reverts the field to the last committed value -- the exact inversion TextAreaNode documents
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL after 'ab' + Return + 'cd' the field holds 2 characters ('cd'); Return did NOT insert a line break in a multiline field;
@@ -23,7 +23,7 @@ M5  CAUGHT  THE TEXT AREA CONSUMES RETURN: the single-line contract (Enter commi
 M6  CAUGHT  THE DECORATION IS NEVER DRAWN: textDecoration is parsed, cascaded and then never reaches the shape, so an underline run looks exactly like a plain one -- a property assertion would still pass
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL no underline at (52,326): #ffffff not #111827; no line-through at (52,353): #ffffff not #111827;
-     restore: byte-identical (700d05ac1f1a3c0f)
+     restore: byte-identical (f9e0e7f47b20d47a)
 M7  CAUGHT  LINE-THROUGH IS DRAWN WHERE THE UNDERLINE GOES: the strike rule collapses into the underline rule, so the one line it does draw is in the wrong place -- and the probe's accent-insensitive text still has a line, which is why it samples the STRIKE node separately
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL no line-through at (52,353): #ffffff not #111827;
@@ -32,6 +32,10 @@ M8  CAUGHT  THE RULE IGNORES THE LINE'S LEFT EDGE: the decoration is drawn from 
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the underline starts before the line: (21,326) is #111827;
      restore: byte-identical (b0d6dea7cd789d50)
+M9  CAUGHT  A TEXT NODE OWNS NO PAINT BOX: the shape that PaintKit.paintBox draws into is never created, so the node keeps its geometry and its glyphs while its background / borderColor paint NOTHING -- the silent drop the docs audit found (three tinted alignment lines came out untinted). Every property assertion still passes; only a pixel inside the box can see it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the text node paints no background: inside its box is #ffffff, expected #ff00ff (PaintKit.paintBox needs a shapeA to draw into);
+     restore: byte-identical (f9e0e7f47b20d47a)
 
-MUTATION textfx: 8/8 caught, 0 problem(s)
+MUTATION textfx: 9/9 caught, 0 problem(s)
 RESULT: PASS

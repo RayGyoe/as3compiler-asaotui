@@ -30,6 +30,10 @@ package demo
         // rather than a guess about which pixels survived.
         private static var BAND:BitmapData = null;
 
+        // The 8x8 diagonal ramp the `smooth` demo scales to 96x96. A hard two-colour
+        // edge would make smooth:true and smooth:false look identical.
+        private static var RAMP:BitmapData = null;
+
         // The glyph data, written as an author would copy it out of an icon set. Kept in
         // one place so the two sizes in a row are provably the SAME data.
         private static const P_GLYPH_CROSS:String = "M12 5 V19 M5 12 H19";
@@ -113,6 +117,30 @@ package demo
                     return row({ gap: 8, alignItems: "center" }, [
                         spinner({ diameter: 16, thickness: 2 }),
                         text("Loading the index...", { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
+                }),
+
+                // The two options that make a spinner a STATE rather than an animation:
+                // a frozen ring is what a "paused" or "stalled" row should show, and
+                // `phase` places the gap without restarting anything.
+                new DocSection("Frozen, and where the gap sits", [
+                    "`spin: false` stops the rotation -- the widget owns an ENTER_FRAME while it spins",
+                    "and none while it does not, so freezing it also stops the per-frame work.",
+                    "`phase` (0..1) is the gap's position around the ring, which is why three frozen",
+                    "spinners can look like three different instants of one animation."
+                ], [
+                    "spinner({ spin: false, phase: 0.0 }),",
+                    "spinner({ spin: false, phase: 0.25 }),   // a quarter turn",
+                    "spinner({ spin: false, phase: 0.5 })"
+                ], 96, function ():Node
+                {
+                    return column({ gap: 6 }, [
+                        row({ gap: 22, alignItems: "center" }, [
+                            spinner({ key: "spP0", diameter: 24, thickness: 3, spin: false, phase: 0 }),
+                            spinner({ key: "spP1", diameter: 24, thickness: 3, spin: false, phase: 0.25 }),
+                            spinner({ key: "spP2", diameter: 24, thickness: 3, spin: false, phase: 0.5 }),
+                            text("phase 0 / 0.25 / 0.5, spin: false", { style: DocsDemo.MONO, ariaName: "" })
+                        ])
                     ]);
                 })
             ];
@@ -230,6 +258,31 @@ package demo
                         icon(P_GLYPH_STAR, { key: "icF", style: ICON48, color: 0xF59E0B, fill: true, stroke: false }),
                         text("a ten-command polygon: no curve at all", { style: DocsDemo.MONO, ariaName: "" })
                     ]);
+                }),
+
+                // `viewBox` is what makes third-party icon data usable: the glyph's own
+                // coordinate space instead of "one unit is one pixel".
+                new DocSection("viewBox: the data's own units", [
+                    "`strokeWidth` is measured in the DATA's units, so the same picture can be told in",
+                    "a 24-unit space or a 48-unit one. Without `viewBox` the data is taken as 24 and",
+                    "drawn 1:1 -- which is why the third glyph below is cut: its cross lives between 10",
+                    "and 38, but the box is 24 wide."
+                ], [
+                    "icon(\"M12 5 V19 M5 12 H19\", { size: [24, 24], strokeWidth: 2 }),",
+                    "icon(\"M24 10 V38 M10 24 H38\", { viewBox: 48, size: [24, 24], strokeWidth: 4 }),",
+                    "icon(\"M24 10 V38 M10 24 H38\", { size: [24, 24], strokeWidth: 2 })   // cut: no viewBox"
+                ], 84, function ():Node
+                {
+                    return row({ gap: 16, alignItems: "center" }, [
+                        icon("M12 5 V19 M5 12 H19", { key: "icVb1", style: ICON24,
+                            color: 0x2563EB, strokeWidth: 2 }),
+                        icon("M24 10 V38 M10 24 H38", { key: "icVb2", style: ICON24,
+                            color: 0x2563EB, viewBox: 48, strokeWidth: 4 }),
+                        icon("M24 10 V38 M10 24 H38", { key: "icVb3", style: ICON24,
+                            color: 0xDC2626, strokeWidth: 2 }),
+                        text("24 units / 48 units + viewBox / 48 units without one",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -318,6 +371,35 @@ package demo
                             style: StyleRefinement.from({ size: [64, 64], background: 0xF3F4F6 }) }),
                         text("loaded from as-image.png", { style: DocsDemo.MONO, ariaName: "" })
                     ]);
+                }),
+
+                // `smooth` is the one image option that changes PIXELS and nothing else. A
+                // gradient source is the only way to see it: on a hard two-colour edge the
+                // seam is one pixel wide and both settings look the same.
+                new DocSection("smooth: a blend or the raw pixels", [
+                    "`smooth: true` (the default) lets the renderer interpolate; `smooth: false` asks for",
+                    "nearest neighbour, which is what pixel art, sprite sheets and 1-bit masks need --",
+                    "blurring a mask turns a crisp edge into a grey halo.",
+                    "Both images below are the same 8x8 gradient drawn at 12x."
+                ], [
+                    "image({ bitmapData: ramp, smooth: false, style: { size: [96, 96] } }),",
+                    "image({ bitmapData: ramp, smooth: true,  style: { size: [96, 96] } })"
+                ], 132, function ():Node
+                {
+                    ensureRamp();
+                    return row({ gap: 14, alignItems: "center" }, [
+                        column({ gap: 2 }, [
+                            image({ key: "imgSharp", bitmapData: RAMP, smooth: false,
+                                style: StyleRefinement.from({ size: [96, 96] }) }),
+                            text("smooth: false", { style: DocsDemo.MONO, ariaName: "" })
+                        ]),
+                        column({ gap: 2 }, [
+                            image({ key: "imgSmooth", bitmapData: RAMP, smooth: true,
+                                style: StyleRefinement.from({ size: [96, 96] }) }),
+                            text("smooth: true", { style: DocsDemo.MONO, ariaName: "" })
+                        ]),
+                        text("an 8x8 gradient at 12x", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -335,6 +417,22 @@ package demo
             if (BAND != null) return;
             BAND = new BitmapData(16, 8, false, 0xDC2626);
             BAND.fillRect(new Rectangle(8, 0, 8, 8), 0x2563EB);
+        }
+
+        // A diagonal ramp: the only kind of source where `smooth` is visible at all.
+        private static function ensureRamp():void
+        {
+            if (RAMP != null) return;
+            RAMP = new BitmapData(8, 8, false, 0x000000);
+            for (var j:int = 0; j < 8; j++)
+            {
+                for (var i:int = 0; i < 8; i++)
+                {
+                    var v:int = int(230 - (i + j) * 14);
+                    if (v < 20) v = 20;
+                    RAMP.setPixel(i, j, (v << 16) | (int(v * 0.6) << 8) | 200);
+                }
+            }
         }
     }
 }

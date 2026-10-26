@@ -130,6 +130,33 @@ package demo
                             justifyContent: "center", alignItems: "center"
                         }) }, [ text("vertical", { ariaName: "" }) ])
                     ]);
+                }),
+
+                // A box is a NODE, so it is clickable: `onClick` makes it a hit target
+                // (and `cursor: "hand"` is the author's promise that it looks like one --
+                // the kit never guesses that a container is interactive).
+                new DocSection("A container can be the button", [
+                    "`box()` takes `onClick` like every other node, so a card, a tile or a whole",
+                    "row can be the hit target -- no wrapper control and no event plumbing. It is",
+                    "the same dispatch a button uses: press, release inside, then the callback."
+                ], [
+                    "box({ style: { size: [180, 44], cursor: \"hand\", background: 0x2563EB,",
+                    "             cornerRadii: 8, justifyContent: \"center\", alignItems: \"center\" },",
+                    "      onClick: function ():void { model.clicks++; } })"
+                ], 96, function ():Node
+                {
+                    return column({ gap: 6 }, [
+                        box({ key: "boxClick", style: StyleRefinement.from({
+                                size: [180, 44], cursor: "hand", background: 0x2563EB,
+                                cornerRadii: 8, justifyContent: "center", alignItems: "center" }),
+                            ariaName: "clickable box",
+                            onClick: function ():void { m.put("box.clicks", int(m.num("box.clicks", 0)) + 1); } }, [
+                            text("click me", { style: StyleRefinement.from({
+                                text: { color: 0xFFFFFF, fontSize: 13 } }), ariaName: "" })
+                        ]),
+                        text("clicks: " + int(m.num("box.clicks", 0)) + "  (cursor: hand is a style, not a default)",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 

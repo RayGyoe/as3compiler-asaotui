@@ -53,7 +53,7 @@ Windows-only, which AIR's XSD has no slot for — `as3compiler/docs/zh-cn/compil
 (`ASC_RENDER_WINGPU=1` plus the backend's own define), because a mode that never
 reached the build renders **identically** to the software one and would look honoured.
 
-Nothing about this is observable by eye — all five modes draw the same 42 pages — so
+Nothing about this is observable by eye — all five modes draw the same 47 pages — so
 `../tools/buildsh-gpu.cjs` pins the descriptor and the argv for every mode, and
 `../tools/mutation-buildsh-gpu.cjs` (5/5) shows that gate goes red when the mapping,
 the refusal of unknown modes, or the one-line-diff invariant is broken. The last one
@@ -217,7 +217,7 @@ the dev box it is `C:\Program Files\LLVM\bin`.
 # (a) correctness self-check -- the CI-gateable one
 node run-check.cjs                       # -> CHECKUI: 23 checks, 0 failures, exit 0
 
-# (a2) the component-docs tour (42 pages, widget-driven switch, 8 screenshots)
+# (a2) the component-docs tour (47 pages, widget-driven switch, 8 screenshots)
 ASC_NO_OPEN=1 node run-gallery.cjs       # -> [gallery] RESULT: PASS
                                          #    air-gallery/gallery{,.done,-page0..7}.{txt,png}
 
@@ -263,17 +263,21 @@ attached) into **failures**, not log lines: `mutation-gallery-zerorect.cjs` resi
 catalog image to 0×0 and requires the tour to go red naming `page 4` (baseline green,
 restore byte-identical).
 
-`air-gallery/gallery-page{0..6}.png` are the gallery's seven pages; the tour's
+`air-gallery/gallery-page{0..7}.png` are the tour's eight page stops; the tour's
 hand-computed columns (`colA 24,132,320,374` / `colB 356,132,320,374`) are derived from
 700 − 2×24 = 652 content width, two `flexGrow:1` columns and a 12 gap.
 
-The **Advanced page (index 6)** is the last seven widgets that had no page: `select`,
-`combobox`, `datePicker`, a `scrollView` of colour bands, a `virtualList` (500 rows, 9
-mounted), a `tree` (two open branches, one selected row) and the two floating surfaces
-those widgets open — a `popover` (opened by the tour, sampled at the body pixel) and a
-`drawer` anchored to the bottom edge, **open on arrival**. The page stops at y = 470
-because the drawer starts there: an edge drawer covered the tab strip and there was no
-way back out of the page.
+The **Advanced page** used to be the one page holding the last seven widgets that had
+none: `select`, `combobox`, `datePicker`, a `scrollView` of colour bands, a
+`virtualList` (500 rows, 9 mounted), a `tree` (two open branches, one selected row) and
+the two floating surfaces those widgets open — a `popover` (opened by the tour, sampled
+at the body pixel) and a `drawer` anchored to the bottom edge, **open on arrival**. It
+has since been split: each of those widgets owns a page in the `Pickers` / `Data` /
+`Overlay` groups (43 → 47 pages, 9 → 10 groups with `System`), and the widget gallery
+keeps only the eight tour stops `gallery-page0..7.png`. The old page stopped at y = 470
+because the drawer started there: an edge drawer covered the tab strip and there was no
+way back out of the page — that lesson is why `drawer` now has its own page with the
+side/axis choice on it.
 
 That list is no longer maintained by hand: `tools/kind-coverage.cjs` resolves every
 `register("<kind>", ...)` to its node class, then to the factory functions that construct

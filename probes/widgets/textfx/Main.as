@@ -30,12 +30,17 @@
 //                    mean the LINE, and "one row above/below is white" can only mean
 //                    it is one pixel thick. Where it lands is derived from
 //                    getLineMetrics here, in the probe, NOT copied from the kit.
+//   7. text bg   -- a text node owns a PAINT BOX (background/border/radius) like every
+//                   other kind. It did not: TextWidget never created a shapeA, so
+//                   PaintKit.paintBox returned early and `background` on a text node was
+//                   accepted and silently unpainted. Magenta on white makes it a two-pixel
+//                   question -- filled inside the box, white in the gap above it.
 //
 // Hand arithmetic (window 460x520, root column, padding 20, gap 12, alignItems
 // flex-start, white, text 12px):
 //
 //   sh (20,20,120,60)   gr (20,92,160,40)   92 = 20 + 60 + 12
-//   then ref / wr / el / ta / ul / stn, each auto-height, in that order.
+//   then ref / wr / el / ta / ul / stn / bg, each auto-height, in that order.
 //
 //   sh's shadow is the box offset by (0,8): it covers y 28..88, so y=84 is inside it
 //   and y=14 is above it (white). x=80 is the box's own mid-column.
@@ -110,6 +115,15 @@ class TextFxProbe extends View
     private static const ST_S:StyleRefinement = StyleRefinement.from({
         text: { fontSize: 24, color: 0x111827, textDecoration: "line-through" }
     });
+    // A text node that carries a PAINT field. Every other kind owns a Shape for these and
+    // draws it through PaintKit.paintBox; text used to own none, so `background` on a text
+    // node was accepted and painted nothing (found by the docs audit, where three tinted
+    // alignment lines came out untinted). Magenta because nothing else in this window is:
+    // "the box is filled" and "the fill stops at the box" are then two pixel questions
+    // with no ambiguity, and the string is short so the right half of the box is bare fill.
+    private static const BG_S:StyleRefinement = StyleRefinement.from({
+        size: [120, 20], background: 0xFF00FF, text: { color: 0xFFFFFF }
+    });
 
     public function TextFxProbe():void { super(); }
 
@@ -131,7 +145,8 @@ class TextFxProbe extends View
                 },
                 onCommit: function (t:String):void { st.committed = t; } }),
             text(DEC, { key: "ul", style: UL_S, ariaName: "" }),
-            text(DEC, { key: "stn", style: ST_S, ariaName: "" })
+            text(DEC, { key: "stn", style: ST_S, ariaName: "" }),
+            text("HH", { key: "bg", style: BG_S, ariaName: "" })
         ]);
     }
 }
@@ -260,6 +275,7 @@ function phaseText():void
         fail("the ellipsised run is " + el.tf.textWidth + "px wide, past its 120px box");
     say("text: lineH=" + lineH + " refH=" + ref.absH + " wrH=" + wr.absH + " wrW=" + wr.absW
         + " elW=" + el.absW + " elLen=" + t.length + "/" + S.length + " elTw=" + el.tf.textWidth);
+
 }
 
 // ==================== phase 3: the multi-line field =========================
@@ -377,6 +393,30 @@ function phaseDecor(bd:BitmapData):void
     }
 }
 
+// ==================== phase 3b: the text PAINT box ===========================
+function phaseTextBg(bd:BitmapData):void
+{
+    // ---- a text node's OWN paint box --------------------------------------
+    // Sampled relative to the node's solved rect, so a font change cannot move the
+    // question: the box must be filled where no glyph can reach, and the GAP ABOVE
+    // it must still be the page white -- the second half is what proves the fill
+    // belongs to the node's box and not to the whole row it sits in.
+    var bg:UiNode = node("bg");
+    if (bg == null) { fail("bg missing"); return; }
+    if (bg.absX != 20 || bg.absW != 120 || bg.absH != 20)
+        fail("bg is " + bg.absX + "," + bg.absY + "," + bg.absW + "," + bg.absH
+            + " -- the box should be 120x20 at x=20");
+    var face:uint = pixel(bd, bg.absX + 110, bg.absY + 10);
+    var aboveBg:uint = pixel(bd, bg.absX + 110, bg.absY - 4);
+    if (face != 0xFF00FF)
+        fail("the text node paints no background: inside its box is " + hex(face)
+            + ", expected #ff00ff (PaintKit.paintBox needs a shapeA to draw into)");
+    if (aboveBg != 0xFFFFFF)
+        fail("the text background escaped its box: " + hex(aboveBg) + " at y-4 above it");
+    say("text bg: face=" + hex(face) + " above=" + hex(aboveBg)
+        + " at " + bg.absX + "," + bg.absY + "," + bg.absW + "," + bg.absH);
+}
+
 // ==================== phase 4: blur commits ================================
 function phaseBlur():void
 {
@@ -405,6 +445,7 @@ function ready():void
     phaseText();
     phaseArea();
     phaseDecor(bd);
+    phaseTextBg(bd);
     setTimeout(function ():void { phaseBlur(); setTimeout(finish, 240); }, 240);
 }
 
@@ -413,7 +454,7 @@ function finish():void
     var bd:BitmapData = frame();
     phaseSurface(bd);
     var lines:String = "";
-    var names:Array = ["root", "sh", "gr", "ref", "wr", "el", "ta", "ul", "stn"];
+    var names:Array = ["root", "sh", "gr", "ref", "wr", "el", "ta", "ul", "stn", "bg"];
     for (var i:int = 0; i < names.length; i++)
     {
         var m:UiNode = node(names[i]);

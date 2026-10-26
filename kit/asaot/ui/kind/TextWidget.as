@@ -28,10 +28,20 @@ package asaot.ui.kind
 
     import asaot.ui.LayoutConstants;
 
+    import flash.display.Shape;
+
     public class TextWidget implements Widget
     {
+        // Every other kind owns a Shape at child index 0 for the PAINT fields
+        // (background / borderColor / cornerRadii / boxShadow / opacity) and draws it
+        // through PaintKit.paintBox. Text did not: `paintBox` bails on a null shapeA, so
+        // `background` on a text node was ACCEPTED and silently painted nothing -- found
+        // by the docs audit, where three 300px tinted alignment lines came out untinted.
+        // The shape goes in FIRST so the field draws on top of the tint.
         public function build(n:UiNode):void
         {
+            n.shapeA = new Shape();
+            n.backing.addChild(n.shapeA);
             n.tf = PaintKit.makeText(false);
             n.backing.addChild(n.tf);
         }

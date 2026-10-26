@@ -590,6 +590,20 @@
 
 ---
 
+## G29 —— 样式字段 `overflow` **被接受、被校验、也进了布局引擎，但两侧画笔都不裁剪**
+
+| 项 | 内容 |
+|---|---|
+| 现象（实测，2026-10-26） | 在 `style` 里写 `overflow: "hidden"` 的 120×28 box 里放一个 200×28 的子件：**子件照样按 200px 画出来**（截图取样：`x 691..989`，即 200 逻辑 px），与 `overflow: "visible"` 的邻格逐像素同宽。`box` 自己的灰底被子件整条盖住 |
+| 代码事实 | 字段是齐全的：`style/Style.as:69` `public var overflow:String`、`As3LayoutEngine.as:409 setOverflow()` 逐值校验（非法值 THROW）、`LayoutConstants.OVERFLOW_VISIBLE/HIDDEN/SCROLL` 三档。缺的是**消费端**：`kit/asaot/ui/PaintKit.as` 里 grep 不到 `overflow`/`clip`/`scrollRect`/`mask` 任何一处；`As3LayoutEngine.as:27` 的注释自己写着「overflow (stored only; clipping happens in the painter)」—— 画笔那一步从来没写 |
+| 影响面 | **纯观感**：布局尺寸、命中测试、滚动位置全都不受影响（`overflow` 不改任何 rect），所以每一个几何断言都是对的 —— 这正是它一直没被发现的原因。反过来说，**用它当遮罩的写法会静默失效**：内容照旧溢出、盖住邻居 |
+| 库侧处置（2026-10-26） | **不假装能演**：`style` 页的 overflow 一节改为「`overflow`: accepted, not yet painted」，两格故意做成一模一样，文案直说两条都是 200px 且指向本文档。同时给出**今天真能裁剪**的两条路：`scrollView`（viewport 自己裁剪）与 `image({ scaleMode: "cover" })`（`scrollRect` 裁切） |
+| 另一条同源陷阱 | 同一格最初的写法是 `flexShrink: 0` + `flexBasis: 200`（因为「任何 flex 字段都会替换 item 的 base size」）。结果在 `overflow: hidden` 的父盒里，子件把那个 basis 落到了**错的轴**上：实测 `200×28` 的条子画成了 **200 高**（截图取样 y 506..805） |
+| 对编译器的主张 | ① 原生画笔（`as_ui_*`，C++ 侧）在 `OVERFLOW_HIDDEN` 时对子树做 `clipRect`（Skia `SkCanvas::save/clipRect/restore`，边界用 padding box）；② 库侧 `PaintKit.paint()` 同一档在 AS3 臂上用 `DisplayObject.scrollRect` 或 `mask` 做等价裁剪，两臂共用一套「padding box」几何；③ 两者的钉子都应落在「同一个 200px 子件在 120px 父盒里，像素只画到 120」这条断言上 |
+| 状态 | **已登记，未修**。⚠️ 证据等级：**native 臂逐像素实测**（`GalleryApp.exe`）；**AIR 臂未逐像素实测**，但两臂共用同一份 `kit/asaot/ui/PaintKit.as`，代码上同样一处 clip 都没有 ⇒ 按同一结论记，立案前补一次 `adl` 取样 |
+
+---
+
 ## 2 不是缺口：已澄清 / 已关闭
 
 | 事项 | 结论 | 证据 |

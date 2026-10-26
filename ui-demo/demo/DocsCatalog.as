@@ -21,7 +21,8 @@ package demo
     {
         public static const GROUPS:Array = [
             "Getting started", "Layout", "Text & badges", "Controls",
-            "Pickers", "Data", "Navigation", "Feedback", "Overlay"
+            "Pickers", "Data", "Navigation", "Feedback", "Overlay",
+            "System"
         ];
 
         private static var _pages:Array;
@@ -81,7 +82,20 @@ package demo
                 new DocPage("popover", "popover", 8, "A panel anchored to a key, sized by its content."),
                 new DocPage("menu", "menu", 8, "A list of actions anchored to a trigger."),
                 new DocPage("toast", "toast", 8, "A transient corner message."),
-                new DocPage("toastHost", "toastHost", 8, "The bottom-right stack toasts drop into.")
+                new DocPage("toastHost", "toastHost", 8, "The bottom-right stack toasts drop into."),
+
+                // The four pages about the framework itself, not about one widget.
+                // They are LAST in the sidebar because they are the reference you
+                // reach for after a kind's page answered "what does it look like":
+                // these answer "which field do I write to make it do that".
+                new DocPage("style", "style", 9,
+                    "The 35 fields: size, flex, spacing, box model, paint, transitions."),
+                new DocPage("theme", "theme", 9,
+                    "Four layers -- control default, theme slot, inherited text, author style."),
+                new DocPage("state", "state", 9,
+                    "Bindings, notify(dirty) and the Subscription: who owns a value."),
+                new DocPage("keyboard", "keyboard", 9,
+                    "The focus ring, Tab, Enter/Space, and the per-kind key map.")
             ];
         }
 
@@ -122,6 +136,8 @@ package demo
             s = DocsNav.sections(view, id);
             if (s != null) return s;
             s = DocsFeedback.sections(view, id);
+            if (s != null) return s;
+            s = DocsSystem.sections(view, id);
             if (s != null) return s;
             return DocsOverlay.sections(view, id);
         }

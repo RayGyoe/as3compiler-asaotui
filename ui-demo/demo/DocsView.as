@@ -280,6 +280,69 @@ package demo
                     onClose: function ():void { m.put("mnu.open", false); }
                 }));
             }
+            if (m.doc == "dialog" && m.bool("dlg2.open", false))
+            {
+                // closeOnScrim: false -- the scrim still absorbs the press, it just does
+                // not report a close. Escape and the panel's own buttons remain.
+                nodes.push(dialog({
+                    key: "demoDlg2", open: true, width: 300, title: "Rename the file",
+                    closeOnScrim: false,
+                    footer: [
+                        button({ key: "demoDlg2No", label: "Discard",
+                                 onClick: function ():void { m.put("dlg2.open", false); } }),
+                        button({ key: "demoDlg2Yes", label: "Save",
+                                 style: StyleRefinement.from({
+                                     background: 0x2563EB, borderColor: 0x1D4ED8,
+                                     text: { color: 0xFFFFFF, fontWeight: "bold" } }),
+                                 onClick: function ():void { m.put("dlg2.open", false); } })
+                    ],
+                    onClose: function ():void { m.put("dlg2.open", false); }
+                }, [
+                    text("A press on the scrim is ignored here; the two buttons and Escape are the exits.",
+                        { key: "demoDlg2Body", style: StyleRefinement.from({
+                            text: { fontSize: 13, color: 0x4B5563 } }) })
+                ]));
+            }
+            if (m.doc == "drawer" && m.bool("drw2.open", false))
+            {
+                // The bottom sheet: `size` is the HEIGHT on this axis.
+                nodes.push(drawer({
+                    key: "demoDrw2", open: true, side: "bottom", size: 160, title: "Share",
+                    onClose: function ():void { m.put("drw2.open", false); }
+                }, [
+                    text("A bottom sheet spans the window's width; its `size` is a height.",
+                        { key: "demoDrw2Body", style: StyleRefinement.from({
+                            text: { fontSize: 13, color: 0x374151 } }) })
+                ]));
+            }
+            if (m.doc == "popover" && m.bool("pop2.open", false))
+            {
+                nodes.push(popover({
+                    key: "demoPop2", open: true, anchorKey: "demoPop2Btn", placement: "bottom",
+                    offset: 8, width: 230, closeOnOutside: false,
+                    onClose: function ():void { m.put("pop2.open", false); }
+                }, [
+                    column({ gap: 6 }, [
+                        text("No outside press closes this one.", { key: "demoPop2Body",
+                            style: StyleRefinement.from({
+                                text: { fontSize: 12, color: 0x374151 } }) }),
+                        button({ key: "demoPop2Done", label: "Done",
+                                 onClick: function ():void { m.put("pop2.open", false); } })
+                    ])
+                ]));
+            }
+            if (m.doc == "menu" && m.bool("mnu2.open", false))
+            {
+                nodes.push(menu({
+                    key: "demoMnu2", open: true, anchorKey: "mnu2Btn", placement: "bottom",
+                    offset: 8, width: 180, selectedIndex: -1, submenuIndex: 1,
+                    items: ["Rename",
+                            { label: "Move to", submenu: ["Inbox", "Archive"] },
+                            "Delete"],
+                    onSelect: function (i:int):void { m.put("mnu2.pick", i); m.put("mnu2.open", false); },
+                    onClose: function ():void { m.put("mnu2.open", false); }
+                }));
+            }
             if (m.doc == "toast" && m.bool("tst.open", false))
             {
                 nodes.push(toastHost({ key: "demoToasts" }, [

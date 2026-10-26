@@ -51,6 +51,29 @@ package demo
                 {
                     return text("Escape closes it too: the widget handles the key, the model owns the flag.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                // closeOnScrim is a POLICY, not a detail: the default (close on a scrim
+                // press) is right for a confirmation and wrong for a form.
+                new DocSection("closeOnScrim: false, for a dialog with unsaved input", [
+                    "By default a scrim press closes the dialog. That is what a confirmation wants and",
+                    "exactly what a FORM does not: one stray click outside and the typed text is gone.",
+                    "`closeOnScrim: false` makes Escape and the panel's own buttons the only exits --",
+                    "the scrim still swallows the press, because a modal blocks the page, it is not a",
+                    "giant close button. `onClose` remains the single writer either way."
+                ], [
+                    "dialog({ key: \"demoDlg2\", open: model.formOpen, width: 300,",
+                    "         closeOnScrim: false,",
+                    "         onClose: function ():void { model.formOpen = false; } },",
+                    "       [ form, row([ discard, save ]) ])"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        button({ key: "demoDlg2Btn", label: "Open a form",
+                                 onClick: function ():void { m.put("dlg2.open", true); } }),
+                        text("click the scrim: nothing happens; Escape still closes",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -80,6 +103,27 @@ package demo
                 {
                     return text("Open it: the page behind neither scrolls nor reflows.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                // The other AXIS: for a top/bottom sheet `size` is a HEIGHT. Same widget,
+                // same scrim, same close contract -- only the anchor edge changes.
+                new DocSection("The other axis: a bottom sheet", [
+                    "`side: \"left\" | \"right\" | \"top\" | \"bottom\"`. On a left/right sheet `size`",
+                    "is a WIDTH; on a top/bottom one it is a HEIGHT, and the layer spans the window",
+                    "on the other axis. An unknown side throws at describe time rather than landing on",
+                    "a default edge -- there is no such thing as a drawer with no edge."
+                ], [
+                    "drawer({ key: \"demoDrw2\", open: model.shareOpen, side: \"bottom\",",
+                    "         size: 160, title: \"Share\",",
+                    "         onClose: function ():void { model.shareOpen = false; } })"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        button({ key: "demoDrw2Btn", label: "Open a bottom sheet",
+                                 onClick: function ():void { m.put("drw2.open", true); } }),
+                        text("same widget, size is the height here",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -112,6 +156,29 @@ package demo
                 {
                     return text("Close it by clicking outside or on the trigger again.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                // The inverse policy of closeOnScrim: a popover can refuse the outside
+                // press too, and then it MUST carry its own way out.
+                new DocSection("closeOnOutside: false", [
+                    "A popover closes on any press outside it by default. `closeOnOutside: false` makes",
+                    "it a panel you dismiss yourself, which is what a colour picker or a mini form",
+                    "wants: a stray click on the page must not throw the work away.",
+                    "It still never closes ITSELF -- `onClose` is the only writer, so the panel needs a",
+                    "button of its own (the one inside this popover is that button)."
+                ], [
+                    "popover({ key: \"demoPop2\", open: model.pinOpen, anchorKey: \"pop2Btn\",",
+                    "          closeOnOutside: false,",
+                    "          onClose: function ():void { model.pinOpen = false; } },",
+                    "        [ text(\"no outside press closes me\"), button({ label: \"Done\", ... }) ])"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        button({ key: "demoPop2Btn", label: "Pin a popover",
+                                 onClick: function ():void { m.put("pop2.open", true); } }),
+                        text("click outside it: it stays; press Done inside",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -142,6 +209,28 @@ package demo
                 {
                     return text("Click an item: onSelect(index) fires and the menu closes.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                // A submenu is a MENU, not a special widget: it is the item's child, so it
+                // inherits the same keys, the same placement maths and the same close rule.
+                new DocSection("A submenu is an item with a list", [
+                    "`items: [{ label: \"Move to\", submenu: [...] }]` -- the submenu is described as a",
+                    "child MENU of the item, so it reuses the same keyboard map, the same placement",
+                    "code and the same close-on-outside rule. `submenuIndex` says which item's list is",
+                    "open; the widget reports the ITEM index, not a flat index into a merged list."
+                ], [
+                    "menu({ key: \"demoMnu2\", open: model.m2Open, anchorKey: \"mnu2Btn\",",
+                    "       items: [ \"Rename\", { label: \"Move to\", submenu: [ \"Inbox\", \"Archive\" ] },",
+                    "                { label: \"Delete\", value: \"rm\" } ],",
+                    "       submenuIndex: 1, onSelect: onItem })"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        button({ key: "mnu2Btn", label: "Menu with a submenu",
+                                 onClick: function ():void { m.put("mnu2.open", true); } }),
+                        text("submenuIndex 1 is open: Inbox / Archive",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 

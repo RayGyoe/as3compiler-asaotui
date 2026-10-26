@@ -17,6 +17,17 @@ package demo
     public class DocsModel extends Observable
     {
         public var doc:String = "start";
+
+        // Two REAL fields, because `bindTo` needs something to point at: a Binding
+        // reads `model[field]` and writes it back, so the docs' own `state` page
+        // binds these rather than faking a binding over `demo[key]` (a Binding over
+        // a Dictionary entry would demonstrate the wrong thing -- the point is that
+        // the field and the pixels cannot disagree, which needs a field).
+        public var tabIdx:int = 0;
+        public var chkOn:Boolean = true;
+        // The page number the `pagination` page's Binding demo owns.
+        public var pgIdx:int = 2;
+
         private var demo:Object;
 
         public function DocsModel():void

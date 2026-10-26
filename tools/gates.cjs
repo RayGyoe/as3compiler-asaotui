@@ -153,7 +153,7 @@
 //                NOTE the probe's onChange deliberately does NOT invalidate: the
 //                field owes the screen its own repaint, and an author-side invalidate
 //                would hide that.
-//   textfx 18 -- probes/widgets/textfx/mutation.cjs: 8/8. Three of them are boxShadow,
+//   textfx 18 -- probes/widgets/textfx/mutation.cjs: 9/9. Three of them are boxShadow,
 //                gradient fills and the textArea/Return contract inversion: the filter
 //                list is built and then NOT handed to the display object (every property
 //                correct, screen unchanged); the radial fallback the kit refuses -- painting
@@ -168,6 +168,12 @@
 //                separately); and the rule drawn from the field's origin instead of the
 //                line box's `lm.x` (an inset or centred run gets a rule that starts too
 //                early -- still "an underline" to any check that only counts ink).
+//                The ninth is a text node with no PAINT BOX: `background` / `borderColor`
+//                are style fields every kind is supposed to honour, but PaintKit.paintBox
+//                bails on a null shapeA, so a text node accepted them and painted nothing --
+//                geometry, glyphs and every property assertion unchanged, which is exactly
+//                why a pixel inside the box had to ask the question (found by the docs audit:
+//                three tinted 300px alignment lines came out untinted).
 //   keys 36   -- probes/widgets/keys/mutation.cjs: 4/4, one per way a keyboard list can
 //                be wrong while its model is right: list Down at the last row WRAPS
 //                (it must clamp -- ARIA listbox is a sequence, a ring is for tree/tabs);

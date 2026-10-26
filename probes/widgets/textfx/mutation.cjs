@@ -33,6 +33,8 @@ const RESULTS = path.join(DIR, 'textfx-mutation.txt');
 
 const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 
+const NL = String.fromCharCode(10);   // a real newline, built rather than typed
+
 const MUTATIONS = [
   {
     id: 'M1',
@@ -111,6 +113,17 @@ const MUTATIONS = [
     find: '                g.drawRect(Math.round(tf.x + lm.x), Math.round(ly), Math.max(1, Math.round(lm.width)), 1);',
     replace: '                g.drawRect(Math.round(tf.x), Math.round(ly), Math.max(1, Math.round(lm.width)), 1);',
     expect: 'starts before the line',
+  },
+  {
+    id: 'M9',
+    file: 'kit/asaot/ui/kind/TextWidget.as',
+    why: 'A TEXT NODE OWNS NO PAINT BOX: the shape that PaintKit.paintBox draws into is never created, so the '
+      + 'node keeps its geometry and its glyphs while its background / borderColor paint NOTHING -- the silent '
+      + 'drop the docs audit found (three tinted alignment lines came out untinted). Every property assertion '
+      + 'still passes; only a pixel inside the box can see it',
+    find: ['            n.shapeA = new Shape();', '            n.backing.addChild(n.shapeA);', '            n.tf = PaintKit.makeText(false);'].join(NL),
+    replace: '            n.tf = PaintKit.makeText(false);',
+    expect: 'the text node paints no background',
   },
 ];
 

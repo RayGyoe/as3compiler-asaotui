@@ -292,6 +292,29 @@ package demo
                                 { style: DocsDemo.MONO, ariaName: "" })
                         ])
                     ]);
+                }),
+
+                // `grid` is the other answer to "which row am I on": rules instead of
+                // alternating fills. They are PAINT, so they cost nothing at layout time.
+                new DocSection("Grid lines instead of stripes", [
+                    "`grid: true` draws the row rules and the column rules in the table's border",
+                    "colour; `stripes` paints every other row instead. They compose (both on is a",
+                    "spreadsheet look) but on a tight row height the rules are usually enough --",
+                    "and a rule is drawn INSIDE the row, so it never changes a row's height."
+                ], [
+                    "table(cols, rows, { grid: true, stripes: false, rowHeight: 24,",
+                    "                    header: true, style: { size: [340, 120] } })",
+                    "// 4 data rows + the header = 5 * 24 = 120, exactly the box"
+                ], 156, function ():Node
+                {
+                    var rows:Array = [];
+                    for (var i:int = 0; i < 4; i++)
+                        rows.push({ name: String(NAMES[i]), qty: (i + 1) * 7 });
+                    return table([{ key: "name", title: "Name", width: 150 },
+                                  { key: "qty", title: "Qty" }], rows,
+                        { key: "demoTableGrid", rowHeight: 24, header: true,
+                          grid: true, stripes: false,
+                          style: StyleRefinement.from({ size: [340, 120] }) });
                 })
             ];
 
@@ -460,6 +483,48 @@ package demo
                         style: StyleRefinement.from({ size: [280, 96], background: 0xF8FAFC }) }, [
                         column({ key: "demoSvStickCol", style: StyleRefinement.from({
                             size: [Length.pct(1), Length.px(n * 20)], gap: 2, padding: 6 }) }, rows)
+                    ]);
+                }),
+
+                // The view can be born scrolled, and the bars are author-styled rather
+                // than theme-styled -- they are the one piece of chrome that sits on top
+                // of the content and is therefore per-instance, not per-kind.
+                new DocSection("Where it starts, and what the bars look like", [
+                    "`offset` (or `offsetX` / `offsetY`) is the view's top-left in CONTENT",
+                    "coordinates, so a restored scroll position needs no scrolling and no frame",
+                    "with the wrong offset on screen. It is clamped to the real range.",
+                    "The bars are the author's: `barThickness`, `barColor`, `barHoverColor` and",
+                    "`trackColor`. `never` hides one axis entirely without changing the layout."
+                ], [
+                    "scrollView({ offset: [120, 0], scrollbarX: \"always\",",
+                    "             scrollbarY: \"never\", barThickness: 8,",
+                    "             barColor: 0x2563EB, trackColor: 0xE2E8F0,",
+                    "             style: { size: [260, 56] } }, [ four 140px tiles ])"
+                ], 116, function ():Node
+                {
+                    var tiles:Array = [];
+                    for (var i:int = 0; i < 4; i++)
+                        tiles.push(box({ key: "svx" + i, style: StyleRefinement.from({
+                            size: [140, 40], background: (i % 2 == 0) ? 0xBFDBFE : 0xC7D2FE,
+                            cornerRadii: 6, justifyContent: "center", alignItems: "center" }) }, [
+                            text("tile " + (i + 1), { style: StyleRefinement.from({
+                                text: { fontSize: 12, color: 0x1E3A8A } }), ariaName: "" })
+                        ]));
+                    return column({ gap: 6 }, [
+                        scrollView({ key: "demoSvOff", offsetX: 120,
+                            scrollbarX: "always", scrollbarY: "never",
+                            barThickness: 8, barColor: 0x2563EB, trackColor: 0xE2E8F0,
+                            style: StyleRefinement.from({ size: [260, 56],
+                                background: 0xF8FAFC, padding: 6 }) }, [
+                            // a ROW, with an explicit height: a container child of a
+                            // scroll view must carry its own cross size (the viewport
+                            // THROWS on an unmeasured child), and a container's default
+                            // direction is a column -- four tiles dropped in loose would
+                            // stack and never overflow x.
+                            row({ style: StyleRefinement.from({ size: [560, 40] }) }, tiles)
+                        ]),
+                        text("born at x=120: the first tile is cut, not the row's start",
+                            { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];

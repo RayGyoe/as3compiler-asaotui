@@ -7,6 +7,7 @@
 package demo
 {
     import asaot.ui.Node;
+    import asaot.ui.bindTo;
     import asaot.ui.column;
     import asaot.ui.combobox;
     import asaot.ui.datePicker;
@@ -169,6 +170,32 @@ package demo
                 {
                     return text("Click a number above: the tone moves with the model.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                // The Binding path exists so the page does NOT have to be rebuilt by
+                // hand: the widget writes the value itself, then calls onSelect.
+                new DocSection("`page` can be a Binding", [
+                    "A Binding is the other owner: `page: bindTo(model, \"pgIdx\")` makes the WIDGET",
+                    "write `model.pgIdx` when a number is clicked, and the model's notify re-renders.",
+                    "The write happens BEFORE `onSelect`, so a listener on the binding and the",
+                    "callback see the same transition -- and clicking the page you are already on",
+                    "reports nothing at all: no callback, no write."
+                ], [
+                    "pagination(2, 12, { key: \"pgB\", windowSize: 5,",
+                    "                      page: bindTo(model, \"pgIdx\"),",
+                    "                      onSelect: function (p:int):void { trace(\"page \" + p); } })"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        pagination(2, 12, { key: "pgB", windowSize: 5,
+                            page: bindTo(m, "pgIdx"),
+                            onSelect: function (p:int):void {
+                                m.put("pg.calls", int(m.num("pg.calls", 0)) + 1);
+                            } }),
+                        text("model.pgIdx = " + m.pgIdx + " of 12, onSelect fired "
+                                + int(m.num("pg.calls", 0)) + "x",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 

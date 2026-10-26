@@ -140,6 +140,54 @@ package demo
                                 fontSize: 12, color: 0x64748B, whiteSpace: "normal",
                                 textDecoration: "underline" } }), ariaName: "" })
                     ]);
+                }),
+
+                // The four TextStyle fields nothing else on this site writes: textAlign
+                // is alignment INSIDE the node's own width (which is why every line here
+                // is given one), leading is the line box, letterSpacing is per character
+                // and fontStyle picks the face's italic cut.
+                new DocSection("Alignment, italic, tracking, leading", [
+                    "`textAlign` aligns the line inside the FIELD. A text node that does not wrap",
+                    "auto-sizes its field to the line itself (`autoSize: \"left\"`), so there is no",
+                    "slack and the alignment is silently a no-op -- which is why `whiteSpace: \"normal\"`",
+                    "is part of this recipe rather than an extra: that is what gives the field a width.",
+                    "The three tinted 300px boxes below share one size and differ only in alignment.",
+                    "`leading` is the line box (line height), not the gap: 12px text with `leading: 24`",
+                    "occupies 24 per line. `letterSpacing` adds per character, and `fontStyle: \"italic\"`",
+                    "selects the face's italic cut rather than skewing the roman one."
+                ], [
+                    "text(\"right\", { style: { size: [300, 16], background: 0xE2E8F0,",
+                    "                        text: { whiteSpace: \"normal\", textAlign: \"right\" } } })",
+                    "// drop whiteSpace \"normal\" and the field shrinks to the line: align does nothing",
+                    "text(\"tracked\", { style: { text: { fontStyle: \"italic\", letterSpacing: 2 } } })",
+                    "text(\"one\\ntwo\", { style: { size: [150, null],",
+                    "                            text: { leading: 24, whiteSpace: \"normal\" } } })"
+                ], 156, function ():Node
+                {
+                    return column({ gap: 8, key: "txType" }, [
+                        text("left", { key: "txAl", style: StyleRefinement.from({
+                            size: [300, 16], background: 0xE2E8F0,
+                            text: { fontSize: 12, whiteSpace: "normal", textAlign: "left" } }),
+                            ariaName: "" }),
+                        text("center", { key: "txAc", style: StyleRefinement.from({
+                            size: [300, 16], background: 0xE2E8F0,
+                            text: { fontSize: 12, whiteSpace: "normal", textAlign: "center" } }),
+                            ariaName: "" }),
+                        text("right", { key: "txAr", style: StyleRefinement.from({
+                            size: [300, 16], background: 0xE2E8F0,
+                            text: { fontSize: 12, whiteSpace: "normal", textAlign: "right" } }),
+                            ariaName: "" }),
+                        row({ gap: 16, alignItems: "flex-start" }, [
+                            text("italic, letterSpacing 2", { key: "txIt", style: StyleRefinement.from({
+                                size: [150, 16],
+                                text: { fontSize: 13, fontStyle: "italic", letterSpacing: 2 } }),
+                                ariaName: "" }),
+                            text("leading 24 wraps to two lines", { key: "txLd",
+                                style: StyleRefinement.from({ size: [150, null],
+                                    text: { fontSize: 12, leading: 24, whiteSpace: "normal" } }),
+                                ariaName: "" })
+                        ])
+                    ]);
                 })
             ];
 
