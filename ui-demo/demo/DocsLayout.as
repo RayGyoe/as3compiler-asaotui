@@ -7,6 +7,7 @@ package demo
     import asaot.ui.card;
     import asaot.ui.column;
     import asaot.ui.row;
+    import asaot.ui.splitPane;
     import asaot.ui.text;
     import asaot.ui.style.Length;
     import asaot.ui.style.StyleRefinement;
@@ -16,6 +17,17 @@ package demo
         private static const FILLED:StyleRefinement = StyleRefinement.from({
             padding: 12, gap: 6, background: 0xF1F5F9, cornerRadii: 8,
             borderWidths: 1, borderColor: 0xDCE6F0, text: { fontSize: 12, color: 0x334155 }
+        });
+        // The splitPane page: a 360-wide splitter whose panes carry NO main-axis size
+        // (the widget's flex basis is the only thing that may decide the share).
+        private static const SP_BOX:StyleRefinement = StyleRefinement.from({
+            size: [360, 76], background: 0xFFFFFF, borderWidths: 1, borderColor: 0xE5E7EB
+        });
+        private static const SP_L:StyleRefinement = StyleRefinement.from({
+            size: [null, 74], padding: 10, background: 0xEEF2FF, text: { fontSize: 12, color: 0x1E3A8A }
+        });
+        private static const SP_R:StyleRefinement = StyleRefinement.from({
+            size: [null, 74], padding: 10, background: 0xFFF1F2, text: { fontSize: 12, color: 0x881337 }
         });
         public static function sections(view:DocsView, id:String):Array
         {
@@ -286,6 +298,66 @@ package demo
                             text("inner card", { style: DocsDemo.LABEL, ariaName: "" })
                         ]),
                         text("outer card", { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
+                })
+            ];
+
+            if (id == "splitPane") return [
+                new DocSection("A share, not two sizes", [
+                    "splitPane(first, second, { ratio }) puts two ORDINARY nodes around a grip and",
+                    "keeps their sizes in step with one number: `ratio` is the FIRST pane's share of",
+                    "the space left after the grip (0.5 = half). The panes are children like any",
+                    "other -- a box, a list, a scrollView -- and the widget writes their flex basis",
+                    "with grow and shrink at 0, so a pane whose content is wider than its share",
+                    "cannot quietly eat the other one.",
+                    "Drag the grip: `onResize(ratio)` reports the new share on every move and again",
+                    "on release. Storing it in the model is the whole contract -- nothing is cached",
+                    "inside the widget, so resizing the window keeps the SHARE, not the pixel width."
+                ], [
+                    "splitPane(left, right, {",
+                    "    ratio: m.num(\"sp.ratio\", 0.5), minSize: 40, dividerSize: 6,",
+                    "    onResize: function (r:Number):void { m.put(\"sp.ratio\", r); }",
+                    "})"
+                ], 116, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        splitPane(
+                            box({ style: SP_L }, [ text("first pane",
+                                { style: DocsDemo.LABEL, ariaName: "" }) ]),
+                            box({ style: SP_R }, [ text("second pane",
+                                { style: DocsDemo.LABEL, ariaName: "" }) ]),
+                            { key: "spDemo", style: SP_BOX, direction: "row",
+                              ratio: m.num("sp.ratio", 0.5), minSize: 40, dividerSize: 6,
+                              onResize: function (r:Number):void { m.put("sp.ratio", r); } }
+                        ),
+                        text("share " + Math.round(m.num("sp.ratio", 0.5) * 100) + "%",
+                            { key: "spShare", style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("minSize is a floor, and the ratio obeys it", [
+                    "`ratio` stays inside 0..1 -- anything else is refused at factory time, because",
+                    "a share above 1 is not a share. `minSize` is applied ON TOP of it, to both",
+                    "panes, so a tiny authored ratio produces a usable grip instead of a pane you",
+                    "cannot see: a 0.02 share of a 294pt area would be 6pt, and 6pt loses to the",
+                    "40pt minimum. A minimum wider than half the area cannot hold twice, so it is",
+                    "halved rather than handing one pane a negative size."
+                ], [
+                    "splitPane(left, right, { ratio: 0.02, minSize: 40, dividerSize: 6 })",
+                    "// 294 available -> round(294 * 0.02) = 6 -> clamped up to 40"
+                ], 116, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        splitPane(
+                            box({ style: SP_L }, [ text("40pt floor",
+                                { style: DocsDemo.LABEL, ariaName: "" }) ]),
+                            box({ style: SP_R }, [ text("the rest",
+                                { style: DocsDemo.LABEL, ariaName: "" }) ]),
+                            { key: "spLow", style: SP_BOX, direction: "row",
+                              ratio: 0.02, minSize: 40, dividerSize: 6 }
+                        ),
+                        text("an authored ratio of 0.02 still yields a 40pt pane",
+                            { key: "spLowCap", style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];

@@ -33,6 +33,22 @@ package asaot.ui
         // both handlers (an author who needs one of them to stop can call
         // stopPropagation in their handler).
         public var onClick:Function;
+        // RIGHT BUTTON (2026-10-27). The runtime has dispatched `rightMouseDown`
+        // since the native ContextMenu landed (emit.ts:26457) and a kit control
+        // could not hear it: every mouse listener in this library was one of six
+        // left/over/wheel types. The coordinates ARE the argument pair -- a
+        // right-click exists to say "open something HERE", and a handler without
+        // the point would have to guess it from the pointer.
+        //
+        // AVM2 arity: called as onRightClick(x, y), so a zero-argument closure is
+        // still valid (extra arguments are ignored; MISSING ones are #1063).
+        public var onRightClick:Function;   // Function(stageX:Number, stageY:Number)
+        // DOUBLE CLICK. Gated by the runtime on the HIT TARGET's own
+        // `doubleClickEnabled` (emit.ts:26439-26443, measured on adl 51.4.1), which
+        // defaults to false -- so this flag is switched on by UiNode only when a
+        // handler exists. Enabling it globally would change what a fast second
+        // click means for every existing control.
+        public var onDoubleClick:Function;  // Function()
 
         public function Element(kind:String):void
         {
@@ -43,6 +59,8 @@ package asaot.ui
             this.visible = true;
             this.disabled = false;
             this.onClick = null;
+            this.onRightClick = null;
+            this.onDoubleClick = null;
         }
     }
 }

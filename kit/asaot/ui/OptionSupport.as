@@ -42,6 +42,15 @@ package asaot.ui
             // nothing ever copied it onto the descriptor, so every container click
             // handler was null and the row was dead to the mouse.
             if (opts.onClick != null) n.onClick = (opts.onClick as Function);
+            // Right button / double click are Element properties too, so every
+            // factory accepts them through this one place (a container is the
+            // natural right-click target -- that is what a context menu is FOR).
+            if (opts.onRightClick != null) n.onRightClick = (opts.onRightClick as Function);
+            if (opts.onDoubleClick != null) n.onDoubleClick = (opts.onDoubleClick as Function);
+            // `tabIndex` only exists on Control. Anything else ignores it silently
+            // today (a box is not a tab stop at all), which is why it is read here
+            // rather than added to every factory signature.
+            if (opts.tabIndex != null && (n is Control)) Control(n).tabIndex = int(Number(opts.tabIndex));
         }
 
         public static function addChildren(n:Node, children:Array):void

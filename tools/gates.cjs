@@ -344,7 +344,15 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // plus `virtual: true` on list and tree. It is the only probe that drives a
                  // WINDOW (mounted rows are a COUNT, not a pixel), and its teeth are
                  // tools/mutation-widget-inputs.cjs (8/8).
-                 'widgets/inputs']) {
+                 'widgets/inputs',
+                 // `actions` is the batch probe for the four input paths that are not a
+                 // pointer: a right click (with its stage point), a double click (behind
+                 // the runtime's doubleClickEnabled flag), a splitter drag (a ratio, not a
+                 // width) and the keymap (ActionRegistry + Control.action + tabIndex). Its
+                 // teeth are tools/mutation-widget-actions.cjs (11/11), which is how the
+                 // two toothless assertions in it were found: a minSize clamp no drag can
+                 // reach, and a shift-modifier vector that also held meta.
+                 'widgets/actions']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);
@@ -424,10 +432,14 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // (virtualList, tree, combobox, datePicker, select, drawer, popover) had shipped
 // without one -- STATUS.md meanwhile claimed "scrollView is the only kind not in
 // the gallery". A checklist cannot stay true; a scan can.
-// Its teeth: tools/mutation-kind-coverage.cjs 3/3 (the tree call renamed; a new
+// Its teeth: tools/mutation-kind-coverage.cjs 4/4 (the tree calls renamed; a new
 // kind+factory that nothing shows -- the regression that actually happened; the
-// call surviving only in a `//` comment, which the tool's first version counted as
-// code and thereby certified prose).
+// calls surviving only in a `//` comment; and the calls surviving only inside a
+// STRING, i.e. a page that prints the source of a widget it never renders. The last
+// two are there because the tool's first version read both kinds of prose as code,
+// and the second of them was still uncaught until the splitPane page made a demo
+// with two real `tree(` calls -- a mutation that renames only the first match
+// renamed a snippet and left both real calls in place).
 {
   const r = sh(process.execPath, ['tools/kind-coverage.cjs'], UI);
   const out = (r.stdout || '') + (r.stderr || '');

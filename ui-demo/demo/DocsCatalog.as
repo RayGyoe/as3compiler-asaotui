@@ -38,6 +38,7 @@ package demo
                 new DocPage("column", "column", 1, "box with direction \"column\" -- the default flow."),
                 new DocPage("row", "row", 1, "box with direction \"row\"."),
                 new DocPage("card", "card", 1, "A bordered, optionally titled surface for grouped content."),
+                new DocPage("splitPane", "splitPane", 1, "Two panes and a grip: one ratio, a minSize floor, and a drag that reports it."),
                 new DocPage("overlay", "overlay", 1, "The root of the SECOND retained tree (View.renderOverlay)."),
 
                 new DocPage("text", "text", 2, "A run of text: the only node that owns a string."),
@@ -87,7 +88,7 @@ package demo
                 new DocPage("toast", "toast", 8, "A transient corner message."),
                 new DocPage("toastHost", "toastHost", 8, "The bottom-right stack toasts drop into."),
 
-                // The four pages about the framework itself, not about one widget.
+                // The five pages about the framework itself, not about one widget.
                 // They are LAST in the sidebar because they are the reference you
                 // reach for after a kind's page answered "what does it look like":
                 // these answer "which field do I write to make it do that".
@@ -97,8 +98,10 @@ package demo
                     "Four layers -- control default, theme slot, inherited text, author style."),
                 new DocPage("state", "state", 9,
                     "Bindings, notify(dirty) and the Subscription: who owns a value."),
+                new DocPage("events", "events", 9,
+                    "Right click with its stage point, double click behind a runtime flag."),
                 new DocPage("keyboard", "keyboard", 9,
-                    "The focus ring, Tab, Enter/Space, and the per-kind key map.")
+                    "The focus ring, Tab, Enter/Space, the per-kind key map, and the keymap.")
             ];
         }
 

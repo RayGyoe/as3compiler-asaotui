@@ -25,6 +25,13 @@ package asaot.ui
         // sets it from onSelect when the activated row has a submenu.
         public var submenuIndex:int;
         public var onSelect:Function;     // Function(index:int)
+        // POINT ANCHOR (2026-10-27): a menu that opens AT A POINTER rather than
+        // beside a node -- which is what a context menu is. `NaN` means "anchored"
+        // (the popover's anchorKey path); anything else is a STAGE coordinate and
+        // the panel is placed there, flipping left/up when it would leave the
+        // window. No new kind and no second row geometry: it is the same menu.
+        public var atX:Number;
+        public var atY:Number;
 
         private static var menuRegistered:Boolean = false;
 
@@ -38,6 +45,8 @@ package asaot.ui
             this.selectedIndex = -1;
             this.submenuIndex = -1;
             this.onSelect = null;
+            this.atX = Number.NaN;
+            this.atY = Number.NaN;
             this.width = 160;
         }
     }

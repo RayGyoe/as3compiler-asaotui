@@ -66,6 +66,12 @@ package asaot.ui
         public var tabMoves:int;
         public var keyEvents:int;
 
+        // Reused scratch for the two per-keypress walks (a keymap context set and the
+        // ordered tab ring). Steady state allocates nothing: AGENTS.md's hot-path rule
+        // applies to a key repeat exactly as it does to a frame.
+        private var ctxScratch:Array = [];
+        private var ringScratch:Vector.<UiNode> = new Vector.<UiNode>();
+
         private var root:UiNode;
         // The keyboard owner. Library state, not display-list state: see
         // UiNode.tabEnabled for why the tab ring is a walk of the retained tree
@@ -648,6 +654,7 @@ package asaot.ui
                 collectFocus(this.root, ring);
                 collectFocus(this.overlayRoot, ring);
             }
+            ring = this.orderRing(ring);
             var m:int = ring.length;
             if (m == 0) return;
             var at:int = -1;
@@ -657,6 +664,61 @@ package asaot.ui
             else next = dir > 0 ? 0 : m - 1;
             this.tabMoves = this.tabMoves + 1;
             this.focusNode(ring[next]);
+        }
+
+        // `tabIndex` ORDERS THE RING, HTML-style: every explicit index first (ascending,
+        // ties in document order), then everything that left it at -1, in document
+        // order. The field had no consumer at all until now, so the ring was purely
+        // document order and an author could not put a "Skip to content" button first.
+        //
+        // NO SORT AND NO VISITED-SET: the output vector IS the visited set, so this
+        // needs one reusable buffer (a Tab press allocates nothing) and picks the
+        // smallest index not yet emitted. n is the number of focus stops -- tens, not
+        // thousands -- so the quadratic scan is invisible.
+        private function orderRing(ring:Vector.<UiNode>):Vector.<UiNode>
+        {
+            var n:int = ring.length;
+            var any:Boolean = false;
+            for (var i0:int = 0; i0 < n; i0++) { if (ring[i0].tabIndex >= 0) { any = true; break; } }
+            if (!any) return ring;
+
+            var out:Vector.<UiNode> = this.ringScratch;
+            out.length = 0;
+            var guard:int = 0;
+            while (guard <= n)
+            {
+                guard++;
+                var bestV:int = -1;
+                var found:Boolean = false;
+                for (var j:int = 0; j < n; j++)
+                {
+                    var ti:int = ring[j].tabIndex;
+                    if (ti < 0) continue;
+                    if (emitted(out, ti)) continue;
+                    if (!found || ti < bestV) { found = true; bestV = ti; }
+                }
+                if (!found) break;
+                // Every node sharing that index, in DOCUMENT order -- which is what makes
+                // the ties stable without carrying their positions around.
+                for (var k0:int = 0; k0 < n; k0++)
+                {
+                    if (ring[k0].tabIndex == bestV) out.push(ring[k0]);
+                }
+            }
+            for (var m0:int = 0; m0 < n; m0++)
+            {
+                if (ring[m0].tabIndex < 0) out.push(ring[m0]);
+            }
+            return out;
+        }
+
+        private static function emitted(out:Vector.<UiNode>, index:int):Boolean
+        {
+            for (var i:int = 0; i < out.length; i++)
+            {
+                if (out[i].tabIndex == index) return true;
+            }
+            return false;
         }
 
         private function collectFocus(n:UiNode, out:Vector.<UiNode>):void
@@ -734,6 +796,21 @@ package asaot.ui
             this.keyEvents = this.keyEvents + 1;
             var kc:int = e.keyCode;
 
+            // KEYMAP FIRST -- ahead of Tab. A binding the author installed is the
+            // MOST specific statement about what a key means in their app, so it
+            // wins over every built-in, including Tab (a user may legitimately want
+            // Tab to do something else in an editor). An UNBOUND key falls through
+            // untouched, which is what keeps plain typing inside a text field.
+            var ctx:Array = this.contextsOf(this._focus);
+            var hit:Object = ActionRegistry.lookup(kc, e.ctrlKey, e.altKey, e.shiftKey,
+                                                   e.commandKey, ctx);
+            if (hit != null)
+            {
+                e.preventDefault();
+                ActionRegistry.dispatch(String(hit.id), hit.payload as Object);
+                return;
+            }
+
             // TAB. The runtime ALSO moves focus on Tab (as_focus_tab over the display
             // list) after the event is dispatched, unless the event was cancelled --
             // so preventing the default is not optional here, it is the difference
@@ -765,8 +842,31 @@ package asaot.ui
             {
                 if (f.focusTarget() is TextField) return;
                 e.preventDefault();
+                // `Control.action` -- declared since the first commit, dispatched now.
+                // A control that names an action is activated by that action; a
+                // control without one keeps the plain click handler.
+                if (f.action != null)
+                {
+                    ActionRegistry.dispatch(f.action, null);
+                    return;
+                }
                 f.handleClick();
             }
+        }
+
+        // The key contexts of the focused node, INNERMOST FIRST (design doc 6.2).
+        // Built into a reused array: this runs on every key repeat.
+        private function contextsOf(n:UiNode):Array
+        {
+            var out:Array = this.ctxScratch;
+            out.length = 0;
+            var p:UiNode = n;
+            while (p != null)
+            {
+                if (p.keyContext != null && p.keyContext != "") out.push(p.keyContext);
+                p = p.parent;
+            }
+            return out;
         }
 
         // ---- introspection for tests / a11y ----------------------------

@@ -3,11 +3,11 @@
 > 回答一个问题：**「UI 库写完了吗？」**
 >
 > 结论：**深水区做透了，表面层补齐了三批（控件集 + 多页 App + 组件目录页 + 浮层系统 + 交互动线），但还不是一个完整工具箱。**
-> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 40 个 kind / 46 个工厂**（第二批 media/feedback/data 九件、
+> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 41 个 kind / 47 个工厂**（第二批 media/feedback/data 九件、
 > 第三批**浮层六件 dialog/drawer/popover/menu/toast/select**、第五批**列表虚拟化 `virtualList` + 选择三件**
 > `tree`/`combobox`/`datePicker` 均已落地）；
-> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**50 页 / 10 组**，每页两个 live 示例 + 产生它的源码），
-> 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**40/40**，变异 3/3）；
+> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**52 页 / 10 组**，每页两个 live 示例 + 产生它的源码），
+> 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**41/41**，变异 4/4）；
 > **浮层走第二棵保留树**（`View.renderOverlay()` + `UiApp.overlayRoot`），主树因此不再为弹层重解布局。
 > 第四轮（2026-10-24）补的是**交互动线**：`disabled` + `hover/pressed/focused` 四态绘制、`textField` 编辑回写、
 > **键盘/焦点管线（Tab 环 / Esc / 方向键 / Enter / Space）**、浮层的**越界翻转 + 子菜单 + 入场动画**。
@@ -110,7 +110,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`；第二十二轮补：四件「有槽位没行为」的空缺（`list`/`table`/`tabs` 键盘导航、
-`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）） · 对应 `kit/` **172 个 .as** · 一次性验收：`node tools/gates.cjs`（**55 道门**）
+`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）；第二十四轮补：**输入面最后四件**（右键 + 点锚菜单 / 双击 / `splitPane` / 键位系统 `ActionRegistry`+`KeyStroke`+`ContextExpr`+`Control.action`+`tabIndex`），顺手拆掉两个只报「条文」不报「代码」的门 —— `kind-coverage` 把字符串里的调用当成了真调用、`demo-options` 的共享键表是手抄的副本）） · 对应 `kit/` **178 个 .as** · 一次性验收：`node tools/gates.cjs`（**56 道门**）
 
 ---
 
@@ -123,15 +123,15 @@
 | L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 28 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
 | L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表 |
 | L2 动画 | ✅ **样式 5 字段 + layout 字段 + 浮层入/退场** | 样式 `paint` 字段：`opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`；样式 **`layout` 字段**：`width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y)——写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停（`probes/widgets/anim` 14 项 + `probes/widgets/motion` 23 项）；显示对象级：`OverlayMotion`（入场 140ms ease-out / **退场 120ms ease-in**，墙钟，每帧从引擎读基准，不累加），见 §3.4 |
-| L3 控件库 | ✅ **46 个工厂 / 40 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**40 个 kind 全部上了文档站**，由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 文档站是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
+| L3 控件库 | ✅ **47 个工厂 / 41 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**41 个 kind 全部上了文档站**，由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 文档站是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
 | L3 样式面 | ✅ **33 字段** | 见 §3.2；仅剩 `grid` 刻意缺席（`cursor` 第十五轮已落地） |
 | L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入退场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、**入场 140ms / 退场 120ms**；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**）+ `probes/widgets/motion` **23 项**（变异 **7/7**） |
-| L3 组合能力 | ✅ **50 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 50 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
+| L3 组合能力 | ✅ **52 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 52 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
 | L3 可访问性 | ⚠️ 半成品 | `role`/`ariaName` **仍只是字段**（无消费者）；但 `Control.tabEnabled` 现在真被 Tab 环读（`UiApp.collectFocus`）、`Element.disabled` 真阻断点击与导航 |
 
 ---
 
-## 2 作者可见 API 全清单（172 个文件里**只有这些**）
+## 2 作者可见 API 全清单（178 个文件里**只有这些**）
 
 复核命令：
 
@@ -187,6 +187,7 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | `multiSelect(opts)` | `MultiSelectNode` | 多选下拉：**菜单在每次勾选后保持打开**，`values`（数组）归作者、widget 永不改写，`onToggle(index)`/`onOpenChange(open)` |
 | `toast(opts)` | `ToastNode` | 轻提示；`open`/`message`/`tone`(default/success/danger)/`duration`/`onClose`/`width` |
 | `toastHost(opts, children)` | `BoxNode` | 吐司堆：右下角、`gap 8`、后进在下；`toast` 必须放在它里面才能堆 |
+| `splitPane(first, second, opts)` | `SplitPaneNode` | 两段 + 一条可拖分隔条（第二十四轮）：`direction`: `row`/`column`、**`ratio`（第一段占比，0..1）**、`minSize`（**两侧地板**）、`dividerSize`、`onResize(ratio)`（拖动中逐像素 + 松手各报一次）；两段是**普通子节点**，widget 用 `setFlex(grow 0, shrink 0, basis px)` 锁死份额；`ratio` 低于地板时**按 minSize 夹住**（不是忽略） |
 
 配套（非控件）：`bindTo(owner, field)`、`Binding`、`Observable`、`Subscription`、
 `Dirty`、`Theme`、`Style`/`StyleRefinement`/`Fill`/`Edges`/`LengthEdges`/`Corners`/`Length`/`Size`/`TextStyle`、
@@ -194,6 +195,13 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 `PaintKit`、`OverlayChrome`（浮层调色板/风格常量）、`OverlayList`（菜单/下拉共用的行几何）、
 `Reconciler`、`UiNode`、`UiApp`（`getOverlayRoot`/`overlayDisplay`）、`View`（`render`/`renderOverlay`/`tick`）、
 `Anim`/`Ease`/`Tween`/`AnimState`。
+
+**键位系统（第二十四轮，非控件）**：`ActionRegistry`（`register`/`unregister`/`has`/`schemaOf`/
+`dispatch(id, payload)`/`setKeymap(entries)`/`clearKeymap`/`keymapEntryCount`/`bindingCount`/`lookup`）、
+`KeyStroke`（`parse("ctrl-shift-s")` → `code` + 四个修饰位，`matches(keyCode, ctrl, alt, shift, meta)`）、
+`ContextExpr`（`parse("editor > modal")` → `matches(contexts)`，`a > b` 即 **a 是 b 的祖先**）。
+作者侧只用三个字段：`Element.onRightClick(x, y)` / `Element.onDoubleClick()` / `Control.action`，
+以及 `Control.tabIndex`（**-1 = 没有显式序**，不是「不可 Tab」）。
 
 ### 2.1 仍缺的（对照常见工具箱）
 
@@ -271,7 +279,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 55 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 56 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -308,6 +316,7 @@ cd asaotui && node tools/gates.cjs                           # 55 道门，含 l
 | 26 | **拖一下滑块就报错、而且滑块根本不动**（用户第二次报告：截图里一行 `#1063 Argument count mismatch`，点了/拖了没反应） | 两个独立缺陷叠在同一个控件上：①`SliderWidget`/`CheckboxWidget`/`SwitchWidget`/`RadioWidget` 调 `n.onChange()` **不传参**，而每个调用方（42 页文档站 + 探针）都声明 `function (v:Number)` / `(v:Boolean)` ⇒ AVM2 上**参数个数不符即抛 #1063**，帧守卫恢复该帧，于是**回调从未运行**、模型从未变、唯一痕迹是控制台一行；②就算参数对了，`SliderWidget` 也只有「按下就地设值」——**没有拖动**（按下后移动鼠标什么都不发生） | 四个控件的调用点补上参数（`onChange(next)` / `onChange(true)`）；`SliderWidget` **重写**：实现 `Widget, WidgetTeardown`，按下设值、拖动期间在 **stage** 上临时挂 `MOUSE_MOVE/MOUSE_UP`（闭包存 `n.extra["dragmv"]/["dragup"]` 以便按引用摘除），`endDrag` 幂等、`teardown` 调它；单一写入点 `commit()`（状态 → `Binding` → `onChange(v)` → `markPaint` → `invalidate(Dirty.VALUE)`），值没变不报 | **行为面**：新探针 `probes/widgets/callback`（24 项，**只点未绑定控件**，含按下→拖动→越界夹紧→回 0→松手→松手后移动无效→纯点击设值）+ 像素（拖动中帧必须跟着走）。变异 8/8（`probes/widgets/callback/mutation.cjs`），含「回调不传参」的四条与「松手什么都不结束」「去掉自抬重绘」。**静态面**：新门 `tools/callback-arity.cjs`（双向扫描：kit 的**调用点**恰好 1 参数、文档站/探针的**声明**恰好 1 参数，`onClick` 两边都是 0），变异 6/6。**为什么此前无人发现**：`probes/widgets/form` 只点**绑定了** `binding` 的控件（走 Binding 分支，不碰 `onChange`），而 42 页截图只渲染不点击 |
 | 27 | **一点下拉就报错、页面冻住**（用户第三次报告，`select`/`combobox`/`datePicker` 三页：`RangeError: Error #2006: The supplied index is out of bounds.` → `DisplayObjectContainer/setChildIndex()` → `asaot.ui::Reconciler/fixDisplayOrder()` → … → `UiApp/onEnterFrame()`，每帧一行，屏幕停在上一棵树） | **两个不同的事故叠在一起**：①库侧——`fixDisplayOrder` 用 `setChildIndex(c.backing, internalCount + <描述下标>)` 修显示序，而弹出的下拉会把**属主节点** `lifted` 出去（`UiNode.lifted`，为了越过后续兄弟的 z 序，见第 19 条）：它**仍占描述树一个槽位，但已不在父 backing 里** ⇒ 下标每遇到一个被抬起的兄弟就多算一，`index == numChildren` 即越界；②编译器侧——`emit.ts:11635` 的 `DisplayObjectContainer_setChildIndex` 对越界做了 `if (index >= length) index = length - 1;`（**夹紧**）且「不是孩子」时直接 `return`，而 AIR 分别抛 `RangeError #2006` / `ArgumentError #2025` ⇒ **同一份代码，AIR 报错、我们静默放行**。夹紧到末尾恰好是最后一个孩子的正确落点，所以画面逐像素相同：42 页截图扫描、全部 AOT 探针、41 道门全部看不见 | 库侧：`fixDisplayOrder` 改成**只数「在用」孩子的槽位计数器**（`slot = internalCount`，只有 `backing.parent == n.backing` 才 `setChildIndex(…, slot++)`），末位最多落到 `numChildren-1`（有 `aboveContent` 时少一），**结构性**不可能越界；`lastIndex` 仍是**描述下标**（那是未带 key 兄弟的身份 token，不是显示位）。编译器侧：**未动**（按本工作区约定登记为缺口 **G24**，附「建议对齐 AIR」的理由） | **新门 `tools/air-sweep.cjs`——本仓第一道也是唯一一道真跑参考运行时的门**：`mxmlc` 编 → `adl` 跑 42 页 × 每页把 10 个可弹层开关打开再关掉 → 读应用自己写的 `air-trace.txt`（`adl.exe` 是 GUI 子系统，管道拿不到 trace，实测）→ 任何 AIR 报的错都算失败。变异 `tools/mutation-air-sweep.cjs` **5/5**：把槽位计数改回 `internalCount + i` ⇒ 立刻在 `select`/`combobox`/`datePicker` 上报 `#2006`；去掉「打开弹层」这一步 ⇒ `OPENED` 缺失（扫得全绿但**已经瞎了**）；少走一步 ⇒ `visited 40/41`（死了的窗口不许当绿）；去掉 `releaseListeners()` ⇒ 145 个 `#1009`（见第 28 条）；只悬停不投递 ⇒ 指针钻报 `0/41`。五条都按 sha256 逐字节还原 |
 | 28 | **多点了几下就报错**（用户第四次报告：`TypeError: Error #1009: Cannot access a property or method of a null object reference.` → `asaot.ui::UiNode/setHover()` ← `Function/UiNode.as$1::anonymous()`） | **两层时序缺一不可**：①库侧——`destroySubtree()` 把节点的 backing 从父容器摘掉、把 `app`/`extra`/`backing` 置空，但**监听器是挂在 backing 这个 EventDispatcher 上的**，`removeChild` 不会替你摘 ⇒ 那个闭包仍活着、捕获变量已全空；②AIR 侧——**`mouseOut` 晚一拍**才投递（先结束这一帧，**然后**才重算「指针下面是谁」并投给上一帧那个对象）⇒ 只要「指针停在某个控件上、而某一帧把那个控件拆了」就会落到尸体上。实测（`adl` 51.4.1，`air-trace.txt`）：只有**点了就拆树**的页中招——`accordion` 1 次、`dialog` 4 次、`drawer` 3 次、`menu` 3 次，其余 37 页 0 次 | 库侧：`UiNode` 新增 `wired:Array` + `listen(target,type,fn)`（登记三元组）+ `releaseListeners()`；`destroySubtree()` **第一句**就释放，再摘显示对象、再置空（顺序是契约：先断线再断电）；全库 **24 处 / 16 个文件**改造。**STAGE 监听器刻意不在此列**（它们属于某次手势，保留 widget 自己 teardown 的显式 add/remove 对）。编译器侧：**未动**，登记缺口 **G25**（AOT 从不派发逆对象的 roll-over/roll-out） | **三道新门 + 一道扩门**：`probes/lifecycle`（**9 项**：10 种 kind × 5 种指针事件，**销毁后**再派发不抛、`state.hover` 保持 0、无游离 `onClick`；同时证明活节点上这道闸不变行为）；`tools/listener-wiring.cjs`（静态扫描：禁裸 `x.backing.addEventListener(`、`destroySubtree` 必须有 `releaseListeners()`、**扫到 0 处也算失败**，现 **29 wired / 0 raw**）；`air-sweep` 新增**指针钻**（离开每页前悬停该页**每个叶子**，切页后**下一拍**投递 roll-out：**3107 hovered / 348 真的已销毁 / 0 errors**）。变异：`probes/lifecycle/mutation.cjs` **4/4**、`tools/mutation-listener-wiring.cjs` **3/3**、`mutation-air-sweep` **5/5** |
+| 29 | **`tabIndex` 写了没用，而且 Tab 会跳过中间那一站**（`tabIndex` 从声明第一天起就是死字段，`Control.tabIndex` 没有任何消费者） | 两件事叠在一起：①`UiApp.focusNext` 直接按**文档序**走，`tabIndex` 从来没被读过；②改成「显式序在前、按值升序、同值按文档序」时，第一版用一个**复用数组**当 visited 表（`taken[j] == true` + 每次 `taken.length = 0`），实测**第二次调用起就丢项**：同一份 3 项输入，直接调 `orderRing` 得 3 项、经 `focusNext` 得 2 项（`btn2` 消失），于是焦点在 `btn3` 与 `btn` 之间来回弹 | 让**输出向量自己当 visited 集**（`emitted(out, index)` 扫已发出的项），不再有第二块可变状态；Tab 每次复用 `ringScratch`，语义照 HTML | 探针 `probes/widgets/actions` 相位 5：文档序 `btn,btn2,btn3` + `tabIndex` 1 和 0 ⇒ 环必须是 `btn3,btn2,btn`（**不是文档序的旋转**；从 `btn` 出发的下一站两法不同，这才是判别点），三次 Tab 逐项断言；变异 M3（`orderRing` 直接返回文档序）⇒ 两条断言同时红 |
 
 **已知边界（登记，不修）**：`card({title: ...})` 的标题画在内容盒左上角、**不占布局位**，
 因此会压住第一个子节点（`kind/CardWidget.as:81` 的 `tf.x/tf.y = inset`）。

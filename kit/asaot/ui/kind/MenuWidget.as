@@ -32,6 +32,7 @@ package asaot.ui.kind
     import asaot.ui.PaintKit;
     import asaot.ui.UiNode;
     import asaot.ui.WidgetKeys;
+    import asaot.ui.style.Style;
 
     import flash.events.MouseEvent;
 
@@ -41,6 +42,8 @@ package asaot.ui.kind
         private static const HIT_KEY:String = "hitRow";
         private static const HOV_KEY:String = "hoverRow";
         private static const ACT_KEY:String = "activeRow";
+        private static const ATX_KEY:String = "atX";
+        private static const ATY_KEY:String = "atY";
 
         override public function build(n:UiNode):void
         {
@@ -54,6 +57,8 @@ package asaot.ui.kind
             n.extra[HIT_KEY] = 0;
             n.extra[HOV_KEY] = -1;
             n.extra[ACT_KEY] = -1;
+            n.extra[ATX_KEY] = Number.NaN;
+            n.extra[ATY_KEY] = Number.NaN;
             var self:MenuWidget = this;
             n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { self.onRowClick(n, e); });
@@ -71,6 +76,18 @@ package asaot.ui.kind
         {
             var m:MenuNode = MenuNode(desc);
             var relayout:Boolean = super.payload(n, desc);
+            // The point anchor is read every frame: an author who opens the menu at
+            // a NEW point with the same `open` flips nothing, and the panel must
+            // still move there. A move is a re-measure (the same rule the anchored
+            // path follows for anchor/placement changes).
+            var px:Number = m.atX;
+            var py:Number = m.atY;
+            if (!sameNumber(n.extra[ATX_KEY], px) || !sameNumber(n.extra[ATY_KEY], py))
+            {
+                n.extra[ATX_KEY] = px;
+                n.extra[ATY_KEY] = py;
+                relayout = true;
+            }
             n.onChange = m.onSelect;
             var prev:Object = n.extra[SEL_KEY];
             if (prev == null || int(Number(prev)) != m.selectedIndex)
@@ -90,6 +107,68 @@ package asaot.ui.kind
         }
 
         override public function wantsPress():Boolean { return true; }
+
+        // POINT MODE OR ANCHORED MODE. Everything else (entrance, dismissal, band,
+        // keyboard) is the popover's and stays untouched; this override only
+        // decides WHERE the panel goes.
+        override public function measure(n:UiNode):void
+        {
+            var ax:Number = Number(n.extra[ATX_KEY]);
+            if (isNaN(ax) || isNaN(Number(n.extra[ATY_KEY])))
+            {
+                super.measure(n);
+                return;
+            }
+            if (n.engineNode == null) return;
+            var eng:LayoutEngine = n.app.engine;
+            var e:Object = n.engineNode;
+            // Same four-side clearing as the anchored path, for the same reason: a
+            // stale inset on a side applyLengthSide returns early for would pin the
+            // panel to the frame.
+            eng.setPosition(e, LayoutConstants.EDGE_LEFT, 0, LayoutConstants.UNIT_UNDEFINED);
+            eng.setPosition(e, LayoutConstants.EDGE_RIGHT, 0, LayoutConstants.UNIT_UNDEFINED);
+            eng.setPosition(e, LayoutConstants.EDGE_TOP, 0, LayoutConstants.UNIT_UNDEFINED);
+            eng.setPosition(e, LayoutConstants.EDGE_BOTTOM, 0, LayoutConstants.UNIT_UNDEFINED);
+
+            var winW:Number = windowW(n);
+            var winH:Number = windowH(n);
+            // Previous frame's size -- same two-pass compromise as the flip in
+            // PopoverWidget.measure (a panel opened at a point has never been
+            // solved, so on the very first frame this is 0 and the panel is placed
+            // at the point unflipped, which is what the author asked for anyway).
+            var pw:Number = n.absW > 0 ? n.absW : 0;
+            var ph:Number = n.absH > 0 ? n.absH : 0;
+            var x:Number = ax;
+            var y:Number = Number(n.extra[ATY_KEY]);
+            // A context menu opens DOWN-RIGHT of the pointer by convention, so the
+            // flip is to the other side of the point (not a clamp against the edge):
+            // a clamp would slide the panel along and lose the alignment with the
+            // click that the author can see.
+            if (pw > 0 && x + pw > winW - EDGE_MARGIN) x = x - pw;
+            if (ph > 0 && y + ph > winH - EDGE_MARGIN) y = y - ph;
+            x = clampX(x, pw, winW);
+            y = clampY(y, ph, winH);
+
+            var ox:Number = 0, oy:Number = 0;
+            if (n.parent != null)
+            {
+                var ps:Style = n.parent.resolved;
+                var pbx:Number = ps.borderWidths == null ? 0 : PaintKit.nz(ps.borderWidths.left);
+                var pby:Number = ps.borderWidths == null ? 0 : PaintKit.nz(ps.borderWidths.top);
+                ox = n.parent.absX + pbx;
+                oy = n.parent.absY + pby;
+            }
+            eng.setPosition(e, LayoutConstants.EDGE_LEFT, x - ox, LayoutConstants.UNIT_POINT);
+            eng.setPosition(e, LayoutConstants.EDGE_TOP, y - oy, LayoutConstants.UNIT_POINT);
+        }
+
+        // NaN never equals itself, and "still anchored" must not look like "moved".
+        private static function sameNumber(a:Object, b:Number):Boolean
+        {
+            var x:Number = Number(a);
+            if (isNaN(x) && isNaN(b)) return true;
+            return x == b;
+        }
 
         override public function paint(n:UiNode):void
         {

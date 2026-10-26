@@ -87,10 +87,14 @@ function mutate(name, apply, expectKind) {
   }
 }
 
-// M1: rename the call. `tree(` appears once in the demo (DocsData.as, the tree page).
-mutate('M1 tree call renamed in the demo', () => {
+// M1: rename EVERY call. `tree(` appears four times in DocsData.as -- two real calls
+// (the tree page and the virtualList page, which builds its rows out of `tree`) and
+// two code SNIPPETS inside prose strings. Renaming only the first match renamed a
+// snippet and left both real calls in place, so the kind stayed SHOWN and the
+// mutation "survived" -- which is how the gap below was found.
+mutate('M1 tree calls renamed in the demo', () => {
   if (!/\btree\s*\(/.test(original)) throw new Error('M1 pattern missing');
-  fs.writeFileSync(VIEW, original.replace(/\btree\s*\(/, 'treeRenamed('));
+  fs.writeFileSync(VIEW, original.replace(/\btree\s*\(/g, 'treeRenamed('));
 }, 'MISSING  tree');
 
 // M2: a new widget ships with no gallery entry. Both files are new, so the kit is
@@ -122,9 +126,18 @@ mutate('M2 new kind registered, no gallery entry', () => {
 }, 'MISSING  shadow');
 
 // M3: the call is only prose. Comments must not count as code.
-mutate('M3 tree call only inside a comment', () => {
+mutate('M3 tree calls only inside comments', () => {
   if (!/\btree\s*\(/.test(original)) throw new Error('M3 pattern missing');
-  fs.writeFileSync(VIEW, original.replace(/\btree\s*\(/, '// tree('));
+  fs.writeFileSync(VIEW, original.replace(/\btree\s*\(/g, '// tree('));
+}, 'MISSING  tree');
+
+// M4: the only remaining mention is inside a STRING -- a page that PRINTS the source
+// of a widget it never renders. Same class as M3 and just as invisible to a scan that
+// reads string bodies as code (the tool's first version did).
+mutate('M4 the only tree( left is inside a string', () => {
+  if (!/\btree\s*\(/.test(original)) throw new Error('M4 pattern missing');
+  fs.writeFileSync(VIEW, original.replace(/\btree\s*\(/g, 'treeRenamed(')
+    + '\nvar __proseOnly:String = "tree(FILES, { key: x })";\n');
 }, 'MISSING  tree');
 
 const bad = results.filter((r) => !r.pass);

@@ -3,11 +3,13 @@
 // Copy of the ChipNode recipe: class `TooltipNode`, lowercase factory `tooltip.as`
 // (compiler-gaps.md G7), `role` mandatory, self-registration once from the ctor.
 //
-// WHERE IT GOES IS THE AUTHOR'S JOB. This library has no overlay layer yet
-// (STATUS.md section 2.1), so a tooltip is not a floating window that anchors
-// itself to a target: it is an ordinary node that takes part in the layout like
-// every other node, and it is placed either in flow or with the absolute
-// positioning the engine already supports:
+// WHERE IT GOES IS THE AUTHOR'S JOB, and that is now a CHOICE rather than the only
+// option: the library HAS a second retained tree (`View.renderOverlay()` + the six
+// overlay kinds), so a bubble that follows a target by key is `popover({ anchorKey })`
+// in the overlay. A tooltip stays an ordinary node on purpose -- a hover bubble that
+// the author places has no anchor to find, no flip to compute and no layer to tear
+// down, and this is the shape the docs demos and the probes use. Placed either in
+// flow or with the absolute positioning the engine already supports:
 //
 //   tooltip("Saved", { style: { position: "absolute", inset: [40, 8, 0, 0] } })
 //

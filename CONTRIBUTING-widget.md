@@ -170,8 +170,14 @@ AVM2 上**实参比形参少就是 `#1063 Argument count mismatch`**（不像 JS
 | 回调 | 参数 | 例 |
 |---|---|---|
 | `n.onClick` | **0 个** | `onClick: function ():void { … }` |
+| `n.onRightClick(x, y)` | **恰好 2 个**：**本帧事件坐标**（不是节点局部坐标） | `onRightClick: function (x:Number, y:Number):void { m.atX = x; }` |
+| `n.onDoubleClick()` | **0 个** | `onDoubleClick: function ():void { … }` |
 | `n.onChange(v)` | **恰好 1 个**：新值（`Boolean` / `0..1` 的 `Number` / 文本 / 索引） | `onChange: function (v:Number):void { slVal = v; }` |
 | `n.onCommit(v)` | **恰好 1 个**：提交值（失焦/Enter 时） | `onCommit: function (v:String):void { … }` |
+
+**`Control.action` / `Control.tabIndex` 是作者的，不是控件的**：一旦 `action` 有值，`Enter`/`Space`
+走 `ActionRegistry.dispatch(action)` 而**不再**走 `onClick`（一次按键一个效果）；`tabIndex` `-1` = **没有显式序**
+（不是「不可 Tab」，后者归 `tabEnabled`/`disabled`）。控件**不得**自己绕过这两条去接 `KEY_DOWN`。
 
 **两道门钉着它**（都得过）：`tools/callback-arity.cjs` 扫**源码两边**（kit 的调用点恰好 1 实参、
 `ui-demo` 与 `probes` 的声明恰好 1 形参，`onClick` 两边 0），变异 6/6；行为面是

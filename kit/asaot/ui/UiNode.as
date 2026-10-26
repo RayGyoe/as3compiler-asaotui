@@ -113,6 +113,20 @@ package asaot.ui
         public var onClick:Function;
         public var onCommit:Function;
         public var onChange:Function;
+        // ---- right button / double click (mirrored from Element) ----------
+        // Kept here as well as on the description because the listeners are
+        // installed ONCE, at structure time, while the handlers live in a fresh
+        // description every frame (see createBacking).
+        public var onRightClick:Function;   // Function(stageX, stageY)
+        public var onDoubleClick:Function;  // Function()
+        // The key context this node contributes while it (or a child) holds the
+        // focus -- matched by ActionRegistry's context predicates. Declared with the
+        // other identity fields at the top of the class; mirrored from
+        // Node.keyContext in applyPayload (the field existed since the first commit
+        // and had no consumer until the keymap landed).
+        //
+        // -1 == "document order" (see UiApp.focusNext).
+        public var tabIndex:int;
         public var role:String;
         public var ariaName:String;
         public var directionOverride:String;
@@ -218,6 +232,9 @@ package asaot.ui
             this.visibleHold = 0;
             this.action = null;
             this.tabEnabled = false;
+            this.tabIndex = -1;
+            this.onRightClick = null;
+            this.onDoubleClick = null;
             this.shapeA = null;
             this.shapeB = null;
             this.aboveContent = null;
@@ -275,6 +292,17 @@ package asaot.ui
                 this.listen(this.backing, MouseEvent.MOUSE_UP, function (e:MouseEvent):void { self.setPressed(0); });
             }
             this.listen(this.backing, MouseEvent.CLICK, function (e:MouseEvent):void { self.handleClick(); });
+            // RIGHT BUTTON. A normal (bubbling) listener on the backing: an event
+            // aimed at a child or at this node's own TextField still arrives, which
+            // is exactly how `box({ onClick })` already works -- and it is why an
+            // ancestor receives the right-clicks of its rows.
+            this.listen(this.backing, MouseEvent.RIGHT_MOUSE_DOWN,
+                function (e:MouseEvent):void { self.handleRightClick(e); });
+            // DOUBLE CLICK. The runtime only produces it when the HIT TARGET's own
+            // `doubleClickEnabled` is true (emit.ts:26439), so the flag is set from
+            // applyPayload the moment a description carries a handler.
+            this.listen(this.backing, MouseEvent.DOUBLE_CLICK,
+                function (e:MouseEvent):void { self.handleDoubleClick(); });
             // Hover needs to FIND this node from a hit target (which may be this
             // node's own TextField or a descendant's backing), so the app keeps
             // backing -> node. Registered last: a backing that never made it this
@@ -390,6 +418,31 @@ package asaot.ui
             return null;
         }
 
+        // ---- the two button channels the library used to ignore -------------
+        //
+        // RIGHT BUTTON. Dispatched by the runtime on the ORDINARY event timeline
+        // (emit.ts:26457 -- the native menu, if any, comes up AFTER the dispatch),
+        // so a handler that just flips a flag sees the same coordinates the popup
+        // would. stageX/stageY are what a caller needs: the floating layer is laid
+        // out in stage space, so handing the author local coordinates would force
+        // every handler to convert them.
+        public function handleRightClick(e:MouseEvent):void
+        {
+            if (this.inert()) return;
+            var f:Function = this.onRightClick;
+            if (f == null) return;
+            f(e.stageX, e.stageY);
+        }
+
+        // DOUBLE CLICK. Zero arguments, exactly like onClick: the targeting rule is
+        // "the object under the pointer", and a double-click handler that needs the
+        // point can read it from the stage.
+        public function handleDoubleClick():void
+        {
+            if (this.inert()) return;
+            if (this.onDoubleClick != null) this.onDoubleClick();
+        }
+
         private function applyDisabledAlpha():void
         {
             if (this.backing == null) return;
@@ -430,6 +483,15 @@ package asaot.ui
             // class, so a plain Element (a box, a text) is simply not tabbable.
             var tab:Boolean = (desc is Control) ? Control(desc).tabEnabled : false;
             if (tab != this.tabEnabled) this.tabEnabled = tab;
+            // tabIndex orders the Tab ring (UiApp.focusNext); -1 means "document
+            // order", which is what every node without an explicit index uses.
+            var ti:int = (desc is Control) ? Control(desc).tabIndex : -1;
+            if (ti != this.tabIndex) this.tabIndex = ti;
+            // `action` is generic too (UiApp dispatches it on Enter/Space). ButtonWidget
+            // used to be the only writer, which is why a radio or a switch could not
+            // name an action at all.
+            var act:String = (desc is Control) ? Control(desc).action : null;
+            if (act != this.action) this.action = act;
 
             // A disabled flip is a PAINT change (the alpha and the dropped
             // hover/press win) -- plus it has to reach the display object in the
@@ -457,6 +519,20 @@ package asaot.ui
             // The kinds that own a click assign the SAME descriptor field in their
             // own payload below, so this line is a no-op for them.
             this.onClick = Element(desc).onClick;
+            // SAME PLACE, SAME REASON for the other two button channels: the
+            // listeners are permanent, the handlers are per-frame. A node whose
+            // handler disappears stops responding on the next frame without
+            // leaking a closure (the behaviour the whole `listen` design buys).
+            this.onRightClick = Element(desc).onRightClick;
+            this.onDoubleClick = Element(desc).onDoubleClick;
+            // `doubleClickEnabled` is what the RUNTIME reads to decide whether the
+            // second click becomes `doubleClick` at all, and it must be on the HIT
+            // TARGET (an ancestor does not help -- measured on adl 51.4.1).
+            if (this.backing != null)
+                this.backing.doubleClickEnabled = this.onDoubleClick != null;
+            // The context string this node contributes to a keymap predicate. A
+            // plain field on the retained node: only the focus path reads it.
+            this.keyContext = desc.keyContext;
 
             var dirBefore:String = this.directionOverride;
             var relayout:Boolean = this.widget.payload(this, desc);

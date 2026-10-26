@@ -44,7 +44,32 @@ function walk(dir, ext, out) {
 }
 
 // ---- the shared key set ----------------------------------------------------
-const SHARED = ['key', 'style', 'keyContext', 'role', 'ariaName', 'visible', 'disabled', 'onClick'];
+// DERIVED, not transcribed. This list used to be a hardcoded copy of what
+// OptionSupport.applyOpts reads, and it drifted exactly the way a copy does: the
+// day `onRightClick`, `onDoubleClick` and `tabIndex` were added to applyOpts, the
+// tool still reported the names as "no factory reads it at all" for every demo
+// that used them -- a gate blaming correct code. Reading the function's own
+// `opts.<name>` accesses makes the list true by construction.
+const SUPPORT_SRC = fs.readFileSync(path.join(KIT, 'OptionSupport.as'), 'utf8');
+const APPLY_AT = SUPPORT_SRC.indexOf('static function applyOpts');
+if (APPLY_AT < 0) {
+  console.log('DEMO OPTIONS: FAIL -- OptionSupport.applyOpts is gone; the shared key set cannot be derived');
+  process.exit(1);
+}
+const APPLY_SRC = (() => {
+  const open = SUPPORT_SRC.indexOf('{', APPLY_AT);
+  let depth = 0;
+  for (let i = open; i < SUPPORT_SRC.length; i++) {
+    if (SUPPORT_SRC[i] === '{') depth++;
+    else if (SUPPORT_SRC[i] === '}' && --depth === 0) return SUPPORT_SRC.slice(open, i + 1);
+  }
+  return SUPPORT_SRC.slice(open);
+})();
+const SHARED = [...new Set([...APPLY_SRC.matchAll(/opts\.(\w+)/g)].map((m) => m[1]))];
+if (SHARED.length < 5) {
+  console.log('DEMO OPTIONS: FAIL -- only ' + SHARED.length + ' shared options read out of applyOpts');
+  process.exit(1);
+}
 const STYLE_SRC = fs.readFileSync(path.join(KIT, 'style', 'StyleRefinement.as'), 'utf8');
 const FROM_SRC = STYLE_SRC.slice(STYLE_SRC.indexOf('static function from'));
 const STYLE_KEYS = [...new Set([...FROM_SRC.matchAll(/o\.(\w+)\s*!=/g)].map((m) => m[1]))];

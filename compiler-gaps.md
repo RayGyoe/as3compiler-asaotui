@@ -620,6 +620,7 @@
 | **G11「同源两次构建产出不同的 C」** | **不是缺口，已结案**：不是生成器随机，而是**测量在另一个进程正改写的编译器树上进行**。失败构建在 `阶段二四七` 提交前 **24 分钟**；同一个坏法在**同一分钟、另一个程序**的产物里原样出现，且两者 84 秒内**收敛**（20→1→0 条 C 错）；冻结树上 5 次构建**逐字节同一份 C**。旧处置「先重跑一次」已废止，改为**先看编译器树状态** | [`reviews/probe-g11-nondeterminism-2026-10-23.md`](reviews/probe-g11-nondeterminism-2026-10-23.md)、[`probes/g11-nondeterminism/`](probes/g11-nondeterminism/) |
 | **`Array(x)` 是「复制数组」吗** | **不是缺口，是 AS3 事实**：`Array(3)` 得长度 3 的空位数组、`Array([1,2])` 得**长度 1** 且 `[0]` 就是那个数组、`Array(a) === a` 为 false。双臂实测一致（8 格 AGREE；门 §7b）⇒ 库内**禁止**用 `Array(v)` 做「单值/列表归一」，一律 `OptionSupport.list(v)` | [`probes/array-coerce/`](probes/array-coerce/) |
 | **`stage.showWindow()` 不返回**（而是把主线程交给帧/消息循环） | **是我方窗口后端的已知平台事实，不是缺口**（要改成非阻塞得动整个事件循环架构）。但它的后果必须写明：**顶层语句在 `showWindow` 之后永不执行，包括 `var x = …` 的初值**；`setTimeout` 也必须在它之前注册。AIR 桌面端不阻塞 ⇒ 同一份源码在 AIR 里这些变量会被正常初始化。⇒ 写窗口程序时**所有 setup 前置** | `probes/array-scope/Main.as` 头注释（SETUP ORDER）、`examples/*window*.as` |
+| **「节点的布局盒是 26×219，为什么只有文字那一段可点」** | **不是缺口，是 AIR 的规则**：拾取问的是**绘制内容区域**（`as_pick_hit_local` → `as_obj_region_hit_local(o, lx, ly, 1)`，`emit.ts:17966`），不是布局盒 —— 画了填充/描边的 Sprite 才算命中，空 Sprite 再大也穿过去。编译器自己的注释就是按 `adl 51.4.1` 实测写下的（`emit.ts:17969-17982`）。**库侧的应对不是绕路，而是正确写法**：行的底噪用 `Fill.fromArgb(0, 0, 0, 0)` 铺满（alpha 0 也是「画了」，因为这不是像素测试），`tooltip`/`menu` 一类纯文字浮层同理 | `probes/widgets/inputs`（`tree` 每行的可点区域）、`STATUS.md` 缺陷 #24 |
 
 ---
 

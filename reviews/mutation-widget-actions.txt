@@ -1,0 +1,58 @@
+baseline probes/widgets/actions: RESULT: PASS  (73 checks)
+
+M1  CAUGHT  the keymap is never consulted -> a bound key does nothing (the built-ins still work)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL Escape inside `probe > modal` did not fire the action; Escape fired outside its context (0 times); the ctrl-k payload arrived as '' not 'palette'; a keymap binding on Tab did not fire; Tab moved the ring as well (1 vs 0); focus left btn on a rebound Tab (now btn3);
+     restore: byte-identical (948d36c0717d9e74)
+M2  CAUGHT  Control.action is never consumed -> Enter on a focused button falls back to onClick
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL Enter on a control with an action did not dispatch it; Enter also ran onClick (1 time(s));
+     restore: byte-identical (948d36c0717d9e74)
+M3  CAUGHT  the ring is left in document order -> tabIndex has no consumer again
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL Tab went to 'btn2' not btn3 (tabIndex 0 is first); the second Tab went to 'btn3' not btn2 (tabIndex 1);
+     restore: byte-identical (948d36c0717d9e74)
+M4  CAUGHT  doubleClickEnabled is never switched on -> the runtime never produces a doubleClick
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a node with onDoubleClick has doubleClickEnabled off (the runtime will never send it);
+     restore: byte-identical (f55fab777884a056)
+M5  CAUGHT  the right-click handler is never copied to the retained node -> the popup never opens
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL onRightClick got (-1,-1) not the stage point (60,30); the menu did not open; the menu is still invisible after opening; the menu is at 4,4,160,88 not 60,30,160,88; row 0 is 9,9,150,26 not 65,35,150,26; the menu reported row -1 not 0; menu row 0 is #dde6ff not the #F3F4F6 active band; the menu surface at (200,100) is #fff1f2 not #FFFFFF;
+     FAIL  rect cm[x] want 60 got 4
+     FAIL  rect cm[y] want 30 got 4
+     ... and 8 more
+     restore: byte-identical (f55fab777884a056)
+M6  CAUGHT  the point anchor ignores its own x -> the panel lands 4pt away from the pointer
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the menu is at 64,30,160,88 not 60,30,160,88; row 0 is 69,35,150,26 not 65,35,150,26;
+     FAIL  rect cm[x] want 60 got 64
+     FAIL  rect cm:i0[x] want 65 got 69
+     ... and 2 more
+     restore: byte-identical (bb466885d37a0c0f)
+M7  CAUGHT  measure() stops honouring minSize -> an authored ratio of 0.02 yields a 6pt pane
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL after the clamp pane A is 16,320,6,40 not 16,320,40,40; its grip is 22,320,6,40 not 56,320,6,40; its pane B is 28,320,288,40 not 62,320,254,40;
+     FAIL  rect sp2:a[w] want 40 got 6
+     FAIL  rect sp2:div[x] want 56 got 22
+     ... and 2 more
+     restore: byte-identical (5eaffdc538a1e960)
+M8  CAUGHT  the DRAG stops honouring minSize -> it reports 0.0136 instead of clamping to 0.13605
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the clamped share is 0.01360544217687075 not 40/294 = 0.13605;
+     restore: byte-identical (5eaffdc538a1e960)
+M9  CAUGHT  lookup() ignores the context predicate -> a binding fires everywhere in the app
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL Escape fired outside its context (2 times);
+     restore: byte-identical (b6208289c5ce7056)
+M10  CAUGHT  the keystroke stops checking SHIFT -> ctrl-shift-s also matches a plain ctrl-s press
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL ctrl-shift-s matched a press without shift;
+     restore: byte-identical (2fa25890a34ac41e)
+M11  CAUGHT  `a > b` is read as "b is an ancestor of a" -> every nested binding inverts
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL Escape inside `probe > modal` did not fire the action; Escape fired outside its context (0 times); 'probe > modal' did not match inner-first [modal, probe]; 'probe > modal' matched the REVERSED list;
+     restore: byte-identical (ea6b4127099d67b4)
+
+MUTATION actions: 11/11 caught, 0 problem(s)
+RESULT: PASS

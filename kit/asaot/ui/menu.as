@@ -29,6 +29,19 @@ package asaot.ui
             if (opts.selectedIndex != null) n.selectedIndex = int(Number(opts.selectedIndex));
             if (opts.submenuIndex != null) n.submenuIndex = int(Number(opts.submenuIndex));
             if (opts.onSelect != null) n.onSelect = (opts.onSelect as Function);
+            // POINT ANCHOR. `atX`/`atY` are STAGE coordinates (what
+            // MouseEvent.stageX/stageY report), and they only make sense as a PAIR --
+            // one of them alone would place the panel on an edge the author never
+            // chose, so that is refused rather than half-applied.
+            if (opts.atX != null || opts.atY != null)
+            {
+                if (opts.atX == null || opts.atY == null)
+                    throw new Error("asaot.ui.menu: `atX` and `atY` go together (got only "
+                        + (opts.atX == null ? "atY" : "atX") + "). Both are stage coordinates, "
+                        + "e.g. from MouseEvent.stageX/stageY in an onRightClick handler.");
+                n.atX = Number(opts.atX);
+                n.atY = Number(opts.atY);
+            }
             if (opts.closeOnOutside != null) n.closeOnOutside = Boolean(opts.closeOnOutside);
             if (opts.onClose != null) n.onClose = (opts.onClose as Function);
         }

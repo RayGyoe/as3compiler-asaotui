@@ -1,7 +1,8 @@
-// demo/DocsSystem.as -- the four pages that are about the FRAMEWORK rather than
+// demo/DocsSystem.as -- the five pages that are about the FRAMEWORK rather than
 // about one widget: `style` (the field vocabulary), `theme` (the four layers the
-// resolver merges), `state` (bindings and notifications) and `keyboard` (focus,
-// the ring, and which kind answers to which key).
+// resolver merges), `state` (bindings and notifications), `events` (the three
+// pointer callbacks and what the runtime gates) and `keyboard` (focus, the ring,
+// which kind answers to which key, and the keymap).
 //
 // WHY THESE FOUR PAGES EXIST (audit, 2026-10-26)
 // ----------------------------------------------
@@ -21,6 +22,7 @@
 // screen. Saying so is the honest form -- see that page's last section.
 package demo
 {
+    import asaot.ui.ActionRegistry;
     import asaot.ui.Dirty;
     import asaot.ui.Node;
     import asaot.ui.Subscription;
@@ -64,6 +66,77 @@ package demo
         {
             var m:DocsModel = view.model;
             var app:UiApp = view.getApp();
+
+            if (id == "events") return [
+                new DocSection("A right click brings its own point", [
+                    "`onRightClick(x, y)` hands you the STAGE coordinates of the press, because a",
+                    "right click exists to say \"open something HERE\" -- a handler without the point",
+                    "would have to guess it from the pointer, which no event field exposes.",
+                    "That pair is exactly what `menu({ atX, atY })` wants, so opening a menu at the",
+                    "click is one assignment. The press BUBBLES like any other event, so a handler",
+                    "on a container also hears its children."
+                ], [
+                    "box({ onRightClick: function (x:Number, y:Number):void {",
+                    "    this.atX = x; this.atY = y; this.open = true;",
+                    "    view.invalidate(Dirty.ALL);",
+                    "} })"
+                ], 104, function ():Node
+                {
+                    return row({ gap: 14, alignItems: "center" }, [
+                        box({ key: "evRight", onRightClick: function (x:Number, y:Number):void
+                                {
+                                    m.put("ev.x", x);
+                                    m.put("ev.y", y);
+                                },
+                                style: StyleRefinement.from({
+                                    size: [180, 56], padding: 10, background: 0xDBEAFE,
+                                    cornerRadii: 8, text: { fontSize: 12, color: 0x1E3A8A } }),
+                                ariaName: "right click target" }, [
+                                text("right-click anywhere here", { ariaName: "" })
+                            ]),
+                        text("last press: (" + int(m.num("ev.x", -1)) + ", "
+                            + int(m.num("ev.y", -1)) + ") stage px",
+                            { key: "evWhere", style: MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("A double click has to be switched on", [
+                    "The runtime only emits `doubleClick` when the HIT TARGET's own",
+                    "`doubleClickEnabled` is true, and it defaults to FALSE (measured on adl 51.4.1).",
+                    "Switching it on globally would change what a fast second click means for every",
+                    "control in the app, so `UiNode` sets it on exactly the nodes that carry an",
+                    "`onDoubleClick` handler -- the flag follows the handler, not the author.",
+                    "Double-click the left box: it counts. The right box has no handler, so the flag",
+                    "stays off and the same gesture reaches nothing."
+                ], [
+                    "box({ onDoubleClick: pick })          // doubleClickEnabled = true",
+                    "box({ onClick: pick })                // stays false",
+                    "// UiNode.applyPayload:",
+                    "backing.doubleClickEnabled = (this.onDoubleClick != null);"
+                ], 104, function ():Node
+                {
+                    return row({ gap: 14, alignItems: "center" }, [
+                        box({ key: "evDbl", onDoubleClick: function ():void
+                                {
+                                    m.put("ev.dbl", int(m.num("ev.dbl", 0)) + 1);
+                                },
+                                style: StyleRefinement.from({
+                                    size: [150, 56], padding: 10, background: 0xDCFCE7,
+                                    cornerRadii: 8, text: { fontSize: 12, color: 0x14532D } }),
+                                ariaName: "double click target" }, [
+                                text("double-click me", { ariaName: "" })
+                            ]),
+                        box({ style: StyleRefinement.from({
+                            size: [150, 56], padding: 10, background: 0xF1F5F9,
+                            cornerRadii: 8, text: { fontSize: 12, color: 0x64748B } }),
+                            ariaName: "no double click target" }, [
+                            text("no handler here", { ariaName: "" })
+                        ]),
+                        text("counted " + int(m.num("ev.dbl", 0)),
+                            { key: "evDblCount", style: MONO, ariaName: "" })
+                    ]);
+                })
+            ];
 
             if (id == "style") return [
                 new DocSection("size, minSize, maxSize", [
@@ -752,7 +825,7 @@ package demo
                             { style: BOLD, ariaName: "" }),
                         text("Esc closes what is open: dialog, drawer, popover, menu, select, datePicker",
                             { style: MONO, ariaName: "" }),
-                        text("`Control.tabIndex` is reserved and NOT consulted by the ring today --",
+                        text("a keymap is consulted BEFORE all of it -- see the last two sections",
                             { style: MONO, ariaName: "" })
                     ]);
                 }),
@@ -792,6 +865,92 @@ package demo
                                      a.focusNode(a.findByKey("kbInner"));
                                      m.put("kb.try", a.focusedNode() == null ? "refused" : "focused");
                                  } })
+                    ]);
+                }),
+
+                new DocSection("A keymap binds keys to ACTIONS, not to widgets", [
+                    "Three pieces, one job each. `KeyStroke` parses \"ctrl-shift-s\" into a key code",
+                    "plus four modifier flags; `ContextExpr` parses \"editor > modal\" into a predicate",
+                    "over the tags on the FOCUS CHAIN; `ActionRegistry` holds the actions and the map",
+                    "from a keystroke to an action id.",
+                    "`setKeymap` takes an ARRAY of { context, bindings } objects -- there is no JSON",
+                    "class in this compiler, so a JSON string would need its own parser -- and it",
+                    "validates every string ONCE, at install time: a typo in a modifier fails when",
+                    "you install the map, not at 3am on the one key the user pressed.",
+                    "Matching is FIRST-ENTRY-WINS in declaration order, modifiers are matched",
+                    "EXACTLY (a binding for `ctrl-s` does not fire while Shift is also held), and a",
+                    "keystroke that matches nothing falls through to the built-ins, so typing is",
+                    "untouched. The map is consulted BEFORE Tab as well: bind Tab and Tab is yours.",
+                    "Install the map, focus the field, press ctrl-k."
+                ], [
+                    "ActionRegistry.register(\"palette.open\", openThePalette);",
+                    "ActionRegistry.setKeymap([",
+                    "    { context: \"docskey\", bindings: {",
+                    "        \"ctrl-k\": [\"palette.open\", { from: \"keymap\" }],",
+                    "        \"escape\": \"palette.close\" } },",
+                    "    { context: \"docskey > modal\", bindings: { \"escape\": \"modal.cancel\" } }",
+                    "]);",
+                    "// the tag the predicate reads: column({ keyContext: \"docskey\" }, [...])"
+                ], 150, function ():Node
+                {
+                    return column({ gap: 10, keyContext: "docskey", alignItems: "flex-start" }, [
+                        row({ gap: 10, alignItems: "center" }, [
+                            textField({ key: "kmField", placeholder: "focus, then ctrl-k",
+                                        style: StyleRefinement.from({ size: [190, null] }) }),
+                            button({ key: "kmInstall", label: "Install keymap",
+                                     style: DocsDemo.QUIET,
+                                     onClick: function ():void { installDemoKeymap(m); } })
+                        ]),
+                        text("fired " + int(m.num("km.n", 0)) + " time(s); map has "
+                            + ActionRegistry.keymapEntryCount() + " entr(y/ies), "
+                            + ActionRegistry.bindingCount() + " binding(s)",
+                            { key: "kmCount", style: MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("`action` takes over Enter; `tabIndex` orders the ring", [
+                    "`Control.action` is an action ID. With one set, Enter or Space runs the ACTION",
+                    "and does NOT also run `onClick` -- one press, one effect. A control without an",
+                    "action keeps the plain click, so nothing changes for code that never names one.",
+                    "`tabIndex` orders the ring the way HTML does: every node with an explicit index",
+                    "comes first, ascending (ties in document order), and everything left at -1",
+                    "follows in document order. -1 means \"no explicit index\", NOT \"unreachable\" --",
+                    "that is what `tabEnabled` and `disabled` are for.",
+                    "Below, the LAST two buttons carry indices 0 and 1, so the ring starts at the",
+                    "third row, not at the first button."
+                ], [
+                    "button({ action: \"docs.act\", label: \"Enter runs the action\" })",
+                    "button({ label: \"first in the document\" })",
+                    "button({ label: \"index 0\", tabIndex: 0 })",
+                    "button({ label: \"index 1\", tabIndex: 1 })"
+                ], 150, function ():Node
+                {
+                    if (!ActionRegistry.has("docs.act"))
+                    {
+                        ActionRegistry.register("docs.act", function (p:Object):void
+                        {
+                            m.put("ka.acts", int(m.num("ka.acts", 0)) + 1);
+                        }, null);
+                    }
+                    return column({ gap: 10, alignItems: "flex-start" }, [
+                        button({ key: "kaAct", label: "Enter runs the action",
+                                 action: "docs.act", style: DocsDemo.QUIET,
+                                 onClick: function ():void
+                                 {
+                                     m.put("ka.clicks", int(m.num("ka.clicks", 0)) + 1);
+                                 } }),
+                        text("action " + int(m.num("ka.acts", 0)) + " time(s), onClick "
+                            + int(m.num("ka.clicks", 0)) + " time(s) -- Enter must move only the first",
+                            { key: "kaCount", style: MONO, ariaName: "" }),
+                        row({ gap: 10, alignItems: "center" }, [
+                            button({ key: "kaIdx0", label: "index 0", tabIndex: 0,
+                                     style: DocsDemo.QUIET,
+                                     onClick: function ():void { } }),
+                            button({ key: "kaIdx1", label: "index 1", tabIndex: 1,
+                                     style: DocsDemo.QUIET,
+                                     onClick: function ():void { } }),
+                            text("Tab reaches index 0 first", { style: MONO, ariaName: "" })
+                        ])
                     ]);
                 })
             ];
@@ -867,6 +1026,21 @@ package demo
             var app:UiApp = view.getApp();
             if (app == null) return;
             app.focusNode(app.findByKey(key));
+        }
+
+        // The keymap demo installs ONE context-scoped binding, replacing any previous
+        // map (setKeymap is a whole-map install, never an append -- that is what makes
+        // it a configuration). Re-installing is therefore safe and idempotent.
+        private static function installDemoKeymap(m:DocsModel):void
+        {
+            ActionRegistry.register("docs.bell", function (p:Object):void
+            {
+                m.put("km.n", int(m.num("km.n", 0)) + 1);
+            }, null);
+            ActionRegistry.setKeymap([
+                { context: "docskey", bindings: { "ctrl-k": "docs.bell" } }
+            ]);
+            m.put("km.on", true);
         }
 
         private static function subscribeDemo(m:DocsModel):void

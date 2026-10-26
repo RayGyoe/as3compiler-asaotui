@@ -75,6 +75,30 @@ function strip(src) {
   return out;
 }
 
+// The DEMO side needs one more step: a factory call that appears inside a STRING is a
+// code snippet printed on a page, not a rendering. `strip` keeps string bodies on
+// purpose (the kit scan reads `register("tree", ...)` out of one), so the demo gets
+// its own pass that empties them. Without it a page could satisfy this gate by
+// PRINTING the source of a call it never makes -- the string-shaped twin of the
+// comment bug that made this tool report `tree` as shown in its first version.
+function stripStrings(src) {
+  let out = '';
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const q = src[i];
+    if (q !== '"' && q !== "'" && q !== '`') { out += q; i++; continue; }
+    out += q;
+    i++;
+    while (i < n) {
+      if (src[i] === '\\') { i += 2; continue; }
+      if (src[i] === q) { out += q; i++; break; }
+      i++;
+    }
+  }
+  return out;
+}
+
 function readKit() {
   const out = [];
   const walk = (dir) => {
@@ -113,7 +137,7 @@ if (!kinds.length) {
 // ---- 2) factories per kind ---------------------------------------------------
 const demo = fs.readdirSync(DEMO)
   .filter((f) => f.endsWith('.as'))
-  .map((f) => strip(fs.readFileSync(path.join(DEMO, f), 'utf8')))
+  .map((f) => stripStrings(strip(fs.readFileSync(path.join(DEMO, f), 'utf8'))))
   .join('\n');
 if (demo.trim() === '') {
   console.error('[kind-coverage] the demo sources are empty -- cannot certify anything');
