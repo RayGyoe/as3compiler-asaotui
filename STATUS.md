@@ -905,7 +905,7 @@ G24 / G25 / G26 在编译器侧全部修好后（**阶段二百七十五，v0.4.
 
 ### 3.17c 文档站上公网：`gh-pages`（第二十一轮）
 
-50 页文档站此前只有一条看的路：克隆 5.4 GB 仓库 + 同级的 5.4 GB 编译器 + 编四分钟。现在
+52 页文档站此前只有一条看的路：克隆 5.4 GB 仓库 + 同级的 5.4 GB 编译器 + 编四分钟。现在
 <https://raygyoe.github.io/as3compiler-asaotui/> 直接打开就是它——`web` 臂的产物放在 `gh-pages` 分支。
 
 先澄清一个常见误解：**`ui-demo/` 的示例代码从来没有被忽略**。`ui-demo/demo/` 20 个 `.as`、`README.md`、
@@ -1046,7 +1046,7 @@ kit 只挂窗口。四条硬规则（每条都有探针断言）：
 |---|---|
 | `probes/widgets/inputs`（新门） | **50 checks / 0 failures**：三个控件 + 两个窗口 + 四条拒绝 + 三个手算像素点 |
 | 变异 `tools/mutation-widget-inputs.cjs` | **8/8 全中**，每条都红在 `expect` 指名的断言上，`finally` 还原后 sha256 逐字节一致 |
-| 文档站 | `numberInput`（2 节）/ `rangeSlider`（2 节）/ `multiSelect`（2 节）+ `list`/`tree` 各一节虚拟化 ⇒ **50 页**；`kind-coverage` **40/40**；`callback-arity` **0 违规** |
+| 文档站 | `numberInput`（2 节）/ `rangeSlider`（2 节）/ `multiSelect`（2 节）+ `list`/`tree` 各一节虚拟化 ⇒ **52 页**；`kind-coverage` **41/41**；`callback-arity` **0 违规** |
 | AIR 臂 | `mxmlc` **OK: 124985 bytes**（新增的 5 个 API 全是合法纯 AS3） |
 | 画廊 | `pages=50 nodes=8796 badPages=0 overflowingBlocks=0` → **PASS** |
 | 门 | **55/55 PASS**（日志 `reviews/gates-all-35.txt`） |
@@ -1091,8 +1091,8 @@ node tools/gates.cjs          # 54/54 PASS 才叫绿（定稿记录 reviews/gate
 | **参考运行时扫全站（第十一轮补，G24）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` | **41/41 页 × 10/10 弹层 × 0 runtime error**（`mxmlc` 编 → `adl` 跑 → 读应用自己写的 `air-trace.txt`）；变异 `tools/mutation-air-sweep.cjs` **5/5**（把槽位计数改回 `internalCount + i` ⇒ `#2006`；去掉「打开弹层」⇒ `OPENED` 缺；少走一页 ⇒ `visited 40/41`；去掉 `releaseListeners()` ⇒ 145 个 `#1009`；只悬停不投递 ⇒ 指针钻 `0/41`） |
 | **指针钻：死节点上的 roll-out（第十二轮补，G25）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` + `node tools/listener-wiring.cjs` + `node tools/probe.cjs probes/lifecycle` | `air-sweep` 行末报 **3107 node(s) hovered and 348 of them destroyed**、0 errors（每页离开前悬停该页每个叶子，切页**下一拍**投递 `mouseOut`）；静态扫描 **29 wired / 0 raw**；探针 **9 项** 0 failures；变异 4/4 + 3/3 |
 | **滑块拖拽 + 回调参数（第九轮补）** | `node tools/probe.cjs probes/widgets/callback` + `node tools/callback-arity.cjs` | **24 checks**，0 failures（只点**未绑定**控件：checkbox/toggle/radio + 滑块的按下→拖动→越界夹紧→松手→松手后移动无效→纯点击）；变异 `probes/widgets/callback/mutation.cjs` **8/8**；静态门 15 调用 / 81 声明 / **0 违规**，变异 `tools/mutation-callback-arity.cjs` **6/6** |
-| **多页 App（组件文档站，50 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **50 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
-| **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **40/40** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
+| **多页 App（组件文档站，52 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **52 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
+| **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **41/41** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
 | **高分辨率（HiDPI）自证** | `cd asaotui/ui-demo && node check-dpi.cjs` | `standard` 700×560(1×) vs `high` 1050×840(1.5×)，且两次 tour 文本**逐字节相同** |
 | **单页登录 App** | `cd asaotui/ui-demo && node build-and-run.cjs` | 8 项手算断言 + `750×563` 截图（1.5×）+ `RESULT: PASS` |
 | **`--air-app` 闭包回归钉（G13，已修）** | `node probes/reach-freefn/run.cjs` | 默认闭包 kept **5/5** 且默认面**能建能跑**（修前是：红 + `unknown superclass 'Base' of 'p_Leaf'`） |
@@ -1150,7 +1150,7 @@ node tools/gates.cjs          # 54/54 PASS 才叫绿（定稿记录 reviews/gate
 
 > 已经从这里划掉的：`list`/`tree` 的虚拟化（本轮，只挂窗口）、`numberInput`/`rangeSlider`/`multiSelect`、
 > `tree`/`combobox`/`datePicker` 三件选择类控件。数字不手写：工厂数由
-> `kit/asaot/ui/*.as` 里「有自己的同名 public 工厂函数」计得（46），kind 数由 `tools/kind-coverage.cjs` 计得（40/40）。
+> `kit/asaot/ui/*.as` 里「有自己的同名 public 工厂函数」计得（47），kind 数由 `tools/kind-coverage.cjs` 计得（41/41）。
 
 > 本表所有「缺」项均为**登记**；对 `as3compiler/` 本轮是**零改动**（上一轮的两个编译阻塞补丁
 > 已随上游提交消失，见 §3.7）：

@@ -41,7 +41,7 @@ node tools/gates.cjs     # 已增至 56 道门，56/56 PASS 才叫绿（最新�
 ```
 
 **在线 demo（零构建）**：<https://raygyoe.github.io/as3compiler-asaotui/> —— 就是下面那张
-52 页文档站，由 `web` 臂编成 wasm 后放在 `gh-pages` 分支。8 个文件 / 8.46 MB，与构建
+52 页文档站，由 `web` 臂编成 wasm 后放在 `gh-pages` 分支。8 个文件 / 8.70 MB，与构建
 产物**逐字节相同**（`tools/publish-pages.cjs --check` 可复核）；刷新它是
 `node tools/publish-pages.cjs --push`，见 [`ui-demo/README.md`](ui-demo/README.md#publishing-the-online-demo)。
 
