@@ -3,10 +3,10 @@
 > 回答一个问题：**「UI 库写完了吗？」**
 >
 > 结论：**深水区做透了，表面层补齐了三批（控件集 + 多页 App + 组件目录页 + 浮层系统 + 交互动线），但还不是一个完整工具箱。**
-> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 37 个 kind / 41 个工厂**（第二批 media/feedback/data 九件、
+> 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 37 个 kind / 43 个工厂**（第二批 media/feedback/data 九件、
 > 第三批**浮层六件 dialog/drawer/popover/menu/toast/select**、第五批**列表虚拟化 `virtualList` + 选择三件**
 > `tree`/`combobox`/`datePicker` 均已落地）；
-> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**43 页 / 9 组**，每页两个 live 示例 + 产生它的源码），
+> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**47 页 / 10 组**，每页两个 live 示例 + 产生它的源码），
 > 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**37/37**，变异 3/3）；
 > **浮层走第二棵保留树**（`View.renderOverlay()` + `UiApp.overlayRoot`），主树因此不再为弹层重解布局。
 > 第四轮（2026-10-24）补的是**交互动线**：`disabled` + `hover/pressed/focused` 四态绘制、`textField` 编辑回写、
@@ -120,13 +120,13 @@
 |---|---|---|
 | L1 渲染（Skia + Stage3D） | ✅ 复用编译器运行时 | `layout-check/visual-check.cjs` 12 项像素断言；AOT ↔ AIR 两张 BMP **0 字节差异** |
 | L2 布局引擎（flexbox 子集） | ✅ **做透** | `layout-check` **133 项手算断言全绿**；Yoga == AOT == AIR **105 行 0 差异** |
-| L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 26 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
+| L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 28 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
 | L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表 |
 | L2 动画 | ✅ **样式 5 字段 + layout 字段 + 浮层入/退场** | 样式 `paint` 字段：`opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`；样式 **`layout` 字段**：`width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y)——写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停（`probes/widgets/anim` 14 项 + `probes/widgets/motion` 23 项）；显示对象级：`OverlayMotion`（入场 140ms ease-out / **退场 120ms ease-in**，墙钟，每帧从引擎读基准，不累加），见 §3.4 |
-| L3 控件库 | ✅ **40 个工厂 / 35 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**35 个 kind 全部上了画廊**（第七页 Advanced），由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 画廊是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
+| L3 控件库 | ✅ **43 个工厂 / 37 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**37 个 kind 全部上了文档站**，由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 文档站是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
 | L3 样式面 | ✅ **33 字段** | 见 §3.2；仅剩 `grid` 刻意缺席（`cursor` 第十五轮已落地） |
 | L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入退场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、**入场 140ms / 退场 120ms**；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**）+ `probes/widgets/motion` **23 项**（变异 **7/7**） |
-| L3 组合能力 | ✅ **43 页组件文档站** | `ui-demo/demo/Docs*.as`（17 个文件）+ `ui-demo/run-gallery.cjs`：左侧 9 组 / 43 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
+| L3 组合能力 | ✅ **47 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 47 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
 | L3 可访问性 | ⚠️ 半成品 | `role`/`ariaName` **仍只是字段**（无消费者）；但 `Control.tabEnabled` 现在真被 Tab 环读（`UiApp.collectFocus`）、`Element.disabled` 真阻断点击与导航 |
 
 ---
@@ -885,12 +885,12 @@ G24 / G25 / G26 在编译器侧全部修好后（**阶段二百七十五，v0.4.
 
 ### 3.17c 文档站上公网：`gh-pages`（第二十一轮）
 
-43 页文档站此前只有一条看的路：克隆 5.4 GB 仓库 + 同级的 5.4 GB 编译器 + 编四分钟。现在
+47 页文档站此前只有一条看的路：克隆 5.4 GB 仓库 + 同级的 5.4 GB 编译器 + 编四分钟。现在
 <https://raygyoe.github.io/as3compiler-asaotui/> 直接打开就是它——`web` 臂的产物放在 `gh-pages` 分支。
 
-先澄清一个常见误解：**`ui-demo/` 的示例代码从来没有被忽略**。`ui-demo/demo/` 19 个 `.as`、`README.md`、
-`build.sh`、7 个 `.cjs`、16 张 `gallery-page*.png` 一直在 `main` 上（`git ls-files ui-demo` = 53 个文件；
-匿名 GitHub API 拉 `contents/ui-demo/demo` 也是 19 条）。`.gitignore` 里的 `/ui-demo/air-*/*` 禁的是**跑过
+先澄清一个常见误解：**`ui-demo/` 的示例代码从来没有被忽略**。`ui-demo/demo/` 20 个 `.as`、`README.md`、
+`build.sh`、11 个 `.cjs`、16 张 `gallery-page*.png` 一直在 `main` 上（`git ls-files ui-demo` = 54 个文件；
+当初写这段时的数字是 19 个 `.as` / 7 个 `.cjs` / 53 个文件，差额全是后来新加的文档页与其探针）。`.gitignore` 里的 `/ui-demo/air-*/*` 禁的是**跑过
 构建之后长出来的那一层**：`src/`（`stage-air.cjs` 从 `demo/` 灌进去的拷贝）、`GalleryApp.c` 5.7 MB、
 `.exe` 11.5 MB、`*.build.json`、`*.done`、`icudtl.dat` 9.7 MB、以及整个 `air-gallery-web/`。
 
@@ -1016,7 +1016,7 @@ node tools/gates.cjs          # 54/54 PASS 才叫绿（定稿记录 reviews/gate
 | **参考运行时扫全站（第十一轮补，G24）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` | **41/41 页 × 10/10 弹层 × 0 runtime error**（`mxmlc` 编 → `adl` 跑 → 读应用自己写的 `air-trace.txt`）；变异 `tools/mutation-air-sweep.cjs` **5/5**（把槽位计数改回 `internalCount + i` ⇒ `#2006`；去掉「打开弹层」⇒ `OPENED` 缺；少走一页 ⇒ `visited 40/41`；去掉 `releaseListeners()` ⇒ 145 个 `#1009`；只悬停不投递 ⇒ 指针钻 `0/41`） |
 | **指针钻：死节点上的 roll-out（第十二轮补，G25）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` + `node tools/listener-wiring.cjs` + `node tools/probe.cjs probes/lifecycle` | `air-sweep` 行末报 **3107 node(s) hovered and 348 of them destroyed**、0 errors（每页离开前悬停该页每个叶子，切页**下一拍**投递 `mouseOut`）；静态扫描 **29 wired / 0 raw**；探针 **9 项** 0 failures；变异 4/4 + 3/3 |
 | **滑块拖拽 + 回调参数（第九轮补）** | `node tools/probe.cjs probes/widgets/callback` + `node tools/callback-arity.cjs` | **24 checks**，0 failures（只点**未绑定**控件：checkbox/toggle/radio + 滑块的按下→拖动→越界夹紧→松手→松手后移动无效→纯点击）；变异 `probes/widgets/callback/mutation.cjs` **8/8**；静态门 15 调用 / 81 声明 / **0 违规**，变异 `tools/mutation-callback-arity.cjs` **6/6** |
-| **多页 App（组件文档站，43 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **43 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
+| **多页 App（组件文档站，47 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **47 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
 | **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **37/37** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
 | **高分辨率（HiDPI）自证** | `cd asaotui/ui-demo && node check-dpi.cjs` | `standard` 700×560(1×) vs `high` 1050×840(1.5×)，且两次 tour 文本**逐字节相同** |
 | **单页登录 App** | `cd asaotui/ui-demo && node build-and-run.cjs` | 8 项手算断言 + `750×563` 截图（1.5×）+ `RESULT: PASS` |
@@ -1064,7 +1064,7 @@ node tools/gates.cjs          # 54/54 PASS 才叫绿（定稿记录 reviews/gate
   第 14 个（翻转定位读到上一帧的 parent 尺寸）要靠**先开窗再缩窗**才看得见；
   第 15 个（入场动画在手泵帧的 tour 里永不落地）要靠**截图**才看得见——而它把所有矩形断言全部躲过去了。
   这条经验比这些 bug 本身更值钱：**探针要配一个真实应用，而且要真的看图。**
-- **表面层（控件集 / 组件目录页 / 浮层系统）**：五批共 37 kind / 41 工厂已落地并有手算探针；
+- **表面层（控件集 / 组件目录页 / 浮层系统）**：五批共 37 kind / 43 工厂已落地并有手算探针；
   仍缺的见 §2.1。当前可交付上限约「多页表单 / 设置页 / 列表详表 / 带图与骨架的异步页 / 弹层与菜单驱动的交互」。
 
 ### 补齐优先级建议
