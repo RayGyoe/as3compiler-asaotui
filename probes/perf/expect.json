@@ -1,0 +1,7 @@
+{
+  "w": 800,
+  "h": 600,
+  "rects": {},
+  "points": [],
+  "_why": "timing probe: reports milliseconds, asserts nothing about pixels"
+}

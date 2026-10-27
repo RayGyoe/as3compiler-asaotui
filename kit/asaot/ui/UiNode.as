@@ -80,6 +80,11 @@ package asaot.ui
         private static const SHADOW_LAST:String = "shadowLast";
 
         // ---- control payload (mirrored from the description node) --------
+        // The input key of the last PaintKit.measureField call on this node. Lives
+        // here rather than in ElementState because that type is deliberately
+        // numbers-only (see its header); a cache key is a string.
+        public var measureKey:String;
+        public var formatKey:String;    // measureKey + colour: when setTextFormat last ran
         public var textContent:String;
         public var label:String;
         public var value:String;
@@ -607,7 +612,7 @@ package asaot.ui
             // resolve, because their `lastStyle` pointers did not change but the
             // parent contribution they inherit did (section 2.3 / 2.4, the same
             // reason `setTheme()` stales the whole tree).
-            if (Style.diffFlags(this.previous, this.resolved) != 0 && inheritedChanged(this.previous, this.resolved))
+            if (f != 0 && inheritedChanged(this.previous, this.resolved))
             {
                 staleDescendants();
             }
@@ -1009,6 +1014,13 @@ package asaot.ui
             var y:Number = py + out[1];
             var w:Number = out[2];
             var h:Number = out[3];
+            // A RESIZE IS A PAINT CHANGE, a move is not. This is what lets the
+            // frame end with a dirty-only paint sweep instead of repainting the
+            // whole tree whenever anything relayouts: every widget draws from
+            // its solved width/height (radius, track length, fill rect), so a
+            // changed extent must be repainted even though no style pointer
+            // moved. x/y need no bit -- the backing is MOVED, not redrawn.
+            if (w != this.absW || h != this.absH) this.dirty |= Dirty.M_PAINT;
             this.absX = x; this.absY = y; this.absW = w; this.absH = h;
             this.state.arrangedX = x; this.state.arrangedY = y;
             this.state.arrangedW = w; this.state.arrangedH = h;

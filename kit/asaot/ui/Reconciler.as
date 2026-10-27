@@ -129,18 +129,25 @@ package asaot.ui
 
             // Duplicate-key check. Index tokens are all negative and key ids are
             // all positive, so only two explicit keys can collide.
+            //
+            // THIS MUST STAY O(n). It used to be the obvious nested loop, which
+            // cost n(n-1)/2 internings PER PARENT PER DESCRIBE -- measured at
+            // 39.3ms of a 39.7ms frame for a single column of 300 keyed buttons
+            // (probes/perf, 2026-10-27): 98% of the whole describe pass, spent
+            // on a check that almost never fires. The interned id is already a
+            // unique positive int, so a seen-set answers the same question in
+            // one pass. The error and its text are unchanged.
+            var seen:Object = {};
             for (i = 0; i < count; i++)
             {
                 if (kids[i].key == null) continue;
-                for (var j:int = i + 1; j < count; j++)
+                var seenId:int = this.internKey(kids[i].key);
+                if (seen[seenId])
                 {
-                    if (kids[j].key == null) continue;
-                    if (this.internKey(kids[i].key) == this.internKey(kids[j].key))
-                    {
-                        throw new Error('asaot.ui: duplicate key "' + String(kids[i].key)
-                            + '" under parent kind "' + n.kind + '" (api-design section 1.2)');
-                    }
+                    throw new Error('asaot.ui: duplicate key "' + String(kids[i].key)
+                        + '" under parent kind "' + n.kind + '" (api-design section 1.2)');
                 }
+                seen[seenId] = true;
             }
 
             var next:Vector.<UiNode> = new Vector.<UiNode>();

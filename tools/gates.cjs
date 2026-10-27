@@ -359,7 +359,12 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // in it is a const so the ONLY way a swap can reach a node is
                  // markThemeDirty -- its teeth are tools/mutation-widget-theme.cjs (8/8).
                  'widgets/theme',
-                 'widgets/actions']) {
+                 'widgets/actions',
+                 // probes/perf is not a pixel probe but a stopwatch: 300 keyed buttons,
+                 // timed idle / describe / one-node-change / solve / paint phases.
+                 // Its one assertion is a 15ms ceiling on a NO-CHANGE describe
+                 // (39.3ms when the duplicate-key check was quadratic, 1.0ms now).
+                 'perf']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);

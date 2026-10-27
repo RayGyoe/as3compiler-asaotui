@@ -540,6 +540,13 @@ package asaot.ui
 
             if (layoutRan)
             {
+                // A full sweep, and that is a MEASURED decision, not inertia:
+                // replacing this with paintDirty cost probes/widgets/stick its
+                // sticky bands (a widget whose paint publishes state the next
+                // scroll step reads), while removing painting altogether moved
+                // the layout phase by 0ms (temp/dissect2.cjs). Painting is not
+                // where the frame time is; measurePass is. Do not "optimise"
+                // this line again without re-running both.
                 this.paintPasses = this.paintPasses + 1;
                 if (this.root != null) paintAll(this.root);
                 if (this.overlayRoot != null) paintAll(this.overlayRoot);
