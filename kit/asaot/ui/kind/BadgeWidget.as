@@ -65,8 +65,9 @@ package asaot.ui.kind
             PaintKit.measureField(n, n.tf, n.label, s);
             if (PaintKit.autoW(s))
             {
-                PaintKit.setPointSize(n, LayoutConstants.AXIS_WIDTH,
-                    n.state.measuredW + PaintKit.padH(s.padding) + PaintKit.borderH(s.borderWidths));
+                var w:Number = n.state.measuredW + PaintKit.padH(s.padding) + PaintKit.borderH(s.borderWidths);
+                if (w < 16) w = 16;   // one digit still gets a circular badge
+                PaintKit.setPointSize(n, LayoutConstants.AXIS_WIDTH, w);
             }
             if (PaintKit.autoH(s))
             {
@@ -110,8 +111,7 @@ package asaot.ui.kind
             {
                 var cw:Number = n.absW - PaintKit.borderH(s.borderWidths) - PaintKit.padH(s.padding);
                 var ch:Number = n.absH - PaintKit.borderV(s.borderWidths) - PaintKit.padV(s.padding);
-                n.tf.x = PaintKit.insetX(n) + (cw - n.state.measuredW) / 2;
-                n.tf.y = PaintKit.insetY(n) + (ch - n.state.measuredH) / 2;
+                PaintKit.centerText(n, PaintKit.insetX(n), PaintKit.insetY(n), cw, ch);
                 n.tf.textColor = fg;
             }
             PaintKit.decorate(n);

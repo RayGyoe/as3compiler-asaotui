@@ -7,7 +7,7 @@
 // "it renders, so it works" -- and each of them can be wrong in a way a bitmap of
 // the resting state cannot see:
 //
-//   numberInput  the STEPPER is a hit region on the right 20pt of the box. A bitmap
+//   numberInput  the STEPPER is a hit region on the right 32pt of the box. A bitmap
 //                looks identical whether the press landed on `+` or on the text, so
 //                the probe dispatches a real mouse press and reads the model. The
 //                keyboard half (40/33/36) and the REVERT (garbage typed into the
@@ -46,7 +46,8 @@
 //     (30,200) inside vl row 4          -> #505050
 //     (30,216) below the viewport (212) -> #ffffff  (no clip => row 5's #606060)
 //
-//   STEPPER   press at (226, 24): localX 210 >= 220-20, localY 8 < 32/2 -> "+2"
+//   STEPPER   press at (206, 24): localX 190 >= 220-32, localY 8 < 32/2 -> "+2";
+//             the old 20pt column started at localX 200, so this also pins the enlargement
 //   RANGE     track y = 44-12 = 32, thumb centre 36 -> stage y = 58+36 = 94
 //             lo thumb x = 16 + 220*0.35 = 93 ; drag to 126 -> (126-16)/220 = 0.5
 //             hi thumb x = 16 + 220*0.75 = 181; drag to 20  -> clamps to lo
@@ -299,9 +300,11 @@ function ready():void
 
     say("ready: list " + keysOf(vl) + "; tree " + keysOf(tr));
 
-    // THE STEPPER: the press lands on the right 20pt strip, upper half.
+    // THE STEPPER: x=206 is only inside the ENLARGED strip (the old 20pt
+    // column started at x=216). This press therefore pins the hit area, not
+    // merely the paint: with the old column it lands in the text field.
     focus("qty");
-    press(226, 24);
+    press(206, 24);
     setTimeout(afterStepper, 250);
 }
 
@@ -329,7 +332,7 @@ function afterStepper():void
     // expected value is derived from the text the field ACTUALLY holds after typing --
     // what this pins is that the commit PARSES the field, CLAMPS it and reports it,
     // not that AIR puts the caret at any particular offset.
-    press(200, 32);          // localX 184 < 200, so this is the field and not a stepper
+    press(200, 32);          // localX 184 < 188, so this is the field and not a stepper
     typeText("9");
     var typed:String = q.tf.text;
     var want:Number = Number(typed);

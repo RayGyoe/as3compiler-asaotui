@@ -257,7 +257,7 @@ package demo
 
             if (id == "numberInput") return [
                 new DocSection("A number, with steppers", [
-                    "The right 20pt of the box is the STEPPER strip (upper half adds, lower half",
+                    "The right 32pt of the box is the STEPPER strip (upper half adds, lower half",
                     "subtracts); everything to its left is a real textField, so typing, selection and",
                     "the caret behave exactly like the single-line field on the previous page.",
                     "step is what the steppers AND the arrow keys move by, and every write is CLAMPED",

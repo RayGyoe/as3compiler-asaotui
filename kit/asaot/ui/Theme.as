@@ -136,6 +136,8 @@ package asaot.ui
             _defaults["textInput"] = makeTextInput();
             _defaults["textArea"] = makeTextInput();
             _defaults["checkbox"] = makeCheckbox();
+            _defaults["chip"] = makeChip();
+            _defaults["badge"] = makeBadge();
             // ONE shared instance: `resolve` copies the baseline into scratch1 and
             // never writes it in place, so every clickable kind can point at the
             // same style without any of them affecting another.
@@ -258,6 +260,24 @@ package asaot.ui
         private static function makeCheckbox():Style
         {
             var s:Style = new Style();
+            s.text.fontSize = 14;
+            s.text.color = _palette.textControl;
+            return s;
+        }
+
+        private static function makeChip():Style
+        {
+            var s:Style = new Style();
+            s.padding = Edges.of(2, 8, 2, 8);
+            s.text.fontSize = 14;
+            s.text.color = _palette.textControl;
+            return s;
+        }
+
+        private static function makeBadge():Style
+        {
+            var s:Style = new Style();
+            s.padding = Edges.of(0, 6, 0, 6);
             s.text.fontSize = 14;
             s.text.color = _palette.textControl;
             return s;

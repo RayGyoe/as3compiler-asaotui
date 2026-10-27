@@ -115,8 +115,7 @@ package asaot.ui.kind
             {
                 var cw:Number = n.absW - PaintKit.borderH(s.borderWidths) - PaintKit.padH(s.padding);
                 var ch:Number = n.absH - PaintKit.borderV(s.borderWidths) - PaintKit.padV(s.padding);
-                n.tf.x = PaintKit.insetX(n) + (cw - n.state.measuredW) / 2;
-                n.tf.y = PaintKit.insetY(n) + (ch - n.state.measuredH) / 2;
+                PaintKit.centerText(n, PaintKit.insetX(n), PaintKit.insetY(n), cw, ch);
                 n.tf.textColor = fg;
             }
             PaintKit.decorate(n);

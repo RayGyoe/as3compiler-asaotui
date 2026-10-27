@@ -108,8 +108,11 @@ package asaot.ui.kind
         public function arrange(n:UiNode):void
         {
             if (n.tf == null) return;
-            n.tf.x = PaintKit.insetX(n);
-            n.tf.y = PaintKit.insetY(n);
+            // textWidth/textHeight describe the paragraph, whose paint origin is
+            // (2, 2) inside the field. Align the paragraph to the content box,
+            // not the field's outer rectangle (notably in flex-centred rows).
+            n.tf.x = PaintKit.insetX(n) - PaintKit.TEXT_GUTTER;
+            n.tf.y = PaintKit.insetY(n) - PaintKit.TEXT_GUTTER;
         }
 
         public function paint(n:UiNode):void

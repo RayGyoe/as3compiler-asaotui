@@ -60,10 +60,10 @@ package asaot.ui.kind
         private static const DEC_K:String = "numDec";
         private static const LBL_K:String = "numLbl";
 
-        private static const STEP_W:Number = 20;    // the stepper column, at the right edge
+        private static const STEP_W:Number = 32;    // two 32pt-wide pointer targets
         private static const GAP:Number = 8;        // between the label and the field
         private static const DEFAULT_W:Number = 150;
-        private static const DEFAULT_H:Number = 32;
+        private static const DEFAULT_H:Number = 36;
 
         public function build(n:UiNode):void
         {
@@ -271,6 +271,12 @@ package asaot.ui.kind
             g.clear();
             var x0:Number = w - STEP_W;
             var pal:ThemeTokens = Theme.tokens();
+            // The whole column is a pointer target, not just the +/- strokes.
+            // An alpha-0 fill still participates in this backend's path hit test;
+            // without it a press between the strokes falls through to the field.
+            g.beginFill(0x000000, 0);
+            g.drawRect(x0, 0, STEP_W, h);
+            g.endFill();
             // The divider: the column is a separate affordance, so it gets an edge.
             g.lineStyle(1, pal.border, 1.0);
             g.moveTo(x0, 2);

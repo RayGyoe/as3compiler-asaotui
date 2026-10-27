@@ -218,6 +218,15 @@ function settle():void
     var drop:UiNode = app.findByKey("sel:drop");
     if (!drop.backing.visible) problems = problems + "the open dropdown is not visible; ";
 
+    // A flex row centres the text NODE. Its field must cancel the renderer's
+    // 2px paragraph gutter or the glyphs sit low inside both trigger and rows.
+    var triggerLabel:UiNode = app.findByKey("sel:label");
+    var rowLabel:UiNode = app.findByKey("sel:i0:t");
+    if (triggerLabel == null || triggerLabel.tf == null || triggerLabel.tf.y != -PaintKit.TEXT_GUTTER)
+        problems = problems + "the select trigger label ignores the paragraph gutter; ";
+    if (rowLabel == null || rowLabel.tf == null || rowLabel.tf.y != -PaintKit.TEXT_GUTTER)
+        problems = problems + "the select row label ignores the paragraph gutter; ";
+
     carry = problems;
     setTimeout(stageB, 300);
 }

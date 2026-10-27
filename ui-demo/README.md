@@ -206,7 +206,7 @@ and `probes/widgets/*` + this demo are the end-to-end half.
 | `air-gallery/app.xml` | The docs descriptor (`high`, 1000×700, `renderMode cpu`) — read by ALL THREE arms. `--gpu` never rewrites it; it derives `app.<mode>.xml` instead. |
 | `air-gallery-standard/app.xml` | The control arm: identical window settings, `standard` resolution. |
 | `../tools/mxmlc-check.cjs` | Compile an AS3 tree with the REAL reference compiler. This is the only evidence that "the toolkit is pure AS3" — our AOT accepts a superset (`--sdk` overrides `AIRSDK_HOME`, and the SDK is otherwise found on `PATH`). |
-| `kit-list.cjs` | The `.as` units the AOT must be given explicitly (seam + kit). `ASC_KIT_OVERLAY=staging/<name>` swaps in shadow copies of same-named files (used to stage parallel work). |
+| `kit-list.cjs` | The `.as` units the AOT must be given explicitly (seam + kit). `ASC_KIT_OVERLAY=staging/<name>` swaps in shadow copies of same-named files (used to stage parallel work). **Staging copies are temporary: delete them as soon as the work lands in `kit/`; never leave stale overlays behind.** |
 
 ## Commands
 

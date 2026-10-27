@@ -25,13 +25,13 @@ import flash.utils.ByteArray;
 import flash.utils.setTimeout;
 
 var W:int = 200;
-var H:int = 160;
+var H:int = 190;
 var OUT:String = 'chip';
 
 class ChipProbe extends View
 {
     private static const ROOT:StyleRefinement = StyleRefinement.from({
-        flexDirection: "column", padding: 20, gap: 8, size: [200, 160],
+        flexDirection: "column", padding: 20, gap: 8, size: [200, 190],
         background: 0xFFFFFF
     });
     private static const PILL:StyleRefinement = StyleRefinement.from({
@@ -43,7 +43,11 @@ class ChipProbe extends View
         return column({ key: "root", style: ROOT }, [
             chip("alpha",  { key: "c1", style: PILL, tone: "neutral" }),
             chip("beta",   { key: "c2", style: PILL, tone: "info" }),
-            chip("gamma",  { key: "c3", style: PILL, tone: "danger" })
+            chip("gamma",  { key: "c3", style: PILL, tone: "danger" }),
+            row({ key: "autoRow", gap: 8 }, [
+                chip("a", { key: "autoA" }),
+                chip("b", { key: "autoB" })
+            ])
         ]);
     }
 }
@@ -94,6 +98,22 @@ function steady():void
     var extraFrames:int = app.enterFrameTicks - frame0;
     if (extraFrames < 2) problems = problems + "only " + extraFrames + " frame(s) elapsed; ";
     if (extraSolves > 0) problems = problems + "a settled tree re-solved layout " + extraSolves + " time(s); ";
+
+    // Auto-sized chips must include their 8pt horizontal padding on BOTH sides,
+    // and the row's 8pt gap must remain between the two solved pills.
+    var a:UiNode = app.findByKey("autoA");
+    var b:UiNode = app.findByKey("autoB");
+    if (a == null || b == null) problems = problems + "auto-sized chips missing; ";
+    else
+    {
+        if (a.absW != a.state.measuredW + 16)
+            problems = problems + "auto chip width " + a.absW + " does not include 16pt horizontal padding; ";
+        if (b.absX != a.absX + a.absW + 8)
+            problems = problems + "auto chip gap is not 8pt; ";
+        var cw:Number = a.absW - PaintKit.padH(a.resolved.padding);
+        var cx:Number = PaintKit.insetX(a) + (cw - a.state.measuredW) / 2 - PaintKit.TEXT_GUTTER;
+        if (a.tf == null || a.tf.x != cx) problems = problems + "auto chip label is not centred; ";
+    }
     writeText(OUT + ".done", problems == "" ? "PASS" : "FAIL " + problems);
 }
 

@@ -68,7 +68,8 @@ class DisplayProbe extends View
             avatar("Grace Hopper", { key: "a2", style: CIRCLE, tone: "info" }),
             card({ key: "card", title: "Card title", style: CARD }, [
                 box({ key: "card-child", style: CARD_BOX })
-            ])
+            ]),
+            badge("3", { key: "autoBadge", tone: "danger" })
         ]);
     }
 }
@@ -151,6 +152,34 @@ function steady():void
                 problems = problems + "card title not at content origin (" + card.tf.x + "," + card.tf.y + "); ";
             }
         }
+    }
+
+    // A one-digit auto badge gets horizontal padding and a 16pt minimum width;
+    // without both it collapses to the narrow strip shown in the gallery.
+    var ab:UiNode = app.findByKey("autoBadge");
+    if (ab == null) problems = problems + "auto badge missing; ";
+    else
+    {
+        if (ab.absW < 16 || ab.absW != ab.state.measuredW + 12)
+            problems = problems + "auto badge width " + ab.absW + " lacks its padding/minimum; ";
+        var bcw:Number = ab.absW - PaintKit.padH(ab.resolved.padding);
+        var bch:Number = ab.absH - PaintKit.padV(ab.resolved.padding);
+        var bx:Number = PaintKit.insetX(ab) + (bcw - ab.state.measuredW) / 2 - PaintKit.TEXT_GUTTER;
+        var by:Number = PaintKit.insetY(ab) + (bch - ab.state.measuredH) / 2 - PaintKit.TEXT_GUTTER;
+        if (ab.tf == null || ab.tf.x != bx || ab.tf.y != by)
+            problems = problems + "auto badge label is not centred; ";
+    }
+
+    // Avatar initials are centred by their PARAGRAPH box, so the field itself
+    // sits two pixels up/left of the naive field-centring formula.
+    var av:UiNode = app.findByKey("a1");
+    if (av == null || av.tf == null) problems = problems + "avatar text missing; ";
+    else
+    {
+        var ax:Number = (av.absW - av.state.measuredW) / 2 - PaintKit.TEXT_GUTTER;
+        var ay:Number = (av.absH - av.state.measuredH) / 2 - PaintKit.TEXT_GUTTER;
+        if (av.tf.x != ax || av.tf.y != ay)
+            problems = problems + "avatar initials are not centred (" + av.tf.x + "," + av.tf.y + "); ";
     }
 
     var extraSolves:Number = app.layoutSolves - solveAtSettle;

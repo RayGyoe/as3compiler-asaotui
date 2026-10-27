@@ -99,8 +99,7 @@ package asaot.ui.kind
             }
             if (n.tf != null)
             {
-                n.tf.x = (w - n.state.measuredW) / 2;
-                n.tf.y = (h - n.state.measuredH) / 2;
+                PaintKit.centerText(n, 0, 0, w, h);
                 n.tf.textColor = pal.onAccent;
             }
             PaintKit.decorate(n);

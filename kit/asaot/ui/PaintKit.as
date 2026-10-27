@@ -149,6 +149,19 @@ package asaot.ui
             return t;
         }
 
+        // The renderer puts the paragraph at (2, 2) inside every TextField.
+        // Centring the FIELD without subtracting that origin centres the wrong
+        // rectangle and leaves the visible glyphs two pixels down and right.
+        public static const TEXT_GUTTER:Number = 2;
+
+        public static function centerText(n:UiNode, x:Number, y:Number,
+                                          w:Number, h:Number):void
+        {
+            if (n.tf == null) return;
+            n.tf.x = x + (w - n.state.measuredW) / 2 - TEXT_GUTTER;
+            n.tf.y = y + (h - n.state.measuredH) / 2 - TEXT_GUTTER;
+        }
+
         // ---- gradient-aware background ------------------------------------
         // One place decides how `Style.background` becomes a paint, so a solid and
         // a gradient cannot drift apart between the two box drawers. A gradient
@@ -196,21 +209,62 @@ package asaot.ui
         public static function measureField(n:UiNode, field:TextField, content:String, s:Style,
                                             wrapW:Number = NaN):void
         {
+            // MEASURE IS A CACHEABLE PURE FUNCTION of (text, font, wrap width).
+            // It used to re-run unconditionally on every measure pass, and every
+            // measure pass is WHOLE-TREE: `field.text = ...` rebuilds the run
+            // table, `setTextFormat` rebuilds it again, and reading textWidth
+            // forces a fresh shaping -- per text node, per relayout, even when
+            // neither the string nor the font had changed. `measureValid` was
+            // written here and read nowhere, so the cache bit existed without a
+            // cache. The key is one small string; building it costs nothing next
+            // to a shaping pass. Colour is deliberately NOT in the key (it cannot
+            // move a glyph), alignment IS (it can move a wrapped line count).
+            // TWO keys, because the two halves of this function have different
+            // dependencies and wildly different prices:
+            //
+            //   measureKey  text + wrap + font METRICS. A hit skips `field.text =`
+            //               (a full re-shape) and the measurement reads.
+            //   formatKey   the same PLUS colour. A hit skips `setTextFormat`.
+            //
+            // Colour is in the second one ONLY: it cannot move a glyph, but it
+            // DOES have to reach the field. The first version of this cache had
+            // one key without colour, and probes/widgets/motion caught it -- a
+            // text-colour tween never reached white, because applying the format
+            // had been a side effect of measuring. Splitting the keys keeps the
+            // saving (a colour change re-formats but does not re-shape) and
+            // restores the behaviour.
+            var t:TextStyle = s.text;
+            var key:String = (content == null ? "" : content) + "\u0001" + wrapW
+                + "\u0001" + t.fontFamily + "\u0001" + t.fontSize
+                + "\u0001" + t.fontWeight + "\u0001" + t.fontStyle
+                + "\u0001" + t.leading + "\u0001" + t.letterSpacing
+                + "\u0001" + t.textAlign + "\u0001" + field.wordWrap;
+            var fkey:String = key + "\u0001" + t.color;
+            var reshape:Boolean = n.measureKey != key || n.state.measureValid != 3;
+            if (!reshape && n.formatKey == fkey) return;
             var f:TextFormat = formatFor(s);
             field.defaultTextFormat = f;
-            var wrapped:Boolean = !isNaN(wrapW) && wrapW > 0;
-            field.autoSize = wrapped ? "none" : "left";
-            field.wordWrap = wrapped;
-            field.multiline = wrapped;
-            if (wrapped) field.width = wrapW;
-            field.text = content == null ? "" : content;
+            if (reshape)
+            {
+                var wrapped:Boolean = !isNaN(wrapW) && wrapW > 0;
+                field.autoSize = wrapped ? "none" : "left";
+                field.wordWrap = wrapped;
+                field.multiline = wrapped;
+                if (wrapped) field.width = wrapW;
+                field.text = content == null ? "" : content;
+                n.measureKey = key;
+            }
             // A full-range replace, safe to repeat: G20 (compiler stage 268) made
             // setTextFormat REBUILD the run table instead of appending a run per
             // call, so re-measuring the same field cannot accumulate runs.
             field.setTextFormat(f);
-            n.state.measuredW = wrapped ? wrapW : field.textWidth;
-            n.state.measuredH = field.textHeight;
-            n.state.measureValid = 3;
+            n.formatKey = fkey;
+            if (reshape)
+            {
+                n.state.measuredW = wrapped ? wrapW : field.textWidth;
+                n.state.measuredH = field.textHeight;
+                n.state.measureValid = 3;
+            }
         }
 
         // Largest prefix of `content` whose rendered width (plus the ellipsis) fits

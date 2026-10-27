@@ -9,31 +9,35 @@ M2  CAUGHT  the list stops clipping to the viewport -> the mounted-but-offscreen
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL (30,216) is #606060 -- row 5 painted below the viewport (the clip is missing);
      FAIL  pixel (30,216) want #ffffff got #606060
-     restore: byte-identical (8f34269c73822dfd)
+     restore: byte-identical (853b0d2316524e3b)
 M3  CAUGHT  a click reports its WINDOW-relative row instead of the absolute index -> row 3 becomes row 0
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the click selected 0 not the absolute row 3;
-     restore: byte-identical (8f34269c73822dfd)
+     restore: byte-identical (853b0d2316524e3b)
 M4  CAUGHT  a row click stops claiming focus -> the End key after a click never reaches the list
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL End reported 3 not 199; End selected 3 not 199; End left the window at 3 not 195 (no reveal);
-     restore: byte-identical (8f34269c73822dfd)
+     restore: byte-identical (853b0d2316524e3b)
 M5  CAUGHT  reveal() becomes a no-op -> End moves the selection but leaves the window where it was
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL End left the window at 3 not 195 (no reveal);
-     restore: byte-identical (8f34269c73822dfd)
+     restore: byte-identical (853b0d2316524e3b)
 M6  CAUGHT  clamp() forgets the upper bound -> PageUp takes the value to 25 instead of stopping at max 10
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL PageUp reported 25 not 10 (clamped); blurring left the model at 90 not 10; onCommit reported 90 not 10; the field shows '90' not '10'; garbage input moved the model to 90 (it must stay 10); the field shows '90' not '10' (revert); an unparseable field still called onCommit with 90;
+     FAIL  program verdict: FAIL PageUp reported 25 not 10 (clamped);
      restore: byte-identical (6d22ff022e3e2066)
-M7  CAUGHT  the stepper strip shrinks from 20pt to 2pt -> a press on the visible `+` lands in the text field
+M7  CAUGHT  the stepper strip shrinks from 32pt to 2pt -> a press on the visible `+` lands in the text field
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the + stepper reported -1 not 7 (5+2); the field shows '5' not '7'; Down reported 3 not 5;
-     restore: byte-identical (d75530895f639007)
-M8  CAUGHT  a multi-select toggle closes the menu -> the gesture becomes a single-select
+     restore: byte-identical (02e94f9916a7fabc)
+M8  CAUGHT  the stepper loses its transparent hit surface -> only the +/- strokes are clickable, not the column
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the + stepper reported -1 not 7 (5+2); the field shows '5' not '7'; Down reported -1 not 5; PageUp reported -1 not 10 (clamped); Home reported -1 not 0;
+     restore: byte-identical (02e94f9916a7fabc)
+M9  CAUGHT  a multi-select toggle closes the menu -> the gesture becomes a single-select
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL onOpenChange fired 1 time(s) on a toggle (it must stay open); Space asked to close the multi-select;
-     restore: byte-identical (0fa6e0d82daf7f6b)
+     restore: byte-identical (25c805ed0f6c490c)
 
-MUTATION inputs: 8/8 caught, 0 problem(s)
+MUTATION inputs: 9/9 caught, 0 problem(s)
 RESULT: PASS

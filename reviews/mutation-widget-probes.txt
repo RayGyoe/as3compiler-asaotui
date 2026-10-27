@@ -1,33 +1,21 @@
 baseline probes/widgets/feedback: RESULT: PASS  (43 checks)
 baseline probes/widgets/media: RESULT: PASS  (43 checks)
 
-M1  CAUGHT  the skeleton plate colour moves 1/255 blue-ward -> the hand-written pixel must name the wrong colour
-     verdict: RESULT: FAIL
-     FAIL  pixel (80,24) want #E5E7EB got #e5e7ec
-     FAIL  pixel (80,52) want #E5E7EB got #e5e7ec
-     FAIL  pixel (40,90) want #E5E7EB got #e5e7ec
-     ... and 1 more
-     restore: byte-identical (92122b1c8f0bbafe)
-M2  CAUGHT  the spinner arc colour (tone "info") moves 1/255 -> the hand-written pixel on the arc must fail
-     verdict: RESULT: FAIL
-     FAIL  pixel (57,40) want #2563EB got #2563ec
-     restore: byte-identical (d7a696bebf2f0bd8)
-M3  CAUGHT  the "fit" factor becomes max instead of min -> the DEFAULT scale mode grows the 8x8 source to 80x80 instead of 40x40, so the letterbox pixel that proves containment turns solid
-     verdict: RESULT: FAIL
-     FAIL  pixel (30,210) want #FFFFFF got #22aa55
-     restore: byte-identical (6211f03a54aad483)
+M1  SKIPPED -- anchor text not found in kit/asaot/ui/SkeletonNode.as (the file drifted; fix the mutation, do not ignore it)
+M2  SKIPPED -- anchor text not found in kit/asaot/ui/kind/SpinnerWidget.as (the file drifted; fix the mutation, do not ignore it)
+M3  SKIPPED -- anchor text not found in kit/asaot/ui/kind/ImageWidget.as (the file drifted; fix the mutation, do not ignore it)
 M4  CAUGHT  the scroll clamp forgets the viewport height (maxY = ch) -> the overscroll no longer stops at 60
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL scroll maxOffsetY is 120 not 60; clamped offset is 120 not 60; onScroll reported the clamp as 120 not 60; the window top at the clamp (b2's tail) is #ffffff not #11ee11; the bottom of the content is not b3 is #ffffff not #1111ee; the last row of the content is not b3 is #ffffff not #1111ee;
-     restore: byte-identical (2924cb857d9e8b67)
+     restore: byte-identical (4c6e6f9a5756f43d)
 M5  CAUGHT  paintDirty clears M_PAINT AFTER painting -> a paint that raises its own next frame has that request erased, so the spinning spinner repaints once and freezes
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL spinning repainted only 2 time(s) in 10 frames;
-     restore: byte-identical (170874cae4914507)
+     restore: byte-identical (3cc88ebd6b75cffb)
 M6  CAUGHT  the spinner self-perpetuating frame asks for a LAYOUT bit instead of paint -> the whole tree re-measures every frame (it still spins, but no longer paint-only)
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL spinning re-solved layout 9 time(s);
-     restore: byte-identical (d7a696bebf2f0bd8)
+     restore: byte-identical (3106aaac12cac459)
 
-MUTATION feedback+media: 6/6 caught, 0 problem(s)
-RESULT: PASS
+MUTATION feedback+media: 3/6 caught, 3 problem(s)
+RESULT: FAIL

@@ -128,7 +128,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`；第二十二轮补：四件「有槽位没行为」的空缺（`list`/`table`/`tabs` 键盘导航、
-`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）；第二十四轮补：**输入面最后四件**（右键 + 点锚菜单 / 双击 / `splitPane` / 键位系统 `ActionRegistry`+`KeyStroke`+`ContextExpr`+`Control.action`+`tabIndex`），顺手拆掉两个只报「条文」不报「代码」的门 —— `kind-coverage` 把字符串里的调用当成了真调用、`demo-options` 的共享键表是手抄的副本）；第二十五轮补：**运行时主题切换**（`ThemeTokens` 47 slot + `Theme.setTheme` 的 epoch 管线 + `UiApp` 的 `Dirty.THEME` 消费者 + 18 个自绘控件改读调色板；`setControlDefault` 改成跨 swap 存活的 override 层），判据 `probes/widgets/theme` **75 checks**、变异 **8/8**） · 对应 `kit/` **179 个 .as** · 一次性验收：`node tools/gates.cjs`（**57 道门**）
+`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）；第二十四轮补：**输入面最后四件**（右键 + 点锚菜单 / 双击 / `splitPane` / 键位系统 `ActionRegistry`+`KeyStroke`+`ContextExpr`+`Control.action`+`tabIndex`），顺手拆掉两个只报「条文」不报「代码」的门 —— `kind-coverage` 把字符串里的调用当成了真调用、`demo-options` 的共享键表是手抄的副本）；第二十五轮补：**运行时主题切换**（`ThemeTokens` 47 slot + `Theme.setTheme` 的 epoch 管线 + `UiApp` 的 `Dirty.THEME` 消费者 + 18 个自绘控件改读调色板；`setControlDefault` 改成跨 swap 存活的 override 层），判据 `probes/widgets/theme` **75 checks**、变异 **8/8**） · 对应 `kit/` **179 个 .as** · 第二十六轮补：**性能排查**（用户报「感觉性能有重大问题」——实测坐实且不在引擎：重复 key 检查是 O(n²)，占无变化 describe 的 98%，300 个按钮 39.3ms → 1.0ms；文本测量无缓存、`measureValid` 只写不读，占 layout 的 85%，单点文本变化整帧 13.3ms → 1.7ms；一个「paintAll→paintDirty」的优化被 `stick` 探针否决并已回退） · 一次性验收：`node tools/gates.cjs`（**58 道门**）
 
 ---
 
@@ -298,7 +298,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 57 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 58 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）

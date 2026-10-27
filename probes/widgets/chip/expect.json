@@ -6,7 +6,7 @@
     "colors": "ChipWidget tone table: neutral #E5E7EB / info #DBEAFE / danger #FEE2E2."
   },
   "w": 200,
-  "h": 160,
+  "h": 190,
   "rects": {
     "c1": [20, 20, 120, 28],
     "c2": [20, 56, 120, 28],
