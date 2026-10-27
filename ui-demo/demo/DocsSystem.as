@@ -16,16 +16,19 @@
 // will use, and prose alone cannot be checked: each section here carries a live
 // demo and the source that produced it, the same unit the widget pages use.
 //
-// `theme` deliberately has NO live `setControlDefault` demo: the resolver
-// re-runs only when a node's own refinement pointer changes (Reconciler), so a
-// call after mount would reach the NEXT node of that kind and not the ones on
-// screen. Saying so is the honest form -- see that page's last section.
+// `theme` USED TO say a live switch was impossible. That stopped being true on
+// 2026-10-27, when `setControlDefault` became an override layer (survives a swap)
+// and `Theme.setTheme` grew an epoch that `UiApp` turns into a re-describe. The
+// page now OPENS with the swap demo and closes with what `setControlDefault`
+// does and does not reach: the next resolve, not the nodes already on screen.
 package demo
 {
     import asaot.ui.ActionRegistry;
     import asaot.ui.Dirty;
     import asaot.ui.Node;
     import asaot.ui.Subscription;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiApp;
     import asaot.ui.badge;
     import asaot.ui.bindTo;
@@ -436,6 +439,49 @@ package demo
             ];
 
             if (id == "theme") return [
+                new DocSection("A palette you can swap at run time", [
+                    "Theme.tokens() is the live palette: 47 slots, ONE instance, read by every",
+                    "widget at paint time. Theme.setTheme(ThemeTokens.dark()) copies a palette in,",
+                    "rebuilds the per-kind baselines and the overlay chrome, and bumps",
+                    "themeEpoch(). UiApp compares that epoch at the frame boundary, marks every",
+                    "node style-stale and asks for one re-describe -- so the whole tree follows in",
+                    "ONE frame, with no relayout (a palette never changes a number).",
+                    "The buttons below swap the DOCS APP itself, not a card inside it. That is the",
+                    "feature: a theme is application-wide, and a preview that themed one panel",
+                    "only would be a lie about what the call does. Press Light to come back.",
+                    "An author colour does not move. A swap replaces the BASELINE, so the blue chip",
+                    "below stays blue in both themes; only the unspecific things (surfaces,",
+                    "borders, text, tracks) follow.",
+                    "Theme.tokens() is read-only by contract. To customise one slot: clone it,",
+                    "assign, then setTheme -- copying in is what keeps the epoch honest."
+                ], [
+                    "Theme.setTheme(ThemeTokens.dark());    // a whole palette, one call",
+                    "Theme.setTheme(ThemeTokens.light());",
+                    "",
+                    "var t:ThemeTokens = Theme.tokens().clone();",
+                    "t.accent = 0x059669;                  // one slot off the shipped palette",
+                    "Theme.setTheme(t);                    // copies in, bumps the epoch"
+                ], 92, function ():Node
+                {
+                    return column({ gap: 10 }, [
+                        row({ gap: 10, alignItems: "center" }, [
+                            button({ key: "thmL", label: "Light", onClick: themeLight }),
+                            button({ key: "thmD", label: "Dark", onClick: themeDark }),
+                            button({ key: "thmA", label: "Green accent", onClick: themeGreen }),
+                            text("epoch " + Theme.themeEpoch(), { style: MONO, ariaName: "" })
+                        ]),
+                        row({ gap: 10, alignItems: "center" }, [
+                            progress("", { value: 0.4,
+                                           style: StyleRefinement.from({ size: [120, 10] }) }),
+                            badge("follows", { tone: "info" }),
+                            chip("author: blue", { style: StyleRefinement.from({
+                                background: 0x2563EB, text: { color: 0xFFFFFF } }) }),
+                            text("surfaces + text follow, authored colours do not",
+                                 { style: MONO, ariaName: "" })
+                        ])
+                    ]);
+                }),
+
                 new DocSection("Layer 1: the control default", [
                     "With no style at all, a control is painted by the kit's baseline FOR ITS KIND -- a",
                     "button gets 9/14 padding, a 1px #D0D0D0 border, a 6px radius and #FFF1F3F5; a",
@@ -549,17 +595,18 @@ package demo
                     ]);
                 }),
 
-                new DocSection("setControlDefault: it happens once, before the first frame", [
-                    "A theme replaces a control's baseline with one call. Build the Style FROM the",
+                new DocSection("setControlDefault: an override layer, and it survives a swap", [
+                    "A control's baseline is replaceable one kind at a time. Build the Style FROM the",
                     "current default and change only what you mean -- a partial Style would write its",
                     "own unset (null) fields over the baseline and erase the rest.",
-                    "There is deliberately no live demo: `setControlDefault` changes the table, and a",
-                    "node is only re-resolved when its own refinement pointer changes (that is the",
-                    "resolver's skip test, and removing it would re-resolve the whole tree every",
-                    "frame). A call after mount therefore reaches the NEXT node of that kind, not the",
-                    "ones on screen -- so call it at startup, once.",
-                    "`Dirty.THEME` exists as a bit and nothing consumes it today; a live theme switch",
-                    "is not a capability this release has."
+                    "It is an OVERRIDE LAYER, not a write into the default table: the resolver reads",
+                    "it before the kind baseline, and Theme.setTheme does not touch it. So flipping",
+                    "light/dark keeps the author's custom button -- call clearControlDefault to get",
+                    "the shipped baseline back.",
+                    "The call still takes effect on the NEXT resolve, and a mounted node only",
+                    "re-resolves when something stales it. To see it now, bump the epoch yourself:",
+                    "Theme.setTheme(Theme.tokens().clone()) -- the same path a theme swap takes, one",
+                    "call, no re-mount."
                 ], [
                     "var s:Style = new Style();",
                     "Theme.controlDefault(\"button\").copyInto(s);   // keep what you do not change",
@@ -1041,6 +1088,36 @@ package demo
                 { context: "docskey", bindings: { "ctrl-k": "docs.bell" } }
             ]);
             m.put("km.on", true);
+        }
+
+        // ---- the calls the theme demo makes -------------------------------
+        //
+        // A theme is application-wide by construction: `setTheme` copies a palette into
+        // the ONE live instance, rebuilds the kind baselines and the overlay chrome, and
+        // bumps the epoch. `UiApp` turns the epoch change into "mark every node
+        // style-stale + re-describe", which is why these three one-line handlers can
+        // repaint the whole docs app between two frames.
+        //
+        // The third one exists to show the CONTRACT, not a feature: `tokens()` is
+        // read-only, so a custom palette is always clone -> assign -> setTheme. Mutating
+        // the live instance would change pixels without bumping the epoch, which is the
+        // silent inconsistency the palette copy exists to prevent.
+
+        private static function themeLight():void
+        {
+            Theme.setTheme(ThemeTokens.light());
+        }
+
+        private static function themeDark():void
+        {
+            Theme.setTheme(ThemeTokens.dark());
+        }
+
+        private static function themeGreen():void
+        {
+            var t:ThemeTokens = Theme.tokens().clone();
+            t.accent = 0x059669;
+            Theme.setTheme(t);
         }
 
         private static function subscribeDemo(m:DocsModel):void

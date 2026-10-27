@@ -104,13 +104,31 @@
 > 判据：新探针 `probes/widgets/icon`（**57 项**，含三次曲线 t=0.5 点、三档描边宽度、viewBox 缩放，以及
 > `A`/未知命令/工厂抛错三个**负例**）+ 变异 **6/6**；文档站新增 `icon` 页；门 50 → **51 道**。
 >
+> 第二十五轮（2026-10-27）是**运行时主题切换**——用户的要求是一句话
+> （`Theme.setTheme(ThemeTokens.dark())` 之后整棵树在下一帧变暗，而默认亮色逐字节不变），
+> 底下却是四件事一起改：**47 slot 的调色板**（`ThemeTokens`，亮色逐值复现旧字面量）、
+> **`setTheme` 的 epoch 管线**（拷入 + 重建每 kind 基线 + 重建浮层 chrome + bump `themeEpoch()`）、
+> **`UiApp` 的消费者**（epoch 变 ⇒ 全树 `lastStyleStale` + `M_PAINT` + 一次 `Dirty.THEME` 重新 describe，
+> 那个存在多年却零消费者的脏位第一次接上）、以及**18 个自绘控件 + 5 个节点类 + 6 个工厂改成读调色板**。
+> 顺带修掉三件结构性欠账：①`setControlDefault` 从「直写默认表」（主题一换就静默抹掉作者定制）
+> 改成**override 层**（跨 swap 存活，`clearControlDefault` 才回落）；②暗色的**状态混合翻向**
+> （亮色 hover→白 / press→黑，暗色两者都向白且 press 更强，否则按下去看不见）；③`knob` 在暗色保持纯白
+> （被照亮的实体跟着变暗就消失了）。判据：新探针 `probes/widgets/theme`（**75 checks**，一棵树画**三个相位**、
+> 12 个采样点 × 3 + 15 个矩形前后比对 + 6 条契约），第三个相位是**用户实际触发的入口**——
+> `onClick` 里调 `setTheme`（在事件派发当中重建静态指针），这一段自己有牙（`probes/widgets/theme/click-teeth.cjs`，
+> 把处理函数指回 `light()` ⇒ 12 点全红）；变异 `tools/mutation-widget-theme.cjs` **8/8**；
+> 门 56 → **57 道**；`kit/` **178 → 179 个 .as**。**探针自己踩到三件事**（`showWindow` 会吃掉它之后的
+> 模块级初始化、OFF 开关的旋钮就停在采样点上、1px 边框永远是两个半覆盖列 ⇒ 边框不可能有精确像素期望）
+> 与**变异机抓到的一件真事**（根样式每次重建时 `markThemeDirty` 与 `staleDescendants` 互为备份 ⇒
+> 删任一个都不变红；改法是让被测形状里所有指针都稳定，见 `reviews/theme-2026-10-27.md` §4.2）都写进了该文档。
+>
 > 仍然缺的是：样式面的 `grid`，以及可访问性字段仍无消费者（`role`/`ariaName` 只是数据）。
 > （`accordion` 多开已在第二十二轮落地，见 §3.17d；`image` 的 `cover`、`list`/`table`/`tabs` 的键盘导航、
 > 文字装饰同为该轮内容。）
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`；第二十二轮补：四件「有槽位没行为」的空缺（`list`/`table`/`tabs` 键盘导航、
-`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）；第二十四轮补：**输入面最后四件**（右键 + 点锚菜单 / 双击 / `splitPane` / 键位系统 `ActionRegistry`+`KeyStroke`+`ContextExpr`+`Control.action`+`tabIndex`），顺手拆掉两个只报「条文」不报「代码」的门 —— `kind-coverage` 把字符串里的调用当成了真调用、`demo-options` 的共享键表是手抄的副本）） · 对应 `kit/` **178 个 .as** · 一次性验收：`node tools/gates.cjs`（**56 道门**）
+`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）；第二十四轮补：**输入面最后四件**（右键 + 点锚菜单 / 双击 / `splitPane` / 键位系统 `ActionRegistry`+`KeyStroke`+`ContextExpr`+`Control.action`+`tabIndex`），顺手拆掉两个只报「条文」不报「代码」的门 —— `kind-coverage` 把字符串里的调用当成了真调用、`demo-options` 的共享键表是手抄的副本）；第二十五轮补：**运行时主题切换**（`ThemeTokens` 47 slot + `Theme.setTheme` 的 epoch 管线 + `UiApp` 的 `Dirty.THEME` 消费者 + 18 个自绘控件改读调色板；`setControlDefault` 改成跨 swap 存活的 override 层），判据 `probes/widgets/theme` **75 checks**、变异 **8/8**） · 对应 `kit/` **179 个 .as** · 一次性验收：`node tools/gates.cjs`（**57 道门**）
 
 ---
 
@@ -127,11 +145,12 @@
 | L3 样式面 | ✅ **33 字段** | 见 §3.2；仅剩 `grid` 刻意缺席（`cursor` 第十五轮已落地） |
 | L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入退场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、**入场 140ms / 退场 120ms**；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**）+ `probes/widgets/motion` **23 项**（变异 **7/7**） |
 | L3 组合能力 | ✅ **52 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 52 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
+| L3 主题 | ✅ **运行时换肤（47 slot）** | `ThemeTokens.light()/dark()` + `Theme.setTheme(t)`：**拷入**、重建每 kind 基线、重建浮层 chrome、bump `themeEpoch()`；`UiApp` 把 epoch 变化翻译成「全树 `lastStyleStale` + `M_PAINT` + 一次 `Dirty.THEME` 重新 describe」⇒ **下一帧整棵树变**，且**不动几何**。暗色的状态混合方向与亮色相反（press 比 hover 更亮），`knob` 保持纯白。作者自定义经 `setControlDefault` 落在 **override 层**，跨 swap 存活。判据 `probes/widgets/theme` **75 项**（变异 **8/8**）；四条取色通路与三件探针自身的教训见 `reviews/theme-2026-10-27.md` |
 | L3 可访问性 | ⚠️ 半成品 | `role`/`ariaName` **仍只是字段**（无消费者）；但 `Control.tabEnabled` 现在真被 Tab 环读（`UiApp.collectFocus`）、`Element.disabled` 真阻断点击与导航 |
 
 ---
 
-## 2 作者可见 API 全清单（178 个文件里**只有这些**）
+## 2 作者可见 API 全清单（179 个文件里**只有这些**）
 
 复核命令：
 
@@ -279,7 +298,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 56 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 57 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）

@@ -104,6 +104,30 @@ package asaot.ui
    `true` = 保留 `previous`（它是动画的「起点」，重定基准会静默吃掉同帧的 tween）。
    **新控件若也往 resolve 里喂料，照这个模式加。**
 
+### 2e 取色：任何颜色都必须来自调色板（否则换主题时它留在原地）
+
+`Theme.tokens()` 是**唯一**合法的取色来源。自 2026-10-27 起有一套暗色调色板，硬编码的十六进制
+不再是「风格选择」，而是**主题缺陷**：亮色下看不出来，`Theme.setTheme(ThemeTokens.dark())` 之后
+它一个人留在上一套配色里。`tools/hex-scan.cjs` 就是查这件事的扫描器（`kit/` 现剩 106 处，
+其中 90 在 `ThemeTokens.as` 自己身上，其余是阴影/掩码/透明命中矩形/动画常量这类**非调色板语义**）。
+
+三条硬规则：
+
+1. **paint 里现读**：`var pal:ThemeTokens = Theme.tokens();` 放在 `paint()` 开头，不要缓存到
+   `n.extra`（缓存 = 换主题后要用到的那份是旧的）。**也只读**：改色请走
+   `Theme.setTheme(Theme.tokens().clone())`，直接改活实例会让像素与 `themeEpoch()` 不同步。
+2. **不要给颜色写 `const`**。`private static const TRACK:uint = 0xE5E7EB` 是旧写法的遗留：
+   静态常量在类初始化时取一次值，换主题后它永远是旧色。几何常量（`HEADER_PAD_H`、`GRIP`…）没问题。
+3. **结构期烘进 `StyleRefinement` 的颜色只有在「重新 describe」后才会更新**。
+   工厂（`table.as` 的 `headBg` 之类）若把 `Theme.tokens()` 读进 refinement，那这个值在
+   `Theme.setTheme` 后是**旧指针**；两条正解：①工厂在每次 `render()` 时重建 refinement
+   （`OverlayChrome.rebuild()` 就是这个模式）；②控件在 `paint()` 里现读。
+   **不要在 factory 里写死颜色然后指望主题救你**。
+
+想验证自己的控件真的跟着主题走：把它加进 `probes/widgets/theme` 的树里，并在两个相位各取一个像素
+（暗色的期望值写在 `expect.json`，亮色的期望值写在 `Main.as` 头注释里手算）。`OFF` 状态的开关旋钮
+停在左边、1px 边框永远是两个半覆盖列——采样点别落在这两处（`reviews/theme-2026-10-27.md` §4.1）。
+
 ### 2b 可选销毁钩子 `WidgetTeardown`（**只要你在 `build()` 里挂了节点外的东西，就必须实现**）
 
 ```as3
