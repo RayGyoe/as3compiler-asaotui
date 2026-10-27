@@ -37,14 +37,9 @@ package asaot.ui
 
     public class AccordionNode extends Control
     {
-        // ---- the palette ---------------------------------------------------
-        // Declared here because both the factory (the header row's resting fill and
-        // its text colour) and the widget (the open header's fill) need it, and two
-        // copies would drift. See TableNode for why this is not a package const.
-        public static const HEADER_BG:uint = 0xF3F4F6;
-        public static const OPEN_BG:uint = 0xDBEAFE;
-        public static const HEADER_TEXT:uint = 0x111827;
-        public static const RULE:uint = 0xE5E7EB;
+        // ---- the geometry --------------------------------------------------
+        // Colours come from `Theme.tokens()` (see TableNode's note: a `const` cannot
+        // follow a theme switch). Only spacing lives here.
         public static const HEADER_PAD_H:Number = 12;
         public static const HEADER_PAD_V:Number = 10;
 

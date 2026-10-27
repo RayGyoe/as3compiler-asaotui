@@ -55,10 +55,12 @@
 // nobody can see. Both the click and the keys end in `select()`.
 package asaot.ui.kind
 {
-    import asaot.ui.TableNode;
     import asaot.ui.Dirty;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.TableNode;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetKeys;
@@ -208,6 +210,7 @@ package asaot.ui.kind
 
             if (n.shapeA == null) return;
             var g:Object = n.shapeA.graphics;
+            var pal:ThemeTokens = Theme.tokens();
 
             // A TRANSPARENT HIT RECT, drawn first so the table is pickable EVERYWHERE
             // and not just on its hairlines and glyphs. The runtime picks a mouse target
@@ -234,13 +237,13 @@ package asaot.ui.kind
                 var isHdr:Boolean = hdr && i == 0;
                 if (!isHdr && stripes && ((first + body) % 2) == 1)
                 {
-                    g.beginFill(TableNode.STRIPE_BG, 1.0);
+                    g.beginFill(pal.surfaceSunken, 1.0);
                     g.drawRect(c.absX - n.absX, c.absY - n.absY, c.absW, c.absH);
                     g.endFill();
                 }
                 if (!isHdr && first + body == sel)
                 {
-                    g.beginFill(TableNode.SEL_BG, 1.0);
+                    g.beginFill(pal.accentSoft, 1.0);
                     g.drawRect(c.absX - n.absX, c.absY - n.absY, c.absW, c.absH);
                     g.endFill();
                 }
@@ -254,7 +257,7 @@ package asaot.ui.kind
                 var last:UiNode = n.children[n.children.length - 1];
                 var top:Number = n.children[0].absY - n.absY;
                 var bottom:Number = last.absY - n.absY + last.absH;
-                g.beginFill(0x2563EB, 1.0);
+                g.beginFill(pal.accent, 1.0);
                 g.drawRect(Math.round(prevX), top, 1, bottom - top);
                 g.endFill();
             }
@@ -263,7 +266,7 @@ package asaot.ui.kind
             if (Number(n.extra[GRID_KEY]) == 0) return;
             var count:int = n.children.length;
             if (count == 0) return;
-            g.beginFill(TableNode.GRID_LINE, 1.0);
+            g.beginFill(pal.border, 1.0);
             // Horizontal hairlines on the bottom edge of every row but the last.
             for (var r:int = 0; r < count - 1; r++)
             {

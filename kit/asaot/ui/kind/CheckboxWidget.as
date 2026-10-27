@@ -11,10 +11,12 @@ package asaot.ui.kind
 {
     import asaot.ui.CheckboxNode;
     import asaot.ui.Dirty;
+    import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
-    import asaot.ui.Node;
     import asaot.ui.style.Style;
 
     import asaot.ui.LayoutConstants;
@@ -89,6 +91,7 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             var s:Style = n.resolved;
+            var pal:ThemeTokens = Theme.tokens();
             var h:Number = n.absH;
             var box:Number = 16;
             var cy:Number = (h - box) / 2;
@@ -97,8 +100,8 @@ package asaot.ui.kind
             {
                 var g:Object = n.shapeA.graphics;
                 g.clear();
-                g.lineStyle(1, on ? 0x2F80ED : 0xBBBBBB, 1.0);
-                g.beginFill(PaintKit.stateColor(n, on ? 0x2F80ED : 0xFFFFFF), 1.0);
+                g.lineStyle(1, on ? pal.accentCheck : pal.borderSoft, 1.0);
+                g.beginFill(PaintKit.stateColor(n, on ? pal.accentCheck : pal.knob), 1.0);
                 g.drawRoundRect(0, cy, box, box, 3, 3);
                 g.endFill();
             }
@@ -108,7 +111,7 @@ package asaot.ui.kind
                 g2.clear();
                 if (on)
                 {
-                    g2.lineStyle(2, 0xFFFFFF, 1.0);
+                    g2.lineStyle(2, pal.onAccent, 1.0);
                     g2.moveTo(4, cy + 8);
                     g2.lineTo(7, cy + 12);
                     g2.lineTo(13, cy + 4);

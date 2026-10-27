@@ -30,10 +30,12 @@
 // and a click cannot disagree about what a selection change is.
 package asaot.ui.kind
 {
-    import asaot.ui.TabsNode;
     import asaot.ui.Dirty;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.TabsNode;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetKeys;
@@ -56,10 +58,8 @@ package asaot.ui.kind
 
         // Segment colours. Selected/unselected are deliberately far apart so a
         // mis-wired index shows up as an exact-pixel failure, not a subtle shade.
-        private static const SEL_BG:uint = 0x2563EB;
-        private static const SEL_FG:uint = 0xFFFFFF;
-        private static const OFF_BG:uint = 0xE5E7EB;
-        private static const OFF_FG:uint = 0x374151;
+        // Read from the palette at paint time (they moved out of this file when the
+        // theme became swappable): a const here would survive a theme switch.
 
         public function build(n:UiNode):void
         {
@@ -217,12 +217,13 @@ package asaot.ui.kind
             var gap:Number = Number(n.extra[GAP_KEY]);
             var segW:Number = (cw - gap * (count - 1)) / count;
             var sel:int = int(Number(n.extra[SEL_KEY]));
+            var pal:ThemeTokens = Theme.tokens();
             var g:Object = n.shapeA.graphics;
             for (var i:int = 0; i < count; i++)
             {
                 var segX:Number = x0 + i * (segW + gap);
                 var on:Boolean = (i == sel);
-                g.beginFill(on ? SEL_BG : OFF_BG, 1.0);
+                g.beginFill(on ? pal.accent : pal.surfaceSoft, 1.0);
                 // radius 6 -> ellipse diameter 12 (same convention as ChipWidget)
                 g.drawRoundRect(segX, y0, segW, ch, 12, 12);
                 g.endFill();
@@ -230,7 +231,7 @@ package asaot.ui.kind
                 var tf:TextField = TextField(tfs[i]);
                 if (tf != null)
                 {
-                    tf.textColor = on ? SEL_FG : OFF_FG;
+                    tf.textColor = on ? pal.onAccent : pal.textBody;
                     tf.x = segX + (segW - tf.textWidth) / 2;
                     tf.y = y0 + (ch - tf.textHeight) / 2;
                 }

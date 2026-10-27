@@ -30,6 +30,8 @@ package asaot.ui.kind
     import asaot.ui.Dirty;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
 
@@ -129,6 +131,7 @@ package asaot.ui.kind
             var multi:Boolean = Number(n.extra[MULTI_KEY]) != 0;
             var openSet:Array = n.extra[OPEN_KEY] as Array;
             var g:Object = n.shapeA.graphics;
+            var pal:ThemeTokens = Theme.tokens();
 
             // A header background AND a hairline under it, both drawn as FILLS: a filled
             // rect rasterises exactly, so the hairline is the 1px that was asked for and
@@ -147,10 +150,10 @@ package asaot.ui.kind
                 if (c.role != ROLE_HEADER) continue;
                 k = k + 1;
                 var isOpen:Boolean = multi ? AccordionNode.isOpen(openSet, k) : (k == act);
-                g.beginFill(isOpen ? AccordionNode.OPEN_BG : AccordionNode.HEADER_BG, 1.0);
+                g.beginFill(isOpen ? pal.accentSoft : pal.surfaceMuted, 1.0);
                 g.drawRect(c.absX - n.absX, c.absY - n.absY, c.absW, c.absH);
                 g.endFill();
-                g.beginFill(AccordionNode.RULE, 1.0);
+                g.beginFill(pal.border, 1.0);
                 g.drawRect(c.absX - n.absX, c.absY - n.absY + c.absH - 1, c.absW, 1);
                 g.endFill();
             }

@@ -31,7 +31,9 @@ package asaot.ui
             this.lines = 3;
             this.barHeight = 8;
             this.gap = 6;
-            this.tone = 0xE5E7EB;
+            // From the palette at construction: the factory rebuilds this node on
+            // every render, so the ctor is where "the default tone" meets the theme.
+            this.tone = Theme.tokens().surfaceSoft;
         }
     }
 }

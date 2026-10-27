@@ -88,7 +88,7 @@ package asaot.ui
         // sampled #f3f4f6 instead of #dbeafe.
         var headRef:StyleRefinement = StyleRefinement.from({
             padding: [AccordionNode.HEADER_PAD_H, AccordionNode.HEADER_PAD_V],
-            text: { color: AccordionNode.HEADER_TEXT, fontWeight: "bold" }
+            text: { color: Theme.tokens().textStrong, fontWeight: "bold" }
         });
 
         var kids:Array = [];

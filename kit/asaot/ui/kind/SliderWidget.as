@@ -19,13 +19,15 @@
 // value), so a value change raises only Dirty.VALUE / a paint.
 package asaot.ui.kind
 {
-    import asaot.ui.SliderNode;
     import asaot.ui.Dirty;
+    import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.SliderNode;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetTeardown;
-    import asaot.ui.Node;
     import asaot.ui.style.Style;
 
     import asaot.ui.LayoutConstants;
@@ -112,6 +114,7 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             var s:Style = n.resolved;
+            var pal:ThemeTokens = Theme.tokens();
             var w:Number = n.absW > 1 ? n.absW : 1;
             var v:Number = Number(n.extra[VALUE]);
             if (isNaN(v)) v = 0;
@@ -121,12 +124,12 @@ package asaot.ui.kind
             {
                 var g:Object = n.shapeA.graphics;
                 g.clear();
-                g.beginFill(PaintKit.stateColor(n, 0xE5E7EB), 1.0);
+                g.beginFill(PaintKit.stateColor(n, pal.track), 1.0);
                 g.drawRoundRect(0, ty, w, 8, 8, 8);
                 g.endFill();
                 if (fill > 0)
                 {
-                    g.beginFill(0x2563EB, 1.0);
+                    g.beginFill(pal.accent, 1.0);
                     g.drawRoundRect(0, ty, fill, 8, 8, 8);
                     g.endFill();
                 }
@@ -135,8 +138,8 @@ package asaot.ui.kind
             {
                 var g2:Object = n.shapeB.graphics;
                 g2.clear();
-                g2.beginFill(0xFFFFFF, 1.0);
-                g2.lineStyle(2, 0x2563EB, 1.0);
+                g2.beginFill(pal.knob, 1.0);
+                g2.lineStyle(2, pal.accent, 1.0);
                 g2.drawCircle(fill, ty + 4, 7);
                 g2.endFill();
             }

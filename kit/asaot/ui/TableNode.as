@@ -63,17 +63,13 @@ package asaot.ui
 
     public class TableNode extends Control
     {
-        // ---- the table's palette -------------------------------------------
-        // Declared HERE, not in the factory or the widget, because both need it:
-        // the factory styles the header cells, the widget paints the grid. Two
-        // copies would drift. (A package-level `const` in table.as would be a
-        // SECOND externally-visible definition in a file named after the factory
-        // -- compiler-gaps G7, an mxmlc hard error.)
-        public static const HEAD_BG:uint = 0xF3F4F6;    // header row fill
-        public static const HEAD_TEXT:uint = 0x374151;  // header cell colour
-        public static const GRID_LINE:uint = 0xE5E7EB;  // hairline colour
-        public static const STRIPE_BG:uint = 0xF9FAFB;  // zebra fill
-        public static const SEL_BG:uint = 0xDBEAFE;     // selected-row fill
+        // ---- the table's geometry ------------------------------------------
+        // The COLOURS that used to live here (head fill, head text, grid line, zebra,
+        // selected row) are palette slots now -- `Theme.tokens().surfaceMuted` and
+        // friends -- because a `const` is captured at class-init and a theme switch
+        // would leave the table light while the rest of the page went dark. Both the
+        // factory and the widget read the palette at CALL time, and both of them run
+        // again on the theme-switch re-describe, so one read site is enough.
         public static const CELL_PAD:Number = 6;        // horizontal cell padding
 
         // Array of { key:String, title:String, width:Number, style:StyleRefinement }

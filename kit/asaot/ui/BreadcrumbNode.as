@@ -24,10 +24,10 @@ package asaot.ui
 
     public class BreadcrumbNode extends Control
     {
-        // ---- the palette (see TableNode for why it lives on the node) ------
-        public static const LINK_TEXT:uint = 0x2563EB;
-        public static const CURRENT_TEXT:uint = 0x6B7280;
-        public static const SEP_TEXT:uint = 0x9CA3AF;
+        // ---- text colours (the palette's, not this file's) ------------------
+        // Nothing here: link / current / separator colours are `Theme.tokens().accent`,
+        // `textMuted` and `neutral`, read by the factory on every render so a theme
+        // switch reaches them. A const copy would pin the breadcrumb to light mode.
 
         public var items:Array;         // Array of labels (String)
         public var separator:String;    // between crumbs

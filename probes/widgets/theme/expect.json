@@ -1,0 +1,181 @@
+{
+  "w": 560,
+  "h": 360,
+  "_why": [
+    "HAND-COMPUTED, not copied from the probe output. The rects come from the column",
+    "arithmetic in Main.as header (16 + height + 10 steps). The pixels are the DARK",
+    "palette slots at the 12 sample points listed in the same header -- this BMP is the",
+    "frame AFTER Theme.setTheme(ThemeTokens.dark()), so a widget that still paints a",
+    "light literal turns these red. The light pass is asserted by the program itself",
+    "(it checks the same 12 points before the swap) and by the other 30 widget probes,",
+    "which still pin the light literals one by one.",
+    "",
+    "The 13th point used to be the text input border at (16,293). It was DROPPED, not",
+    "forgiven: a 1px control border is stroked across the pixel boundary, so it lands as",
+    "two half-covered columns (measured #2D3644 = 50% blend of border #4B5563 with page",
+    "#111827) and can never be an exact-pixel expectation. The input baseline is pinned",
+    "on ti.resolved.borderColor instead (light #CCCCCC / dark #4B5563), and on the",
+    "button text colour through btn.resolved.",
+    "",
+    "The BMP is written by the LAST phase, which is the one a user triggers: the probe",
+    "swaps back to light, dispatches a real click on the author-coloured box (whose",
+    "onClick is Theme.setTheme(dark)), and checks the same 12 points again. So this file",
+    "is the frame after a CLICK-driven swap, not just after a programmatic one. Teeth:",
+    "point that handler at light() instead and 12 points go red (probes/widgets/theme/click-teeth.cjs",
+    "reproduces it and restores byte-identically)."
+  ],
+  "rects": {
+    "root": [
+      0,
+      0,
+      560,
+      360
+    ],
+    "page": [
+      0,
+      0,
+      560,
+      360
+    ],
+    "surface": [
+      0,
+      0,
+      560,
+      360
+    ],
+    "btn": [
+      16,
+      16,
+      120,
+      32
+    ],
+    "sw": [
+      16,
+      58,
+      140,
+      20
+    ],
+    "bd": [
+      16,
+      88,
+      48,
+      20
+    ],
+    "ch": [
+      16,
+      118,
+      60,
+      24
+    ],
+    "dv": [
+      16,
+      152,
+      200,
+      1
+    ],
+    "pg": [
+      16,
+      163,
+      120,
+      12
+    ],
+    "keep": [
+      16,
+      185,
+      60,
+      20
+    ],
+    "tbl": [
+      16,
+      215,
+      260,
+      52
+    ],
+    "hdr": [
+      16,
+      215,
+      260,
+      26
+    ],
+    "h:0": [
+      16,
+      215,
+      130,
+      26
+    ],
+    "r0": [
+      16,
+      241,
+      260,
+      26
+    ],
+    "ti": [
+      16,
+      277,
+      160,
+      32
+    ]
+  },
+  "points": [
+    {
+      "x": 400,
+      "y": 340,
+      "rgb": "#111827"
+    },
+    {
+      "x": 126,
+      "y": 32,
+      "rgb": "#1F2937"
+    },
+    {
+      "x": 48,
+      "y": 68,
+      "rgb": "#4B5563"
+    },
+    {
+      "x": 60,
+      "y": 98,
+      "rgb": "#1E3A8A"
+    },
+    {
+      "x": 72,
+      "y": 130,
+      "rgb": "#374151"
+    },
+    {
+      "x": 100,
+      "y": 152,
+      "rgb": "#374151"
+    },
+    {
+      "x": 26,
+      "y": 167,
+      "rgb": "#60A5FA"
+    },
+    {
+      "x": 126,
+      "y": 167,
+      "rgb": "#374151"
+    },
+    {
+      "x": 60,
+      "y": 195,
+      "rgb": "#FF2D55"
+    },
+    {
+      "x": 116,
+      "y": 228,
+      "rgb": "#1F2937"
+    },
+    {
+      "x": 60,
+      "y": 241,
+      "rgb": "#374151"
+    },
+    {
+      "x": 116,
+      "y": 254,
+      "rgb": "#111827"
+    }
+  ]
+}

@@ -79,7 +79,7 @@ package asaot.ui
         var dv:Number = n.dividerSize;
         var grip:StyleRefinement = StyleRefinement.from({
             size: row ? [dv, null] : [null, dv],
-            background: 0xE5E7EB
+            background: Theme.tokens().border
         });
         var div:Node = box({ key: base + ":div", style: grip, ariaName: "splitter" });
 

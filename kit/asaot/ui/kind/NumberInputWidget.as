@@ -30,6 +30,8 @@ package asaot.ui.kind
     import asaot.ui.Node;
     import asaot.ui.NumberInputNode;
     import asaot.ui.PaintKit;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetFocus;
@@ -60,7 +62,6 @@ package asaot.ui.kind
 
         private static const STEP_W:Number = 20;    // the stepper column, at the right edge
         private static const GAP:Number = 8;        // between the label and the field
-        private static const STEMMER_COLOR:uint = 0x6B7280;
         private static const DEFAULT_W:Number = 150;
         private static const DEFAULT_H:Number = 32;
 
@@ -213,14 +214,14 @@ package asaot.ui.kind
             PaintKit.paintBox(n, s, w, h);
             if (n.tf == null) return;
 
-            var color:Number = isNaN(s.text.color) ? 0x202020 : s.text.color;
+            var color:Number = isNaN(s.text.color) ? Theme.tokens().textControl : s.text.color;
             var f:TextFormat = PaintKit.formatFor(s);
 
             var lbl:TextField = TextField(n.extra[LABEL_TF]);
             var lf:TextFormat = PaintKit.formatFor(s);
-            lf.color = 0x6B7280;
+            lf.color = Theme.tokens().textMuted;
             lbl.defaultTextFormat = lf;
-            lbl.textColor = 0x6B7280;
+            lbl.textColor = Theme.tokens().textMuted;
 
             // Right-aligned: a numeric column reads by its last digit, and a
             // left-aligned number jitters the ones place as the digits grow.
@@ -269,8 +270,9 @@ package asaot.ui.kind
             var g:Object = n.shapeB.graphics;
             g.clear();
             var x0:Number = w - STEP_W;
+            var pal:ThemeTokens = Theme.tokens();
             // The divider: the column is a separate affordance, so it gets an edge.
-            g.lineStyle(1, 0xE5E7EB, 1.0);
+            g.lineStyle(1, pal.border, 1.0);
             g.moveTo(x0, 2);
             g.lineTo(x0, h - 2);
             // A line between the two halves so +/- are two targets, not one.
@@ -278,7 +280,7 @@ package asaot.ui.kind
             g.lineTo(w - 2, h / 2);
 
             var cx:Number = x0 + STEP_W / 2;
-            var color:uint = PaintKit.stateColor(n, STEMMER_COLOR);
+            var color:uint = PaintKit.stateColor(n, pal.textMuted);
             g.lineStyle(1.5, color, 1.0);
             var topY:Number = h / 4;
             var botY:Number = topY + h / 2;

@@ -14,6 +14,7 @@ package asaot.ui.kind
     import asaot.ui.DividerNode;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.Theme;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.style.Style;
@@ -73,7 +74,7 @@ package asaot.ui.kind
         {
             if (n.shapeA == null) return;
             var s:Style = n.resolved;
-            var col:uint = 0xE5E7EB;
+            var col:uint = Theme.tokens().border;
             if (!isNaN(s.borderColor)) col = uint(s.borderColor) & 0xFFFFFF;
             else if (s.background != null) col = s.background.rgb();
 

@@ -13,6 +13,7 @@ package asaot.ui.kind
     import asaot.ui.Dirty;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.Theme;
     import asaot.ui.TooltipNode;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
@@ -169,7 +170,7 @@ package asaot.ui.kind
                 var padV:Number = nzPad(s, false, PAD_V);
                 n.tf.x = bx + padH;
                 n.tf.y = by + padV;
-                n.tf.textColor = 0xFFFFFF;
+                n.tf.textColor = Theme.tokens().onInverse;
             }
             PaintKit.decorate(n);
         }

@@ -37,7 +37,9 @@ package asaot.ui
             this.role = "tooltip";
             this.text = "";
             this.arrow = "up";
-            this.tone = 0x1F2937;
+            // The bubble is INVERTED against the page, so its default is the palette's
+            // inverse surface (read per render -- see SkeletonNode).
+            this.tone = Theme.tokens().surfaceInverse;
         }
     }
 }

@@ -29,6 +29,8 @@ package asaot.ui.kind
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
     import asaot.ui.RangeSliderNode;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetKeys;
@@ -50,7 +52,6 @@ package asaot.ui.kind
 
         private static const TRACK_H:Number = 8;
         private static const THUMB_R:Number = 7;
-        private static const BLUE:uint = 0x2563EB;
 
         public function build(n:UiNode):void
         {
@@ -137,17 +138,18 @@ package asaot.ui.kind
             var ty:Number = n.absH - 12;
             var lx:Number = w * lo;
             var hx:Number = w * hi;
+            var pal:ThemeTokens = Theme.tokens();
 
             if (n.shapeA != null)
             {
                 var g:Object = n.shapeA.graphics;
                 g.clear();
-                g.beginFill(PaintKit.stateColor(n, 0xE5E7EB), 1.0);
+                g.beginFill(PaintKit.stateColor(n, pal.track), 1.0);
                 g.drawRoundRect(0, ty, w, TRACK_H, TRACK_H, TRACK_H);
                 g.endFill();
                 if (hx > lx)
                 {
-                    g.beginFill(BLUE, 1.0);
+                    g.beginFill(pal.accent, 1.0);
                     g.drawRect(lx, ty, hx - lx, TRACK_H);
                     g.endFill();
                 }
@@ -156,12 +158,12 @@ package asaot.ui.kind
             {
                 var g2:Object = n.shapeB.graphics;
                 g2.clear();
-                g2.beginFill(0xFFFFFF, 1.0);
-                g2.lineStyle(2, BLUE, 1.0);
+                g2.beginFill(pal.knob, 1.0);
+                g2.lineStyle(2, pal.accent, 1.0);
                 g2.drawCircle(lx, ty + TRACK_H / 2, THUMB_R);
                 g2.endFill();
-                g2.beginFill(0xFFFFFF, 1.0);
-                g2.lineStyle(2, BLUE, 1.0);
+                g2.beginFill(pal.knob, 1.0);
+                g2.lineStyle(2, pal.accent, 1.0);
                 g2.drawCircle(hx, ty + TRACK_H / 2, THUMB_R);
                 g2.endFill();
             }

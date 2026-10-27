@@ -9,12 +9,14 @@
 // calls onChange). Same discipline as CheckboxWidget.
 package asaot.ui.kind
 {
-    import asaot.ui.SwitchNode;
     import asaot.ui.Dirty;
+    import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.SwitchNode;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
-    import asaot.ui.Node;
     import asaot.ui.style.Style;
 
     import asaot.ui.LayoutConstants;
@@ -94,13 +96,14 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             var s:Style = n.resolved;
+            var pal:ThemeTokens = Theme.tokens();
             var ty:Number = (n.absH - 20) / 2;   // track top
             var on:Boolean = n.checked;
             if (n.shapeA != null)
             {
                 var g:Object = n.shapeA.graphics;
                 g.clear();
-                g.beginFill(PaintKit.stateColor(n, on ? 0x34D399 : 0xD1D5DB), 1.0);
+                g.beginFill(PaintKit.stateColor(n, on ? pal.success : pal.trackOff), 1.0);
                 g.drawRoundRect(0, ty, 36, 20, 20, 20);
                 g.endFill();
             }
@@ -111,7 +114,7 @@ package asaot.ui.kind
                 // Knob centre: 10 (off, left) or 26 (on, right) in the shrunken
                 // content box; radius 8 leaves a 2pt margin to the track edge.
                 var kx:Number = on ? 26 : 10;
-                g2.beginFill(0xFFFFFF, 1.0);
+                g2.beginFill(pal.knob, 1.0);
                 g2.drawCircle(kx, ty + 10, 8);
                 g2.endFill();
             }

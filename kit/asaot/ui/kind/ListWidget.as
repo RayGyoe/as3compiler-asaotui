@@ -33,10 +33,11 @@
 // unmounted row is a selection nobody can see).
 package asaot.ui.kind
 {
-    import asaot.ui.ListNode;
     import asaot.ui.Dirty;
+    import asaot.ui.ListNode;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.Theme;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetKeys;
@@ -57,8 +58,6 @@ package asaot.ui.kind
         private static const CLIP_KEY:String = "clip";  // applied [w,h] pair
         private static const WHEEL_STEP:int = 3;
         private static const HIT_KEY:String = "hit";   // 1 when the last click hit a row
-
-        private static const SEL_BG:uint = 0xDBEAFE;   // selected-row highlight
 
         public function build(n:UiNode):void
         {
@@ -146,7 +145,7 @@ package asaot.ui.kind
             // Highlight in LOCAL coordinates (the backing's origin is the list's
             // top-left; abs* is absolute, so subtract).
             var g:Object = n.shapeA.graphics;
-            g.beginFill(SEL_BG, 1.0);
+            g.beginFill(Theme.tokens().accentSoft, 1.0);
             g.drawRect(child.absX - n.absX, child.absY - n.absY, child.absW, child.absH);
             g.endFill();
         }

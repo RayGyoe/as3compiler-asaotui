@@ -42,10 +42,10 @@ package asaot.ui
         // set of probes/g16-ternary-null, so the ternary is the safe shape again.
         n.style = n.style == null ? dirRef : n.style.withPatch(dirRef);
 
-        var linkRef:StyleRefinement = StyleRefinement.from({ text: { color: BreadcrumbNode.LINK_TEXT } });
-        var curRef:StyleRefinement = StyleRefinement.from({ text: { color: BreadcrumbNode.CURRENT_TEXT,
+        var linkRef:StyleRefinement = StyleRefinement.from({ text: { color: Theme.tokens().accent } });
+        var curRef:StyleRefinement = StyleRefinement.from({ text: { color: Theme.tokens().textMuted,
                                                                    fontWeight: "bold" } });
-        var sepRef:StyleRefinement = StyleRefinement.from({ text: { color: BreadcrumbNode.SEP_TEXT },
+        var sepRef:StyleRefinement = StyleRefinement.from({ text: { color: Theme.tokens().neutral },
                                                             padding: [4, 0] });
 
         var kids:Array = [];

@@ -29,6 +29,7 @@ package asaot.ui.kind
     import asaot.ui.OverlayList;
     import asaot.ui.OverlayMotion;
     import asaot.ui.PaintKit;
+    import asaot.ui.Theme;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetKeys;
@@ -46,7 +47,6 @@ package asaot.ui.kind
         private static const CHROME_KEY:String = "mChrome";   // band + check marks
         private static const VALUES_KEY:String = "mValues";
         private static const OPTS_KEY:String = "mOptions";
-        private static const CHECK:uint = 0x2563EB;
 
         public function build(n:UiNode):void
         {
@@ -221,7 +221,7 @@ package asaot.ui.kind
             var values:Array = n.extra[VALUES_KEY] as Array;
             var options:Array = n.extra[OPTS_KEY] as Array;
             if (values == null || options == null) return;
-            sh.graphics.lineStyle(2, CHECK, 1.0);
+            sh.graphics.lineStyle(2, Theme.tokens().accent, 1.0);
             for (var i:int = 0; i < drop.children.length && i < options.length; i++)
             {
                 var ov:String = OverlayList.valueOf(options[i], i);

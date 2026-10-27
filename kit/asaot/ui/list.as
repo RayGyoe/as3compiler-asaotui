@@ -59,7 +59,7 @@ package asaot.ui
         // A hairline between rows. `width` is intentionally NOT set: in a column
         // the cross axis (width) stretches, and the divider's own auto size pins
         // the height to 1 (DividerWidget.measure).
-        var sepRef:StyleRefinement = StyleRefinement.from({ background: 0xD1D5DB });
+        var sepRef:StyleRefinement = StyleRefinement.from({ background: Theme.tokens().divider });
         for (var i:int = 0; i < count; i++)
         {
             var child:Node = builder(items[i], i);

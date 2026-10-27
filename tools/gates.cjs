@@ -352,6 +352,13 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // teeth are tools/mutation-widget-actions.cjs (11/11), which is how the
                  // two toothless assertions in it were found: a minSize clamp no drag can
                  // reach, and a shift-modifier vector that also held meta.
+                 //
+                 //  is the runtime theme switch: one tree painted twice (light,
+                 // then dark), all 12 sample points asserted in BOTH passes, all 15 rects
+                 // compared across the swap, plus the contract checks. Every style pointer
+                 // in it is a const so the ONLY way a swap can reach a node is
+                 // markThemeDirty -- its teeth are tools/mutation-widget-theme.cjs (8/8).
+                 'widgets/theme',
                  'widgets/actions']) {
   const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
   const out = (r.stdout || '') + (r.stderr || '');

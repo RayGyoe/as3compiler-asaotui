@@ -98,9 +98,14 @@ package asaot.ui
             this.scrollbarX = "auto";
             this.scrollbarY = "auto";
             this.barThickness = 10;
-            this.barColor = 0xB9C2D0;
-            this.barHoverColor = 0x8A97AB;
-            this.trackColor = 0xE8EDF5;
+            // From the palette, read here rather than stored as a const: the node is
+            // rebuilt by the factory on every render pass, so the ctor is the one
+            // place where "the default" is evaluated against the CURRENT theme. An
+            // author who assigns `barColor` (opts or by hand) still wins.
+            var pal:ThemeTokens = Theme.tokens();
+            this.barColor = pal.scrollBar;
+            this.barHoverColor = pal.scrollBarHover;
+            this.trackColor = pal.scrollTrack;
         }
 
         // "auto" | "always" | "never", anything else THROWS. A static on the NODE

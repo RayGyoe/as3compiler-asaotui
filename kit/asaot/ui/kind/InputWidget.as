@@ -52,13 +52,14 @@
 package asaot.ui.kind
 {
     import asaot.ui.Dirty;
+    import asaot.ui.Node;
     import asaot.ui.PaintKit;
     import asaot.ui.TextInput;
+    import asaot.ui.Theme;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetFocus;
     import asaot.ui.WidgetKeys;
-    import asaot.ui.Node;
     import asaot.ui.style.Style;
     import asaot.ui.style.TextStyle;
 
@@ -76,7 +77,6 @@ package asaot.ui.kind
         private static const MODEL_KEY:String = "modelValue";
         private static const COMMIT_KEY:String = "committed";
         private static const PH_KEY:String = "placeholderField";
-        private static const PLACEHOLDER_COLOR:uint = 0x9A9A9A;
 
         public function build(n:UiNode):void
         {
@@ -198,7 +198,7 @@ package asaot.ui.kind
             PaintKit.paintBox(n, s, PaintKit.w1(n), PaintKit.h1(n));
             if (n.tf == null) return;
             var shown:String = n.value == null ? "" : n.value;
-            var color:Number = isNaN(s.text.color) ? 0x202020 : s.text.color;
+            var color:Number = isNaN(s.text.color) ? Theme.tokens().textControl : s.text.color;
             var f:TextFormat = PaintKit.formatFor(s);
             f.color = uint(color);
             n.tf.defaultTextFormat = f;
@@ -221,7 +221,7 @@ package asaot.ui.kind
             if (usePh && ph.text != n.placeholder)
             {
                 var pf:TextFormat = PaintKit.formatFor(s);
-                pf.color = PLACEHOLDER_COLOR;
+                pf.color = Theme.tokens().placeholder;
                 ph.defaultTextFormat = pf;
                 ph.text = n.placeholder;
             }

@@ -18,10 +18,10 @@
 // TextFormat (there is no way to mutate one in place).
 package asaot.ui
 {
-    import asaot.ui.style.Style;
     import asaot.ui.style.Edges;
-    import asaot.ui.style.TextStyle;
     import asaot.ui.style.Fill;
+    import asaot.ui.style.Style;
+    import asaot.ui.style.TextStyle;
 
     import asaot.ui.LayoutConstants;
 
@@ -47,8 +47,9 @@ package asaot.ui
         // idle one. Three numbers below turn that state into pixels with no new
         // style field:
         //
-        //   hover   -- lift the surface toward white by HOVER_LIFT percent
-        //   pressed -- sink it toward black by PRESS_SINK percent
+        //   hover   -- lift the surface toward the palette's `hoverTint` by
+        //              `hoverPct` percent
+        //   pressed -- push it toward the palette's `pressTint` by `pressPct` percent
         //   focused -- a 2px accent ring, DRAWN AS FOUR FILLED RECTS (not a
         //              lineStyle stroke: a fill is integer-exact, so the ring is
         //              exactly 2px and a probe can assert a single pixel. Stroke
@@ -60,13 +61,17 @@ package asaot.ui
         //              label, an image and a chip at full strength, and it would
         //              multiply twice on a node that already dims itself
         //
+        // THE MIX DIRECTION IS A THEME DECISION, NOT A CONSTANT. The light palette
+        // lifts toward white and sinks toward black (what this file always did). A
+        // DARK palette cannot sink toward black -- a black press on a #111827 surface
+        // is invisible -- so it tints both ways toward white and lets `pressPct` be
+        // the stronger of the two. That is why the tints and the two percentages live
+        // in `ThemeTokens` while the weights used to be consts here.
+        //
         // IDLE MUST BE BYTE-IDENTICAL TO BEFORE. Every branch below is a no-op at
-        // (0,0,0,0), which is what keeps the six gallery screenshots and every
-        // widget probe baseline valid while adding the whole feature.
-        public static const HOVER_LIFT:int = 8;      // percent toward white
-        public static const PRESS_SINK:int = 12;     // percent toward black
+        // (0,0,0,0), which is what keeps the gallery screenshots and every widget
+        // probe baseline valid while adding the whole feature.
         public static const DISABLED_ALPHA:Number = 0.45;
-        public static const FOCUS_RING:uint = 0x2563EB;
         public static const FOCUS_RING_W:Number = 2;
 
         // ---- NaN-tolerant accessors --------------------------------------
@@ -173,7 +178,7 @@ package asaot.ui
             var f:TextFormat = new TextFormat();
             f.font = t.fontFamily != null ? t.fontFamily : "Arial";
             f.size = isNaN(t.fontSize) ? 14 : t.fontSize;
-            f.color = isNaN(t.color) ? uint(0x000000) : uint(t.color);
+            f.color = isNaN(t.color) ? Theme.tokens().textDefault : uint(t.color);
             f.bold = t.fontWeight == "bold";
             f.italic = t.fontStyle == "italic";
             if (!isNaN(t.leading)) f.leading = t.leading;
@@ -284,8 +289,9 @@ package asaot.ui
             // mean it: a focused-able control (tabEnabled) or a node some widget
             // handed a click handler to (chips, cards).
             var live:Boolean = (n.tabEnabled || n.onClick != null) && n.state.disabled == 0;
-            var hoveredLift:int = (live && n.state.hover != 0) ? HOVER_LIFT : 0;
-            var pressedSink:int = (live && n.state.pressed != 0) ? PRESS_SINK : 0;
+            var pal:ThemeTokens = Theme.tokens();
+            var hoveredLift:int = (live && n.state.hover != 0) ? pal.hoverPct : 0;
+            var pressedSink:int = (live && n.state.pressed != 0) ? pal.pressPct : 0;
 
             var hasBg:Boolean = s.background != null;
             if (hasBg)
@@ -301,8 +307,8 @@ package asaot.ui
                 else
                 {
                     var bg:uint = s.background.rgb();
-                    if (pressedSink > 0) bg = mixRGB(bg, 0x000000, pressedSink);
-                    else if (hoveredLift > 0) bg = mixRGB(bg, 0xFFFFFF, hoveredLift);
+                    if (pressedSink > 0) bg = mixRGB(bg, pal.pressTint, pressedSink);
+                    else if (hoveredLift > 0) bg = mixRGB(bg, pal.hoverTint, hoveredLift);
                     g.beginFill(bg, s.background.alpha());
                 }
             }
@@ -310,8 +316,8 @@ package asaot.ui
             if (hasBorder)
             {
                 var bc:uint = uint(s.borderColor) & 0xFFFFFF;
-                if (pressedSink > 0) bc = mixRGB(bc, 0x000000, pressedSink);
-                else if (hoveredLift > 0) bc = mixRGB(bc, 0xFFFFFF, hoveredLift);
+                if (pressedSink > 0) bc = mixRGB(bc, pal.pressTint, pressedSink);
+                else if (hoveredLift > 0) bc = mixRGB(bc, pal.hoverTint, hoveredLift);
                 g.lineStyle(nz(s.borderWidths.top), bc, 1.0);
             }
             if (hasBg || hasBorder)
@@ -327,9 +333,9 @@ package asaot.ui
                 && w >= FOCUS_RING_W * 4 && h >= FOCUS_RING_W * 4)
             {
                 // Four filled bars, NOT a stroke: the ring then lands on integer
-                // pixels (probe: (x+1,y) is exactly FOCUS_RING for any w,h).
+                // pixels (probe: (x+1,y) is exactly the ring colour for any w,h).
                 var t:Number = FOCUS_RING_W;
-                g.beginFill(FOCUS_RING, 1.0);
+                g.beginFill(pal.focus, 1.0);
                 g.drawRect(0, 0, w, t);
                 g.drawRect(0, h - t, w, t);
                 g.drawRect(0, t, t, h - t - t);
@@ -365,8 +371,9 @@ package asaot.ui
         {
             if (n.state.disabled != 0) return c;
             if (n.tabEnabled == false && n.onClick == null) return c;
-            if (n.state.pressed != 0) return mixRGB(c, 0x000000, PRESS_SINK);
-            if (n.state.hover != 0) return mixRGB(c, 0xFFFFFF, HOVER_LIFT);
+            var pal:ThemeTokens = Theme.tokens();
+            if (n.state.pressed != 0) return mixRGB(c, pal.pressTint, pal.pressPct);
+            if (n.state.hover != 0) return mixRGB(c, pal.hoverTint, pal.hoverPct);
             return c;
         }
 
@@ -462,11 +469,13 @@ package asaot.ui
             }
         }
 
-        // The colour the decoration is drawn in: the run's own text colour, and black
-        // when the style left it unset (the same fallback formatFor uses for the fill).
+        // The colour the decoration is drawn in: the run's own text colour, and the
+        // palette's text fallback when the style left it unset (the same fallback
+        // formatFor uses for the fill).
         public static function textColorOf(s:Style):uint
         {
-            if (s == null || s.text == null || isNaN(s.text.color) || s.text.color < 0) return 0x000000;
+            if (s == null || s.text == null || isNaN(s.text.color) || s.text.color < 0)
+                return Theme.tokens().textDefault;
             return uint(s.text.color);
         }
     }

@@ -21,9 +21,9 @@
 // same frame's present.
 package asaot.ui
 {
-    import asaot.ui.as3.As3LayoutEngine;
     import asaot.ui.anim.Anim;
     import asaot.ui.anim.Tween;
+    import asaot.ui.as3.As3LayoutEngine;
 
     import flash.display.DisplayObject;
     import flash.display.DisplayObjectContainer;
@@ -89,6 +89,10 @@ package asaot.ui
         private var _solvedW:Number;
         private var _solvedH:Number;
         private var _running:Boolean;
+        // The palette generation this app has already applied. `Theme.themeEpoch()`
+        // changes when `Theme.setTheme()` swaps the palette; the difference is the whole
+        // signal that a theme switch happened, and it is checked once per frame.
+        private var _themeEpoch:int;
 
         public function UiApp(view:View):void
         {
@@ -106,6 +110,7 @@ package asaot.ui
             this._solvedW = -1;
             this._solvedH = -1;
             this._running = false;
+            this._themeEpoch = Theme.themeEpoch();
             this.describeCalls = 0;
             this.reconcileVisits = 0;
             this.layoutSolves = 0;
@@ -347,11 +352,42 @@ package asaot.ui
             this.setHoverTarget(null);
         }
 
+        // Mark a whole subtree's styles stale and ask for a repaint. Styles are NOT
+        // rebuilt here: the next reconcile re-resolves each node against the new
+        // palette, which is one pass instead of two and keeps the "one writer per bit"
+        // rule that `markLayoutDirty` documents. Layout is deliberately NOT marked --
+        // a palette swap never changes a number, and forcing a re-solve would repaint
+        // the tree through the expensive door for nothing.
+        private function markThemeDirty(n:UiNode):void
+        {
+            n.lastStyleStale = true;
+            n.dirty |= Dirty.M_PAINT;
+            for (var i:int = 0; i < n.children.length; i++) this.markThemeDirty(n.children[i]);
+        }
+
         // ---- frame boundary ---------------------------------------------
         private function onEnterFrame(e:Event):void
         {
             this.enterFrameTicks = this.enterFrameTicks + 1;
             if (!this._running) return;
+            // A THEME SWITCH IS A FRAME BOUNDARY EVENT, and it runs FIRST: everything
+            // below (the author's tick, the reconcile, the paint) must already see the
+            // new palette. Two things have to happen, and they are different things:
+            //   * a DESCRIBE pass (`invalidate`), because the overlay chrome and every
+            //     factory-baked refinement were rebuilt with new pointers -- only a
+            //     re-describe hands those pointers to the resolver. `Dirty.THEME` was
+            //     declared for years with no consumer; this is its consumer.
+            //   * `lastStyleStale` + M_PAINT on every node, because a node whose
+            //     refinement pointer did NOT move (the author's own style, or a widget
+            //     that paints from `Theme.tokens()` directly) still has to re-resolve
+            //     its baseline and repaint.
+            if (Theme.themeEpoch() != this._themeEpoch)
+            {
+                this._themeEpoch = Theme.themeEpoch();
+                if (this.root != null) this.markThemeDirty(this.root);
+                if (this.overlayRoot != null) this.markThemeDirty(this.overlayRoot);
+                this.invalidate(Dirty.THEME);
+            }
             // The author tick runs FIRST, for the same reason the reflow runs in
             // ENTER_FRAME at all: an invalidation raised here must be visible in
             // THIS frame's present. The clock is getTimer() (monotonic ms since

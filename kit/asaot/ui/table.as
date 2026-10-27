@@ -145,7 +145,7 @@ package asaot.ui
             pad = pad.withPatch(StyleRefinement.from({ height: n.rowHeight }));
         }
         var headPad:StyleRefinement = pad.withPatch(StyleRefinement.from({
-            text: { fontWeight: "bold", color: TableNode.HEAD_TEXT } }));
+            text: { fontWeight: "bold", color: Theme.tokens().textBody } }));
         for (var c:int = 0; c < cols; c++)
         {
             var col:Object = n.columns[c];
@@ -180,7 +180,7 @@ package asaot.ui
         // squeezed table beats one spilling over its siblings.
         if (n.virtual && rowH != null)
             rowH = rowH.withPatch(StyleRefinement.from({ minSize: [null, n.rowHeight] }));
-        var headBg:StyleRefinement = StyleRefinement.from({ background: TableNode.HEAD_BG });
+        var headBg:StyleRefinement = StyleRefinement.from({ background: Theme.tokens().surfaceMuted });
         // Patching rowH (rather than passing both keys: OptionSupport.applyOpts
         // reads EITHER `opts.style` OR the shorthand keys, never both) keeps the
         // header background while pinning its height.

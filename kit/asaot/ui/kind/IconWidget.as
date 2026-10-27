@@ -33,6 +33,7 @@ package asaot.ui.kind
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
     import asaot.ui.PathData;
+    import asaot.ui.Theme;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.style.Style;
@@ -45,7 +46,6 @@ package asaot.ui.kind
     {
         private static const SIG_KEY:String = "isig";   // data + viewBox + box + width
         private static const CMDS_KEY:String = "icmd";  // scaled, ready to replay
-        private static const DEFAULT_COLOR:uint = 0x111827;
 
         public function build(n:UiNode):void
         {
@@ -123,7 +123,7 @@ package asaot.ui.kind
                 n.extra[SIG_KEY] = sig;
             }
 
-            var col:uint = DEFAULT_COLOR;
+            var col:uint = Theme.tokens().textStrong;
             if (!isNaN(s.text.color)) col = uint(s.text.color) & 0xFFFFFF;
             var own:Number = n.extra["icol"] == null ? NaN : Number(n.extra["icol"]);
             if (!isNaN(own)) col = uint(own) & 0xFFFFFF;

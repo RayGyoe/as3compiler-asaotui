@@ -16,28 +16,28 @@
 //   paint    <-> GPUI Element::paint          (element.rs:96)
 package asaot.ui
 {
+    import asaot.ui.style.BoxShadow;
+    import asaot.ui.style.Corners;
+    import asaot.ui.style.Edges;
+    import asaot.ui.style.Fill;
+    import asaot.ui.style.Length;
+    import asaot.ui.style.LengthEdges;
+    import asaot.ui.style.Size;
     import asaot.ui.style.Style;
     import asaot.ui.style.StyleRefinement;
-    import asaot.ui.style.Length;
-    import asaot.ui.style.Edges;
-    import asaot.ui.style.LengthEdges;
-    import asaot.ui.style.Corners;
-    import asaot.ui.style.Fill;
-    import asaot.ui.style.Size;
     import asaot.ui.style.TextStyle;
-    import asaot.ui.style.BoxShadow;
 
     import asaot.ui.LayoutConstants;
     import asaot.ui.anim.Anim;
 
-    import flash.display.Sprite;
-    import flash.display.Shape;
     import flash.display.DisplayObject;
     import flash.display.DisplayObjectContainer;
-    import flash.filters.DropShadowFilter;
-    import flash.text.TextField;
+    import flash.display.Shape;
+    import flash.display.Sprite;
     import flash.events.EventDispatcher;
     import flash.events.MouseEvent;
+    import flash.filters.DropShadowFilter;
+    import flash.text.TextField;
 
     public class UiNode
     {

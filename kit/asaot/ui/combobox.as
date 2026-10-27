@@ -57,7 +57,7 @@ package asaot.ui
         // the re-render that the callback causes (the reconciler does not re-assign an
         // identical text).
         var fieldStyle:StyleRefinement = StyleRefinement.from({
-            flexGrow: 1, background: 0xFFFFFF, borderWidths: 0, padding: [4, 2]
+            flexGrow: 1, background: Theme.tokens().surface, borderWidths: 0, padding: [4, 2]
         });
         n.addChild(textField({ key: base + ":q", value: n.query == null ? "" : n.query,
                                placeholder: n.placeholder, style: fieldStyle,

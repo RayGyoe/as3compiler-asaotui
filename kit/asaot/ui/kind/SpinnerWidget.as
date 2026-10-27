@@ -30,6 +30,8 @@ package asaot.ui.kind
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
     import asaot.ui.SpinnerNode;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.style.Style;
@@ -46,7 +48,8 @@ package asaot.ui.kind
         private static const SPIN_KEY:String = "spin";
         private static const PH_KEY:String = "phase";
 
-        private static const TRACK:uint = 0xE5E7EB;
+        // The groove colour comes from the palette at paint time; only the geometry
+        // constants are local.
         // The arc is 3/8 of a turn, so that 0 degrees (3 o'clock) sits in the
         // MIDDLE of the sweep rather than on one of its square-cut ends: that is
         // the angle the pixel probe samples, and a fill boundary is not a colour
@@ -143,7 +146,7 @@ package asaot.ui.kind
                 : Number(n.extra[PH_KEY]);
 
             var g:Object = n.shapeA.graphics;
-            g.beginFill(TRACK, 1.0);
+            g.beginFill(Theme.tokens().track, 1.0);
             band(g, cx, cy, rOut, rIn, 0, TAU);
             g.endFill();
 
@@ -179,9 +182,10 @@ package asaot.ui.kind
 
         private function toneOf(tone:String):uint
         {
-            if (tone == "neutral") return 0x64748B;
-            if (tone == "danger") return 0xDC2626;
-            return 0x2563EB;
+            var pal:ThemeTokens = Theme.tokens();
+            if (tone == "neutral") return pal.neutralStrong;
+            if (tone == "danger") return pal.danger;
+            return pal.accent;
         }
 
         public function click(n:UiNode):Boolean { return false; }

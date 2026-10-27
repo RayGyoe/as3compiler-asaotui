@@ -1,0 +1,46 @@
+baseline probes/widgets/theme: RESULT: PASS  (75 checks)
+
+M1  CAUGHT  the swap does not bump the epoch -> nothing downstream learns a theme switch happened
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the epoch is 0 not 1; dark: page at (400,340) is #ffffff not #111827; dark: button at (126,32) is #f1f3f5 not #1f2937; dark: switch at (48,68) is #d1d5db not #4b5563; dark: badge at (60,98) is #dbeafe not #1e3a8a; dark: chip at (72,130) is #e5e7eb not #374151; dark: divider at (100,152) is #e5e7eb not #374151; dark: progress fill at (26,167) is #2563eb not #60a5fa; dark: progress track at (126,167) is #e5e7eb not #374151; dark: table header at (116,228) is #f3f4f6 not #1f2937; dark: table grid at (60,241) is #e5e7eb not #374151; dark: table body at (116,254) is #ffffff not #111827; after the switch the button text colour is #202020 not the dark textControl (0xE5E7EB); after the switch the input's border is #cccccc not the dark borderInput (#4B5563); the epoch is 0 not 2 after two setTheme calls; the second swap moved the epoch from 0 to 0; the click-driven swap moved the epoch from 0 to 0 not +2; dark, driven by a click: page at (400,340) is #ffffff not #111827; dark, driven by a click: button at (126,32) is #f1f3f5 not #1f2937; dark, driven by a click: switch at (48,68) is #d1d5db not #4b5563; dark, driven by a click: badge at (60,98) is #dbeafe not #1e3a8a; dark, driven by a click: chip at (72,130) is #e5e7eb not #374151; dark, driven by a click: divider at (100,152) is #e5e7eb not #374151; dark, driven by a click: progress fill at (26,167) is #2563eb not #60a5fa; dark, driven by a click: progress track at (126,167) is #e5e7eb not #374151; dark, driven by a click: table header at (116,228) is #f3f4f6 not #1f2937; dark, driven by a click: table grid at (60,241) is #e5e7eb not #374151; dark, driven by a click: table body at (116,254) is #ffffff not #111827;
+     FAIL  pixel (400,340) want #111827 got #ffffff
+     FAIL  pixel (126,32) want #1F2937 got #f1f3f5
+     ... and 9 more
+     restore: byte-identical (7b2c1d9eb5c62fff)
+M2  CAUGHT  markThemeDirty stops marking styles stale -> nodes whose style POINTER did not move keep the old baseline
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL dark: button at (126,32) is #f1f3f5 not #1f2937; after the switch the button text colour is #202020 not the dark textControl (0xE5E7EB); after the switch the input's border is #cccccc not the dark borderInput (#4B5563); dark, driven by a click: button at (126,32) is #f1f3f5 not #1f2937;
+     FAIL  pixel (126,32) want #1F2937 got #f1f3f5
+     restore: byte-identical (1e3568a2c9fb0683)
+M3  CAUGHT  the overlay chrome is not rebuilt -> every baked overlay colour stays light
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the overlay's hover band did not follow (#f3f4f6);
+     restore: byte-identical (7b2c1d9eb5c62fff)
+M4  CAUGHT  setTheme aliases the caller palette instead of copying -> the caller can repaint half the tree
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL setTheme aliased the caller's instance (surface #000000);
+     restore: byte-identical (7b2c1d9eb5c62fff)
+M5  CAUGHT  the override layer is no longer consulted -> an author customisation silently disappears
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the author's override is not in force after the swap;
+     restore: byte-identical (7b2c1d9eb5c62fff)
+M6  CAUGHT  a widget still paints a LIGHT LITERAL -> the dark pass catches the one that did not migrate
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL dark: switch at (48,68) is #d1d5db not #4b5563; dark, driven by a click: switch at (48,68) is #d1d5db not #4b5563;
+     FAIL  pixel (48,68) want #4B5563 got #d1d5db
+     restore: byte-identical (2e2dd4e34fd4709d)
+M7  CAUGHT  no DESCRIBE is requested -> factory-baked refinements never get the new palette (geometry is fine, paint-time reads look fine)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL dark: page at (400,340) is #ffffff not #111827; dark: button at (126,32) is #f1f3f5 not #1f2937; dark: switch at (48,68) is #d1d5db not #4b5563; dark: badge at (60,98) is #dbeafe not #1e3a8a; dark: chip at (72,130) is #e5e7eb not #374151; dark: divider at (100,152) is #e5e7eb not #374151; dark: progress fill at (26,167) is #2563eb not #60a5fa; dark: progress track at (126,167) is #e5e7eb not #374151; dark: table header at (116,228) is #f3f4f6 not #1f2937; dark: table grid at (60,241) is #e5e7eb not #374151; dark: table body at (116,254) is #ffffff not #111827; after the switch the button text colour is #202020 not the dark textControl (0xE5E7EB); after the switch the input's border is #cccccc not the dark borderInput (#4B5563); dark, driven by a click: page at (400,340) is #ffffff not #111827; dark, driven by a click: button at (126,32) is #f1f3f5 not #1f2937; dark, driven by a click: switch at (48,68) is #d1d5db not #4b5563; dark, driven by a click: badge at (60,98) is #dbeafe not #1e3a8a; dark, driven by a click: chip at (72,130) is #e5e7eb not #374151; dark, driven by a click: divider at (100,152) is #e5e7eb not #374151; dark, driven by a click: progress fill at (26,167) is #2563eb not #60a5fa; dark, driven by a click: progress track at (126,167) is #e5e7eb not #374151; dark, driven by a click: table header at (116,228) is #f3f4f6 not #1f2937; dark, driven by a click: table grid at (60,241) is #e5e7eb not #374151; dark, driven by a click: table body at (116,254) is #ffffff not #111827;
+     FAIL  pixel (400,340) want #111827 got #ffffff
+     FAIL  pixel (126,32) want #1F2937 got #f1f3f5
+     ... and 9 more
+     restore: byte-identical (1e3568a2c9fb0683)
+M8  CAUGHT  the kind defaults are not rebuilt -> every baseline-driven colour (text, borders) stays light
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL dark: button at (126,32) is #f1f3f5 not #1f2937; after the switch the button text colour is #202020 not the dark textControl (0xE5E7EB); after the switch the input's border is #cccccc not the dark borderInput (#4B5563); after the override is gone the baseline is #1a1a1a not the dark text slot (0xE5E7EB); dark, driven by a click: button at (126,32) is #f1f3f5 not #1f2937;
+     FAIL  pixel (126,32) want #1F2937 got #f1f3f5
+     restore: byte-identical (7b2c1d9eb5c62fff)
+
+MUTATION theme: 8/8 caught, 0 problem(s)
+RESULT: PASS

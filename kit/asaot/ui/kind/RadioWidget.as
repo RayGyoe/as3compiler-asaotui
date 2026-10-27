@@ -16,12 +16,14 @@
 // additionally fire.
 package asaot.ui.kind
 {
-    import asaot.ui.RadioNode;
     import asaot.ui.Dirty;
+    import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.RadioNode;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
-    import asaot.ui.Node;
     import asaot.ui.style.Style;
 
     import asaot.ui.LayoutConstants;
@@ -101,14 +103,15 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             var s:Style = n.resolved;
+            var pal:ThemeTokens = Theme.tokens();
             var cy:Number = (n.absH - 16) / 2 + 8;   // indicator centre y
             var on:Boolean = n.checked;
             if (n.shapeA != null)
             {
                 var g:Object = n.shapeA.graphics;
                 g.clear();
-                g.beginFill(PaintKit.stateColor(n, 0xFFFFFF), 1.0);
-                g.lineStyle(2, on ? 0x2563EB : 0x9CA3AF, 1.0);
+                g.beginFill(PaintKit.stateColor(n, pal.knob), 1.0);
+                g.lineStyle(2, on ? pal.accent : pal.neutral, 1.0);
                 g.drawCircle(8, cy, 7);
                 g.endFill();
             }
@@ -118,7 +121,7 @@ package asaot.ui.kind
                 g2.clear();
                 if (on)
                 {
-                    g2.beginFill(0x2563EB, 1.0);
+                    g2.beginFill(pal.accent, 1.0);
                     g2.drawCircle(8, cy, 4);
                     g2.endFill();
                 }

@@ -14,6 +14,8 @@ package asaot.ui.kind
     import asaot.ui.Dirty;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.style.Style;
@@ -80,10 +82,11 @@ package asaot.ui.kind
             var s:Style = n.resolved;
             var w:Number = PaintKit.w1(n);
             var h:Number = PaintKit.h1(n);
-            var bg:uint = 0x9CA3AF;
+            var pal:ThemeTokens = Theme.tokens();
+            var bg:uint = pal.neutral;
             var tone:String = String(n.extra[TONE_KEY]);
-            if (tone == "info") bg = 0x2563EB;
-            else if (tone == "danger") bg = 0xDC2626;
+            if (tone == "info") bg = pal.accent;
+            else if (tone == "danger") bg = pal.danger;
 
             var r:Number = w < h ? w / 2 : h / 2;
             if (n.shapeA != null)
@@ -98,7 +101,7 @@ package asaot.ui.kind
             {
                 n.tf.x = (w - n.state.measuredW) / 2;
                 n.tf.y = (h - n.state.measuredH) / 2;
-                n.tf.textColor = 0xFFFFFF;
+                n.tf.textColor = pal.onAccent;
             }
             PaintKit.decorate(n);
         }

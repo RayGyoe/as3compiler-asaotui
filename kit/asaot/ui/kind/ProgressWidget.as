@@ -9,12 +9,14 @@
 // drawing, so 0 draws no fill and 1 fills exactly the track width.
 package asaot.ui.kind
 {
-    import asaot.ui.ProgressNode;
     import asaot.ui.Dirty;
+    import asaot.ui.Node;
     import asaot.ui.PaintKit;
+    import asaot.ui.ProgressNode;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
-    import asaot.ui.Node;
     import asaot.ui.style.Style;
 
     import asaot.ui.LayoutConstants;
@@ -82,11 +84,12 @@ package asaot.ui.kind
             if (isNaN(v)) v = 0;
             var ty:Number = n.absH - 12;   // track top
             var fill:Number = w * v;
+            var pal:ThemeTokens = Theme.tokens();
             if (n.shapeA != null)
             {
                 var g:Object = n.shapeA.graphics;
                 g.clear();
-                g.beginFill(0xE5E7EB, 1.0);
+                g.beginFill(pal.track, 1.0);
                 g.drawRoundRect(0, ty, w, 8, 8, 8);
                 g.endFill();
             }
@@ -96,7 +99,7 @@ package asaot.ui.kind
                 g2.clear();
                 if (fill > 0)
                 {
-                    g2.beginFill(0x2563EB, 1.0);
+                    g2.beginFill(pal.accent, 1.0);
                     g2.drawRoundRect(0, ty, fill, 8, 8, 8);
                     g2.endFill();
                 }
