@@ -70,6 +70,13 @@ const absent = [
   ['hover', 'hover-dependent styling'], ['tabBar', 'bottom tab navigation'],
   ['bottomSheet', 'sheet presentation'], ['navStack', 'navigation stack'],
   ['inertia', 'scroll momentum'], ['rubber', 'elastic overscroll'], ['pinch', 'pinch gesture'],
+  // MOBILE.md §2/§5: the declarative press/hit contract. A 0 here means the
+  // semantics NSH answers with a prop (and AIR answers with needsSoftKeyboard /
+  // softKeyboardType) has no name in this kit at all.
+  ['hitSlop', 'enlarged touch target'], ['pointerEvents', 'touch pass-through rule'],
+  ['longPress', 'long-press semantics'], ['pressDelay', 'press-in delay inside scroll'],
+  ['appBar', 'page header'], ['appState', 'foreground/background'],
+  ['reduceMotion', 'motion preference'], ['screenReader', 'screen-reader state'],
 ];
 
 const absentHits = {};
@@ -101,6 +108,7 @@ const listCaps = {
   momentumMentions: count(scrollSrc, 'momentum') + count(scrollSrc, 'inertia'),
   elasticMentions: count(scrollSrc, 'elastic'),
   pagingMentions: count(scrollSrc, 'paging') + count(scrollSrc, 'snap'),
+  touchDragWords: count(scrollSrc, 'touch') + count(scrollSrc, 'finger'),
   estimatedRowHeight: count(vlistSrc, 'estimated'),
   stickyHeader: count(vlistSrc, 'sticky'),
   onVisible: count(vlistSrc, 'onVisible'),
@@ -132,6 +140,13 @@ if (facts.compilerFound) {
   facts.stageOrientation = count(emitSrc, 'stageOrientation');
   facts.emitTouchEvent = count(emitSrc, 'TouchEvent');   // the CLASS exists ...
   facts.sdlFingerInGlue = count(windowSrc, 'SDL_FINGER'); // ... the INPUT does not
+  facts.sdlStartTextInput = count(windowSrc, 'SDL_StartTextInput');
+  facts.sdlSetTextInputRect = count(windowSrc, 'SDL_SetTextInputRect');
+  facts.emitSetSelection = count(emitSrc, 'setSelection');
+  facts.emitSoftKeyboardType = count(emitSrc, 'softKeyboardType');
+  facts.emitReturnKeyLabel = count(emitSrc, 'returnKeyLabel');
+  facts.emitNeedsSoftKeyboard = count(emitSrc, 'needsSoftKeyboard');
+  facts.emitAutoOrients = count(emitSrc, 'autoOrients');
   facts.webTouchOrPointer = count(webSrc, 'touchstart') + count(webSrc, 'pointerdown');
   facts.webKeydown = count(webSrc, 'keydown');
   facts.webKeyCallbackDiscarded = /\(void\)on_key/.test(webSrc);
@@ -175,6 +190,13 @@ if (facts.compilerFound) {
   line('glue SDL_FINGER (input)', facts.sdlFingerInGlue);
   line('Stage.softKeyboardRect', facts.stageSoftKeyboardRect);
   line('Stage.stageOrientation', facts.stageOrientation);
+  line('emit setSelection', facts.emitSetSelection);
+  line('emit softKeyboardType', facts.emitSoftKeyboardType);
+  line('emit returnKeyLabel', facts.emitReturnKeyLabel);
+  line('emit needsSoftKeyboard', facts.emitNeedsSoftKeyboard);
+  line('emit autoOrients', facts.emitAutoOrients);
+  line('glue SDL_StartTextInput', facts.sdlStartTextInput);
+  line('glue SDL_SetTextInputRect', facts.sdlSetTextInputRect);
   line('web touch/pointer handlers', facts.webTouchOrPointer);
   line('web keydown handlers', facts.webKeydown + (facts.webKeyCallbackDiscarded ? '  (on_key discarded)' : ''));
   line('skia prebuilt platforms', facts.skiaPlatforms.join(' ') || '(none)');
