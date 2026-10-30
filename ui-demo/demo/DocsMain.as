@@ -197,11 +197,24 @@ package demo
                     this.problems = this.problems + "(900,200) already painted #0f172a before the scroll -- the sample point is wrong; ";
                 }
                 // Back to the top, so the screenshots below are of a settled page.
+                //
+                // THE POINT IS NOT ARBITRARY, and this line is a regression test of
+                // its own: after the notch above, (600,300) falls on a GAP in the
+                // pane's content -- no painted region under it, only the surface. The
+                // runtime picks a wheel target by PAINTED REGION (as_shape_region_hit),
+                // so a hit-test hole there sent the event to the window root and the
+                // pane never saw it: that is exactly how this assertion went red on
+                // macOS after the scroll code had been reworked. ScrollViewWidget now
+                // paints a transparent hit rect over its whole viewport (the idiom
+                // TableWidget already used), so a wheel anywhere in the pane reaches
+                // it. If that ever regresses, this reads a non-zero offset.
                 this.stage.dispatchWheel(600, 300, 3);
                 this.app.reflow();
-                if (ScrollViewNode(sv.desc).offsetY != 0)
+                var back:Number = ScrollViewNode(sv.desc).offsetY;
+                if (back != 0)
                 {
-                    this.problems = this.problems + "wheeling back did not return the pane to offsetY 0; ";
+                    this.problems = this.problems + "wheeling back over a content gap left the pane at offsetY "
+                        + back + ", expected 0 (a wheel inside the viewport must reach it, even over a gap); ";
                 }
             }
 

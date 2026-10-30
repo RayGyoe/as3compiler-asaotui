@@ -297,6 +297,30 @@ package asaot.ui.kind
                 n.shapeA.y = oy;
             }
             PaintKit.paintBox(n, n.resolved, w, h);
+            // A VIEWPORT IS A WHEEL TARGET OVER ITS WHOLE BOX, not only where its
+            // content happens to be painted. `paintBox` draws NOTHING for a style with
+            // no background, and the runtime picks by PAINTED REGION
+            // (as_pick_hit_local -> as_obj_region_hit_local): a pane whose style sets no
+            // background therefore had holes wherever a content gap sat under the
+            // pointer, and a wheel there fell through to the window root instead of
+            // scrolling the pane.
+            //
+            // Found by the docs tour's "wheeling back did not return the pane to
+            // offsetY 0": after the pane had scrolled, its fixed sample point landed on
+            // a gap. A user hits the same hole by wheeling over the space between two
+            // paragraphs. TableWidget already draws this rect for the same reason (it
+            // paints only hairlines and glyphs).
+            //
+            // A transparent fill is how to be a pointer region without painting: the
+            // region test does not look at alpha (the trick MOBILE.md 2.3(2) names for
+            // hitSlop), and a 0-alpha fill blends to no pixel.
+            if (n.shapeA != null && n.resolved.background == null)
+            {
+                var gh:Object = n.shapeA.graphics;
+                gh.beginFill(0x000000, 0.0);
+                gh.drawRect(0, 0, w, h);
+                gh.endFill();
+            }
 
             // Re-assign only when it moved: the runtime copies the rectangle into the
             // object (emit.ts:10551, "store a private copy"), so assigning every frame
