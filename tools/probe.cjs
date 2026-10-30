@@ -126,7 +126,6 @@ if (exe == null) {
   console.error('[probe] build succeeded but no freshly built .exe in ' + dir);
   process.exit(1);
 }
-const exeName = path.basename(exe);
 console.log('[probe] built ' + path.relative(UI, exe));
 if (rebuildOnly) process.exit(0);
 
@@ -138,10 +137,17 @@ function kill() {
   // Windows holds the .exe open while the window is up, so the process must die
   // before the next build; on POSIX the file stays writable, but a leftover window
   // would still steal the focus of the next probe -- so kill there too.
+  //
+  // BY PID, NOT BY NAME. This used to run `pkill -f "Main"`: `-f` matches a
+  // substring of the whole command line, so the cleanup reached ANY process whose
+  // argv contains "Main" -- every probe here is built as `Main`, and so is anything
+  // else that spells it. The pid we spawned is exact; taskkill /T also takes the
+  // tree, which is what a window backend that forks a helper needs.
+  try { process.kill(child.pid, 'SIGKILL'); } catch (e) { /* already gone */ }
   try {
     execSync(process.platform === 'win32'
-      ? 'taskkill /F /IM "' + exeName + '"'
-      : 'pkill -f ' + JSON.stringify(exeName),
+      ? 'taskkill /F /T /PID ' + child.pid
+      : 'kill -9 ' + child.pid,
       { stdio: 'ignore' });
   } catch (e) { /* already gone */ }
 }

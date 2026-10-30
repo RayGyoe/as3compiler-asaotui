@@ -261,6 +261,19 @@ if (done === null) {
 // reached the build -- a blurry window that every rect assertion in the tour
 // would still call perfect. That is why this is measured, not assumed.
 const shots = [];
+// STALE STOPS ARE PART OF THE GATE, NOT CLUTTER. The tour used to have 12 stops;
+// when PAGES dropped to 8 the four extra PNGs stayed behind, still tracked in git,
+// and a reader takes a file named `gallery-page8.png` for current evidence -- it was
+// a 1.5x frame from the twelve-stop layout. `shots.length !== PAGES` cannot see
+// them, because it counts what THIS run wrote. So the runner owns the naming: any
+// `gallery-page<N>.png` at or beyond PAGES in the output dir is deleted and named.
+for (const f of fs.readdirSync(outDir)) {
+  const m = /^gallery-page(\d+)\.png$/.exec(f);
+  if (m === null) continue;
+  if (parseInt(m[1], 10) < PAGES) continue;
+  fs.unlinkSync(path.join(outDir, f));
+  console.log('[gallery] removed stale ' + f + ' (the tour has ' + PAGES + ' stops)');
+}
 for (let k = 0; k < PAGES; k++) {
   const f = path.join(outDir, OUT + '-page' + k + '.png');
   const c = checkShot(f, size, OUT + '-page' + k + '.png');

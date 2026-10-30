@@ -265,7 +265,11 @@ restore byte-identical).
 
 `air-gallery/gallery-page{0..7}.png` are the tour's eight page stops; the tour's
 hand-computed columns (`colA 24,132,320,374` / `colB 356,132,320,374`) are derived from
-700 − 2×24 = 652 content width, two `flexGrow:1` columns and a 12 gap.
+700 − 2×24 = 652 content width, two `flexGrow:1` columns and a 12 gap. The runner owns
+that numbering: a `gallery-page<N>.png` at or beyond `PAGES` in the output dir is deleted
+and named on the console. That sweep is not housekeeping — this count dropped from 12 to
+8 and the four leftovers (`gallery-page8..11.png`, still 1.5× frames from the twelve-stop
+layout) sat in git for a week looking like current evidence.
 
 The **Advanced page** used to be the one page holding the last seven widgets that had
 none: `select`, `combobox`, `datePicker`, a `scrollView` of colour bands, a
