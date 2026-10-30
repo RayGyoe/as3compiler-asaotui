@@ -134,7 +134,7 @@ console.log('[gallery] descriptor ' + appDirName + '/' + descriptorName + ': win
 
 // ---- 3) stage -------------------------------------------------------------
 {
-  const r = spawnSync(process.execPath, ['stage-air.cjs', appDirName], { cwd: here, stdio: 'inherit' });
+  const r = spawnSync(process.execPath, ['stage-air.cjs', appDirName], { cwd: here, stdio: 'inherit', timeout: 120000 });
   if (r.status !== 0) {
     console.error('[gallery] STAGING FAILED (exit ' + r.status + ')');
     process.exit(1);
@@ -200,7 +200,17 @@ console.log('[gallery] building GalleryApp with `--air-app ' + appDirName + '/' 
   }
 }
 {
-  const r = spawnSync(process.execPath, args, { cwd: compilerDir, stdio: 'inherit' });
+  // BOUNDED: a build that never returns would leave the window unlaunched and this
+  // process alive for ever (measured: an as-aot run on a tree that another session was
+  // editing hung instead of failing).
+  const r = spawnSync(process.execPath, args, {
+    cwd: compilerDir, stdio: 'inherit',
+    timeout: Number(process.env.ASC_BUILD_TIMEOUT_MS || 300000), killSignal: 'SIGKILL',
+  });
+  if (r.status === null && r.signal) {
+    console.error('[gallery] BUILD TIMED OUT -- the compiler never returned (raise ASC_BUILD_TIMEOUT_MS if it is just slow)');
+    process.exit(1);
+  }
   if (r.status !== 0) {
     console.error('[gallery] BUILD FAILED (exit ' + r.status + ')');
     process.exit(1);
@@ -238,7 +248,10 @@ const child = spawn(exe, [], { cwd: outDir, detached: true, stdio: 'inherit' });
 child.unref();
 
 const donePath = path.join(outDir, OUT + '.done');
-const done = waitForFile(donePath, 60000);
+// 60s, because the tour is 8 stops of real clicks on a real window; anything longer is
+// a hang, not slowness. `ASC_TOUR_TIMEOUT_MS` shortens it when only the STARTUP is
+// being checked (a smoke run: does the window come up and paint at all?).
+const done = waitForFile(donePath, Number(process.env.ASC_TOUR_TIMEOUT_MS || 60000));
 
 const tourPath = path.join(outDir, OUT + '.txt');
 if (fs.existsSync(tourPath)) {
@@ -248,8 +261,16 @@ if (fs.existsSync(tourPath)) {
 
 if (done === null) {
   console.error('[gallery] TIMEOUT: ' + OUT + '.done was never written -- the tour did not finish.');
-  console.error('[gallery] the window is still up; look at it, then run:  '
-    + (process.platform === 'win32' ? 'taskkill /F /IM ' : 'pkill -f ') + EXE);
+  // A FAILED run kills its window. Leaving it up is what "the test just sits there"
+  // looks like from the outside, and inside a gate run it is a leftover that steals
+  // focus from the next probe. `ASC_KEEP_WINDOW=1` is the deliberate exception (you
+  // want to look at the half-finished UI).
+  if (process.env.ASC_KEEP_WINDOW === '1') {
+    console.error('[gallery] the window is left up on purpose (ASC_KEEP_WINDOW=1).');
+  } else {
+    killWindow();
+    console.error('[gallery] the window was killed (ASC_KEEP_WINDOW=1 to keep it).');
+  }
   process.exit(1);
 }
 

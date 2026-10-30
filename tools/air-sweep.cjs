@@ -150,7 +150,7 @@ const build = spawnSync(process.execPath, [
   '--root', 'ui-demo/demo/DocsAir.as',
   '--src', 'ui-demo', '--src', 'kit', '--src', 'seam',
   '--out', 'ui-demo/air-gallery/GalleryApp.swf',
-], { cwd: UI, encoding: 'utf8', maxBuffer: 1 << 28 });
+], { cwd: UI, encoding: 'utf8', maxBuffer: 1 << 28, timeout: 300000, killSignal: 'SIGKILL' });
 const buildOut = (build.stdout || '') + (build.stderr || '');
 if (build.status !== 0) {
   console.log(buildOut);

@@ -294,7 +294,35 @@ const COMPILER = path.resolve(UI, '..', 'as3compiler');
 const clang = process.env.ASC_CC || 'clang';
 const kit = require(path.join(UI, 'ui-demo', 'kit-list.cjs'));
 
-const sh = (cmd, args, cwd, env) => spawnSync(cmd, args, { cwd, encoding: 'utf8', maxBuffer: 1 << 28, env: env ? { ...process.env, ...env } : process.env });
+// EVERY CHILD IS BOUNDED, AND THAT IS NOT AN OPTIMISATION.
+//
+// These gates launch REAL WINDOWS (a probe, the gallery tour, an AIR app under adl).
+// A program that errors on startup does not exit: it sits there with a window up and
+// writes no verdict, and `spawnSync` without a `timeout` waits for ever -- so one bad
+// build turns `node tools/gates.cjs` into a command that never returns. Measured: a
+// full run that looked like "just slow" was a launch block, not a build.
+//
+// 15 minutes is a CEILING for the slowest legit gate (the web/emcc arm and the AIR
+// sweep), not a budget anyone should need; `ASC_GATE_TIMEOUT_MS` lowers it. A killed
+// child is reported as 124 with a `[TIMEOUT]` line naming the command, never as a
+// silent `exit null`.
+const GATE_TIMEOUT_MS = Number(process.env.ASC_GATE_TIMEOUT_MS || 900000);
+const sh = (cmd, args, cwd, env) => {
+  const r = spawnSync(cmd, args, {
+    cwd, encoding: 'utf8', maxBuffer: 1 << 28,
+    env: env ? { ...process.env, ...env } : process.env,
+    timeout: GATE_TIMEOUT_MS,
+    killSignal: 'SIGKILL',
+  });
+  if (r.status === null && r.signal) {
+    console.log('[TIMEOUT] ' + path.basename(String(cmd)) + ' ' + args.join(' ')
+      + '  killed after ' + Math.round(GATE_TIMEOUT_MS / 1000) + 's'
+      + ' (the window never published a verdict, or the build never finished);'
+      + ' raise ASC_GATE_TIMEOUT_MS if this gate is legitimately slower');
+    return { ...r, status: 124 };
+  }
+  return r;
+};
 const tail = (s, n) => (s || '').split(/\r?\n/).filter((l) => l.trim() !== '').slice(-n).join('\n');
 
 const gates = [];

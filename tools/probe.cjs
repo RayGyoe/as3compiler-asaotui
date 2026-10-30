@@ -90,8 +90,21 @@ const args = [
 ];
 
 const buildStarted = Date.now();
-const b = spawnSync(process.execPath, args, { cwd: COMPILER, encoding: 'utf8' });
+// BOUNDED. `as-aot` can hang on its own inputs (a tree mid-edit under another session
+// produced a build that never returned), and an unbounded spawnSync here would hang the
+// whole gate run without printing anything.
+const b = spawnSync(process.execPath, args, {
+  cwd: COMPILER, encoding: 'utf8',
+  timeout: Number(process.env.ASC_BUILD_TIMEOUT_MS || 300000),
+  killSignal: 'SIGKILL',
+});
 const buildOut = (b.stdout || '') + (b.stderr || '');
+if (b.status === null && b.signal) {
+  console.error('[probe] BUILD TIMED OUT (killed after '
+    + Math.round(Number(process.env.ASC_BUILD_TIMEOUT_MS || 300000) / 1000) + 's)');
+  console.error(buildOut.split(/\r?\n/).slice(-20).join('\n'));
+  process.exit(1);
+}
 if (b.status !== 0) {
   console.error('[probe] BUILD FAILED (exit ' + b.status + ')');
   console.error(buildOut.split(/\r?\n/).slice(-40).join('\n'));
