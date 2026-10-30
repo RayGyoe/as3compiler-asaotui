@@ -34,6 +34,13 @@ node tools/gates.cjs     # 已增至 62 道门，62/62 PASS 才叫绿（最新�
 AIR SDK（`mxmlc` / `adl`，探针的**参考臂**要用）按 §「本机环境」以 `AIRSDK_HOME` 指向。
 什么进库、什么不进库的判据写在 [`.gitignore`](.gitignore) 头部的注释里。
 
+**跑出来的东西写哪儿**：一次运行的日志、截图、抽查文件一律写本仓的 `temp/`
+（已忽略、可随时删），例如 `node tools/gates.cjs > temp/gates-$(date +%F).txt 2>&1`。
+**不要写到工作区根**（`../temp`）或本仓根——根目录只放文档与构建输入。三个目录的分工：
+`temp/` = 运行证据（人和 agent 产生，可丢弃）；`.scratch/` = 工具自己的暂存树
+（`publish-pages` 的 `pages`、`buildsh-web` 的假 emsdk）；`reviews/` = 被文档按路径引用的
+**归档**证据（不可再生，才进库）。
+
 ## 交付（2026-10-25，第十七轮：图标通道 `icon()`）—— 一条命令复核
 
 ```sh

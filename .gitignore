@@ -145,4 +145,10 @@ icudtl.dat
 /probes/vec-vs-arr/vec-aot.txt
 /probes/vec-vs-arr/vec-air.txt
 
+# --- §4c 本机运行证据（temp/） --------------------------------------------
+# 跑门、跑探针、截图复核时产生的日志/截图/抽查文件，一律落 `temp/`：
+#   node tools/gates.cjs > temp/gates-$(date +%F).txt 2>&1
+# **不要**写到工作区根（`../temp`）或本仓根——本仓根只放文档与构建输入。
+# 与 `.scratch/` 的分工：`.scratch/` 归**工具自己**的暂存树（`publish-pages` 的
+# `pages`、`buildsh-web` 的假 emsdk），`temp/` 归**人和 agent 的运行证据**；两者都可随时删。
 temp

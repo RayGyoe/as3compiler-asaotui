@@ -366,6 +366,17 @@ node tools/probe.cjs probes/widgets/<x>
 
 这个命令会：清掉旧证据 → 用我们的 AOT 编译（含整个 kit）→ 启动窗口（detached）→ 等程序写 `<x>.done` → 杀进程 → 把程序写的 `<x>.rects.txt` / `<x>.bmp` 与**你手写的** `expect.json` 逐项比对 → 打印 `PROBE <x>: n checks, m failures`，退出码 0/1。
 
+### 跑出来的东西写哪儿
+
+一次运行的日志、截图、抽查文件一律写 **本仓的 `temp/`**（已忽略、可随时删）：
+
+```sh
+node tools/gates.cjs > temp/gates-$(date +%F).txt 2>&1
+```
+
+**不要**写到工作区根（`../temp`）或本仓根——根目录只放文档与构建输入。
+`reviews/` 只收被文档按路径引用的**归档**证据（不可再生），`.scratch/` 只留给工具自己的暂存树。
+
 ### 探针协议（必须照做）
 
 - 目录名 == 输出前缀（`probes/widgets/chip` ⇒ 程序写 `chip.*`）。
