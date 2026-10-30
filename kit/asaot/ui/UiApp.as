@@ -24,6 +24,7 @@ package asaot.ui
     import asaot.ui.anim.Anim;
     import asaot.ui.anim.Tween;
     import asaot.ui.as3.As3LayoutEngine;
+    import asaot.ui.style.Edges;
 
     import flash.display.DisplayObject;
     import flash.display.DisplayObjectContainer;
@@ -72,6 +73,23 @@ package asaot.ui
         // applies to a key repeat exactly as it does to a frame.
         private var ctxScratch:Array = [];
         private var ringScratch:Vector.<UiNode> = new Vector.<UiNode>();
+
+        // ---- the platform facts (MOBILE.md E1) ---------------------------
+        // ONE owner, so every consumer (this class today, a widget that needs the
+        // keyboard rect tomorrow) reads the same answers. Never null: an app that
+        // says nothing gets `DesktopEnv`, which is the honest floor for every target
+        // this library can build today.
+        public var env:Env;
+        private var _envSub:Subscription;
+        // A safe-area change arrives OUTSIDE the frame (a platform callback), but the
+        // fold happens INSIDE one, so the request is latched here rather than acted
+        // on from the callback: folding mid-frame would write engine style during a
+        // paint pass.
+        private var _safeDirty:Boolean;
+        // Diagnostics: how many Env notifications this app has folded. A probe that
+        // expects "one" change and gets two has found a double-notify in the
+        // producer, which is otherwise invisible.
+        public var envChanges:int;
 
         private var root:UiNode;
         // The keyboard owner. Library state, not display-list state: see
@@ -131,6 +149,15 @@ package asaot.ui
             this._synthetic = false;
             this.syntheticMoves = 0;
             this.pickCalls = 0;
+            // The env comes FIRST, before the router is even consulted, because
+            // `_hasHover` above is the default for "no platform said otherwise" and
+            // bindEnv(null-answer) must be able to correct it. DesktopEnv is the
+            // floor rather than a placeholder: see its header for which of the nine
+            // facts it may honestly claim.
+            this.env = new DesktopEnv();
+            this._envSub = null;
+            this._safeDirty = false;
+            this.envChanges = 0;
             if (view != null) view.attachApp(this);
         }
 
@@ -432,6 +459,100 @@ package asaot.ui
             return this._hasHover;
         }
 
+        // ---- the environment (MOBILE.md E1) --------------------------------
+        //
+        // `bindEnv` is the ONE place an app tells the kit what the platform is. It
+        // does two things and nothing else: it reads the answers that have a
+        // consumer TODAY (hasHover -> the 103 hover branches; safeArea -> the root
+        // padding), and it subscribes so a change to either is honoured without the
+        // app calling back.
+        //
+        // THE OTHER SEVEN FACTS ARE DELIVERED, NOT CONSUMED -- on purpose, and the
+        // `Env` interface says which: keyboardRect needs S7, appState needs E7,
+        // isDark needs E5, reduceMotion needs E8, locale needs E6. Delivering them
+        // through one interface now is what lets each of those land as a consumer
+        // instead of as a change to the shape every backend implements.
+        //
+        // Binding twice is legal: the old subscription is dropped, which is what a
+        // probe that swaps a fake env for the real one needs.
+        public function bindEnv(e:Env):void
+        {
+            if (e == null)
+            {
+                // NOT a silent fallback to the desktop answers: an app that binds
+                // null has a bug, and hiding it would make "why is there no hover"
+                // a build-wide mystery.
+                throw new Error('asaot.ui: bindEnv(null) -- an app always has an Env; keep the DesktopEnv '
+                    + 'or bind a real one');
+            }
+            if (this._envSub != null)
+            {
+                this._envSub.cancel();
+                this._envSub = null;
+            }
+            this.env = e;
+            var self:UiApp = this;
+            this._envSub = e.subscribe(function (d:int):void { self.envChanged(d); });
+            this.envChanged(0);
+        }
+
+        // A notification means "something in the environment moved"; the app does not
+        // branch on which, because every consumer reads the value it needs and the
+        // compare-before-notify writers on EnvBase already suppressed no-ops.
+        //
+        // The work is LATCHED, never done here: a platform callback can arrive
+        // outside the frame, and folding an inset means writing engine style and
+        // re-resolving nodes -- which must happen at a frame boundary, exactly like
+        // every other change in this class.
+        private function envChanged(dirty:int):void
+        {
+            this.envChanges = this.envChanges + 1;
+            if (this.env == null) return;
+            this.setHasHover(this.env.hasHover);
+            this._safeDirty = true;
+            // A reflow has to RUN for the latch to be consumed. `_needsPaint` is the
+            // cheapest honest wake-up: it asks for a frame boundary without asking
+            // for a re-describe (the description did not change -- the platform
+            // did), and the layout gate then sees the bits the fold raises.
+            if (this.root != null) this._needsPaint = true;
+        }
+
+        // Push the platform's insets onto every node that claims them. ONE walk, on
+        // the frames that can change either input: a reconcile (a new node, or a
+        // flipped `safeArea:` opt) or an Env notification. A settled frame does not
+        // run this at all -- the same invariant CheckUi pins for describe/measure.
+        //
+        // The OVERLAY root gets it too: a dialog is drawn on top of the whole window
+        // and must clear the notch as well. Nodes inside either tree that did not
+        // declare the opt are left alone (their mask is NONE, so the fold never
+        // touches their padding).
+        private function applySafeArea():void
+        {
+            this._safeDirty = false;
+            var ins:Edges = this.env != null ? this.env.safeArea : null;
+            if (ins == null)
+            {
+                throw new Error('asaot.ui: Env.safeArea returned null -- an Env must answer all four sides '
+                    + '(use Edges.of(0,0,0,0) for "none")');
+            }
+            if (this.root != null) this.applySafeAreaIn(this.root, ins);
+            if (this.overlayRoot != null) this.applySafeAreaIn(this.overlayRoot, ins);
+        }
+
+        private function applySafeAreaIn(n:UiNode, ins:Edges):void
+        {
+            var m:int = n.safeAreaMask;
+            if (m != SafeArea.NONE)
+            {
+                n.setSafeInsets((m & SafeArea.TOP) != 0 ? ins.top : 0,
+                    (m & SafeArea.RIGHT) != 0 ? ins.right : 0,
+                    (m & SafeArea.BOTTOM) != 0 ? ins.bottom : 0,
+                    (m & SafeArea.LEFT) != 0 ? ins.left : 0);
+            }
+            var kids:Vector.<UiNode> = n.children;
+            for (var i:int = 0; i < kids.length; i++) this.applySafeAreaIn(kids[i], ins);
+        }
+
         // THE NODE UNDER A ROOT-SPACE POINT. Touch arrives without a target (the
         // platform that would have hit-tested for us does not exist here -- G5), so the
         // library has to answer the question itself, and the honest way is to ask the
@@ -667,6 +788,14 @@ package asaot.ui
                     this.stageContainer.setChildIndex(this.overlayRoot.backing, top);
                 }
             }
+
+            // SAFE AREA FOLD (MOBILE.md E2). Runs BEFORE the layout gate, because
+            // folding an inset changes padding -- i.e. it is a layout input -- and
+            // AFTER both reconciles, because its input is two-sided: a new node with
+            // a `safeArea:` opt, or an Env notification that moved the numbers.
+            // `_safeDirty` is the second case; it is latched by envChanged rather
+            // than acted on there, so the engine is only written at a frame boundary.
+            if (reconciled || this._safeDirty) this.applySafeArea();
 
             var layoutRan:Boolean = false;
             if (this.root != null && (this.root.dirty & (Dirty.M_MEASURE | Dirty.M_ARRANGE)) != 0)

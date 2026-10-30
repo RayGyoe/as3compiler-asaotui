@@ -88,7 +88,7 @@ package demo
                 new DocPage("toast", "toast", 8, "A transient corner message."),
                 new DocPage("toastHost", "toastHost", 8, "The bottom-right stack toasts drop into."),
 
-                // The five pages about the framework itself, not about one widget.
+                // The SIX pages about the framework itself, not about one widget.
                 // They are LAST in the sidebar because they are the reference you
                 // reach for after a kind's page answered "what does it look like":
                 // these answer "which field do I write to make it do that".
@@ -101,7 +101,9 @@ package demo
                 new DocPage("events", "events", 9,
                     "Right click with its stage point, double click behind a runtime flag."),
                 new DocPage("keyboard", "keyboard", 9,
-                    "The focus ring, Tab, Enter/Space, the per-kind key map, and the keymap.")
+                    "The focus ring, Tab, Enter/Space, the per-kind key map, and the keymap."),
+                new DocPage("env", "env", 9,
+                    "The platform's answers -- hasHover, safeArea, pixelRatio -- and who reads them.")
             ];
         }
 

@@ -420,6 +420,17 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // scrollRect checks, the cache-identity check and the click count (the
                  // spilling child takes the mouse again). Measured, then reverted.
                  'widgets/clip',
+                 // `env` is MOBILE.md E1/E2: the platform facts arrive through ONE
+                 // interface (`Env`, bound with `UiApp.bindEnv`) and the safe-area
+                 // insets are consumed in ONE place (a container's own padding).
+                 // It is the only probe that drives an ENV: the desktop answers are
+                 // asserted as the floor every app gets, then a FakeEnv pulls the
+                 // same window through a phone rotation (47 -> 0 -> bottom-only ->
+                 // 47) and a hover-capable-pointer flip, because a desktop window
+                 // can never show either. Teeth: probes/widgets/env/mutation.cjs 7/7,
+                 // including one that makes every node claim every edge (the
+                 // "scatter it everywhere" E2 forbids).
+                 'widgets/env',
                  // probes/perf is not a pixel probe but a stopwatch: 300 keyed buttons,
                  // timed idle / describe / one-node-change / solve / paint phases.
                  // Its one assertion is a 15ms ceiling on a NO-CHANGE describe

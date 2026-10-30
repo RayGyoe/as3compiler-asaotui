@@ -1,0 +1,45 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE FOLD NEVER ADDS THE INSET: `safeArea: true` becomes decoration and the content starts under the notch
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL root padding top is 4, want 4+47=51; root padding bottom is 4, want 4+34=38; root padding bottom is 4, want 38; the engine pointer did not hover the first row; the hovered row has no hover state; hover did not come back when the Env regained a pointer; the row did not get its hover state back;
+     FAIL  rect a[y] want 51 got 4
+     FAIL  rect plain[y] want 81 got 34
+     FAIL  rect inner[y] want 85 got 38
+     ... and 9 more
+     restore: byte-identical (65841a89b46ad7ee)
+M2  CAUGHT  EVERY NODE CLAIMS ALL FOUR EDGES: the `safeArea:` opt stops being a choice, so the inset lands on nodes that never asked -- exactly the "scatter it everywhere" E2 forbids
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the inset leaked into a child's padding (51); with the top inset gone the third row is at y 112.24000000000001, want 74;
+     FAIL  rect a[h] want 30 got 81
+     FAIL  rect plain[y] want 81 got 89.34169278996865
+     FAIL  rect plain[h] want 40 got 89
+     ... and 13 more
+     restore: byte-identical (c41c880ad94829dd)
+M3  CAUGHT  THE INSET LANDS ON THE WRONG SIDE: every edge claims the TOP number, so a phone with a status bar and a home indicator reserves one of them twice and the other never
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL root padding bottom is 51, want 4+34=38; root padding bottom is 4, want 38;
+     FAIL  rect a[h] want 30 got 27.6
+     FAIL  rect plain[y] want 81 got 78.6
+     FAIL  rect plain[h] want 40 got 36.8
+     ... and 9 more
+     restore: byte-identical (65841a89b46ad7ee)
+M4  CAUGHT  HAS HOVER IS NOT TAKEN FROM THE ENV: the 103 hover branches keep running on a window with no hover-capable pointer
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL Env.hasHover(false) did not reach UiApp; hasHover=false left the hover chain lit; hasHover=false left a row painted hovered; a pointer move revived hover on a hasHover=false window;
+     restore: byte-identical (75e83575a8499c83)
+M5  CAUGHT  A REBIND KEEPS THE OLD SUBSCRIPTION: a platform nobody is listening to keeps driving the app, invisibly, for the rest of the session
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the OLD env still notifies the app after a rebind; re-binding produced 2 notifications, want 1; re-binding the same env stacked a listener (3 notifications for one change, want 1);
+     restore: byte-identical (75e83575a8499c83)
+M6  CAUGHT  AN ENV CHANGE NEVER WAKES A FRAME: the change is latched and the reflow that would consume it never runs, so the app is stuck on the old geometry
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL with no safe area the first row is at y 51, want 4; root padding top is 51, want 4; the top-only child is at y 169, want the part's own y 121 + its author padding 1; with the top inset gone the third row is at y 121, want 74; root padding top is 51, want 4; back on a DesktopEnv the first row is at y 51, want 4; root padding top is 51, want 4;
+     restore: byte-identical (75e83575a8499c83)
+M7  CAUGHT  THE DESKTOP FLOOR ANSWERS A FAKE SAFE AREA: every app in this repo would start with a notch it does not have, and nothing would be able to tell
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the desktop safe area is not all zero; back on a DesktopEnv the first row is at y 24, want 4; root padding top is 24, want 4;
+     restore: byte-identical (6ab7d717f143d822)
+
+MUTATION env: 7/7 caught, 0 problem(s)
+RESULT: PASS

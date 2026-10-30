@@ -50,6 +50,18 @@ package asaot.ui
         // click means for every existing control.
         public var onDoubleClick:Function;  // Function()
 
+        // SAFE AREA (MOBILE.md E2, 6.4). Which edges of THIS element want the
+        // platform's insets added to its padding: `true` (all four), an edge name
+        // ("top"), or an array of them (["top", "bottom"]). null/false is the
+        // default -- "none" -- so every node that predates the feature and every
+        // node that does not ask keeps the exact padding it had.
+        //
+        // The INTENT is the root container: full-bleed against the status bar /
+        // notch while its CONTENT stays clear of it. That is why the surface still
+        // covers the whole window (the inset goes into PADDING, inside the box)
+        // instead of the box being shrunk and the gap left to the window colour.
+        public var safeArea:*;
+
         public function Element(kind:String):void
         {
             super(kind);
@@ -61,6 +73,7 @@ package asaot.ui
             this.onClick = null;
             this.onRightClick = null;
             this.onDoubleClick = null;
+            this.safeArea = null;
         }
     }
 }

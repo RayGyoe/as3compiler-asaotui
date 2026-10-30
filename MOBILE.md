@@ -29,6 +29,7 @@
 | 2 | 触摸拖动滚动 + 惯性（S1/S2） | 手机上「滚不动」等于不可用 | M |
 | — | ↳ **✅ S1/S2 已落地（2026-10-31）** | `TouchScrollable` + `ScrollViewWidget` 的 1:1 拖动/轴锁/press 撒回 + 惯性（按 dt 积分，`momentum`/`decelerationRate`）；门 `probes/widgets/touch-scroll`，变异 10/10。**S3 回弹、S4 分页、S5 嵌套仲裁仍未做** | Done |
 | 3 | `Env`（安全区 / 键盘 / 密度 / hasHover）（E1/E2） | 刘海与键盘一挡，界面就残；且 `hasHover` 决定 103 处 hover 是否该跑 | M |
+| — | ↳ **✅ E1/E2 已落地（2026-10-31）** | `Env`/`EnvBase`/`DesktopEnv`/`SafeArea` + `UiApp.bindEnv`（订阅、`hasHover` 一处裁决）+ 根容器的 `safeArea:` 折进 **padding**；门 `probes/widgets/env`，变异 **7/7**。**键盘矩形、`appState`、`reduceMotion`、`isDark` 只有投递、没有消费者**（S7/E5/E7/E8） | Done |
 | 4 | `navStack` + `appBar` + `tabBar`（N1–N3） | 现在**没有"页面"概念**，手机上没有返回栈 | L |
 | 5 | 触控态样式 + `hitSlop` + `pointerEvents`（P5/P6） | 触摸设备没有 hover；小目标点不中 | S |
 | 6 | 列表四件 + 下拉刷新（S6/C4） | 列表只能当展示用，不能当列表用 | M |
@@ -48,8 +49,8 @@ NSH 只补「声明式属性 + 一层共享的行为组件」。
 | 能力 | NSH 谁做 | 我们必须自己做的部分 | 我们的现状 |
 |---|---|---|---|
 | 滚动惯性 / 回弹 / 吸附 | UIScrollView / ScrollView | 触摸拖动 + 物理 + 与按压竞争 | 自述「no momentum / elastic overscroll」（`ScrollViewWidget.as:32`） |
-| 软键盘弹出与顶起 | 平台自动 | 键盘矩形 → inset → 滚入视口 | `softKeyboardRect` 全库 0；`SDL_StartTextInput` 已调用 |
-| 安全区 | 平台视图自动 | 平台查询 → 环境值 → 根 padding | `safeArea` 全库 0 |
+| 软键盘弹出与顶起 | 平台自动 | 键盘矩形 → inset → 滚入视口 | **只投递不消费**：`Env.keyboardRect` 有值有订阅，**没有消费者**（S7 未做）；`SDL_StartTextInput` 已调用 |
+| 安全区 | 平台视图自动 | 平台查询 → 环境值 → 根 padding | **✅ 消费侧已落地**：`Env.safeArea` → 根容器 `safeArea: true` 的 padding（E2）；**平台查询仍缺**（B9，桌面全 0） |
 | 手势（pan/pinch/rotate） | 平台识别器 | 识别器 + 仲裁 + 轴锁 | `pinch` 0、`rubber` 0 |
 | 无障碍树 | 平台自动（真视图层级） | 自绘语义树 → 平台 a11y 节点 | 只有 `role/ariaName/ariaValue` 三个**形状**字段 |
 | 文本选择/光标/复制菜单 | 系统文本控件 | —— | **已有**：真 `TextField type="input"`，caret/selection/masking 走运行时 |
@@ -88,28 +89,28 @@ NSH 的 common props 里，按压相关是：`onPress` / `onLongPress` / `onPres
 
 | 指标 | 值 |
 |---|---|
-| kit `.as` 文件 | **183** |
+| kit `.as` 文件 | **187** |
 | 注册 kind / 作者工厂 | **41 / 47** |
 | `Style` 字段 | **33**（flexbox 子集 + 视觉；**无 grid、无 z-index**） |
-| 处理 `MouseEvent` 的文件 | **26 / 183**，**186 处**引用 |
-| `hover` 相关引用 | **113 处**（悬停假设遍布控件层） |
-| 文档站页数 | **52**（`new DocPage`） |
-| 验收门 | **60**（`node tools/gates.cjs`；含 `probes/widgets/pointer-touch`、`touch-scroll`） |
+| 处理 `MouseEvent` 的文件 | **26 / 187**，**186 处**引用 |
+| `hover` 相关引用 | **121 处**（悬停假设遍布控件层；**2026-10-31 起有了一处裁决点**：`UiApp.setHasHover` 由 `Env.hasHover` 驱动） |
+| 文档站页数 | **53**（`new DocPage`） |
+| 验收门 | **62**（`node tools/gates.cjs`；含 `probes/widgets/pointer-touch`、`touch-scroll`、`env`） |
 | `VirtualListWidget` | **202 行**，固定行高 |
 
-**2026-10-31 复核（M0 + M1 前半落地后，命令不变）**：kit `.as` **183**；`MouseEvent` 耦合 **26 / 183 文件，186 处**（新增的四件都在输入层，没有把鼠标耦合摊到控件上）；`hover` **113**；`TouchEvent` **18**；`inertia` **1**（滑行在 `ScrollViewWidget` 里，不再只是注释）。
+**2026-10-31 复核（M0 + M1 前半 + E1/E2 落地后，命令不变）**：kit `.as` **187**；`MouseEvent` 耦合 **26 / 183 文件，186 处**（新增的四件都在输入层，没有把鼠标耦合摊到控件上）；`hover` **121**；`safeArea` **43**（消费侧已接线）；`TouchEvent` **18**；`inertia` **1**（滑行在 `ScrollViewWidget` 里，不再只是注释）。
 
 ### 2.2 移动端令牌：全 0
 
 | 令牌 | 命中 | 含义 |
 |---|---|---|
 | `TouchEvent` / `Multitouch` / `TouchPhase` | **18** / 0 / 0 | **已订正（2026-10-31）**：库内**有**触摸**路由**了（`PointerRouter` 与 `UiApp` 的四个监听），但**平台仍不产生事件**（G5）——「有消费者、没有输入源」这一条要分清；多指与 phase 抽象仍为 0 |
-| `safeArea` / `keyboardHeight` / `softKeyboard` | 0 / 0 / 0 | 安全区与键盘 inset 无人消费 |
-| `stageOrientation` / `Capabilities` / `pixelRatio` | 0 / 0 / 0 | 方向、密度、物理像素比都读不到 |
+| `safeArea` / `keyboardRect` / `keyboardHeight` | **43** / **8** / 0 | **部分订正（2026-10-31）**：安全区**有消费者**了（`Env.safeArea` → 根容器 padding，E2）；`keyboardRect` 只被**投递**（界面里还没有读它的控件，S7 未做） |
+| `stageOrientation` / `Capabilities` / `pixelRatio` | 0 / **5** / **11** | **部分订正（2026-10-31）**：`DesktopEnv` 读 `Capabilities.language` 填 `locale`；`pixelRatio` 是**构造参数**而不是真值（`Capabilities.screenDPI` 在这个运行时是硬编码 96/72，**不可当密度用**）—— 方向仍读不到 |
 | `hitSlop` / `pointerEvents` / `longPress` / `pressDelay` | **1** / 0 / **4** / 0 | **部分订正（2026-10-31）**：`longPress` 有常量与计时器（`InputConstants.LONG_PRESS_MS`），`hitSlop` 有 1 处常量（`MIN_HIT_PT`，**尚未接入命中**）；`hitSlop`/`pointerEvents` 的**描述符字段**仍缺，`pressDelay` 仍是常量而不是 per-control 默认值 |
 | `navStack` / `appBar` / `tabBar` / `bottomSheet` | 0 / 0 / 0 / 0 | 手机骨架全缺 |
 | `rubber` / `pinch` | 0 / 0 | 无回弹、无捏合 |
-| `reduceMotion` / `appState` / `screenReader` | 0 / 0 / 0 | 系统偏好与前后台状态拿不到 |
+| `reduceMotion` / `appState` / `screenReader` | **9** / **10** / 0 | **部分订正（2026-10-31）**：`Env` 里**有字段有订阅**（`reduceMotion`/`appState`），但**没有消费者**（E8/E7 未做）；`screenReader` 仍为 0 |
 | `inertia` | 2（**都在注释里**：`ScrollViewWidget.as:32` 的自述 + `UiApp.as:543`） | 不是实现 |
 | `accessibility` | 2（`Element.as` 的注释） | 只有形状字段，无语义树 |
 
@@ -165,8 +166,8 @@ caret / 选区 / 密码掩码 / 组字都走运行时。所以旧评估里的 E3
 | `WebView` | — | — | 不做 |
 | `Video` | — | — | 不做 |
 | `Overlay` | `overlay` + `OverlayChrome` | ✓ | 叠放靠 display order（`overlay.as:10`，引擎无 z-index） |
-| Safe area | — | ✗缺 | 无 API、无消费者（E1/E2） |
-| Keyboard inset | — | ✗缺 | 无 API、无消费者（E1） |
+| Safe area | `safeArea:` 选项 + `Env.safeArea` | ✓ | **E1/E2 已落地**：insets → 容器 padding（不缩盒子），桌面全 0；真实平台值仍缺（B9） |
+| Keyboard inset | `Env.keyboardRect` | ~ | API 有、订阅有，**消费者没有**（S7：焦点框滚入可见区） |
 | Text selection | 运行时 `TextField` | ~ | 无 `setSelection` 等 ref 方法（T1） |
 | `If` / `Each` | AS3 原生 `if` / `for` / `Array` | ✓ | 形态不同，语义等价 |
 
@@ -252,8 +253,8 @@ caret / 选区 / 密码掩码 / 组字都走运行时。所以旧评估里的 E3
 
 | ID | 事项 | 现状证据 | 改法 | 优先级 |
 |---|---|---|---|---|
-| E1 | `asaot.ui.Env`：`safeArea` / `keyboardRect` / `pixelRatio` / `hasTouch` / `hasHover` / `reduceMotion` / `appState` / `locale`，**读即订阅** | 全部 0 命中 | 接口 + 桌面实现（读 `Stage`/`Screen` 回退）；平台填充留给 B 组；订阅复用现有 `Observable`/`Subscription` | **P0** |
-| E2 | 安全区消费：**根节点 padding**（或 `safeAreaBox` 容器），不在引擎里散布 inset | 无 | 只在一处消费；`Style.inset` 已存在且是 CSS 定位语义，**不要**复用这个名字 | **P0** |
+| E1 | `asaot.ui.Env`：`safeArea` / `keyboardRect` / `pixelRatio` / `hasTouch` / `hasHover` / `reduceMotion` / `appState` / `isDark` / `locale`，**读即订阅** | ✅ **已落地（2026-10-31）**：`Env`（接口）/`EnvBase`（可写 + compare-before-notify）/`DesktopEnv`（桌面地板）；`UiApp.env` + `bindEnv`（重绑退订、`bindEnv(null)` **抛**）；`hasHover` 接上 `setHasHover` 那唯一裁决点。门 `probes/widgets/env`，变异 7/7 | 平台填充留给 B 组；`pixelRatio` 是**构造参数**（运行时没有 DPR 真值） | ✅ |
+| E2 | 安全区消费：**根节点 padding**（或 `safeAreaBox` 容器），不在引擎里散布 inset | ✅ **已落地（2026-10-31）**：`Element.safeArea`（`true` / `"top"` / `["top","bottom"]`，其余**抛**）→ `UiNode` 把 insets **折进 `resolved.padding`**（盒子不缩，背景铺到刘海下），只认声明过的边、不与作者 padding 打架；未声明的节点一行不动 | 只在一处消费（`UiNode.foldSafePadding`）；**没有**复用 `Style.inset` | ✅ |
 | E3 | 输入法移动化：键盘类型 / 回车键 / 自动大写 / 自动更正 / 密码 / 多行自增高 | `emit` 里 `softKeyboardType`/`returnKeyLabel`/`needsSoftKeyboard` 全 0 | AIR **有**这三个 API ⇒ **遗留欠账**（B 组），不是增强；库侧先出字段与默认值 | P1 |
 | E4 | 字号缩放（`fontScale` 参与度量与行高） | 无 | 与「手算高度」那类逻辑冲突，需一起改 | P2 |
 | E5 | 深色跟随系统 | 只有库内 `Theme`（运行时切换已就绪） | 读 `Env.isDark` 即可 | P2 |
@@ -399,8 +400,24 @@ public interface Env {
 }
 ```
 
-桌面实现：`safeArea` 全 0、`keyboardRect` 全 0、`pixelRatio` 读 `Stage` 的物理/逻辑比、
-`hasHover = true`、`appState = "active"`。**平台填充只改实现，不改接口。**
+桌面实现：`safeArea` 全 0、`keyboardRect` 全 0、`hasHover = true`、`hasTouch = false`、
+`appState = "active"`、`isDark = false`、`reduceMotion = false`、`locale = Capabilities.language`。
+**平台填充只改实现，不改接口。**
+
+**落地口径（2026-10-31）**：上面这份形状是 `kit/asaot.ui.Env` 的**逐字实现**，另有
+`EnvBase`（九个值 + 九个 compare-before-notify writer + `Observable` 订阅）和 `DesktopEnv`
+（桌面地板）。三处与本节的原始设想不同，都是**实测后改的**：
+
+- `pixelRatio` **不是**「读 `Stage` 的物理/逻辑比」——运行时没有这个 API 可读：
+  `Capabilities.screenDPI` 是硬编码 96（Windows）/72（其余）常量，窗口后端的 `ASC_win_scale`
+  是 C 侧全局。所以它是**构造参数**，默认 1；拿 `screenDPI` 反推等于编一个数。
+- `hasTouch` 同理：`Capabilities.touchscreenType` 在这个运行时也是硬编码 `"none"`。
+- `DesktopEnv` 只有 `locale` / `appState` / `hasHover` 三个**真值**，其余是**诚实默认**，
+  写在这份文档里而不是藏进注释（见 `DesktopEnv.as` 头部）。
+
+**消费侧今天只有两条**：`hasHover` → `UiApp.setHasHover`（103 处 hover 分支的唯一裁决点）；
+`safeArea` → 根容器 padding（E2）。其余七个**只投递**：`keyboardRect`(S7)、`appState`(E7)、
+`isDark`(E5)、`reduceMotion`(E8)、`locale`(E6)、`pixelRatio`/`hasTouch`（B9/B5）。
 
 ### 6.4 描述符新增字段（与 `Widget` 契约一致）
 
@@ -412,7 +429,7 @@ public interface Env {
 | `hitSlop` / `hitSlopEdges` | 同上 | `0` | `Widget.measure`（画透明填充） |
 | `pointerEvents` | 同上 | `"auto"` | 绑定阶段写 `mouseEnabled`/`mouseChildren` |
 | `presentation` | `select` / `menu` / `popover` / `datepicker` | `"popover"` | 工厂：小屏选 `"sheet"` / `"fullscreen"` |
-| `safeArea` | 根容器 | `"none"` | 布局前加 padding |
+| `safeArea` | 根容器（任何 Element 都接受） | `"none"` | ✅ **已实现**：`true` / 边名 / 边名数组 → 折进 padding；`UiNode.foldSafePadding` |
 | `decelerationRate` | `scrollView` / `vlist` | 平台值 | 惯性积分 |
 | `paging` | `scrollView` | `false` | 吸附 |
 
@@ -430,7 +447,7 @@ public interface Env {
 |---|---|---|
 | **M0 触摸可路由** | P1/P2/P5 + 合成 mouse 兼容层 | 新增 `probes/widgets/pointer-touch`：用**合成 touch 序列**驱动 chip/button/switch；现有 `probes/widgets/*` 在触摸驱动下全绿。**2026-10-31：前半已达成** —— 探针在门里，驱动 button 的 tap / 拖拽 / scroller 延迟 / 取消 / hover 两态，变异 7/7；**「现有全部探针改触摸驱动」还没做**（它们仍走 `dispatchMouse`） |
 | **M1 可滚** | S1/S2/S3 | 确定性回放：一次 fling 的位移曲线与手算表一致；越界回弹回位误差 < 1pt。**2026-10-31：S1/S2 已达成** —— `probes/widgets/touch-scroll` 钉 1:1 位移（20pt→20px 精确）、slop 不滚动、轴锁、press 撒回、`momentum:false` 停在释放点、拖动越界钉在 180、程序化滚动取消滑行，变异 10/10；**S3 回弹没做**，所以「回位误差 < 1pt」这一条**不适用**；位移曲线只用「更远 / 不越界 / 最终停下」三条粗断言（精确距离是帧时钟的函数，钉死它等于钉死机器的忙闲） |
-| **M2 有环境** | E1/E2/E7 | 模拟 `safeArea=(47,0,34,0)` + `keyboardRect` 后，根 padding 与「输入框滚入可见区」逐项断言 |
+| **M2 有环境** | E1/E2/E7 | 模拟 `safeArea=(47,0,34,0)` + `keyboardRect` 后，根 padding 与「输入框滚入可见区」逐项断言。**2026-10-31：E1/E2 已达成** —— `probes/widgets/env` 用 FakeEnv 把同一棵树推过 47/0/34/0 → 全 0 → 仅底 34 → 再回 47，逐项断言根 padding（51/4/38/4）、盒子不缩、未声明的子节点不动、只认声明过的边，并钉「一次平台改动 = 一次通知」与重绑退订；变异 7/7。**`keyboardRect` 与「滚入可见区」没做（S7）**，`appState` 停帧也没做（E7），所以这条**只算三分之二** |
 | **M3 有骨架** | N1–N5 | 三页栈：push/pop/系统返回/侧滑；页面状态保持；`navStack` 深度断言 |
 | **M4 可输入** | E3/T1–T4 | 键盘矩形变化 → 焦点框滚入 → 收起复原；`setSelection` 生效 |
 | **M5 像应用** | C4–C11 + E5/E8 | 下拉刷新 + 滑动删除 + 深色 + 后台不烧电 |
@@ -484,7 +501,7 @@ cd asaotui
 node tools/mobile-gap-scan.cjs          # 本文所有计数（只读，不编译、不写文件）
 node tools/mobile-gap-scan.cjs --json   # 机读形态
 node tools/compiler-fingerprint.cjs     # 复核 as3compiler/ 零改动
-node tools/gates.cjs                    # 61 道门（含本文 M0 的 pointer-touch、M1 的 touch-scroll）
+node tools/gates.cjs                    # 62 道门（含本文 M0 的 pointer-touch、M1 的 touch-scroll、M2 的 env）
 ```
 
 > 本文**不给门的绿/红判断**（只做静态计数与代码事实）。上一次全量落盘是
@@ -499,6 +516,19 @@ node tools/gates.cjs                    # 61 道门（含本文 M0 的 pointer-t
 | 变异 `probes/widgets/pointer-touch/mutation.cjs` | **7/7 全中**：合成事件改投 stage / 每个 press 都延迟 / 不延迟 / slop 不再否决点击 / 去掉 synthetic 守卫 / `pickAt` 不问引擎 / 取消后不释放 press 槽 |
 | pick 与引擎对账 | 4 个点位（三个控件中心 + 根 padding）上 `UiApp.pickAt(x,y)` 必须等于引擎 `dispatchMouse` 派生出的 hover 节点 —— 这是「触摸不许自造第二套命中规则」的**测量**，不是声明 |
 | 仍然缺的 | 真触摸（G5：后端不出 `TouchEvent`）、`hitSlop`/44pt 最小命中（P6）、触控态视觉（P5 后半）、`Env`（E1）、手势仲裁（P3）、多指（P4） |
+
+**M2 前半的落地证据（2026-10-31，仍未碰编译器）**
+
+| 项 | 结果 |
+|---|---|
+| `probes/widgets/env` | **PASS / 0 failures**（43 checks：8 条矩形 ×4 + 8 个像素点 + 程序内 30 余条状态断言）。树的根是 `column(padding 4, safeArea: true)`，绑定 FakeEnv `(47,0,34,0)` 后再 `mount` |
+| 根 padding | `4+47=51` / `4` / `4+34=38` / `4`，且**盒子仍是 320×240**（inset 进 padding，不是缩小窗口） |
+| 只认声明过的边 | `safeArea: ["top"]` 的节点在**只有底边**变化时一行不动；`safeArea: false` 的节点始终是作者 padding |
+| 平台改动的往返 | 47/0/34/0 → 全 0 → 仅底 34 → 47/0/34/0，每一步都落到矩形上；**一次平台改动只产生一次通知**（`EnvBase` 的 compare-before-notify） |
+| 重绑 | `bindEnv` 换 env 后退订旧的（旧 env 再 `notify` 打不到 app）、重复绑同一个不叠订阅；`bindEnv(null)` **抛** |
+| `hasHover` | `false` ⇒ 链接清空、指针移动不许复活、整棵树的 hover 态归零；`true` ⇒ 恢复（复用了 `pointer-touch` 那条钉子） |
+| 变异 `probes/widgets/env/mutation.cjs` | **7/7 全中**：不折 inset / 每个节点都宣称四条边 / inset 落到错误的边 / 不从 Env 取 `hasHover` / 重绑不退订 / 改动不唤醒帧 / 桌面地板编一个安全区 |
+| 仍然缺的 | 真平台数值（B9）、`keyboardRect` 的消费者（S7）、后台停帧（E7）、`reduceMotion`（E8）、`isDark`（E5）、locale/RTL（E6） |
 
 **M1 的落地证据（2026-10-31，同一轮继续，仍未碰编译器）**
 

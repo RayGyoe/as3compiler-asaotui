@@ -6,7 +6,7 @@
 > 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 41 个 kind / 47 个工厂**（第二批 media/feedback/data 九件、
 > 第三批**浮层六件 dialog/drawer/popover/menu/toast/select**、第五批**列表虚拟化 `virtualList` + 选择三件**
 > `tree`/`combobox`/`datePicker` 均已落地）；
-> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**52 页 / 10 组**，每页两个 live 示例 + 产生它的源码），
+> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**53 页 / 10 组**，每页两个 live 示例 + 产生它的源码），
 > 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**41/41**，变异 4/4）；
 > **浮层走第二棵保留树**（`View.renderOverlay()` + `UiApp.overlayRoot`），主树因此不再为弹层重解布局。
 > 第四轮（2026-10-24）补的是**交互动线**：`disabled` + `hover/pressed/focused` 四态绘制、`textField` 编辑回写、
@@ -135,6 +135,17 @@
 > 且「手指底下是谁」不是库自算的矩形，而是与引擎 hover **逐点对账**过的。真触摸仍挂在 **G5**
 > （窗口后端不产生 `TouchEvent`），所以这一轮的诚实说法是：**路由与按压语义可验，平台输入仍缺**。
 
+> 第四十三轮（2026-10-31）补的是**环境层（MOBILE.md E1/E2）**：`Env`（接口）/ `EnvBase`（可写 +
+> compare-before-notify）/ `DesktopEnv`（桌面地板）/ `SafeArea`（`safeArea:` 选项的解析），
+> `UiApp.env` + `bindEnv`（重绑退订、`bindEnv(null)` **抛**）。消费侧只有两条，而且都是「一处裁决」：
+> `hasHover` 接上 `UiApp.setHasHover`（103 处 hover 分支的唯一开关，此前**没有任何代码调用它**），
+> `safeArea` 折进**声明了 `safeArea:` 的那个容器的 padding**（盒子不缩，背景铺到刘海下，未声明的节点一行不动）。
+> 判据 `probes/widgets/env`（43 checks，FakeEnv 把同一棵树推过 47/0/34/0 → 全 0 → 仅底 34 → 47/0/34/0），
+> 变异 **7/7**。**其余七个值只投递、不消费**（`keyboardRect`→S7、`appState`→E7、`isDark`→E5、
+> `reduceMotion`→E8、`locale`→E6、`pixelRatio`/`hasTouch`→B9/B5），这一点写在 `Env.as` 与 `DesktopEnv.as`
+> 的头部，也列进了文档站新页 `env`。**`pixelRatio` 不是真值**：这个运行时没有可读的 DPR
+> （`Capabilities.screenDPI` 是硬编码 96/72 常量），所以它是构造参数，默认 1。
+
 ---
 
 ## 1 一句话分层结论
@@ -149,7 +160,7 @@
 | L3 控件库 | ✅ **47 个工厂 / 41 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**41 个 kind 全部上了文档站**，由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 文档站是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
 | L3 样式面 | ✅ **33 字段** | 见 §3.2；仅剩 `grid` 刻意缺席（`cursor` 第十五轮已落地） |
 | L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入退场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、**入场 140ms / 退场 120ms**；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**）+ `probes/widgets/motion` **23 项**（变异 **7/7**） |
-| L3 组合能力 | ✅ **52 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 52 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
+| L3 组合能力 | ✅ **53 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 53 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
 | L3 主题 | ✅ **运行时换肤（47 slot）** | `ThemeTokens.light()/dark()` + `Theme.setTheme(t)`：**拷入**、重建每 kind 基线、重建浮层 chrome、bump `themeEpoch()`；`UiApp` 把 epoch 变化翻译成「全树 `lastStyleStale` + `M_PAINT` + 一次 `Dirty.THEME` 重新 describe」⇒ **下一帧整棵树变**，且**不动几何**。暗色的状态混合方向与亮色相反（press 比 hover 更亮），`knob` 保持纯白。作者自定义经 `setControlDefault` 落在 **override 层**，跨 swap 存活。判据 `probes/widgets/theme` **75 项**（变异 **8/8**）；四条取色通路与三件探针自身的教训见 `reviews/theme-2026-10-27.md` |
 | L3 可访问性 | ⚠️ 半成品 | `role`/`ariaName` **仍只是字段**（无消费者）；但 `Control.tabEnabled` 现在真被 Tab 环读（`UiApp.collectFocus`）、`Element.disabled` 真阻断点击与导航 |
 
@@ -214,6 +225,7 @@ cd asaotui && node tools/scan.cjs kit/asaot/ui/list.as "public function"
 | `splitPane(first, second, opts)` | `SplitPaneNode` | 两段 + 一条可拖分隔条（第二十四轮）：`direction`: `row`/`column`、**`ratio`（第一段占比，0..1）**、`minSize`（**两侧地板**）、`dividerSize`、`onResize(ratio)`（拖动中逐像素 + 松手各报一次）；两段是**普通子节点**，widget 用 `setFlex(grow 0, shrink 0, basis px)` 锁死份额；`ratio` 低于地板时**按 minSize 夹住**（不是忽略） |
 
 配套（非控件）：`bindTo(owner, field)`、`Binding`、`Observable`、`Subscription`、
+**`Env`/`EnvBase`/`DesktopEnv`**（平台事实 + `UiApp.bindEnv`；`Element.safeArea` / `SafeArea` 决定哪几条边吃 inset）、
 `Dirty`、`Theme`、`Style`/`StyleRefinement`/`Fill`/`Edges`/`LengthEdges`/`Corners`/`Length`/`Size`/`TextStyle`、
 `Node`/`Element`/`ElementState`/`Control`、`Widget`/`Widgets`（控件扩展点）、`WidgetTeardown`（可选销毁钩子）、
 `PaintKit`、`OverlayChrome`（浮层调色板/风格常量）、`OverlayList`（菜单/下拉共用的行几何）、
@@ -1194,12 +1206,19 @@ kit 只挂窗口。四条硬规则（每条都有探针断言）：
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **59** 道门：
+一条命令跑全部 **62** 道门：
 
 ```sh
-node tools/gates.cjs          # 61/61 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-10-31b.txt）
+node tools/gates.cjs          # 62/62 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-10-31c.txt）
 ```
 
+> 第四十三轮（E1/E2）后的全量：**46 PASS / 15 FAIL / 1 SKIP**（`reviews/gates-macos-2026-10-31c.txt`，**62 道门**）。
+> 15 道红没有一道来自本轮：**9 道是本机没装 AIR SDK**（`exit 2`）；**2 道（G13 / descriptor DPI）是并发会话
+> 正在改 `as3compiler/` 造成的构建失败**（生成的 C 报 `static declaration of 'RangeError_new' follows
+> non-static declaration`，而报错的那几个程序一行 `asaot.ui` 都不含）；`G11` 因树脏报 `0/0`；其余 3 道
+> （`widgets/choice` 1 项、`widgets/imaging`、`build.sh --gpu` 2 项）是既有红。**本轮新加的门
+> `probes/widgets/env` 是 43 checks / 0 failures，画廊 tour 也是 PASS（53 页 / badPages=0）。**
+>
 > 第十二轮补那次全量：**44/44 PASS**（`reviews/gates-all-26.txt`，exit 0），包括新门 `probe lifecycle`（9 项）
 > 与 `kit listeners are all releasable`（29 wired / 0 raw），以及 6b6 改判后的
 > `docs app on AIR (adl): … pointer drill … (41/41 pages, 10/10 popups, 0 errors, 348/3107 destroyed)`。
@@ -1228,9 +1247,10 @@ node tools/gates.cjs          # 61/61 PASS 才叫绿（最新落盘 reviews/gate
 | 验收 | 命令 | 期望 |
 |---|---|---|
 | **参考运行时扫全站（第十一轮补，G24）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` | **41/41 页 × 10/10 弹层 × 0 runtime error**（`mxmlc` 编 → `adl` 跑 → 读应用自己写的 `air-trace.txt`）；变异 `tools/mutation-air-sweep.cjs` **5/5**（把槽位计数改回 `internalCount + i` ⇒ `#2006`；去掉「打开弹层」⇒ `OPENED` 缺；少走一页 ⇒ `visited 40/41`；去掉 `releaseListeners()` ⇒ 145 个 `#1009`；只悬停不投递 ⇒ 指针钻 `0/41`） |
+| **环境层（第四十三轮，E1/E2）** | `node tools/probe.cjs probes/widgets/env` | **43 checks**，0 failures：`DesktopEnv` 的九个答案（含 `locale == Capabilities.language` 的镜像断言）、insets 折进根 padding（`4+47 / 4 / 4+34 / 4`）且**盒子仍是 320×240**、只认声明过的边、未声明的节点不动、47→0→仅底 34→47 的往返、**一次平台改动 = 一次通知**、重绑退订、`bindEnv(null)` 抛、`hasHover` 两态；变异 `probes/widgets/env/mutation.cjs` **7/7**（不折 inset / 每个节点都宣称四条边 / inset 落到错误的边 / 不从 Env 取 `hasHover` / 重绑不退订 / 改动不唤醒帧 / 桌面地板编一个安全区） |
 | **指针钻：死节点上的 roll-out（第十二轮补，G25）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` + `node tools/listener-wiring.cjs` + `node tools/probe.cjs probes/lifecycle` | `air-sweep` 行末报 **3107 node(s) hovered and 348 of them destroyed**、0 errors（每页离开前悬停该页每个叶子，切页**下一拍**投递 `mouseOut`）；静态扫描 **29 wired / 0 raw**；探针 **9 项** 0 failures；变异 4/4 + 3/3 |
 | **滑块拖拽 + 回调参数（第九轮补）** | `node tools/probe.cjs probes/widgets/callback` + `node tools/callback-arity.cjs` | **24 checks**，0 failures（只点**未绑定**控件：checkbox/toggle/radio + 滑块的按下→拖动→越界夹紧→松手→松手后移动无效→纯点击）；变异 `probes/widgets/callback/mutation.cjs` **8/8**；静态门 15 调用 / 81 声明 / **0 违规**，变异 `tools/mutation-callback-arity.cjs` **6/6** |
-| **多页 App（组件文档站，52 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **52 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
+| **多页 App（组件文档站，53 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **53 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
 | **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **41/41** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
 | **高分辨率（HiDPI）自证** | `cd asaotui/ui-demo && node check-dpi.cjs` | `standard` 700×560(1×) vs `high` 1050×840(1.5×)，且两次 tour 文本**逐字节相同** |
 | **单页登录 App** | `cd asaotui/ui-demo && node build-and-run.cjs` | 8 项手算断言 + `750×563` 截图（1.5×）+ `RESULT: PASS` |

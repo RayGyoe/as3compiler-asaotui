@@ -1,0 +1,213 @@
+[PASS] probe widgets/chip (19 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/form (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/display (48 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/nav (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/anim (14 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/feedback (43 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/media (43 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/data (77 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/overlay (65 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/interact (25 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/flip (54 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/motion (23 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/vlist (26 checks, 0 failures)  (exit 0)
+[FAIL] probe widgets/choice  (exit 1)
+[probe] building choice
+[probe] build succeeded but no freshly built .exe in /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/widgets/choice
+[PASS] probe redraw (14 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/popup (26 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/typing (18 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/scrollbar (44 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/callback (24 checks, 0 failures)  (exit 0)
+[PASS] probe lifecycle (9 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/textfx (18 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/pointer (23 checks, 0 failures)  (exit 0)
+[FAIL] probe widgets/imaging  (exit 1)
+ 86171 |       if ((phys == asaot_ui_LayoutConstants_EDGE_TOP)) {
+       |           ~     ^                                   ~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/widgets/imaging/Main.c:86171:17: note: use '=' to turn this equality comparison into an assignment
+ 86171 |       if ((phys == asaot_ui_LayoutConstants_EDGE_TOP)) {
+       |                 ^~
+       |                 =
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/widgets/imaging/Main.c:86217:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 86217 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/widgets/imaging/Main.c:86217:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 86217 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |       ~     ^                               
+[PASS] probe widgets/table2 (22 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/stick (15 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/pointer-touch (30 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/touch-scroll (26 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/icon (66 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/keys (36 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/accordion (18 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/inputs (50 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/theme (75 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/actions (73 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/clip (33 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/env (43 checks, 0 failures)  (exit 0)
+[PASS] probe perf (1 checks, 0 failures)  (exit 0)
+[PASS] layout-check text half (133 checks, 0 failures)  (exit 0)
+[PASS] ui-demo CheckUi (33 checks, 0 failures)  (exit 0)
+[PASS] layout-check visual half (12 checks, 0 failures)  (exit 0)
+[PASS] gallery tour: 53 component pages (incl. the overlay tree), hand-computed rects (PASS)  (exit 0)
+[PASS] gallery kind coverage: all registered widgets are shown (41/41)  (exit 0)
+[PASS] docs demos pass only options the factories read (0 unknown)  (exit 0)
+[PASS] author callbacks carry their documented argument (24 calls / 174 handlers) (0 violations)  (exit 0)
+[FAIL] AIR arm (build.sh default) compiles under mxmlc  (exit 2)
+mxmlc-check.cjs: no AIR SDK -- pass --sdk <root>, or set AIRSDK_HOME, or put its bin/ on PATH
+[FAIL] build.sh --gpu selects renderMode + backend, app.xml untouched (26 checks, 2 failures)  (exit 1)
+  ok   --gpu d3d12 changes nothing but the <renderMode> line
+  ok   --gpu d3d12 passes --app-xml app.d3d12.xml
+  ok   --gpu d3d12 passes --gpu-backend d3d12
+  ok   --gpu direct exits 0
+  ok   --gpu direct writes <renderMode>direct</renderMode>
+  ok   --gpu direct changes nothing but the <renderMode> line
+  ok   --gpu direct passes --app-xml app.direct.xml
+  ok   --gpu direct names no backend (the platform default)
+  ok   plain `desc` exits 0
+  ok   plain `desc` says it builds from the tracked app.xml, passing no extra args
+  ok   an unknown --gpu mode is refused
+  ok   app.xml is byte-identical after all of the above
+[PASS] build.sh web: toolchain spawned, argv pinned, refusals, staged dir untracked (25 checks, 0 failures)  (exit 0)
+[SKIP] docs app on AIR (adl): every page, popups open, pointer drill, no runtime error  (exit 3: nothing violated, the compiler source MOVED mid-run)
+[PASS] kit listeners are all releasable (UiNode.listen + destroySubtree) (44 wired, 0 raw)  (exit 0)
+[FAIL] G13 air-app reach: closure keeps 5/5, both faces build+run (FAIL)  (exit 1)
+  arm B: --all-sources (control: must still work) builds and links (exit 0)
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/reach-freefn/ReachFreeFn.c:3379:18: note: previous implicit declaration is here
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/reach-freefn/ReachFreeFn.c:30154:45: warning: passing 'char *[3]' to parameter of type 'const char **' discards qualifiers in nested pointer types [-Wincompatible-pointer-types-discards-qualifiers]
+ 30154 |   as_throw(TypeError_new(as_str_concat_n(3, parts), 1123));
+       |                                             ^~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/reach-freefn/ReachFreeFn.c:8366:50: note: passing argument to parameter 'parts' here
+ 8366 | static char* as_str_concat_n(int n, const char** parts) {
+      |                                                  ^
+6 warnings and 10 errors generated.
+  arm B: --all-sources (control: must still work) emitted ReachFreeFn
+[FAIL] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (FAIL)  (exit 1)
+       |                      =
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/ui-demo/air-gallery-standard/GalleryApp.c:97869:24: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 97869 |           if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_AROUND)) {
+       |                ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/ui-demo/air-gallery-standard/GalleryApp.c:97869:24: note: remove extraneous parentheses around the comparison to silence this warning
+ 97869 |           if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_AROUND)) {
+       |               ~        ^                                               ~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/ui-demo/air-gallery-standard/GalleryApp.c:97869:24: note: use '=' to turn this equality comparison into an assignment
+ 97869 |           if ((justify == asaot_ui_LayoutConstants_JUSTIFY_SPACE_AROUND)) {
+       |                        ^~
+       |                        =
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/ui-demo/air-gallery-standard/GalleryApp.c:97873:26: warning: equality comparison with extraneo[gallery] BUILD FAILED (exit 1)
+[PASS] style scan: no Object-typed local is used as a condition (0 found)  (exit 0)
+[FAIL] G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (0/0 hashes)  (exit 1)
+FAIL: run 1 did not build
+FAIL: run 2 did not build
+FAIL: run 3 did not build
+FAIL: run 4 did not build
+FAIL: run 5 did not build
+FAIL: the 0 builds produced 0 distinct C files
+FAIL: artifact-1-struct-time__.c: expected clang to hit its error cap, it did not
+FAIL: artifact-1-struct-time__.c: 0 errors, expected at least 16
+FAIL: artifact-1-struct-time__.c: kinds [] != expected [Date._time, ServerSocketConnectEvent.socket, TextField.___restrict]
+FAIL: artifact-2-struct-socket-1-error.c: clang reported 0 errors, expected 1
+FAIL: artifact-2-struct-socket-1-error.c: kinds [] != expected [ServerSocketConnectEvent.socket]
+---- evidence appended to probes/g11-nondeterminism/run-2026-10-30.txt ----
+[FAIL] G14 array-in-Object-slot identity (26 cases, AOT vs AIR)  (exit 2)
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/obj-array-identity/aot-case.exe.c:838:38: note: passing argument to parameter 'e' here
+  838 | static _Noreturn void as_throw(void* e);
+      |                                      ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/obj-array-identity/aot-case.exe.c:28111:20: error: static declaration of 'RangeError_new' follows non-static declaration
+ 28111 | static RangeError* RangeError_new(char* message, int id);
+       |                    ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/obj-array-identity/aot-case.exe.c:3379:18: note: previous implicit declaration is here
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^
+10 errors generated.
+[PASS] G16 ternary-null (20 cases, AOT vs AIR) -- AOT deviations: none  (exit 0)
+[FAIL] G19 drawRoundRect, AOT vs AIR  (exit 2)
+[ab-round] mxmlc FAILED for Round
+[FAIL] G20 setTextFormat replaces the range (AOT vs AIR)  (exit 2)
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g20-settextformat/AotMain.exe.c:838:38: note: passing argument to parameter 'e' here
+  838 | static _Noreturn void as_throw(void* e);
+      |                                      ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g20-settextformat/AotMain.exe.c:28086:20: error: static declaration of 'RangeError_new' follows non-static declaration
+ 28086 | static RangeError* RangeError_new(char* message, int id);
+       |                    ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g20-settextformat/AotMain.exe.c:3379:18: note: previous implicit declaration is here
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^
+10 errors generated.
+[FAIL] G21 getTextFormat reads the run table (AOT vs AIR)  (exit 2)
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g21-gettextformat/AotMain.exe.c:838:38: note: passing argument to parameter 'e' here
+  838 | static _Noreturn void as_throw(void* e);
+      |                                      ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g21-gettextformat/AotMain.exe.c:28086:20: error: static declaration of 'RangeError_new' follows non-static declaration
+ 28086 | static RangeError* RangeError_new(char* message, int id);
+       |                    ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g21-gettextformat/AotMain.exe.c:3379:18: note: previous implicit declaration is here
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^
+10 errors generated.
+[FAIL] G22 closure statics initialise (AOT vs AIR, emitted C audited)  (exit 2)
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g22-closure-statics/AotMain.exe.c:838:38: note: passing argument to parameter 'e' here
+  838 | static _Noreturn void as_throw(void* e);
+      |                                      ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g22-closure-statics/AotMain.exe.c:28134:20: error: static declaration of 'RangeError_new' follows non-static declaration
+ 28134 | static RangeError* RangeError_new(char* message, int id);
+       |                    ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g22-closure-statics/AotMain.exe.c:3379:18: note: previous implicit declaration is here
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^
+10 errors generated.
+[FAIL] Vector vs Array throughput, both runtimes  (exit 2)
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/vec-vs-arr/bench-aot.exe.c:838:38: note: passing argument to parameter 'e' here
+  838 | static _Noreturn void as_throw(void* e);
+      |                                      ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/vec-vs-arr/bench-aot.exe.c:28086:20: error: static declaration of 'RangeError_new' follows non-static declaration
+ 28086 | static RangeError* RangeError_new(char* message, int id);
+       |                    ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/vec-vs-arr/bench-aot.exe.c:3379:18: note: previous implicit declaration is here
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^
+10 errors generated.
+[FAIL] style fromAny is total: 19 cases, AOT vs AIR  (exit 2)
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/style-fromany/style-fromany.exe.c:838:38: note: passing argument to parameter 'e' here
+  838 | static _Noreturn void as_throw(void* e);
+      |                                      ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/style-fromany/style-fromany.exe.c:33613:20: error: static declaration of 'RangeError_new' follows non-static declaration
+ 33613 | static RangeError* RangeError_new(char* message, int id);
+       |                    ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/style-fromany/style-fromany.exe.c:3379:18: note: previous implicit declaration is here
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^
+10 errors generated.
+[FAIL] Array(x) wraps on both runtimes (8 cases, AOT vs AIR)  (exit 2)
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/array-coerce/AotMain.exe.c:838:38: note: passing argument to parameter 'e' here
+  838 | static _Noreturn void as_throw(void* e);
+      |                                      ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/array-coerce/AotMain.exe.c:28086:20: error: static declaration of 'RangeError_new' follows non-static declaration
+ 28086 | static RangeError* RangeError_new(char* message, int id);
+       |                    ^
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/array-coerce/AotMain.exe.c:3379:18: note: previous implicit declaration is here
+ 3379 |         as_throw(RangeError_new((char*)"Error #1116", 1116));
+      |                  ^
+10 errors generated.
+[PASS] fingerprint porcelain parsing: no dropped records (PASS)  (exit 0)
+
+==== 46/62 gates PASS, 1 SKIPPED ====
+FAILED: probe widgets/choice | probe widgets/imaging | AIR arm (build.sh default) compiles under mxmlc | build.sh --gpu selects renderMode + backend, app.xml untouched (26 checks, 2 failures) | G13 air-app reach: closure keeps 5/5, both faces build+run (FAIL) | descriptor DPI A/B: standard 1x vs high >1x, same logical rects (FAIL) | G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (0/0 hashes) | G14 array-in-Object-slot identity (26 cases, AOT vs AIR) | G19 drawRoundRect, AOT vs AIR | G20 setTextFormat replaces the range (AOT vs AIR) | G21 getTextFormat reads the run table (AOT vs AIR) | G22 closure statics initialise (AOT vs AIR, emitted C audited) | Vector vs Array throughput, both runtimes | style fromAny is total: 19 cases, AOT vs AIR | Array(x) wraps on both runtimes (8 cases, AOT vs AIR)

@@ -158,6 +158,23 @@ package asaot.ui
         // `tabEnabled` is true, it is visible, and nothing above it is disabled.
         public var tabEnabled:Boolean;
 
+        // ---- safe area (MOBILE.md E1/E2) ---------------------------------
+        // `safeAreaMask` is the EDGES this node claims (SafeArea bitmask, mirrored
+        // from Element.safeArea); the four numbers are the platform's current
+        // insets for those edges, pushed in by UiApp.applySafeArea and folded into
+        // `resolved.padding` (see resolveStyle / foldSafePadding).
+        //
+        // TWO HALVES ON PURPOSE: the MASK is the author's statement (it survives a
+        // re-describe as one int compare), the VALUES are the platform's and can
+        // change without the description changing at all. Folded into padding rather
+        // than kept beside it, because padding is what the engine, PaintKit, the
+        // animator and every widget already read -- one number, one meaning.
+        public var safeAreaMask:int;
+        public var safeTop:Number;
+        public var safeRight:Number;
+        public var safeBottom:Number;
+        public var safeLeft:Number;
+
         // ---- backing internals ------------------------------------------
         public var shapeA:Shape;
         public var shapeB:Shape;
@@ -243,6 +260,9 @@ package asaot.ui
             this.action = null;
             this.tabEnabled = false;
             this.tabIndex = -1;
+            this.safeAreaMask = SafeArea.NONE;
+            this.safeTop = 0; this.safeRight = 0;
+            this.safeBottom = 0; this.safeLeft = 0;
             this.onRightClick = null;
             this.onDoubleClick = null;
             this.shapeA = null;
@@ -544,6 +564,19 @@ package asaot.ui
             // plain field on the retained node: only the focus path reads it.
             this.keyContext = desc.keyContext;
 
+            // SAFE AREA MASK (MOBILE.md E2). `safeArea: true | "top" | ["top",
+            // "bottom"]` names the edges whose platform inset is added to this
+            // node's padding. Parsed here, into an int, so an unchanged opt costs
+            // one comparison; a CHANGE re-resolves because the fold lives in
+            // `resolved.padding` and a re-resolve is what puts the new mask's
+            // numbers (or the author's, when the mask goes back to none) there.
+            var sam:int = SafeArea.maskOf(Element(desc).safeArea);
+            if (sam != this.safeAreaMask)
+            {
+                this.safeAreaMask = sam;
+                this.resolveStyle(true);
+            }
+
             var dirBefore:String = this.directionOverride;
             var relayout:Boolean = this.widget.payload(this, desc);
             if (relayout)
@@ -609,6 +642,11 @@ package asaot.ui
             if (!keepPrevious) this.resolved.copyInto(this.previous);
             Theme.resolve(this.resolved, this.kind, this.parent != null ? this.parent.resolved : null,
                 this.lastStyle, this.directionOverride);
+            // THE SAFE AREA IS FOLDED HERE, before the diff, so that `previous`,
+            // `resolved`, the engine write below, PaintKit's content box and the
+            // animator all see the SAME padding. See foldSafePadding for why it is
+            // padding and not a second field.
+            if (this.safeAreaMask != SafeArea.NONE) this.foldSafePadding();
             var f:int = Style.diffFlags(this.previous, this.resolved);
             if ((f & 1) != 0) { this.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE | Dirty.M_PAINT; this.markLayoutDirty(); }
             if ((f & 2) != 0) { this.dirty |= Dirty.M_MEASURE | Dirty.M_PAINT; this.markLayoutDirty(); }
@@ -783,6 +821,80 @@ package asaot.ui
                 this.children[i].lastStyleStale = true;
                 this.children[i].staleDescendants();
             }
+        }
+
+        // ---- the safe area, folded into padding (MOBILE.md E1/E2) ---------
+        //
+        // MOBILE.md E2 asks for the platform's insets to be consumed in ONE place.
+        // That place is this node's own PADDING, and this pair of methods is the
+        // whole mechanism: `foldSafePadding` puts author padding + env inset into
+        // `resolved.padding` on a re-resolve, and `setSafeInsets` is how UiApp
+        // changes the env half afterwards.
+        //
+        // WHY PADDING AND NOT A DEDICATED `inset` FIELD: the engine applies padding,
+        // but so does everything that READS it -- PaintKit.insetY/contentH place a
+        // widget's inner content box, the animator interpolates padding, a card's
+        // title sits inside it. A second field would mean every one of those readers
+        // learns a second addition, and the reader that forgot would be off by the
+        // notch -- which no rect assertion can see, because the rects are the
+        // engine's and only the painted inner box would drift.
+        //
+        // WHY IT IS SAFE TO OVERWRITE `resolved.padding`: the resolver always hands
+        // out a NODE-owned Edges (`Style.copyEdges`/`mergeEdges` copy; unset stays
+        // null), so this never writes into an author's static refinement constant.
+        // The assignment builds a fresh Edges rather than nudging the old one for the
+        // same reason: `mergeEdges` may hand back the PARENT's or the refinement's
+        // pointer, and a `p.top = ...` would then edit a shared object.
+        //
+        // KNOWN EDGE, NOT COVERED: a padding TRANSITION on a node that also declares
+        // `safeArea:` animates `resolved.padding` from the animator, which writes the
+        // interpolated numbers back with the inset baked into both ends -- so the
+        // inset is interpolated rather than held constant for the duration of the
+        // tween. Nothing in the kit declares both today, and the probe does not claim
+        // it; a fixed inset across a padding tween needs the animator to know which
+        // part of the number is the author's.
+        private function foldSafePadding():void
+        {
+            var p:Edges = this.resolved.padding;
+            var t:Number = safeSide(p != null ? p.top : NaN, this.safeAreaMask, SafeArea.TOP, this.safeTop);
+            var r:Number = safeSide(p != null ? p.right : NaN, this.safeAreaMask, SafeArea.RIGHT, this.safeRight);
+            var b:Number = safeSide(p != null ? p.bottom : NaN, this.safeAreaMask, SafeArea.BOTTOM, this.safeBottom);
+            var l:Number = safeSide(p != null ? p.left : NaN, this.safeAreaMask, SafeArea.LEFT, this.safeLeft);
+            if (p != null && sameNum(p.top, t) && sameNum(p.right, r)
+                && sameNum(p.bottom, b) && sameNum(p.left, l)) return;
+            this.resolved.padding = new Edges(t, r, b, l);
+        }
+
+        // One side: an edge that does not claim the inset keeps the AUTHOR's value
+        // untouched (NaN included -- a NaN side means "unset", and turning it into 0
+        // would make this node start writing a padding the author never wrote).
+        private static function safeSide(v:Number, mask:int, bit:int, inset:Number):Number
+        {
+            if ((mask & bit) == 0 || inset == 0) return v;
+            return (isNaN(v) ? 0 : v) + inset;
+        }
+
+        private static function sameNum(a:Number, b:Number):Boolean
+        {
+            if (isNaN(a) && isNaN(b)) return true;
+            return a == b;
+        }
+
+        // UiApp pushes the platform's current numbers in here -- once per Env
+        // CHANGE, never per frame, and only on nodes whose mask claims an edge.
+        //
+        // A change RE-RESOLVES (rather than just re-folding) because the base is
+        // the author's resolved padding, which the fold has already overwritten:
+        // subtracting the old inset back out would work exactly once and then drift
+        // the moment a theme swap re-resolves in between. Re-resolving is O(1) per
+        // node, happens only on an env change, and makes the diff raise the layout
+        // bits by itself. `keepPrevious` is the same contract applyPayload uses for
+        // a direction override: `previous` is the animator's "from" value.
+        public function setSafeInsets(t:Number, r:Number, b:Number, l:Number):void
+        {
+            if (t == this.safeTop && r == this.safeRight && b == this.safeBottom && l == this.safeLeft) return;
+            this.safeTop = t; this.safeRight = r; this.safeBottom = b; this.safeLeft = l;
+            this.resolveStyle(true);
         }
 
         // Push the SUPPORTED style surface onto the layout engine. Uses ONLY the

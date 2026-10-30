@@ -47,6 +47,12 @@ package asaot.ui
             // natural right-click target -- that is what a context menu is FOR).
             if (opts.onRightClick != null) n.onRightClick = (opts.onRightClick as Function);
             if (opts.onDoubleClick != null) n.onDoubleClick = (opts.onDoubleClick as Function);
+            // The safe area opt is an Element property, so EVERY factory accepts it
+            // (`safeArea: true` is most useful on the root container, but a bottom
+            // bar that clears the home indicator is the same one line). Parsed into
+            // a bitmask in UiNode.applyPayload, never here: a factory builds a
+            // DESCRIPTION and must not read the environment.
+            if (opts.safeArea != null) n.safeArea = opts.safeArea;
             // `tabIndex` only exists on Control. Anything else ignores it silently
             // today (a box is not a tab stop at all), which is why it is read here
             // rather than added to every factory signature.

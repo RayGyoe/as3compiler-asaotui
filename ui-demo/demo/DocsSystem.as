@@ -1,8 +1,9 @@
-// demo/DocsSystem.as -- the five pages that are about the FRAMEWORK rather than
+// demo/DocsSystem.as -- the six pages that are about the FRAMEWORK rather than
 // about one widget: `style` (the field vocabulary), `theme` (the four layers the
 // resolver merges), `state` (bindings and notifications), `events` (the three
-// pointer callbacks and what the runtime gates) and `keyboard` (focus, the ring,
-// which kind answers to which key, and the keymap).
+// pointer callbacks and what the runtime gates), `keyboard` (focus, the ring, which
+// kind answers to which key, and the keymap) and `env` (the platform's own answers:
+// Env, and the safe area consumed as padding).
 //
 // WHY THESE FOUR PAGES EXIST (audit, 2026-10-26)
 // ----------------------------------------------
@@ -25,6 +26,7 @@ package demo
 {
     import asaot.ui.ActionRegistry;
     import asaot.ui.Dirty;
+    import asaot.ui.Env;
     import asaot.ui.Node;
     import asaot.ui.Subscription;
     import asaot.ui.Theme;
@@ -1004,6 +1006,73 @@ package demo
                                      style: DocsDemo.QUIET,
                                      onClick: function ():void { } }),
                             text("Tab reaches index 0 first", { style: MONO, ariaName: "" })
+                        ])
+                    ]);
+                })
+            ];
+
+            // ---- the environment (MOBILE.md E1/E2) ---------------------------
+            if (id == "env") return [
+                new DocSection("The platform answers through ONE interface", [
+                    "`UiApp.env` is always an `Env`: nine read-only answers about the window the",
+                    "app lives in -- safe area, keyboard rect, pixel ratio, touch/hover, reduce",
+                    "motion, app state, dark mode, locale -- plus a subscription for the ones that",
+                    "change. An app that says nothing gets `DesktopEnv` (zeros and a mouse), and a",
+                    "phone shell binds its own before `mount`; `bindEnv(null)` THROWS, because an",
+                    "app that cannot say what platform it is on has a bug, not a default.",
+                    "The values below are read live from the running app, so this page cannot",
+                    "drift from the code: a chip that disagrees with its own sentence is visible."
+                ], [
+                    "app.bindEnv(new DesktopEnv());   // the floor: no notch, a hovering mouse",
+                    "var e:Env = app.env;",
+                    "e.hasHover;   // the ONE verdict behind every hover branch in the kit",
+                    "e.safeArea;   // Edges: top/right/bottom/left, logical points"
+                ], 100, function ():Node
+                {
+                    var e:Env = app.env;
+                    return column({ gap: 10 }, [
+                        row({ gap: 8, alignItems: "center" }, [
+                            chip("pixelRatio " + e.pixelRatio, { key: "envDpr" }),
+                            chip("hasHover " + e.hasHover, { key: "envHover" }),
+                            chip("hasTouch " + e.hasTouch, { key: "envTouch" })
+                        ]),
+                        row({ gap: 8, alignItems: "center" }, [
+                            chip("appState " + e.appState, { key: "envState" }),
+                            chip("isDark " + e.isDark, { key: "envDark" }),
+                            chip("locale " + e.locale, { key: "envLocale" })
+                        ]),
+                        text("safeArea " + e.safeArea.top + " / " + e.safeArea.right + " / "
+                            + e.safeArea.bottom + " / " + e.safeArea.left,
+                            { key: "envEdges", style: MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("safeArea is padding, on the box that ASKS for it", [
+                    "`safeArea: true` adds the platform inset to a container's OWN padding, on the",
+                    "edges it names (`[\"top\"]` is just the status bar). It goes into PADDING, so",
+                    "the box still fills the window: the background runs under the notch and only",
+                    "the content moves in. It adds to the padding you wrote, and it is not",
+                    "inherited -- a child that does not ask keeps exactly its own numbers.",
+                    "On this desktop every inset is zero, so the two boxes below look identical on",
+                    "purpose. `probes/widgets/env` pulls the same tree through 47 / 0 / 34 / 0 and",
+                    "asserts the arithmetic (and a rotation back to zero)."
+                ], [
+                    "column({ padding: 4, safeArea: true }, [ ... ]);   // all four edges",
+                    "box({ safeArea: [\"top\"] }, [ ... ]);               // status bar only",
+                    "// the inset is folded into resolved.padding, so every reader",
+                    "// (engine, painter, animator) sees ONE number"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 10, alignItems: "flex-start" }, [
+                        column({ key: "envSafe", safeArea: true,
+                                 style: StyleRefinement.from({ size: [150, 84], padding: 4,
+                                     background: 0xDBEAFE, cornerRadii: 6 }) }, [
+                            text("safeArea: true", { style: MONO, ariaName: "" })
+                        ]),
+                        column({ key: "envTopOnly", safeArea: ["top"],
+                                 style: StyleRefinement.from({ size: [150, 84], padding: 4,
+                                     background: 0xFEF3C7, cornerRadii: 6 }) }, [
+                            text("safeArea: [\"top\"]", { style: MONO, ariaName: "" })
                         ])
                     ]);
                 })
