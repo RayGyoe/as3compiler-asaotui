@@ -10,7 +10,7 @@ import flash.filesystem.FileStream;
 var i:int = 1;
 while (i <= NullCases.COUNT)
 {
-    var f:File = new File("g16-ternary-null-aot.txt");
+    var f:File = File.applicationDirectory.resolvePath("g16-ternary-null-aot.txt");
     var st:FileStream = new FileStream();
     st.open(f, FileMode.APPEND);
     st.writeUTFBytes("id=" + i + " " + NullCases.one(i) + "\n");

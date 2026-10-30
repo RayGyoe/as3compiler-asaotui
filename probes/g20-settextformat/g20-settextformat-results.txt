@@ -14,23 +14,23 @@ id  case                                                rule   AIR 51.4.1  our A
 14  a run takes effect (24px run is wider than the 20px default)true   true        true        
 
 absolute metrics (INFORMATIONAL -- AIR and this build use different text engines):
-  AOT: file C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\g20-settextformat\g20-settextformat-aot.txt
-  AOT: tw1=46.65625 tw2=46.65625 tw3=46.65625 ink1=45 ink3=45
-  AOT: sub tw1=44.734375 tw3=44.734375
-  AOT: override=39.546875 fresh=39.546875
-  AOT: ab=46.65625 ba=46.65625
-  AOT: plain=39.546875 formatted=46.65625
-  AOT: splitTail=37.328125 fresh=37.328125
-  AOT: splitMid=39.109375 fresh=39.109375
+  AOT: file /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g20-settextformat/g20-settextformat-aot.txt
+  AOT: tw1=48.04999923706055 tw2=48.04999923706055 tw3=48.04999923706055 ink1=46 ink3=46
+  AOT: sub tw1=45.68000030517578 tw3=45.68000030517578
+  AOT: override=40.040000915527344 fresh=40.040000915527344
+  AOT: ab=48.04999923706055 ba=48.04999923706055
+  AOT: plain=40.040000915527344 formatted=48.04999923706055
+  AOT: splitTail=37.37109375 fresh=37.37109375
+  AOT: splitMid=39.15234375 fresh=39.15234375
   AOT: color=255 size=30
-  AIR: file C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\g20-settextformat\g20-settextformat-air.txt
-  AIR: tw1=52 tw2=52 tw3=52 ink1=50 ink3=50
-  AIR: sub tw1=48 tw3=48
-  AIR: override=44 fresh=44
-  AIR: ab=52 ba=52
-  AIR: plain=44 formatted=52
-  AIR: splitTail=40 fresh=40
-  AIR: splitMid=40 fresh=40
+  AIR: file /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g20-settextformat/g20-settextformat-air.txt
+  AIR: tw1=48 tw2=48 tw3=48 ink1=46 ink3=46
+  AIR: sub tw1=45 tw3=45
+  AIR: override=40 fresh=40
+  AIR: ab=49 ba=49
+  AIR: plain=40 formatted=48
+  AIR: splitTail=36.5 fresh=36.5
+  AIR: splitMid=38 fresh=38
   AIR: color=255 size=30
 
 AOT exit: 0

@@ -23,6 +23,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { mxmlcRun } = require('../../tools/mxmlc-run.cjs');
 const { spawnSync, execFileSync } = require('child_process');
 
 const DIR = __dirname;
@@ -46,7 +47,7 @@ function airArm(cls, swfName, txtName) {
   const txt = path.join(DIR, txtName);
   if (fs.existsSync(swf)) fs.unlinkSync(swf);
   if (fs.existsSync(txt)) fs.unlinkSync(txt);
-  const m = spawnSync('cmd', ['/c', MXMLC, '-output=' + swf, '-source-path=' + DIR, path.join(DIR, cls + '.as')],
+  const m = mxmlcRun(MXMLC, ['-output=' + swf, '-source-path=' + DIR, path.join(DIR, cls + '.as')],
     { cwd: DIR, encoding: 'buffer' });
   if (m.status !== 0 || !fs.existsSync(swf)) {
     fail('mxmlc FAILED for ' + cls + '\n' + new TextDecoder('gbk').decode(m.stderr || Buffer.alloc(0)).slice(-1500));

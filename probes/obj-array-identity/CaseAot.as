@@ -9,7 +9,7 @@ import flash.filesystem.FileStream;
 
 function readAll(name:String):String
 {
-    var f:File = new File(name);
+    var f:File = File.applicationDirectory.resolvePath(name);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.READ);
     var s:String = fs.readUTFBytes(fs.bytesAvailable);
@@ -19,7 +19,7 @@ function readAll(name:String):String
 
 function writeAll(name:String, s:String):void
 {
-    var f:File = new File(name);
+    var f:File = File.applicationDirectory.resolvePath(name);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeUTFBytes(s);

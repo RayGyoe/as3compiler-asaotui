@@ -71,7 +71,7 @@ function dump():void
     var bd:BitmapData = new BitmapData(W, H, true, 0xFF000000);
     bd.draw(stage);
     writeBmp(OUT, bd);
-    var f:File = new File(OUT + ".log");
+    var f:File = File.applicationDirectory.resolvePath(OUT + ".log");
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeUTFBytes("order: wrote " + OUT + "\n");
@@ -114,7 +114,7 @@ function writeBmp(path:String, bd:BitmapData):void
             ba.writeByte(px[i]);
         }
     }
-    var f:File = new File(path);
+    var f:File = File.applicationDirectory.resolvePath(path);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeBytes(ba, 0, 0);

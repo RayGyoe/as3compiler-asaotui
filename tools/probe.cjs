@@ -99,12 +99,23 @@ if (b.status !== 0) {
 }
 
 function newestExe() {
+  // The AOT names the executable after the INPUT FILE's basename; on Windows that
+  // is `Main.exe`, on macOS/Linux it is plain `Main` with no extension. Discovery
+  // therefore cannot key on `.exe` -- it keys on "a FRESH regular file that the
+  // filesystem marks executable and that is not one of the artifacts this tool
+  // itself produces". (Keying on the extension made every probe here report
+  // "build succeeded but no freshly built .exe" on macOS.)
   let best = null;
   for (const f of fs.readdirSync(dir)) {
-    if (!f.toLowerCase().endsWith('.exe')) continue;
     const p = path.join(dir, f);
-    const st = fs.statSync(p);
+    let st;
+    try { st = fs.statSync(p); } catch (e) { continue; }
+    if (!st.isFile()) continue;
     if (st.mtimeMs + 5000 < buildStarted) continue;   // stale artifact
+    const isExe = process.platform === 'win32'
+      ? f.toLowerCase().endsWith('.exe')
+      : (st.mode & 0o111) !== 0 && !/\.(c|as|json|txt|log|bmp|done|step|dat|png|swf)$/i.test(f);
+    if (!isExe) continue;
     if (best == null || st.mtimeMs > fs.statSync(best).mtimeMs) best = p;
   }
   return best;
@@ -124,7 +135,15 @@ const child = spawn(exe, [], { cwd: dir, detached: true, stdio: 'ignore' });
 child.unref();
 
 function kill() {
-  try { execSync('taskkill /F /IM "' + exeName + '"', { stdio: 'ignore' }); } catch (e) { /* already gone */ }
+  // Windows holds the .exe open while the window is up, so the process must die
+  // before the next build; on POSIX the file stays writable, but a leftover window
+  // would still steal the focus of the next probe -- so kill there too.
+  try {
+    execSync(process.platform === 'win32'
+      ? 'taskkill /F /IM "' + exeName + '"'
+      : 'pkill -f ' + JSON.stringify(exeName),
+      { stdio: 'ignore' });
+  } catch (e) { /* already gone */ }
 }
 
 // ---- 4: wait for the program to publish its verdict ------------------------

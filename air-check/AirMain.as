@@ -674,7 +674,7 @@ package
         private function writeOut():void
         {
             var dir:String = File.applicationDirectory.nativePath;
-            var f:File = new File(dir + File.separator + 'air-out.txt');
+            var f:File = File.applicationDirectory.resolvePath(dir + File.separator + 'air-out.txt');
             var fs:FileStream = new FileStream();
             fs.open(f, FileMode.WRITE);
             fs.writeUTFBytes(out);

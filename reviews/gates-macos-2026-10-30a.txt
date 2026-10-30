@@ -1,0 +1,211 @@
+[PASS] probe widgets/chip (19 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/form (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/display (48 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/nav (41 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/anim (14 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/feedback (43 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/media (43 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/data (77 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/overlay (65 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/interact (25 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/flip (54 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/motion (23 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/vlist (26 checks, 0 failures)  (exit 0)
+[FAIL] probe widgets/choice (44 checks, 1 failures)  (exit 1)
+[probe] building choice
+[probe] built probes/widgets/choice/Main
+PROBE choice: 44 checks, 1 failures
+  FAIL  program verdict: FAIL the child row's label is at 60,77.5 not 60,79 (the label is vertically centred in the 26pt row);
+RESULT: FAIL
+[PASS] probe redraw (14 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/popup (26 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/typing (18 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/scrollbar (44 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/callback (24 checks, 0 failures)  (exit 0)
+[PASS] probe lifecycle (9 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/textfx (18 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/pointer (23 checks, 0 failures)  (exit 0)
+[FAIL] probe widgets/imaging  (exit 1)
+       |                 =
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/widgets/imaging/Main.c:84229:13: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 84229 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |        ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/widgets/imaging/Main.c:84229:13: note: remove extraneous parentheses around the comparison to silence this warning
+ 84229 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |       ~     ^                                     ~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/widgets/imaging/Main.c:84229:13: note: use '=' to turn this equality comparison into an assignment
+ 84229 |   if ((unit == asaot_ui_LayoutConstants_UNIT_POINT)) {
+       |             ^~
+       |             =
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/widgets/imaging/Main.c:84232:13: warning: equality co
+[PASS] probe widgets/table2 (22 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/stick (15 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/icon (66 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/keys (36 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/accordion (18 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/inputs (50 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/theme (75 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/actions (73 checks, 0 failures)  (exit 0)
+[PASS] probe widgets/clip (33 checks, 0 failures)  (exit 0)
+[PASS] probe perf (1 checks, 0 failures)  (exit 0)
+[FAIL] layout-check text half  (exit 1)
+ 61589 |       if ((physEdge == asaot_ui_LayoutConstants_EDGE_RIGHT)) {
+       |            ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../asaotui/layout-check/CheckMain.c:61589:21: note: remove extraneous parentheses around the comparison to silence this warning
+ 61589 |       if ((physEdge == asaot_ui_LayoutConstants_EDGE_RIGHT)) {
+       |           ~         ^                                     ~
+../asaotui/layout-check/CheckMain.c:61589:21: note: use '=' to turn this equality comparison into an assignment
+ 61589 |       if ((physEdge == asaot_ui_LayoutConstants_EDGE_RIGHT)) {
+       |                     ^~
+       |                     =
+72 warnings generated.
+ld: library 'zlib' not found
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+[FAIL] ui-demo CheckUi  (exit 1)
+ 83995 |   if ((handler == NULL)) {
+       |                ^~
+       |                =
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/ui-demo/CheckUi.c:84039:10: warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+ 84039 |   if ((f == NULL)) {
+       |        ~~^~~~~~~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/ui-demo/CheckUi.c:84039:10: note: remove extraneous parentheses around the comparison to silence this warning
+ 84039 |   if ((f == NULL)) {
+       |       ~  ^      ~
+/Users/ray.lei/Documents/as3compiler-aot/asaotui/ui-demo/CheckUi.c:84039:10: note: use '=' to turn this equality comparison into an assignment
+ 84039 |   if ((f == NULL)) {
+       |          ^~
+[SKIP] layout-check visual half  (exit 3: nothing violated, the compiler source MOVED mid-run)
+[SKIP] gallery tour: ? component pages (incl. the overlay tree), hand-computed rects  (exit 3: nothing violated, the compiler source MOVED mid-run)
+[PASS] gallery kind coverage: all registered widgets are shown (41/41)  (exit 0)
+[PASS] docs demos pass only options the factories read (0 unknown)  (exit 0)
+[PASS] author callbacks carry their documented argument (24 calls / 169 handlers) (0 violations)  (exit 0)
+[FAIL] AIR arm (build.sh default) compiles under mxmlc  (exit 2)
+mxmlc-check.cjs: no AIR SDK -- pass --sdk <root>, or set AIRSDK_HOME, or put its bin/ on PATH
+[FAIL] build.sh --gpu selects renderMode + backend, app.xml untouched (26 checks, 2 failures)  (exit 1)
+  ok   --gpu d3d12 changes nothing but the <renderMode> line
+  ok   --gpu d3d12 passes --app-xml app.d3d12.xml
+  ok   --gpu d3d12 passes --gpu-backend d3d12
+  ok   --gpu direct exits 0
+  ok   --gpu direct writes <renderMode>direct</renderMode>
+  ok   --gpu direct changes nothing but the <renderMode> line
+  ok   --gpu direct passes --app-xml app.direct.xml
+  ok   --gpu direct names no backend (the platform default)
+  ok   plain `desc` exits 0
+  ok   plain `desc` says it builds from the tracked app.xml, passing no extra args
+  ok   an unknown --gpu mode is refused
+  ok   app.xml is byte-identical after all of the above
+[PASS] build.sh web: toolchain spawned, argv pinned, refusals, staged dir untracked (25 checks, 0 failures)  (exit 0)
+[SKIP] docs app on AIR (adl): every page, popups open, pointer drill, no runtime error  (exit 3: nothing violated, the compiler source MOVED mid-run)
+[PASS] kit listeners are all releasable (UiNode.listen + destroySubtree) (44 wired, 0 raw)  (exit 0)
+[FAIL] G13 air-app reach: closure keeps 5/5, both faces build+run (FAIL)  (exit 1)
+  FAIL arm A: plain --air-app closure (was the defect) emitted ReachFreeFn.exe
+== arm B: --all-sources (control: must still work) ==
+     exit 0  
+      8062 | static char* as_str_concat_n(int n, const char** parts) {
+           |                                                  ^
+     6 warnings generated.
+     ld: warning: ignoring duplicate libraries: '-lz'
+  ok   arm B: --all-sources (control: must still work) builds and links (exit 0)
+  FAIL arm B: --all-sources (control: must still work) emitted ReachFreeFn.exe
+==== G13 PROBE: FAIL (2) ====
+  arm A: plain --air-app closure (was the defect) emitted ReachFreeFn.exe
+  arm B: --all-sources (control: must still work) emitted ReachFreeFn.exe
+[FAIL] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (FAIL)  (exit 1)
+/Users/ray.lei/Documents/as3compiler-aot/as3compiler/vendor/window_glue.cc:1036:9: note: previous definition is here
+ 1036 | #define SK_MOD_SHIFT  4  /* shiftKey */
+      |         ^
+/Users/ray.lei/Documents/as3compiler-aot/as3compiler/vendor/window_glue.cc:3534:9: warning: 'SK_MOD_CTRL' macro redefined [-Wmacro-redefined]
+ 3534 | #define SK_MOD_CTRL    (1UL << 18)  // NSEventModifierFlagControl
+      |         ^
+/Users/ray.lei/Documents/as3compiler-aot/as3compiler/vendor/window_glue.cc:1034:9: note: previous definition is here
+ 1034 | #define SK_MOD_CTRL   1  /* KeyboardEvent.ctrlKey (Cmd counts as ctrl on macOS) */
+      |         ^
+3 warnings generated.
+ld: warning: ignoring duplicate libraries: '-lz'
+[gallery] expected exe not found: /Users/ray.lei/Documents/as3compiler-aot/asaotui/ui-demo/air-gallery-standard/GalleryApp.exe
+[PASS] style scan: no Object-typed local is used as a condition (0 found)  (exit 0)
+[FAIL] G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (1/5 hashes)  (exit 1)
+   -> same program, three different C files, errors decaying to zero in 84 s: the tree was mid-edit.
+E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04:00:19 +0800)
+   my build broke on:      Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   artifact-1 (04:00:10) broke on: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   -> identical hazard set, from two different programs, 9 seconds apart: one tree state.
+---- verdict ----
+FAIL: artifact-1-struct-time__.c: expected clang to hit its error cap, it did not
+FAIL: artifact-1-struct-time__.c: 0 errors, expected at least 16
+FAIL: artifact-1-struct-time__.c: kinds [] != expected [Date._time, ServerSocketConnectEvent.socket, TextField.___restrict]
+FAIL: artifact-2-struct-socket-1-error.c: clang reported 0 errors, expected 1
+FAIL: artifact-2-struct-socket-1-error.c: kinds [] != expected [ServerSocketConnectEvent.socket]
+---- evidence appended to probes/g11-nondeterminism/run-2026-10-30.txt ----
+[FAIL] G14 array-in-Object-slot identity (26 cases, AOT vs AIR)  (exit 2)
+[run] building the AOT arm
+[run] AOT BUILD FAILED (exit 1)
+== as-aot: AS3 subset -> C -> native ==
+[1/4] read        /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/obj-array-identity/CaseAot.as, /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/obj-array-identity/Cases.as, /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/obj-array-identity/Marker.as
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+[4/4] compile     clang -O2 -ffp-contract=off -Wl,-dead_strip -Wl,-x -lm -lz -l iconv -o /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/obj-array-identity/aot-case.exe /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/obj-array-identity/aot-case.exe.c -I ./vendor/curl/include -w -L ./vendor/curl/lib/windows-x64 -l zlib -framework CoreFoundation
+ld: library 'zlib' not found
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+[PASS] G16 ternary-null (20 cases, AOT vs AIR) -- AOT deviations: none  (exit 0)
+[FAIL] G19 drawRoundRect, AOT vs AIR  (exit 2)
+[ab-round] mxmlc FAILED for Round
+[FAIL] G20 setTextFormat replaces the range (AOT vs AIR)  (exit 2)
+[g20] building the AOT arm
+[g20] running the AOT arm
+[g20] AIR SDK not found under D:/Adobe/Flex_Sdk/AIRSDK_51.4.1 (set AIRSDK_HOME, or ASC_SKIP_AIR=1)
+[FAIL] G21 getTextFormat reads the run table (AOT vs AIR)  (exit 2)
+[g21] building the AOT arm
+[g21] AOT BUILD FAILED (exit 1)
+== as-aot: AS3 subset -> C -> native ==
+[1/4] read        /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g21-gettextformat/AotMain.as, /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g21-gettextformat/GetFmtCases.as
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+[4/4] compile     clang -O2 -ffp-contract=off -Wl,-dead_strip -Wl,-x -lm -lz -l iconv -o /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g21-gettextformat/AotMain.exe /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g21-gettextformat/AotMain.exe.c -I ./vendor/curl/include -w -L ./vendor/curl/lib/windows-x64 -l zlib -framework CoreFoundation
+ld: library 'zlib' not found
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+[FAIL] G22 closure statics initialise (AOT vs AIR, emitted C audited)  (exit 2)
+[g22] building the AOT arm
+[g22] AOT BUILD FAILED (exit 1)
+== as-aot: AS3 subset -> C -> native ==
+[1/4] read        /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g22-closure-statics/AotMain.as, /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g22-closure-statics/ClosureCases.as, /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g22-closure-statics/Bag.as, /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g22-closure-statics/Sealed.as
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+[4/4] compile     clang -O2 -ffp-contract=off -Wl,-dead_strip -Wl,-x -lm -lz -l iconv -o /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g22-closure-statics/AotMain.exe /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g22-closure-statics/AotMain.exe.c -I ./vendor/curl/include -w -L ./vendor/curl/lib/windows-x64 -l zlib -framework CoreFoundation
+ld: library 'zlib' not found
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+[FAIL] Vector vs Array throughput, both runtimes  (exit 2)
+[run] building the AOT arm
+[run] AOT BUILD FAILED (exit 1)
+== as-aot: AS3 subset -> C -> native ==
+[1/4] read        /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/vec-vs-arr/BenchAot.as, /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/vec-vs-arr/BenchCore.as
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+[4/4] compile     clang -O2 -ffp-contract=off -Wl,-dead_strip -Wl,-x -lm -lz -l iconv -o /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/vec-vs-arr/bench-aot.exe /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/vec-vs-arr/bench-aot.exe.c -I ./vendor/curl/include -w -L ./vendor/curl/lib/windows-x64 -l zlib -framework CoreFoundation
+ld: library 'zlib' not found
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+[FAIL] style fromAny is total: 19 cases, AOT vs AIR  (exit 2)
+[fromany] building the AOT arm
+[fromany] AOT BUILD FAILED (exit 1)
+== as-aot: AS3 subset -> C -> native ==
+[1/4] read        /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/style-fromany/AotMain.as, /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/style-fromany/StyleCases.as, ../asaotui/seam/asaot/ui/LayoutConstants.as, ../asaotui/seam/asaot/ui/LayoutEngine.as, ../asaotui/seam/asaot/ui/as3/As3LayoutEngine.as, ../asaotui/seam/asaot/ui/as3/As3LayoutNode.as, ../asaotui/kit/asaot/ui/AccordionNode.as, ../asaotui/kit/asaot/ui/ActionRegistry.as, ../asaotui/kit/asaot/ui/AvatarNode.as, ../asaotui/kit/asaot/ui/BadgeNode.as, ../asaotui/kit/asaot/ui/Binding.as, ../asaotui/kit/asaot/ui/BoxNode.as, ../asaotui/kit/asaot/ui/BreadcrumbNode.as, ../asaotui/kit/asaot/ui/ButtonNode.as, ../asaotui/kit/asaot/ui/CardNode.as, ../asaotui/kit/asaot/ui/CheckboxNode.as, ../asaotui/kit/asaot/ui/ChipNode.as, ../asaotui/kit/asaot/ui/ComboBoxNode.as, ../asaotui/kit/asaot/ui/ContextExpr.as, ../asaotui/kit/asaot/ui/Control.as, ../asaotui/kit/asaot/ui/DateMath.as, ../asaotui/kit/asaot/ui/DatePickerNode.as, ../asaotui/kit/asaot/ui/DatePickerParts.as, ../asaotui/kit/asaot/ui/DialogNode.as, ../asaotui/kit/asaot/ui/Dirty.as, ../asaotui/kit/asaot/ui/DividerNode.as, ../asaotui/kit/asaot/ui/DrawerNode.as, ../asaotui/kit/asaot/ui/Element.as, ../asaotui/kit/asaot/ui/ElementState.as, ../asaotui/kit/asaot/ui/IconNode.as, ../asaotui/kit/asaot/ui/ImageNode.as, ../asaotui/kit/asaot/ui/KeyStroke.as, ../asaotui/kit/asaot/ui/ListNode.as, ../asaotui/kit/asaot/ui/MenuNode.as, ../asaotui/kit/asaot/ui/MultiSelectNode.as, ../asaotui/kit/asaot/ui/Node.as, ../asaotui/kit/asaot/ui/NumberInputNode.as, ../asaotui/kit/asaot/ui/Observable.as, ../asaotui/kit/asaot/ui/OptionSupport.as, ../asaotui/kit/asaot/ui/OverlayChrome.as, ../asaotui/kit/asaot/ui/OverlayList.as, ../asaotui/kit/asaot/ui/OverlayMotion.as, ../asaotui/kit/asaot/ui/PaginationNode.as, ../asaotui/kit/asaot/ui/PaintKit.as, ../asaotui/kit/asaot/ui/PathData.as, ../asaotui/kit/asaot/ui/PopoverNode.as, ../asaotui/kit/asaot/ui/ProgressNode.as, ../asaotui/kit/asaot/ui/RadioNode.as, ../asaotui/kit/asaot/ui/RangeSliderNode.as, ../asaotui/kit/asaot/ui/Reconciler.as, ../asaotui/kit/asaot/ui/ScrollViewNode.as, ../asaotui/kit/asaot/ui/SelectNode.as, ../asaotui/kit/asaot/ui/SkeletonNode.as, ../asaotui/kit/asaot/ui/SliderNode.as, ../asaotui/kit/asaot/ui/SpinnerNode.as, ../asaotui/kit/asaot/ui/SplitPaneNode.as, ../asaotui/kit/asaot/ui/Subscription.as, ../asaotui/kit/asaot/ui/SwitchNode.as, ../asaotui/kit/asaot/ui/TableNode.as, ../asaotui/kit/asaot/ui/TabsNode.as, ../asaotui/kit/asaot/ui/TextAreaNode.as, ../asaotui/kit/asaot/ui/TextInput.as, ../asaotui/kit/asaot/ui/TextNode.as, ../asaotui/kit/asaot/ui/Theme.as, ../asaotui/kit/asaot/ui/ThemeTokens.as, ../asaotui/kit/asaot/ui/ToastNode.as, ../asaotui/kit/asaot/ui/TooltipNode.as, ../asaotui/kit/asaot/ui/TreeNode.as, ../asaotui/kit/asaot/ui/UiApp.as, ../asaotui/kit/asaot/ui/UiNode.as, ../asaotui/kit/asaot/ui/View.as, ../asaotui/kit/asaot/ui/VirtualListNode.as, ../asaotui/kit/asaot/ui/Widget.as, ../asaotui/kit/asaot/ui/WidgetFocus.as, ../asaotui/kit/asaot/ui/WidgetKeys.as, ../asaotui/kit/asaot/ui/WidgetTeardown.as, ../asaotui/kit/asaot/ui/Widgets.as, ../asaotui/kit/asaot/ui/accordion.as, ../asaotui/kit/asaot/ui/anim/Anim.as, ../asaotui/kit/asaot/ui/anim/AnimState.as, ../asaotui/kit/asaot/ui/anim/Ease.as, ../asaotui/kit/asaot/ui/anim/Tween.as, ../asaotui/kit/asaot/ui/avatar.as, ../asaotui/kit/asaot/ui/badge.as, ../asaotui/kit/asaot/ui/bindTo.as, ../asaotui/kit/asaot/ui/box.as, ../asaotui/kit/asaot/ui/breadcrumb.as, ../asaotui/kit/asaot/ui/button.as, ../asaotui/kit/asaot/ui/card.as, ../asaotui/kit/asaot/ui/checkbox.as, ../asaotui/kit/asaot/ui/chip.as, ../asaotui/kit/asaot/ui/column.as, ../asaotui/kit/asaot/ui/combobox.as, ../asaotui/kit/asaot/ui/datePicker.as, ../asaotui/kit/asaot/ui/dialog.as, ../asaotui/kit/asaot/ui/divider.as, ../asaotui/kit/asaot/ui/drawer.as, ../asaotui/kit/asaot/ui/icon.as, ../asaotui/kit/asaot/ui/image.as, ../asaotui/kit/asaot/ui/kind/AccordionWidget.as, ../asaotui/kit/asaot/ui/kind/AvatarWidget.as, ../asaotui/kit/asaot/ui/kind/BadgeWidget.as, ../asaotui/kit/asaot/ui/kind/BoxWidget.as, ../asaotui/kit/asaot/ui/kind/BreadcrumbWidget.as, ../asaotui/kit/asaot/ui/kind/ButtonWidget.as, ../asaotui/kit/asaot/ui/kind/CardWidget.as, ../asaotui/kit/asaot/ui/kind/CheckboxWidget.as, ../asaotui/kit/asaot/ui/kind/ChipWidget.as, ../asaotui/kit/asaot/ui/kind/ComboBoxWidget.as, ../asaotui/kit/asaot/ui/kind/DatePickerWidget.as, ../asaotui/kit/asaot/ui/kind/DialogWidget.as, ../asaotui/kit/asaot/ui/kind/DividerWidget.as, ../asaotui/kit/asaot/ui/kind/DrawerWidget.as, ../asaotui/kit/asaot/ui/kind/IconWidget.as, ../asaotui/kit/asaot/ui/kind/ImageWidget.as, ../asaotui/kit/asaot/ui/kind/InputWidget.as, ../asaotui/kit/asaot/ui/kind/ListWidget.as, ../asaotui/kit/asaot/ui/kind/MenuWidget.as, ../asaotui/kit/asaot/ui/kind/MultiSelectWidget.as, ../asaotui/kit/asaot/ui/kind/NumberInputWidget.as, ../asaotui/kit/asaot/ui/kind/PaginationWidget.as, ../asaotui/kit/asaot/ui/kind/PanelShellWidget.as, ../asaotui/kit/asaot/ui/kind/PopoverWidget.as, ../asaotui/kit/asaot/ui/kind/ProgressWidget.as, ../asaotui/kit/asaot/ui/kind/RadioWidget.as, ../asaotui/kit/asaot/ui/kind/RangeSliderWidget.as, ../asaotui/kit/asaot/ui/kind/ScrollViewWidget.as, ../asaotui/kit/asaot/ui/kind/SelectWidget.as, ../asaotui/kit/asaot/ui/kind/SkeletonWidget.as, ../asaotui/kit/asaot/ui/kind/SliderWidget.as, ../asaotui/kit/asaot/ui/kind/SpinnerWidget.as, ../asaotui/kit/asaot/ui/kind/SplitPaneWidget.as, ../asaotui/kit/asaot/ui/kind/SwitchWidget.as, ../asaotui/kit/asaot/ui/kind/TableWidget.as, ../asaotui/kit/asaot/ui/kind/TabsWidget.as, ../asaotui/kit/asaot/ui/kind/TextAreaWidget.as, ../asaotui/kit/asaot/ui/kind/TextWidget.as, ../asaotui/kit/asaot/ui/kind/ToastWidget.as, ../asaotui/kit/asaot/ui/kind/TooltipWidget.as, ../asaotui/kit/asaot/ui/kind/TreeWidget.as, ../asaotui/kit/asaot/ui/kind/VirtualListWidget.as, ../asaotui/kit/asaot/ui/label.as, ../asaotui/kit/asaot/ui/list.as, ../asaotui/kit/asaot/ui/menu.as, ../asaotui/kit/asaot/ui/multiSelect.as, ../asaotui/kit/asaot/ui/numberInput.as, ../asaotui/kit/asaot/ui/overlay.as, ../asaotui/kit/asaot/ui/pagination.as, ../asaotui/kit/asaot/ui/popover.as, ../asaotui/kit/asaot/ui/progress.as, ../asaotui/kit/asaot/ui/radio.as, ../asaotui/kit/asaot/ui/rangeSlider.as, ../asaotui/kit/asaot/ui/row.as, ../asaotui/kit/asaot/ui/scrollView.as, ../asaotui/kit/asaot/ui/select.as, ../asaotui/kit/asaot/ui/skeleton.as, ../asaotui/kit/asaot/ui/slider.as, ../asaotui/kit/asaot/ui/spinner.as, ../asaotui/kit/asaot/ui/splitPane.as, ../asaotui/kit/asaot/ui/style/BoxShadow.as, ../asaotui/kit/asaot/ui/style/Corners.as, ../asaotui/kit/asaot/ui/style/Edges.as, ../asaotui/kit/asaot/ui/style/Fill.as, ../asaotui/kit/asaot/ui/style/Length.as, ../asaotui/kit/asaot/ui/style/LengthEdges.as, ../asaotui/kit/asaot/ui/style/Size.as, ../asaotui/kit/asaot/ui/style/Style.as, ../asaotui/kit/asaot/ui/style/StyleRefinement.as, ../asaotui/kit/asaot/ui/style/TextStyle.as, ../asaotui/kit/asaot/ui/style/auto.as, ../asaotui/kit/asaot/ui/style/pct.as, ../asaotui/kit/asaot/ui/style/px.as, ../asaotui/kit/asaot/ui/style/rem.as, ../asaotui/kit/asaot/ui/style/rems.as, ../asaotui/kit/asaot/ui/table.as, ../asaotui/kit/asaot/ui/tabs.as, ../asaotui/kit/asaot/ui/text.as, ../asaotui/kit/asaot/ui/textArea.as, ../asaotui/kit/asaot/ui/textField.as, ../asaotui/kit/asaot/ui/toast.as, ../asaotui/kit/asaot/ui/toastHost.as, ../asaotui/kit/asaot/ui/toggle.as, ../asaotui/kit/asaot/ui/tooltip.as, ../asaotui/kit/asaot/ui/tree.as, ../asaotui/kit/asaot/ui/virtualList.as
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+[4/4] compile     clang -O2 -ffp-contract=off -Wl,-dead_strip -Wl,-x -lm -lz -l iconv -o /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/style-fromany/style-fromany.exe /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/style-fromany/style-fromany.exe.c -I ./vendor/curl/include -w -L ./vendor/curl/lib/windows-x64 -l zlib -framework CoreFoundation
+ld: library 'zlib' not found
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+[FAIL] Array(x) wraps on both runtimes (8 cases, AOT vs AIR)  (exit 2)
+[arr] building AOT arm
+AOT BUILD FAILED
+== as-aot: AS3 subset -> C -> native ==
+[1/4] read        /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/array-coerce/AotMain.as, /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/array-coerce/Cases.as
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+[4/4] compile     clang -O2 -ffp-contract=off -Wl,-dead_strip -Wl,-x -lm -lz -l iconv -o /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/array-coerce/AotMain.exe /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/array-coerce/AotMain.exe.c -I ./vendor/curl/include -w -L ./vendor/curl/lib/windows-x64 -l zlib -framework CoreFoundation
+ld: library 'zlib' not found
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+[PASS] fingerprint porcelain parsing: no dropped records (PASS)  (exit 0)
+
+==== 39/59 gates PASS, 3 SKIPPED ====
+FAILED: probe widgets/choice (44 checks, 1 failures) | probe widgets/imaging | layout-check text half | ui-demo CheckUi | AIR arm (build.sh default) compiles under mxmlc | build.sh --gpu selects renderMode + backend, app.xml untouched (26 checks, 2 failures) | G13 air-app reach: closure keeps 5/5, both faces build+run (FAIL) | descriptor DPI A/B: standard 1x vs high >1x, same logical rects (FAIL) | G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (1/5 hashes) | G14 array-in-Object-slot identity (26 cases, AOT vs AIR) | G19 drawRoundRect, AOT vs AIR | G20 setTextFormat replaces the range (AOT vs AIR) | G21 getTextFormat reads the run table (AOT vs AIR) | G22 closure statics initialise (AOT vs AIR, emitted C audited) | Vector vs Array throughput, both runtimes | style fromAny is total: 19 cases, AOT vs AIR | Array(x) wraps on both runtimes (8 cases, AOT vs AIR)
+EXIT=1

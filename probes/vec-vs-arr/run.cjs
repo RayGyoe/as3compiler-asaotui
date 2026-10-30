@@ -14,6 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { mxmlcRun } = require('../../tools/mxmlc-run.cjs');
 const { spawnSync, execFileSync } = require('child_process');
 
 const DIR = __dirname;
@@ -28,7 +29,12 @@ const AOT_TXT = path.join(DIR, 'vec-aot.txt');
 const AIR_TXT = path.join(DIR, 'vec-air.txt');
 const AIR_SWF = path.join(DIR, 'BenchAir.swf');
 
-const libs = ['-I', './vendor/curl/include', '-L', './vendor/curl/lib/windows-x64', '-l', 'zlib'];
+const libs = [  // Host include/link flags come from the manifest -- the single place that
+  // knows what each platform needs. Spelling the Windows curl import library
+  // and `-l zlib` here by hand made this runner Windows-only (clang on macOS
+  // reads that as a file named libzlib.a and the link dies).
+  '--manifest', 'examples/window.build.example.json',
+];
 
 console.log('[run] building the AOT arm');
 if (fs.existsSync(AOT_EXE)) fs.unlinkSync(AOT_EXE);
@@ -57,7 +63,7 @@ if (!skipAir) {
   console.log('[run] building the AIR arm with mxmlc');
   if (fs.existsSync(AIR_SWF)) fs.unlinkSync(AIR_SWF);
   if (fs.existsSync(AIR_TXT)) fs.unlinkSync(AIR_TXT);
-  const m = spawnSync('cmd', ['/c', mxmlc, '-output=' + AIR_SWF, '-source-path=' + DIR, path.join(DIR, 'BenchAir.as')],
+  const m = mxmlcRun(mxmlc, ['-output=' + AIR_SWF, '-source-path=' + DIR, path.join(DIR, 'BenchAir.as')],
     { cwd: DIR, encoding: 'utf8' });
   if (m.status !== 0 || !fs.existsSync(AIR_SWF)) {
     console.error('[run] mxmlc FAILED (exit ' + m.status + ')');

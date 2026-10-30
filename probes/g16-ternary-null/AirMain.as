@@ -19,7 +19,7 @@ package
             var path:String = File.applicationDirectory.nativePath + File.separator + "g16-ternary-null-air.txt";
             for (var i:int = 1; i <= NullCases.COUNT; i++)
             {
-                var f:File = new File(path);
+                var f:File = File.applicationDirectory.resolvePath(path);
                 var st:FileStream = new FileStream();
                 st.open(f, FileMode.APPEND);
                 st.writeUTFBytes("id=" + i + " " + NullCases.one(i) + "\n");

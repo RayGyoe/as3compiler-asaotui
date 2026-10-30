@@ -12,7 +12,7 @@ package
         public function BenchAir()
         {
             var p:String = File.applicationDirectory.nativePath + File.separator + "vec-air.txt";
-            var f:File = new File(p);
+            var f:File = File.applicationDirectory.resolvePath(p);
             var st:FileStream = new FileStream();
             st.open(f, FileMode.WRITE);
             st.writeUTFBytes(BenchCore.run());

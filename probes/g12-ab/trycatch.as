@@ -52,7 +52,7 @@ class TinyView extends View
 
 function w(s:String):void
 {
-    var f:File = new File(OUT + ".log.txt");
+    var f:File = File.applicationDirectory.resolvePath(OUT + ".log.txt");
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.APPEND);
     fs.writeUTFBytes(s + "\n");
@@ -133,7 +133,7 @@ function tickBody():void
     else if (step == 10)
     {
         w("DONE");
-        var f:File = new File(OUT + ".done");
+        var f:File = File.applicationDirectory.resolvePath(OUT + ".done");
         var fs:FileStream = new FileStream();
         fs.open(f, FileMode.WRITE);
         fs.writeUTFBytes("PASS");

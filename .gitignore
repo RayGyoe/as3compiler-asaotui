@@ -47,6 +47,19 @@ Thumbs.db
 *.wasm
 *.wat
 
+# --- §2b POSIX 产物（无扩展名，上面按后缀的规则盖不住） --------------------
+# as-aot 用**输入文件的 basename** 给产物命名：`Main.as` 出来就叫 `Main`，
+# 在 Windows 上是 `Main.exe`（被 §2 的 `*.exe` 盖住），在 macOS/Linux 上是
+# 裸名——一条后缀规则也匹配不到，于是每跑一次探针工作树就多出十几个
+# Mach-O。按**产物名**逐条禁，不用 `*` 通配：`probes/**/Main` 只匹配名字
+# 恰为 `Main` 的文件，不会误伤 `Main.as`（pattern 匹配的是整条路径名）。
+/probes/**/Main
+/probes/reach-freefn/ReachFreeFn
+/layout-check/CheckMain
+/layout-check/VisualDemo
+/ui-demo/CheckUi
+/ui-demo/air-*/GalleryApp
+
 # --- §3 文字引擎运行时数据 -------------------------------------------------
 # 窗口后端要求可执行文件同目录有 icudtl.dat。克隆后拷一份即可，来源二选一：
 #   ../as3compiler/vendor/skia/lib/windows-x64/icudtl.dat    （最省事）

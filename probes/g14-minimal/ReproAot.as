@@ -19,7 +19,7 @@ import flash.filesystem.FileStream;
 
 function emit(line:String):void
 {
-    var f:File = new File("g14-aot.txt");
+    var f:File = File.applicationDirectory.resolvePath("g14-aot.txt");
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.APPEND);
     fs.writeUTFBytes(line + "\n");

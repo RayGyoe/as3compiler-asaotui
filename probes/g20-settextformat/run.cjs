@@ -24,6 +24,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { mxmlcRun } = require('../../tools/mxmlc-run.cjs');
 const { spawnSync, execFileSync } = require('child_process');
 
 const DIR = __dirname;
@@ -87,11 +88,9 @@ if (!skipAir) {
   }
   console.log('[g20] building the AIR arm with mxmlc');
   clean(AIR_SWF); clean(AIR_TXT);
-  const m = spawnSync('cmd', ['/c', mxmlc,
-    '-output=' + AIR_SWF,
+  const m = mxmlcRun(mxmlc, ['-output=' + AIR_SWF,
     '-source-path=' + DIR,
-    path.join(DIR, 'AirMain.as'),
-  ], { cwd: DIR, encoding: 'buffer' });
+    path.join(DIR, 'AirMain.as')], { cwd: DIR, encoding: 'buffer' });
   if (m.status !== 0 || !fs.existsSync(AIR_SWF)) {
     console.error('[g20] mxmlc FAILED (exit ' + m.status + ')');
     console.error(new TextDecoder('gbk').decode(m.stderr || Buffer.alloc(0)).split(/\r?\n/).slice(-30).join('\n'));

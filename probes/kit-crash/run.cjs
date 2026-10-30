@@ -21,9 +21,11 @@ const r = spawnSync(process.execPath, [
   path.join(compilerDir, 'src', 'index.ts'),
   src, ...ALL,
   '--run', '--cc', clang,
-  '-I', './vendor/curl/include',
-  '-L', './vendor/curl/lib/windows-x64',
-  '-l', 'zlib'
+    // Host include/link flags come from the manifest -- the single place that
+  // knows what each platform needs. Spelling the Windows curl import library
+  // and `-l zlib` here by hand made this runner Windows-only (clang on macOS
+  // reads that as a file named libzlib.a and the link dies).
+  '--manifest', 'examples/window.build.example.json',
 ], { cwd: compilerDir, encoding: 'buffer' });
 
 const status = r.status;

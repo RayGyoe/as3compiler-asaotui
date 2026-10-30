@@ -20,14 +20,22 @@ const path = require('path');
 
 const HERE = __dirname;
 const REPO = path.resolve(HERE, '..', '..', 'as3compiler'); // <root>/as3compiler
-const EXE = path.join(HERE, 'VisualDemo.exe');
+const EXE = path.join(HERE, process.platform === 'win32' ? 'VisualDemo.exe' : 'VisualDemo');
+// Windows holds the .exe open while its window is up, so the old process must die
+// before the rebuild; POSIX does not lock the file, but a leftover window would
+// still swallow the next run's focus, so the same step runs on both.
+function killDemo() {
+  spawnSync(process.platform === 'win32' ? 'taskkill' : 'pkill',
+    process.platform === 'win32' ? ['/F', '/IM', 'VisualDemo.exe'] : ['-f', path.basename(EXE)],
+    { encoding: 'utf8' });
+}
 const BMP = path.join(HERE, 'visual-demo.bmp');
 
 function step(msg) { console.log('\n=== ' + msg + ' ==='); }
 
 // ---- 1. make sure no previous window is holding the .exe -------------------
 step('close any running VisualDemo');
-spawnSync('taskkill', ['/F', '/IM', 'VisualDemo.exe'], { encoding: 'utf8' });
+killDemo();
 for (let i = 0; i < 20 && fs.existsSync(EXE); i++) {
   try { fs.unlinkSync(EXE); } catch (e) { /* still locked; retry */ }
   if (fs.existsSync(EXE)) spawnSync('node', ['-e', 'setTimeout(()=>{},150)']);
@@ -64,7 +72,7 @@ while (!fs.existsSync(BMP) && Date.now() < DEADLINE) {
 }
 if (!fs.existsSync(BMP)) {
   console.error('TIMEOUT: the window never wrote ' + BMP);
-  spawnSync('taskkill', ['/F', '/IM', 'VisualDemo.exe'], { encoding: 'utf8' });
+  killDemo();
   process.exit(3);
 }
 console.log('ok: ' + fs.statSync(BMP).size + ' bytes');
@@ -77,7 +85,7 @@ if (verify.stderr) console.error(verify.stderr);
 
 // ---- 5. clean up -----------------------------------------------------------
 step('close the window');
-spawnSync('taskkill', ['/F', '/IM', 'VisualDemo.exe'], { encoding: 'utf8' });
+killDemo();
 console.log('closed');
 
 process.exit(verify.status === 0 ? 0 : 1);

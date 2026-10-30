@@ -18,7 +18,7 @@ package
             var path:String = File.applicationDirectory.nativePath + File.separator + "objarr-air.txt";
             for (var id:int = 1; id <= Cases.COUNT; id++)
             {
-                var f:File = new File(path);
+                var f:File = File.applicationDirectory.resolvePath(path);
                 var st:FileStream = new FileStream();
                 st.open(f, FileMode.APPEND);
                 st.writeUTFBytes("id=" + id + " " + Cases.one(id) + "\n");

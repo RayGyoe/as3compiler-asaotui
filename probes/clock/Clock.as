@@ -36,7 +36,7 @@ out = out + "getTimer before/after = " + t0 + "/" + t1 + "\n";
 out = out + "advanced              = " + (t1 - t0) + "\n";
 out = out + "spin iterations       = " + spin + "\n";
 
-var f:File = new File("clock.txt");
+var f:File = File.applicationDirectory.resolvePath("clock.txt");
 var s:FileStream = new FileStream();
 s.open(f, FileMode.WRITE);
 s.writeUTFBytes(out);

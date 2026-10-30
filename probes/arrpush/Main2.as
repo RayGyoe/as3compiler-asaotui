@@ -16,7 +16,7 @@ class ZPt
 
 function log(s:String):void
 {
-    var f:File = new File(LOG);
+    var f:File = File.applicationDirectory.resolvePath(LOG);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.APPEND);
     fs.writeUTFBytes(s + "\n");

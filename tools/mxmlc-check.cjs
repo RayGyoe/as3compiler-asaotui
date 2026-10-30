@@ -17,6 +17,7 @@
 //      --sdk overrides it, for callers running from a shell that mangles the
 //      environment of native children.
 // Exit: 0 compiled, 1 compile errors, 2 usage/SDK problem.
+const { mxmlcRun } = require('./mxmlc-run.cjs');
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -71,10 +72,10 @@ const mxmlc = path.join(sdk, 'bin', process.platform === 'win32' ? 'mxmlc.bat' :
 if (!fs.existsSync(mxmlc)) { console.error('mxmlc-check.cjs: no mxmlc at ' + mxmlc); process.exit(2); }
 
 const outSwf = out || path.join(path.dirname(roots[0]), '.mxmlc-check.swf');
-const cmdArgs = [mxmlc, '-output=' + outSwf, ...srcs.flatMap((s) => ['-source-path=' + s]), ...roots];
+const cmdArgs = ['-output=' + outSwf, ...srcs.flatMap((s) => ['-source-path=' + s]), ...roots];
 
 console.log('mxmlc: ' + roots.join(' ') + '   (source-path: ' + (srcs.join(', ') || none()) + ')');
-const r = spawnSync('cmd', ['/c', ...cmdArgs], { encoding: 'buffer', timeout: 300000 });
+const r = mxmlcRun(mxmlc, cmdArgs, { encoding: 'buffer', timeout: 300000 });
 // mxmlc writes its diagnostics in the console codepage on Windows, not UTF-8.
 const decode = (b) => { try { return new TextDecoder('gbk').decode(b); } catch (e) { return String(b); } };
 const text = decode(r.stdout || Buffer.alloc(0)) + decode(r.stderr || Buffer.alloc(0));

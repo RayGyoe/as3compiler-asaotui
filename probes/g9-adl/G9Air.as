@@ -15,7 +15,7 @@ package
         {
             var body:String = G9Cases.run();
             var dir:String = File.applicationDirectory.nativePath;
-            var f:File = new File(dir + File.separator + "g9-air.txt");
+            var f:File = File.applicationDirectory.resolvePath(dir + File.separator + "g9-air.txt");
             var st:FileStream = new FileStream();
             st.open(f, FileMode.WRITE);
             st.writeUTFBytes("AIR " + NativeApplication.nativeApplication.runtimeVersion);

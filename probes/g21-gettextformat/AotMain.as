@@ -11,7 +11,7 @@ import flash.filesystem.FileStream;
 var i:int = 1;
 while (i <= 30)
 {
-    var f:File = new File("g21-gettextformat-aot.txt");
+    var f:File = File.applicationDirectory.resolvePath("g21-gettextformat-aot.txt");
     var st:FileStream = new FileStream();
     st.open(f, FileMode.APPEND);
     st.writeUTFBytes("id=" + i + " " + GetFmtCases.one(i) + "\n");

@@ -23,6 +23,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { mxmlcRun } = require('../../tools/mxmlc-run.cjs');
 const { spawnSync, execFileSync } = require('child_process');
 
 const DIR = __dirname;
@@ -48,9 +49,11 @@ const build = spawnSync(process.execPath, [
   path.join(DIR, 'Marker.as'),
   '-o', AOT_EXE,
   '--cc', clang, '-w',
-  '-I', './vendor/curl/include',
-  '-L', './vendor/curl/lib/windows-x64',
-  '-l', 'zlib',
+    // Host include/link flags come from the manifest -- the single place that
+  // knows what each platform needs. Spelling the Windows curl import library
+  // and `-l zlib` here by hand made this runner Windows-only (clang on macOS
+  // reads that as a file named libzlib.a and the link dies).
+  '--manifest', 'examples/window.build.example.json',
 ], { cwd: COMPILER, encoding: 'utf8' });
 if (build.status !== 0) {
   console.error('[g14] AOT BUILD FAILED (exit ' + build.status + ')');
@@ -74,7 +77,7 @@ if (process.env.ASC_SKIP_AIR !== '1') {
   }
   console.log('[g14] building + running the AIR arm (mxmlc + adl)');
   clean(AIR_SWF); clean(AIR_TXT);
-  const m = spawnSync('cmd', ['/c', mxmlc, '-output=' + AIR_SWF, '-source-path=' + DIR, path.join(DIR, 'ReproAir.as')],
+  const m = mxmlcRun(mxmlc, ['-output=' + AIR_SWF, '-source-path=' + DIR, path.join(DIR, 'ReproAir.as')],
     { cwd: DIR, encoding: 'utf8' });
   if (m.status !== 0 || !fs.existsSync(AIR_SWF)) {
     console.error('[g14] mxmlc FAILED (exit ' + m.status + ')');

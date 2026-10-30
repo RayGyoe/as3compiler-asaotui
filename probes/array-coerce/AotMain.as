@@ -5,7 +5,7 @@ import flash.filesystem.FileStream;
 
 for (var i:int = 1; i <= Cases.COUNT; i++)
 {
-    var f:File = new File("arr-aot.txt");
+    var f:File = File.applicationDirectory.resolvePath("arr-aot.txt");
     var st:FileStream = new FileStream();
     st.open(f, FileMode.APPEND);
     st.writeUTFBytes("id=" + i + " " + Cases.one(i) + "\n");

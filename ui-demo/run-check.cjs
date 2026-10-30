@@ -21,9 +21,11 @@ const args = [
   ...ALL,
   '--run',
   '--cc', clang,
-  '-I', './vendor/curl/include',
-  '-L', './vendor/curl/lib/windows-x64',
-  '-l', 'zlib'
+  // Include/link flags come from the manifest, which is the single place that
+  // knows what each host needs. Hand-spelling the Windows curl import library and
+  // `-l zlib` here made this check unrunnable on macOS (clang looks for a file
+  // named "libzlib.a" and stops).
+  '--manifest', 'examples/window.build.example.json'
 ];
 
 console.log('[run-check] compiling + running CheckUi.as via our AOT');

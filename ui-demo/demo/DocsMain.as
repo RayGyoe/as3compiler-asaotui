@@ -871,7 +871,7 @@ package demo
 
         private function out(p:String, txt:String):void
         {
-            var f:File = new File(p);
+            var f:File = File.applicationDirectory.resolvePath(p);
             var fs:FileStream = new FileStream();
             fs.open(f, FileMode.WRITE);
             fs.writeUTFBytes(txt);

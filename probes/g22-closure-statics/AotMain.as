@@ -10,7 +10,7 @@ import flash.filesystem.FileStream;
 var i:int = 1;
 while (i <= 10)
 {
-    var f:File = new File("g22-closure-statics-aot.txt");
+    var f:File = File.applicationDirectory.resolvePath("g22-closure-statics-aot.txt");
     var st:FileStream = new FileStream();
     st.open(f, FileMode.APPEND);
     st.writeUTFBytes("id=" + i + " " + ClosureCases.one(i) + "\n");

@@ -31,7 +31,9 @@ package
 
     public class PixelDump extends Sprite
     {
-        public static var OUT:String = "C:/Users/rayle/Desktop/as3compiler-aot/asaotui/air-check/air-dump.bmp";
+        // Relative to the swf/app dir on AIR and to the app dir on our AOT (both are this
+        // folder), so the air arm and the AOT arm write the same file name.
+        public static var OUT:String = "air-dump.bmp";
         public static var W:int = 200;
         public static var H:int = 120;
 
@@ -76,7 +78,7 @@ package
 
         private function writeText(path:String, text:String):void
         {
-            var f:File = new File(path);
+            var f:File = File.applicationDirectory.resolvePath(path);
             var fs:FileStream = new FileStream();
             fs.open(f, FileMode.WRITE);
             fs.writeUTFBytes(text);
@@ -118,7 +120,7 @@ package
                     ba.writeByte(px[i]);
                 }
             }
-            var f:File = new File(path);
+            var f:File = File.applicationDirectory.resolvePath(path);
             var fs:FileStream = new FileStream();
             fs.open(f, FileMode.WRITE);
             fs.writeBytes(ba, 0, 0);

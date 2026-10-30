@@ -49,7 +49,11 @@ const here = __dirname;
 const compilerDir = path.resolve(here, '..', '..', 'as3compiler');
 const clang = process.env.ASC_CC || 'clang';
 const OUT = 'gallery';
-const EXE = 'GalleryApp.exe';
+// The AOT appends `.exe` only on Windows; on macOS/Linux the artifact is the bare
+// name. Keying the runner on the Windows spelling made every macOS run stop at
+// "expected exe not found" -- a red gate about a file-name suffix, not about the
+// tour. (Same class of defect as tools/probe.cjs's `.exe`-only discovery.)
+const EXE = process.platform === 'win32' ? 'GalleryApp.exe' : 'GalleryApp';
 // The tour's screenshot count: demo/DocsMain.as renders one PNG per entry in its
 // `stops` list (start / box / button / image / select / table / tabs / dialog).
 // Kept here as a number as well, so a page that silently stops being rendered is a
@@ -244,7 +248,8 @@ if (fs.existsSync(tourPath)) {
 
 if (done === null) {
   console.error('[gallery] TIMEOUT: ' + OUT + '.done was never written -- the tour did not finish.');
-  console.error('[gallery] the window is still up; look at it, then run:  taskkill /F /IM ' + EXE);
+  console.error('[gallery] the window is still up; look at it, then run:  '
+    + (process.platform === 'win32' ? 'taskkill /F /IM ' : 'pkill -f ') + EXE);
   process.exit(1);
 }
 

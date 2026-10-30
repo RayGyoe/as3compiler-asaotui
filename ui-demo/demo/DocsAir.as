@@ -148,7 +148,7 @@ package demo
 
             var req:Array = requestedMode();          // [mode, logPath, openKeys]
             var mode:String = req[0];
-            this.logFile = new File(req[1] != null ? String(req[1]) : defaultLogPath());
+            this.logFile = File.applicationDirectory.resolvePath(req[1] != null ? String(req[1]) : defaultLogPath());
             this.openKeys = req[2] != null ? String(req[2]).split(",") : [];
             this.errorCount = 0;
 

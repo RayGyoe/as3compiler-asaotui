@@ -20,7 +20,7 @@ package
             var path:String = File.applicationDirectory.nativePath + File.separator + "g22-closure-statics-air.txt";
             for (var i:int = 1; i <= 10; i++)
             {
-                var f:File = new File(path);
+                var f:File = File.applicationDirectory.resolvePath(path);
                 var st:FileStream = new FileStream();
                 st.open(f, FileMode.APPEND);
                 st.writeUTFBytes("id=" + i + " " + ClosureCases.one(i) + "\n");

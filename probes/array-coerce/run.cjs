@@ -3,6 +3,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { mxmlcRun } = require('../../tools/mxmlc-run.cjs');
 const { spawnSync, execFileSync } = require('child_process');
 
 const DIR = __dirname;
@@ -29,7 +30,11 @@ console.log('[arr] building AOT arm');
 const b = spawnSync(process.execPath, [
   'src/index.ts', path.join(DIR, 'AotMain.as'), path.join(DIR, 'Cases.as'),
   '-o', path.join(DIR, 'AotMain.exe'), '--cc', 'clang', '-w',
-  '-I', './vendor/curl/include', '-L', './vendor/curl/lib/windows-x64', '-l', 'zlib',
+    // Host include/link flags come from the manifest -- the single place that
+  // knows what each platform needs. Spelling the Windows curl import library
+  // and `-l zlib` here by hand made this runner Windows-only (clang on macOS
+  // reads that as a file named libzlib.a and the link dies).
+  '--manifest', 'examples/window.build.example.json',
 ], { cwd: COMPILER, encoding: 'utf8' });
 if (b.status !== 0) {
   console.error('AOT BUILD FAILED\n' + ((b.stdout || '') + (b.stderr || '')).split(/\r?\n/).slice(-20).join('\n'));
@@ -39,11 +44,11 @@ spawnSync(path.join(DIR, 'AotMain.exe'), [], { cwd: DIR, encoding: 'utf8' });
 const aot = parse(AOT_TXT);
 
 console.log('[arr] building AIR arm');
-const mxmlc = path.join(SDK, 'bin', 'mxmlc.bat');
-const adl = path.join(SDK, 'bin', 'adl.exe');
+const mxmlc = path.join(SDK, 'bin', process.platform === 'win32' ? 'mxmlc.bat' : 'mxmlc');
+const adl = path.join(SDK, 'bin', process.platform === 'win32' ? 'adl.exe' : 'adl');
 const swf = path.join(DIR, 'AirMain.swf');
 clean(swf);
-const m = spawnSync('cmd', ['/c', mxmlc, '-output=' + swf, '-source-path=' + DIR, path.join(DIR, 'AirMain.as')],
+const m = mxmlcRun(mxmlc, ['-output=' + swf, '-source-path=' + DIR, path.join(DIR, 'AirMain.as')],
   { cwd: DIR, encoding: 'utf8' });
 if (m.status !== 0 || !fs.existsSync(swf)) {
   console.error('mxmlc FAILED\n' + ((m.stdout || '') + (m.stderr || '')).split(/\r?\n/).slice(-20).join('\n'));

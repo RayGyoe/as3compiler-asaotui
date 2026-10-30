@@ -147,7 +147,7 @@ var tookIf4:String = "no";
 if (qb) tookIf4 = "YES (wrong)";
 say("17 if(Boolean-declared local), value false ->", tookIf4);
 
-var f:File = new File("bind-truthy.txt");
+var f:File = File.applicationDirectory.resolvePath("bind-truthy.txt");
 var fs:FileStream = new FileStream();
 fs.open(f, FileMode.WRITE);
 fs.writeUTFBytes(buf);

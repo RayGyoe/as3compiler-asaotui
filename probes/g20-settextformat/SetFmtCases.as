@@ -174,7 +174,7 @@ package
 
         private static function emit(path:String, line:String):void
         {
-            var f:File = new File(path);
+            var f:File = File.applicationDirectory.resolvePath(path);
             var st:FileStream = new FileStream();
             st.open(f, FileMode.APPEND);
             st.writeUTFBytes(line + "\n");

@@ -35,7 +35,11 @@ const UI = path.resolve(__dirname, '..', '..');
 const COMPILER = path.resolve(UI, '..', 'as3compiler');
 const HERE = __dirname;
 const clang = process.env.ASC_CC || 'clang';
-const EXE = path.join(HERE, 'ReachFreeFn.exe');
+// The AOT appends `.exe` only on Windows; on macOS/Linux the artifact is the bare
+// name, so a Windows-spelled path made both arms report "emitted ..." FAIL even
+// though the link exited 0.
+const EXE_NAME = process.platform === 'win32' ? 'ReachFreeFn.exe' : 'ReachFreeFn';
+const EXE = path.join(HERE, EXE_NAME);
 
 const sh = (args, cwd) => spawnSync(process.execPath, args, { cwd, encoding: 'utf8', maxBuffer: 1 << 28 });
 const both = (r) => (r.stdout || '') + (r.stderr || '');
@@ -81,7 +85,7 @@ function build(extraArgs, label) {
 function buildAndRun(extraArgs, label) {
   const b = build(extraArgs, label);
   check(b.r.status === 0, label + ' builds and links (exit 0)', b.out);
-  check(b.exe, label + ' emitted ReachFreeFn.exe', '');
+  check(b.exe, label + ' emitted ' + EXE_NAME, '');
   if (!b.exe) return;
   const r = spawnSync(EXE, [], { cwd: HERE, encoding: 'utf8', maxBuffer: 1 << 24 });
   const out = both(r);

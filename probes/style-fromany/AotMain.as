@@ -13,7 +13,7 @@ import flash.filesystem.FileStream;
 var i:int = 1;
 while (i <= StyleCases.COUNT)
 {
-    var f:File = new File("style-fromany-aot.txt");
+    var f:File = File.applicationDirectory.resolvePath("style-fromany-aot.txt");
     var st:FileStream = new FileStream();
     st.open(f, FileMode.APPEND);
     st.writeUTFBytes("id=" + i + " " + StyleCases.one(i) + "\n");

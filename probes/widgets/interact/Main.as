@@ -416,7 +416,7 @@ function send(x:Number, y:Number, type:String):void
 
 function writeText(path:String, t:String):void
 {
-    var f:File = new File(path);
+    var f:File = File.applicationDirectory.resolvePath(path);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeUTFBytes(t);
@@ -458,7 +458,7 @@ function writeBmp(path:String, bd:BitmapData):void
             ba.writeByte(px[i]);
         }
     }
-    var f:File = new File(path);
+    var f:File = File.applicationDirectory.resolvePath(path);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeBytes(ba, 0, 0);

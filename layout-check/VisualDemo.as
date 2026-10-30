@@ -277,7 +277,12 @@ paint(r6, i6[0], i6[1], 0);
 label(20, 18, 'asaot.ui -- As3LayoutEngine: every rectangle below is the ENGINE output (layoutGet), not a mock', CAPTION, 14);
 
 // ---------------------------------------------------------------- evidence
-var OUT:String = 'C:/Users/rayle/Desktop/as3compiler-aot/asaotui/layout-check/visual-demo.bmp';
+// A RELATIVE name, resolved against the application directory (= the folder the
+// binary sits in, which is also the runner's cwd). The literal absolute path that
+// used to live here only existed on one Windows box, and it is not even reachable
+// there from `new File`: an absolute native path is fine, but a machine-specific
+// one makes the artifact vanish on any other machine.
+var OUT:String = 'visual-demo.bmp';
 
 function dumpBmp():void {
     var bd:BitmapData = new BitmapData(W, H, true, 0xFF000000);
@@ -313,7 +318,7 @@ function dumpBmp():void {
             ba.writeByte(px[i]);
         }
     }
-    var f:File = new File(OUT);
+    var f:File = File.applicationDirectory.resolvePath(OUT);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeBytes(ba, 0, 0);

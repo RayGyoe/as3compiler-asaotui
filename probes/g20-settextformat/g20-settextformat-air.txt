@@ -1,22 +1,22 @@
-raw file C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\g20-settextformat\g20-settextformat-air.txt
-raw tw1=52 tw2=52 tw3=52 ink1=50 ink3=50
+raw file /Users/ray.lei/Documents/as3compiler-aot/asaotui/probes/g20-settextformat/g20-settextformat-air.txt
+raw tw1=48 tw2=48 tw3=48 ink1=46 ink3=46
 id=1 true
 id=2 true
 id=3 true
 id=4 true
 id=5 true
 id=6 true
-raw sub tw1=48 tw3=48
+raw sub tw1=45 tw3=45
 id=7 true
-raw override=44 fresh=44
+raw override=40 fresh=40
 id=8 true
-raw ab=52 ba=52
+raw ab=49 ba=49
 id=9 true
-raw plain=44 formatted=52
+raw plain=40 formatted=48
 id=14 true
-raw splitTail=40 fresh=40
+raw splitTail=36.5 fresh=36.5
 id=12 true
-raw splitMid=40 fresh=40
+raw splitMid=38 fresh=38
 id=13 true
 raw color=255 size=30
 id=10 true

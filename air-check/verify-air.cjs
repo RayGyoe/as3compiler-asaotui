@@ -11,11 +11,12 @@
 // in project docs -- this is a local runner, not a doc).
 const fs = require('fs');
 const path = require('path');
+const { mxmlcRun } = require('../../tools/mxmlc-run.cjs');
 const { spawnSync } = require('child_process');
 
 const HERE = __dirname;
 const AIR = process.env.AIRSDK_HOME || 'D:/Adobe/Flex_Sdk/AIRSDK_51.4.1';
-const MXMLC = path.join(AIR, 'bin', 'mxmlc.bat');
+const MXMLC = path.join(AIR, 'bin', process.platform === 'win32' ? 'mxmlc.bat' : 'mxmlc');
 const noBuild = process.argv.includes('--no-build');
 
 function fail(msg) { console.error('FAIL ' + msg); process.exit(1); }
@@ -26,8 +27,7 @@ if (!fs.existsSync(MXMLC)) fail('no mxmlc at ' + MXMLC + ' (set AIRSDK_HOME)');
 if (!noBuild) {
   const t0 = fs.existsSync('aircheck.swf') ? fs.statSync('aircheck.swf').mtimeMs : 0;
   // A .bat needs cmd.exe: spawnSync of a .bat directly returns a null status.
-  const r = spawnSync('cmd', ['/c', MXMLC,
-    '-output=aircheck.swf', '-source-path=../seam', 'AirMain.as'],
+  const r = mxmlcRun(MXMLC, ['-output=aircheck.swf', '-source-path=../seam', 'AirMain.as'],
     { cwd: HERE, encoding: 'utf8', timeout: 300000 });
   const out = ((r.stdout || '') + (r.stderr || '')).trim();
   const rebuilt = fs.existsSync('aircheck.swf') && fs.statSync('aircheck.swf').mtimeMs !== t0;

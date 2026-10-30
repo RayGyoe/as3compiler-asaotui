@@ -120,7 +120,7 @@ function say(s:String):void
     // discards stdout (the window owns the process) and an in-memory log dies
     // with it -- then "the probe never wrote its files" is all you learn. A file
     // written on every step turns that into "it stopped right after X".
-    var f:File = new File(OUT + ".log.txt");
+    var f:File = File.applicationDirectory.resolvePath(OUT + ".log.txt");
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.APPEND);
     fs.writeUTFBytes(s + "\n");
@@ -338,7 +338,7 @@ function finish():void
 
 function writeText(path:String, t:String):void
 {
-    var f:File = new File(path);
+    var f:File = File.applicationDirectory.resolvePath(path);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeUTFBytes(t);
@@ -383,7 +383,7 @@ function writeBmp(path:String, bd:BitmapData):void
             ba.writeByte(px[i]);
         }
     }
-    var f:File = new File(path);
+    var f:File = File.applicationDirectory.resolvePath(path);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeBytes(ba, 0, 0);
