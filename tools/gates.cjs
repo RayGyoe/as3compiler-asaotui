@@ -330,6 +330,28 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // `stick` (scroll that follows its own content) were each green by hand
                  // for a while before this line existed.
                  'widgets/pointer', 'widgets/imaging', 'widgets/table2', 'widgets/stick',
+                 // `pointer-touch` is the MOBILE.md M0 pin: a SYNTHESIZED TouchEvent
+                 // series (G5 means no backend produces one) goes through PointerRouter
+                 // into the same press/click vocabulary the 41 kinds already speak, with
+                 // the scroller press delay, the slop veto and hover arbitration
+                 // (hasHover=false). It is also the only gate that checks a PICK against
+                 // the engine's own hit test: four points, engine pointer vs
+                 // UiApp.pickAt, so the touch path cannot invent a second definition of
+                 // "under the finger". Teeth: probes/widgets/pointer-touch/mutation.cjs
+                 // 6/6 -- including the one that removes the sub-step slop veto, which
+                 // stayed green until the release path stopped re-deciding it.
+                 'widgets/pointer-touch',
+                 // `touch-scroll` is MOBILE.md M1 (S1/S2): a synthesized touch series
+                 // DRAGS a viewport -- 1:1 follow, the press withdrawn without a click,
+                 // the axis locked once, and a coast that integrates wall-clock dt.
+                 // Deterministic half: the pixel offsets after a drag are hand arithmetic
+                 // (20pt -> 20px, the slop does not scroll, a drag past the end clamps at
+                 // 180, `momentum:false` stops at EXACTLY the release offset). Physics
+                 // half: coarse on purpose (the glide moved further, stayed inside the
+                 // content, and stopped) -- pinning the distance would pin the machine's
+                 // frame clock. Teeth: probes/widgets/touch-scroll/mutation.cjs 9/9,
+                 // including a programmatic scroll that must cancel a coast in flight.
+                 'widgets/touch-scroll',
                  // `icon` (SVG path data: cubic subdivision, stroke scaling, and the
                  // refusals an arc and a junk command must get) joined with the icons
                  // batch; it is the only probe in the kit that drives a PARSER.

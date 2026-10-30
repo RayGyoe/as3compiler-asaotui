@@ -10,6 +10,11 @@
 // Scrollbars are on by default (`scrollbarX`/`scrollbarY`: "auto"). They are drawn
 // over the viewport, so they do not change any rect this node is laid out in.
 //
+// A finger can scroll it (MOBILE.md S1) and coasts after the lift unless
+// `momentum: false`; `decelerationRate` (default 0.95, a fraction in (0,1)) sets how
+// quickly the coast dies. Both are read at glide time, so a render() that changes
+// them mid-flight is honoured.
+//
 // Give it an explicit size: a viewport has no meaningful intrinsic size, so an
 // auto axis falls back to 200x150 (ScrollViewWidget.DEFAULT_W/H) rather than
 // collapsing to zero.
@@ -35,6 +40,9 @@ package asaot.ui
             if (opts.offsetY != null) n.offsetY = Number(opts.offsetY);
             if (opts.wheelStep != null) n.wheelStep = Number(opts.wheelStep);
             if (opts.stickToBottom != null) n.stickToBottom = Boolean(opts.stickToBottom);
+            if (opts.momentum != null) n.momentum = Boolean(opts.momentum);
+            if (opts.decelerationRate != null)
+                n.decelerationRate = ScrollViewNode.decelRate(opts.decelerationRate, "decelerationRate");
             if (opts.onScroll != null) n.onScroll = opts.onScroll;
             // The bar modes are validated HERE, at factory time: an unknown string
             // that silently became "auto" is exactly the fallback AGENTS.md 2.5

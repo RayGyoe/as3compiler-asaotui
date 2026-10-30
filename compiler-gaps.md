@@ -102,7 +102,7 @@
 | 现象 | `flash.events.TouchEvent` 的类形状是完整的（`emit.ts:12047` 起，含 `TouchEvent_new`/`createTouchEvent` 等），但窗口后端**不转发触摸输入** ⇒ 拿不到触摸事件 |
 | 判定 | **后端缺口**（AIR 在触屏设备上有触摸输入；我们的桌面后端未接输入源）。**AIR 桌面端的确切行为——未实测** |
 | 对 UI 库的影响 | UI 库「**不做手势识别**」这条设计决定的部分原因即在此（见主文档「明确不做」） |
-| 状态 | 代码事实（后端不产生）；AIR 桌面行为**待实测** |
+| 状态 | 代码事实（后端不产生）；AIR 桌面行为**待实测**。**库侧已不再是空的**（2026-10-31，MOBILE.md M0 + M1 前半）：`PointerRouter` + 合成 mouse 兼容层 + `UiApp.pickAt`，再加上 `TouchScrollable`（1:1 拖拽、轴锁、惯性），各有门：`probes/widgets/pointer-touch`（30 checks，变异 **7/7**）与 `probes/widgets/touch-scroll`（26 checks，变异 **9/9**）；它们验证的是**路由、按压与滚动语义**，不是平台输入——真触摸仍等这一条 |
 
 ### G6 —— `--target wasm` + C++ 源**直接 throw**
 

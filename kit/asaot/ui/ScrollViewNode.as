@@ -40,6 +40,22 @@
 // shift-wheel is NOT available: the runtime's wheel event carries no modifier
 // (see Stage_dispatchWheel in the compiler).
 //
+// TOUCH (MOBILE.md S1/S2). A finger inside the viewport scrolls it 1:1 and, unless
+// `momentum` is false, keeps going after it lifts:
+//
+//   * `momentum` (default `true`) is the author's "no coasting" switch -- a form
+//     whose list must stop the instant the finger lifts sets it false;
+//   * `decelerationRate` (default 0.95) is the share of the velocity that survives
+//     ONE 60Hz frame; the widget corrects it for the real frame time, so the curve is
+//     the same at 30/60/120 Hz. Smaller = stops sooner. It is validated at factory
+//     time like the bar modes: a rate of 1.5 ("it accelerates") or 0 ("it stops dead
+//     every frame") is a typo, not a style.
+//
+// Momentum is deliberately NOT here as a per-frame tick: the widget runs it inside
+// `paint` and asks for its own next frame (markPaint), so coasting never re-solves
+// layout. That is also why `decelerationRate` is read at glide time from the
+// description: a theme or a model that changes it mid-glide is honoured.
+//
 // STICK TO BOTTOM (`stickToBottom`) is for logs, chats and consoles: the view keeps
 // following the END of the content while it grows, and stops following the moment the
 // reader scrolls away from the bottom. The whole rule is one comparison per frame
@@ -72,6 +88,9 @@ package asaot.ui
         public var stickToBottom:Boolean;   // follow content growth while at the end
         public var onScroll:Function;   // (offsetX:Number, offsetY:Number)
 
+        public var momentum:Boolean;        // touch fling keeps going after the lift
+        public var decelerationRate:Number; // velocity multiplier per 60Hz frame, (0,1)
+
         public var scrollbarX:String;   // "auto" | "always" | "never"
         public var scrollbarY:String;
         public var barThickness:Number; // px, the overlay bar's width
@@ -95,6 +114,8 @@ package asaot.ui
             this.maxOffsetY = 0;
             this.stickToBottom = false;
             this.onScroll = null;
+            this.momentum = true;
+            this.decelerationRate = 0.95;
             this.scrollbarX = "auto";
             this.scrollbarY = "auto";
             this.barThickness = 10;
@@ -119,6 +140,22 @@ package asaot.ui
             if (s == "auto" || s == "always" || s == "never") return s;
             throw new Error("asaot.ui.scrollView: " + opt + " must be \"auto\", \"always\""
                 + " or \"never\", got '" + s + "'");
+        }
+
+        // The share of the velocity surviving one 60Hz frame, anything outside (0,1)
+        // THROWS. Same reasoning as barMode: an out-of-range rate is a typo
+        // (`decelerationRate: 0.95` written as `95`), and a silent fallback would
+        // make a list that stops dead look like "momentum is broken".
+        public static function decelRate(v:Object, opt:String):Number
+        {
+            var n:Number = Number(v);
+            if (isNaN(n) || n <= 0 || n >= 1)
+            {
+                throw new Error("asaot.ui.scrollView: " + opt
+                    + " must be a fraction in (0,1) -- the share of velocity that"
+                    + " survives one 60Hz frame, got '" + v + "'");
+            }
+            return n;
         }
     }
 }

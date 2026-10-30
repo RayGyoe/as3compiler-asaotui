@@ -33,6 +33,7 @@ package asaot.ui
     import flash.events.FocusEvent;
     import flash.events.KeyboardEvent;
     import flash.events.MouseEvent;
+    import flash.events.TouchEvent;
     import flash.text.TextField;
     import flash.ui.Mouse;
     import flash.ui.MouseCursor;
@@ -122,6 +123,14 @@ package asaot.ui
             this.tabMoves = 0;
             this.keyEvents = 0;
             this._focus = null;
+            // Touch: one router per app. `hasHover` defaults to TRUE because every
+            // target this library can build today is a desktop window -- a platform
+            // that knows better calls setHasHover(false) and hover stops existing.
+            this.router = new PointerRouter(this);
+            this._hasHover = true;
+            this._synthetic = false;
+            this.syntheticMoves = 0;
+            this.pickCalls = 0;
             if (view != null) view.attachApp(this);
         }
 
@@ -150,6 +159,19 @@ package asaot.ui
             // do not exist" but "one listener, sharing the click's hit test".
             stage.addEventListener(MouseEvent.MOUSE_MOVE, onStageMouseMove);
             stage.addEventListener(Event.MOUSE_LEAVE, onStageMouseLeave);
+            // TOUCH. One stage listener per phase, exactly like the mouse above: a
+            // phase target is recomputed by the platform per touch, and a per-node
+            // listener would be one more thing that can outlive its node.
+            //
+            // Today nothing in the runtime dispatches these (G5 in compiler-gaps.md:
+            // the window backend has no touch source), so the only sequences that
+            // arrive are ones a program synthesizes -- the routing and press semantics
+            // are checkable either way, and `probes/widgets/pointer-touch` is what
+            // keeps this honest.
+            stage.addEventListener(TouchEvent.TOUCH_BEGIN, onStageTouchBegin);
+            stage.addEventListener(TouchEvent.TOUCH_MOVE, onStageTouchMove);
+            stage.addEventListener(TouchEvent.TOUCH_END, onStageTouchEnd);
+            stage.addEventListener(InputConstants.TOUCH_CANCEL, onStageTouchCancel);
             this._running = true;
             this.invalidate(Dirty.ALL);
             this.reflow();
@@ -227,6 +249,20 @@ package asaot.ui
         private var _regCount:int;          // entries in _nodeOf (O(1) diagnostic)
         private var _hover:UiNode;          // deepest node under the pointer
         public var hoverMoves:int;          // every MOUSE_MOVE the stage sent
+
+        // ---- touch (MOBILE.md M0) ---------------------------------------
+        //
+        // The router turns a touch series into the mouse vocabulary the kinds already
+        // speak; it is the ONLY consumer of TouchEvent in the library. `_synthetic`
+        // marks the events the router itself dispatches, because they bubble back to
+        // this same stage listener -- and re-deriving hover from a target this app
+        // chose would make the derived hover agree with itself by construction, which
+        // is exactly the failure mode the block above exists to prevent.
+        public var router:PointerRouter;
+        private var _hasHover:Boolean;      // false on touch-first devices (MOBILE.md E1/P5)
+        private var _synthetic:Boolean;
+        public var syntheticMoves:int;      // MOUSE_MOVEs the router dispatched
+        public var pickCalls:int;           // pickAt() calls (O(tree); press-rate only)
 
         // Called by UiNode.createBacking. The registry is how a hit target (which
         // may be a TextField or a child node's backing) finds its owner in O(depth)
@@ -344,12 +380,123 @@ package asaot.ui
         private function onStageMouseMove(e:MouseEvent):void
         {
             this.hoverMoves = this.hoverMoves + 1;
+            // A MOVE THE ROUTER INVENTED IS NOT EVIDENCE OF A POINTER. It bubbled here
+            // from an event we crafted for a node we picked, so its target IS our own
+            // guess -- deriving hover from it would let the router confirm itself.
+            if (this._synthetic) return;
+            // A finger has no "over" (MOBILE.md P5). Clear the chain rather than freeze
+            // it: otherwise the last desktop hover stays lit for the rest of the session.
+            if (!this._hasHover)
+            {
+                this.setHoverTarget(null);
+                return;
+            }
             this.setHoverTarget(this.nodeAt(e.target as DisplayObject));
         }
 
         private function onStageMouseLeave(e:Event):void
         {
             this.setHoverTarget(null);
+        }
+
+        // ---- touch routing (MOBILE.md M0) --------------------------------
+        //
+        // The four phases are forwarded, not interpreted: press delay, slop and long
+        // press are one policy and it lives in PointerRouter, so a second touch channel
+        // later (pen, platform stylus) reuses the same decisions.
+
+        private function onStageTouchBegin(e:TouchEvent):void { this.router.begin(e); }
+        private function onStageTouchMove(e:TouchEvent):void { this.router.move(e); }
+        private function onStageTouchEnd(e:TouchEvent):void { this.router.end(e); }
+        private function onStageTouchCancel(e:TouchEvent):void { this.router.cancel(e); }
+
+        // Does this window have a hovering pointer at all? A touch-first platform sets
+        // this to false and the 103 hover branches in the kinds stop running -- one
+        // verdict here instead of a `hasHover` test inside every widget (MOBILE.md P5).
+        public function setHasHover(v:Boolean):void
+        {
+            if (this._hasHover == v) return;
+            this._hasHover = v;
+            if (v)
+            {
+                if (this._hover != null) this.applyCursor();
+            }
+            else
+            {
+                this.setHoverTarget(null);
+            }
+        }
+
+        public function hasHover():Boolean
+        {
+            return this._hasHover;
+        }
+
+        // THE NODE UNDER A ROOT-SPACE POINT. Touch arrives without a target (the
+        // platform that would have hit-tested for us does not exist here -- G5), so the
+        // library has to answer the question itself, and the honest way is to ask the
+        // ENGINE's geometry rather than re-derive rectangles: `hitTestPoint(true)` is
+        // the same painted-content region `as_pick_hit` walks, so a mask, a scrollRect
+        // or a rotated child is accounted for by the code that draws it.
+        //
+        // What is NOT delegated is the ORDER: deepest first, later siblings on top, the
+        // overlay tree above everything -- that is the retained tree's own fact.
+        //
+        // The remaining gap is measured, not assumed: `probes/widgets/pointer-touch`
+        // dispatches a real engine pointer to the same coordinates and asserts that this
+        // pick and the engine's hover agree. If they ever drift, that probe is red.
+        public function pickAt(x:Number, y:Number):UiNode
+        {
+            this.pickCalls = this.pickCalls + 1;
+            var hit:UiNode = null;
+            if (this.overlayRoot != null) hit = this.pickIn(this.overlayRoot, x, y);
+            if (hit == null && this.root != null) hit = this.pickIn(this.root, x, y);
+            return hit;
+        }
+
+        private function pickIn(n:UiNode, x:Number, y:Number):UiNode
+        {
+            if (n == null || n.backing == null) return null;
+            if (!n.backing.visible) return null;
+            // `inert()` walks the ancestor chain, so a disabled container has already
+            // made this whole subtree unpickable -- returning here keeps the walk O(1)
+            // for the common disabled case instead of testing every descendant.
+            if (n.inert()) return null;
+            var kidsVector:Vector.<UiNode> = n.children;
+            if (kidsVector != null)
+            {
+                var i:int = kidsVector.length - 1;
+                while (i >= 0)
+                {
+                    var got:UiNode = this.pickIn(kidsVector[i], x, y);
+                    if (got != null) return got;
+                    i--;
+                }
+            }
+            if (n.backing.hitTestPoint(x, y, true)) return n;
+            return null;
+        }
+
+        // Dispatch one of the four mouse events a touch stands in for, AT THE NODE THE
+        // ROUTER CHOSE. `localX/localY` are computed against this node's box so every
+        // existing handler (`e.localY` in the menu rows, the slider's drag math) reads
+        // exactly what a real mouse would have given it.
+        public function dispatchPointerMouse(type:String, n:UiNode, sx:Number, sy:Number):void
+        {
+            if (n == null || n.backing == null) return;
+            if (type == MouseEvent.MOUSE_MOVE) this.syntheticMoves = this.syntheticMoves + 1;
+            var lx:Number = sx - n.absX;
+            var ly:Number = sy - n.absY;
+            var ev:MouseEvent = new MouseEvent(type, true, true, lx, ly, null, false, false, false, false, 0);
+            this._synthetic = true;
+            try
+            {
+                n.backing.dispatchEvent(ev);
+            }
+            finally
+            {
+                this._synthetic = false;
+            }
         }
 
         // Mark a whole subtree's styles stale and ask for a repaint. Styles are NOT

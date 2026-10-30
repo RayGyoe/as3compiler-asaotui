@@ -19,6 +19,7 @@
 |---|---|
 | 改 `as3compiler/` 任何文件 | 项目级承诺（占阶段号 + 全量回归）。工作全在 `asaotui/` |
 | 改 `UiNode.as` / `UiApp.as` / `Reconciler.as` / `Widget.as` / `Widgets.as` / `PaintKit.as` / `Node.as` / `Element.as` / `Control.as` | 由协调者独占；并行改会互相覆盖。**缺扩展点就报回来，不要自己动** |
+| 改 `Pointer.as` / `PointerRouter.as` / `InputConstants.as` / `TouchScrollable.as` | 输入路由是**跨全部 kind 的一条通路**（一次改动决定每个控件的 press/click/drag），与上面同属协调者层；控件要新的触摸语义请登记，不要自己加分支 |
 | 改 `style/Style.as` / `style/StyleRefinement.as` | 另一路 worker 正在改 |
 | 改 `ui-demo/kit-list.cjs` | 已改为**自动发现**，你新增的 `.as` 不需要登记 |
 | 用 `|| echo` 之类吞掉失败 | 假绿陷阱。要判绿必须看退出码 |

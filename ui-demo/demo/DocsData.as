@@ -502,10 +502,17 @@ package demo
 
                 new DocSection("Wheel, thumb, track", [
                     "One wheel notch is `wheelStep` px; with nothing to scroll vertically, the wheel",
-                    "falls back to the horizontal axis. There is no momentum and no elastic edge."
+                    "falls back to the horizontal axis.",
+                    "A FINGER on a touch screen scrolls this pane 1:1 and keeps going after it lifts",
+                    "(`momentum`, default true; `decelerationRate`, default 0.95 per 60Hz frame); a finger",
+                    "landing on a gliding pane stops it. It is",
+                    "not demonstrable here: this window's backend produces no touch events at all",
+                    "(compiler-gaps.md G5), so on a desktop this pane is wheel and thumb only. There is",
+                    "still no elastic edge (no overscroll bounce)."
                 ], [
                     "// wheel -> offsetY; dragging a thumb writes the same offset back",
-                    "// scrollbarX/scrollbarY: \"auto\" | \"always\" | \"never\""
+                    "// scrollbarX/scrollbarY: \"auto\" | \"always\" | \"never\"",
+                    "// touch: 1:1 drag + coast; momentum: false stops at the release offset"
                 ], 76, function ():Node
                 {
                     return text("Drag the thumb in the panel above; its source stays in sync.",

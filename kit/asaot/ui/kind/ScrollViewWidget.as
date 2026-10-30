@@ -29,16 +29,36 @@
 // (compensated for the scroll, like the background). They are real mouse targets
 // because a Graphics fill is a pick region (as_shape_region_hit).
 //
-// WHAT A SCROLLVIEW STILL DOES NOT DO: no momentum/inertia, no elastic overscroll,
-// no keyboard paging, no double-click-to-maximise. A wheel is `wheelStep` per
-// delta unit; the bars ARE draggable and a click on the track pages by one
-// viewport (this is the honest list; anything else would be a lie in the docs).
+// WHAT A SCROLLVIEW STILL DOES NOT DO: no elastic overscroll, no paging/snap, no
+// nested-scroller arbitration, no keyboard paging, no double-click-to-maximise. A wheel
+// is `wheelStep` per delta unit; the bars ARE draggable and a click on the track pages
+// by one viewport (this is the honest list; anything else would be a lie in the docs).
+//
+// TOUCH DRAG AND MOMENTUM (MOBILE.md S1/S2) go through TouchScrollable, called by
+// PointerRouter once the finger has left the press slop inside this viewport:
+//
+//   * the drag is anchored WHERE THE SLOP WAS CROSSED, not at touch-down. The 8pt of
+//     motion that proved "this is a drag" therefore does not also scroll -- otherwise a
+//     tap that wobbles by 9pt jumps the list a pixel, and every list does it slightly
+//     differently;
+//   * the axis is chosen ONCE, by the dominant motion, and only if that axis can
+//     actually scroll. A horizontal swipe across a vertical list is consumed and does
+//     nothing, which is what stops a diagonal finger from nudging a column;
+//   * the glide integrates WALL-CLOCK milliseconds (getTimer), scaled against the 60Hz
+//     frame the rate is quoted in -- it never assumes one frame is 16ms. A 120Hz window
+//     and a stalled frame both end in the same place (S2), and the glide is a PAINT-ONLY
+//     loop (markPaint), so it never re-solves layout while it coasts;
+//   * a finger landing on the viewport stops the coast IMMEDIATELY (`touchPress`), not
+//     when the press proves itself: on every mobile platform, touching a gliding list
+//     stops it.
 package asaot.ui.kind
 {
     import asaot.ui.Dirty;
+    import asaot.ui.InputConstants;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
     import asaot.ui.ScrollViewNode;
+    import asaot.ui.TouchScrollable;
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetTeardown;
@@ -52,8 +72,9 @@ package asaot.ui.kind
     import flash.display.Stage;
     import flash.events.MouseEvent;
     import flash.geom.Rectangle;
+    import flash.utils.getTimer;
 
-    public class ScrollViewWidget implements Widget, WidgetTeardown
+    public class ScrollViewWidget implements Widget, WidgetTeardown, TouchScrollable
     {
         // Scratch keys on the node (see Widget for why per-node state lives here and
         // not on the widget: one widget instance serves every node of its kind).
@@ -100,6 +121,27 @@ package asaot.ui.kind
         private static const MOVE_FN:String = "moveFn";
         private static const UP_FN:String = "upFn";
 
+        // Touch drag state (TouchScrollable). TD_AXIS is 0 undecided, 1 vertical,
+        // 2 horizontal, -1 "this viewport cannot scroll the axis the finger chose" (the
+        // series is then consumed without moving anything).
+        private static const TD_AXIS:String = "tdaxis";
+        private static const TD_X:String = "tdx";          // where the slop was crossed
+        private static const TD_Y:String = "tdy";
+        private static const TD_OX:String = "tdox";        // where the finger went down
+        private static const TD_OY:String = "tdoy";
+        private static const TD_OFFX:String = "tdoffx";
+        private static const TD_OFFY:String = "tdoffy";
+        // Last position/time that actually MOVED, for the velocity sample.
+        private static const TD_PX:String = "tdpx";
+        private static const TD_PY:String = "tdpy";
+        private static const TD_PT:String = "tdpt";
+        private static const TD_VEL:String = "tdvel";
+        // The glide: velocity (px/ms in OFFSET space), the wall-clock instant it was last
+        // integrated, and the axis. GLIDE_V == null means "not gliding".
+        private static const GLIDE_V:String = "gv";
+        private static const GLIDE_T:String = "gt";
+        private static const GLIDE_AXIS:String = "ga";
+
         private static const DEFAULT_W:Number = 200;
         private static const DEFAULT_H:Number = 150;
         // Bar metrics. 10px is the "classic" desktop thickness; the thumb needs a
@@ -141,6 +183,9 @@ package asaot.ui.kind
             n.extra[DRAG] = 0;
             n.extra[DRAGGED] = 0;
             n.extra[CONSUMED] = 0;
+            n.extra[TD_AXIS] = 0;
+            n.extra[TD_VEL] = 0;
+            n.extra[GLIDE_V] = null;
         }
 
         public function payload(n:UiNode, desc:Node):Boolean
@@ -149,9 +194,21 @@ package asaot.ui.kind
             var step:Object = n.extra[STEP_KEY];
             if (step == null || Number(step) != sv.wheelStep) n.extra[STEP_KEY] = sv.wheelStep;
             // A CHANGE in the description is a request; an unchanged one leaves the
-            // live position alone (see ScrollViewNode's header).
-            if (requested(n, REQ_X, LIVE_X, sv.offsetX)) n.dirty |= Dirty.M_PAINT;
-            if (requested(n, REQ_Y, LIVE_Y, sv.offsetY)) n.dirty |= Dirty.M_PAINT;
+            // live position alone (see ScrollViewNode's header). A REQUEST ALSO CANCELS A
+            // COAST: an author who scrolls programmatically (`offsetY = 0` from a "back to
+            // top" button) means it, and a glide that keeps writing the old position would
+            // fight the author. paint syncs REQ_X/REQ_Y with what IT wrote, so this fires
+            // only for somebody else's write.
+            if (requested(n, REQ_X, LIVE_X, sv.offsetX))
+            {
+                this.stopGlide(n);
+                n.dirty |= Dirty.M_PAINT;
+            }
+            if (requested(n, REQ_Y, LIVE_Y, sv.offsetY))
+            {
+                this.stopGlide(n);
+                n.dirty |= Dirty.M_PAINT;
+            }
             if (optionsChanged(n, sv)) n.dirty |= Dirty.M_PAINT;
             return false;   // the viewport's own size is the style's business
         }
@@ -247,6 +304,9 @@ package asaot.ui.kind
 
         public function paint(n:UiNode):void
         {
+            // A glide advances the offset BEFORE anything reads it, so the clamp below
+            // and every output (scrollRect, bars, onScroll) see one position, not two.
+            this.applyGlide(n);
             var w:Number = PaintKit.w1(n);
             var h:Number = PaintKit.h1(n);
 
@@ -346,6 +406,12 @@ package asaot.ui.kind
             // (the wheel handler writes back for the same reason).
             sv.offsetX = ox;
             sv.offsetY = oy;
+            // Mirror the write-back into the request bookkeeping: the author's handle and
+            // the widget's own output are now the same value, so payload can tell an
+            // authors' request from this frame's slide (and cancel a glide only for the
+            // former).
+            n.extra[REQ_X] = ox;
+            n.extra[REQ_Y] = oy;
             sv.contentW = cw;
             sv.contentH = ch;
             sv.maxOffsetX = maxX;
@@ -510,6 +576,13 @@ package asaot.ui.kind
             return v > max ? max : v;
         }
 
+        // The live offset of an axis, with "never painted yet" (NaN) read as 0.
+        private function liveOf(n:UiNode, k:String):Number
+        {
+            var v:Number = Number(n.extra[k]);
+            return isNaN(v) ? 0 : v;
+        }
+
         // ---- input ------------------------------------------------------------
         // Which bar sits under a viewport-local point: 1/2 = the vertical /
         // horizontal THUMB, 3/4 = the matching TRACK, 0 = neither. The geometry is
@@ -670,6 +743,173 @@ package asaot.ui.kind
         public function teardown(n:UiNode):void
         {
             this.endDrag(n);
+            n.extra[GLIDE_V] = null;
+            n.extra[TD_AXIS] = 0;
+        }
+
+        // ---- touch drag (TouchScrollable, MOBILE.md S1/S2) ----------------------
+        //
+        // Called by PointerRouter once it has decided the series is a drag: the finger
+        // left the press slop inside a viewport, and the press was withdrawn without a
+        // click. Everything below is in ROOT coordinates, like the Pointer that feeds it.
+
+        public function touchPress(n:UiNode):void
+        {
+            // Stop the coast, keep everything else: this may still turn out to be a tap.
+            this.stopGlide(n);
+        }
+
+        public function touchDragBegin(n:UiNode, x:Number, y:Number, originX:Number, originY:Number):void
+        {
+            // Grabbing a coasting list stops it dead where it is: the finger took over,
+            // and a glide that keeps running under a held finger reads as "it ran away".
+            this.stopGlide(n);
+            n.extra[TD_AXIS] = 0;
+            n.extra[TD_X] = x;
+            n.extra[TD_Y] = y;
+            n.extra[TD_OX] = originX;
+            n.extra[TD_OY] = originY;
+            n.extra[TD_OFFX] = liveOf(n, LIVE_X);
+            n.extra[TD_OFFY] = liveOf(n, LIVE_Y);
+            n.extra[TD_PX] = x;
+            n.extra[TD_PY] = y;
+            n.extra[TD_PT] = getTimer();
+            n.extra[TD_VEL] = 0;
+        }
+
+        public function touchDragTo(n:UiNode, x:Number, y:Number):void
+        {
+            var axis:int = int(n.extra[TD_AXIS]);
+            if (axis == 0)
+            {
+                // THE AXIS IS DECIDED BY THE MOTION SINCE TOUCH-DOWN, and the offset is
+                // anchored where the slop was crossed. Two different points on purpose:
+                // the 8pt that proved "this is a drag" are the only samples that can say
+                // "vertical or horizontal", and they must not also scroll.
+                var adx:Number = Math.abs(x - Number(n.extra[TD_OX]));
+                var ady:Number = Math.abs(y - Number(n.extra[TD_OY]));
+                if (adx == 0 && ady == 0) return;
+                // Dominant axis, and only if it can scroll. A viewport whose chosen axis
+                // has no range takes the series and does nothing with it (axis = -1):
+                // this is the "a horizontal swipe must not nudge a vertical list" rule.
+                if (ady >= adx) axis = (Number(n.extra[MAX_Y]) > 0) ? 1 : -1;
+                else axis = (Number(n.extra[MAX_X]) > 0) ? 2 : -1;
+                n.extra[TD_AXIS] = axis;
+                if (axis == -1) return;
+            }
+            if (axis != 1 && axis != 2) return;
+
+            var pos:Number = (axis == 1) ? y : x;
+            var prev:Number = (axis == 1) ? Number(n.extra[TD_PY]) : Number(n.extra[TD_PX]);
+            var now:Number = getTimer();
+            var dt:Number = now - Number(n.extra[TD_PT]);
+            // The velocity sample is taken in OFFSET space (positive = toward the end),
+            // and only from a sample that MOVED -- an end event that repeats the last
+            // move's coordinates must not report a speed of zero for a fast flick, but a
+            // finger that rests before lifting must not keep an old speed either
+            // (touchDragEnd checks the sample's age).
+            if (pos != prev && dt > 0)
+            {
+                n.extra[TD_VEL] = (prev - pos) / dt;
+                n.extra[TD_PT] = now;
+                n.extra[TD_PX] = x;
+                n.extra[TD_PY] = y;
+            }
+
+            var maxOff:Number = (axis == 1) ? Number(n.extra[MAX_Y]) : Number(n.extra[MAX_X]);
+            var anchor:Number = (axis == 1) ? Number(n.extra[TD_Y]) : Number(n.extra[TD_X]);
+            var start:Number = (axis == 1) ? Number(n.extra[TD_OFFY]) : Number(n.extra[TD_OFFX]);
+            this.moveTo(n, axis, start - (pos - anchor), maxOff);
+        }
+
+        public function touchDragEnd(n:UiNode, x:Number, y:Number):void
+        {
+            this.touchDragTo(n, x, y);
+            var axis:int = int(n.extra[TD_AXIS]);
+            n.extra[TD_AXIS] = 0;
+            if (axis != 1 && axis != 2) return;
+            var sv:ScrollViewNode = ScrollViewNode(n.desc);
+            if (!sv.momentum) return;
+            var v:Number = Number(n.extra[TD_VEL]);
+            if (isNaN(v)) return;
+            // A stale sample is a finger that STOPPED moving before it lifted: that is
+            // placing the content, not throwing it.
+            if ((getTimer() - Number(n.extra[TD_PT])) > InputConstants.FLING_FRESH_MS) return;
+            var speed:Number = Math.abs(v);
+            if (speed < InputConstants.FLING_MIN_PT_PER_MS) return;
+            var maxOff:Number = (axis == 1) ? Number(n.extra[MAX_Y]) : Number(n.extra[MAX_X]);
+            var off:Number = liveOf(n, (axis == 1) ? LIVE_Y : LIVE_X);
+            // Already against the wall in the direction of travel: a fling cannot push
+            // past the end (that would need overscroll, which this widget does not do).
+            if (v > 0 && off >= maxOff) return;
+            if (v < 0 && off <= 0) return;
+            n.extra[GLIDE_AXIS] = axis;
+            n.extra[GLIDE_V] = v;
+            n.extra[GLIDE_T] = getTimer();
+            n.app.markPaint(n);
+        }
+
+        public function touchDragCancel(n:UiNode):void
+        {
+            n.extra[TD_AXIS] = 0;
+            this.stopGlide(n);
+        }
+
+        // One writer for "put the viewport at this offset", shared by the drag and the
+        // glide so they cannot drift apart.
+        private function moveTo(n:UiNode, axis:int, off:Number, maxOff:Number):void
+        {
+            if (isNaN(off)) off = 0;
+            if (off < 0) off = 0;
+            if (off > maxOff) off = maxOff;
+            var key:String = (axis == 1) ? LIVE_Y : LIVE_X;
+            if (Number(n.extra[key]) == off) return;
+            n.extra[key] = off;
+            var sv:ScrollViewNode = ScrollViewNode(n.desc);
+            if (axis == 1) sv.offsetY = off; else sv.offsetX = off;
+            n.app.markPaint(n);
+        }
+
+        private function stopGlide(n:UiNode):void
+        {
+            n.extra[GLIDE_V] = null;
+        }
+
+        // The glide step. Two things are load-bearing here:
+        //   * dt is MEASURED (getTimer), and the rate is corrected by `rate^(dt/16.667)`,
+        //     so the decay is the same curve on a 120Hz window, a 30Hz window and after
+        //     a stalled frame (MOBILE.md S2 forbids assuming 16ms);
+        //   * the loop is PAINT-ONLY. It writes the offset and asks for another frame;
+        //     it never raises a layout bit, so coasting costs a repaint, not a re-solve.
+        private function applyGlide(n:UiNode):void
+        {
+            var raw:Object = n.extra[GLIDE_V];
+            if (raw == null) return;
+            var axis:int = int(n.extra[GLIDE_AXIS]);
+            var maxOff:Number = (axis == 1) ? Number(n.extra[MAX_Y]) : Number(n.extra[MAX_X]);
+            if (isNaN(maxOff) || maxOff <= 0) { n.extra[GLIDE_V] = null; return; }
+            var v:Number = Number(raw);
+            if (isNaN(v)) { n.extra[GLIDE_V] = null; return; }
+            var now:Number = getTimer();
+            var last:Object = n.extra[GLIDE_T];
+            var dt:Number = (last == null) ? 0 : (now - Number(last));
+            if (dt < 0) dt = 0;
+            n.extra[GLIDE_T] = now;
+
+            var key:String = (axis == 1) ? LIVE_Y : LIVE_X;
+            var off:Number = liveOf(n, key) + v * dt;
+            var sv:ScrollViewNode = ScrollViewNode(n.desc);
+            var rate:Number = sv.decelerationRate;
+            if (!(rate > 0 && rate < 1)) rate = 0.95;
+            v = v * Math.pow(rate, dt / InputConstants.FLING_FRAME_MS);
+
+            var done:Boolean = false;
+            if (off <= 0) { off = 0; done = true; }
+            else if (off >= maxOff) { off = maxOff; done = true; }
+            if (Math.abs(v) < InputConstants.FLING_STOP_PT_PER_MS) done = true;
+            n.extra[key] = off;
+            n.extra[GLIDE_V] = done ? null : v;
+            if (!done) n.app.markPaint(n);
         }
 
         // One wheel notch scrolls the axis that can scroll. Vertical wins when both

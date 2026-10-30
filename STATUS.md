@@ -128,7 +128,12 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`；第二十二轮补：四件「有槽位没行为」的空缺（`list`/`table`/`tabs` 键盘导航、
-`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制，✅ **已于 v0.4.303 在运行时修掉**，见 `compiler-gaps.md` G28）；第二十四轮补：**输入面最后四件**（右键 + 点锚菜单 / 双击 / `splitPane` / 键位系统 `ActionRegistry`+`KeyStroke`+`ContextExpr`+`Control.action`+`tabIndex`），顺手拆掉两个只报「条文」不报「代码」的门 —— `kind-coverage` 把字符串里的调用当成了真调用、`demo-options` 的共享键表是手抄的副本）；第二十五轮补：**运行时主题切换**（`ThemeTokens` 47 slot + `Theme.setTheme` 的 epoch 管线 + `UiApp` 的 `Dirty.THEME` 消费者 + 18 个自绘控件改读调色板；`setControlDefault` 改成跨 swap 存活的 override 层），判据 `probes/widgets/theme` **75 checks**、变异 **8/8**） · 对应 `kit/` **179 个 .as** · 第二十六轮补：**性能排查**（用户报「感觉性能有重大问题」——实测坐实且不在引擎：重复 key 检查是 O(n²)，占无变化 describe 的 98%，300 个按钮 39.3ms → 1.0ms；文本测量无缓存、`measureValid` 只写不读，占 layout 的 85%，单点文本变化整帧 13.3ms → 1.7ms；一个「paintAll→paintDirty」的优化被 `stick` 探针否决并已回退） · 一次性验收：`node tools/gates.cjs`（**58 道门**）
+`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制，✅ **已于 v0.4.303 在运行时修掉**，见 `compiler-gaps.md` G28）；第二十四轮补：**输入面最后四件**（右键 + 点锚菜单 / 双击 / `splitPane` / 键位系统 `ActionRegistry`+`KeyStroke`+`ContextExpr`+`Control.action`+`tabIndex`），顺手拆掉两个只报「条文」不报「代码」的门 —— `kind-coverage` 把字符串里的调用当成了真调用、`demo-options` 的共享键表是手抄的副本）；第二十五轮补：**运行时主题切换**（`ThemeTokens` 47 slot + `Theme.setTheme` 的 epoch 管线 + `UiApp` 的 `Dirty.THEME` 消费者 + 18 个自绘控件改读调色板；`setControlDefault` 改成跨 swap 存活的 override 层），判据 `probes/widgets/theme` **75 checks**、变异 **8/8**） · 对应 `kit/` **182 个 .as** · 第二十六轮补：**性能排查**（用户报「感觉性能有重大问题」——实测坐实且不在引擎：重复 key 检查是 O(n²)，占无变化 describe 的 98%，300 个按钮 39.3ms → 1.0ms；文本测量无缓存、`measureValid` 只写不读，占 layout 的 85%，单点文本变化整帧 13.3ms → 1.7ms；一个「paintAll→paintDirty」的优化被 `stick` 探针否决并已回退） · 一次性验收：`node tools/gates.cjs`（**59 道门**）；第四十二轮（MOBILE M1 前半）再加 `widgets/touch-scroll`，共 **61 道门**
+
+> 第四十一轮（2026-10-31）补的是**移动端的第一块地基（MOBILE.md M0）**：`Pointer` / `PointerRouter` /
+> `InputConstants` + `UiApp.pickAt` + **合成 mouse 兼容层** —— 一份合成 touch 序列就能驱动既有 kind，
+> 且「手指底下是谁」不是库自算的矩形，而是与引擎 hover **逐点对账**过的。真触摸仍挂在 **G5**
+> （窗口后端不产生 `TouchEvent`），所以这一轮的诚实说法是：**路由与按压语义可验，平台输入仍缺**。
 
 ---
 
@@ -139,7 +144,7 @@
 | L1 渲染（Skia + Stage3D） | ✅ 复用编译器运行时 | `layout-check/visual-check.cjs` 12 项像素断言；AOT ↔ AIR 两张 BMP **0 字节差异** |
 | L2 布局引擎（flexbox 子集） | ✅ **做透** | `layout-check` **133 项手算断言全绿**；Yoga == AOT == AIR **105 行 0 差异** |
 | L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 28 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
-| L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表 |
+| L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表。**触摸（第四十一轮）**：合成 `TouchEvent` 序列经 `PointerRouter` 走同一条 press/click 通路；`pickAt` 与引擎 hover 逐点对账。**真触摸输入仍是 G5** |
 | L2 动画 | ✅ **样式 5 字段 + layout 字段 + 浮层入/退场** | 样式 `paint` 字段：`opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`；样式 **`layout` 字段**：`width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y)——写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停（`probes/widgets/anim` 14 项 + `probes/widgets/motion` 23 项）；显示对象级：`OverlayMotion`（入场 140ms ease-out / **退场 120ms ease-in**，墙钟，每帧从引擎读基准，不累加），见 §3.4 |
 | L3 控件库 | ✅ **47 个工厂 / 41 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**41 个 kind 全部上了文档站**，由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 文档站是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
 | L3 样式面 | ✅ **33 字段** | 见 §3.2；仅剩 `grid` 刻意缺席（`cursor` 第十五轮已落地） |
@@ -303,7 +308,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 58 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 61 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -1077,12 +1082,122 @@ kit 只挂窗口。四条硬规则（每条都有探针断言）：
 
 **这一批最值得记的一条**：两个库级缺陷都**不是**「功能没写」，而是「写好了但摸不到 / 按下去没反应」。
 位图、矩形、`kind-coverage` 全都看不见它们 —— 只有**真的按坐标点一下、再真的敲一个键**才看得见。
+### 3.19 触摸可路由：`Pointer` + 合成 mouse 兼容层（第四十一轮 · MOBILE M0）
+
+**为什么从这儿开始**：`MOBILE.md` §0.1 的「先做哪六件」第 1 件。移动端的控件数量不是主要缺口
+（拿 NSH 的 48 个 element 对表，等价物 19 个、语义不同 14 个、真缺 9 个），缺的是**输入层**：
+全库 **0 处** `TouchEvent`，41 个 kind 只会被鼠标驱动。
+
+**落地三件 + 一处裁决**（全部在 `asaotui/` 内，编译器一行未改）：
+
+| 文件 | 职责 |
+|---|---|
+| `kit/asaot/ui/Pointer.as` | 一个指针的状态（id / x / y / phase / isPrimary / pressure + press 锚点）。**可变**，因为 move 热路径上**路由自己的判定**不许分配（§2.4 的 GC 红线）；兼容层每次派发仍要 new 一个 `MouseEvent`（与引擎一次真实事件同量级），所以这不是「零分配」的证明 |
+| `kit/asaot/ui/PointerRouter.as` | 一个 touch 序列进，一套既有词汇出：`down/move/up/cancel` → `MOUSE_DOWN/MOVE/UP` + `CLICK`，外加 press 延迟（滚动容器内 130ms）、slop（8pt）、长按（500ms）与取消 |
+| `kit/asaot/ui/InputConstants.as` | 阈值**唯一出处**（另有 `TOUCH_CANCEL` 字面量：AIR 3.0 的类没有 cancel 常量，平台却总能撤销一段序列） |
+| `UiApp` | 四个 stage 监听 + `pickAt` + `dispatchPointerMouse` + `setHasHover`（一处裁决 103 处 hover 分支） |
+
+**三条刻意的设计决定**
+
+1. **兼容层发合成 `MouseEvent`，是为了让 41 个 kind 一行不改**。代价写在代码里：这些事件不是引擎发的，
+   所以引擎自己的鼠标状态（`ASC_mouse_down`、roll-over 记账、TextField 的 mouse-down 聚焦）看不见它们；
+   库侧只补了 hover 与焦点，其余当作已知边界。
+2. **命中不许自造第二套规则**。`pickAt` 只用引擎的 `hitTestPoint(x,y,true)`（同一块「已绘制内容」区域）
+   + 保留树的顺序事实；探针再拿**真引擎指针**在同一点上派生 hover，逐个点位断言 `pickAt` 与它相等。
+   四个点位里有一个是根 padding —— 那里两边都必须是 `null`，否则"永远返回最深节点"的假实现也会绿。
+3. **合成的 move 不许自我确认**。这些事件会冒泡回同一个 stage 监听，若让它重新派生 hover，
+   "我们的 hover 等于引擎的 hover"就变成同义反复。`_synthetic` 标志是这条的闸门。
+
+**变异测试抓到的两件事（比新功能本身值钱）**
+
+- **M4 第一次是绿的**：删掉「slop 不再否决点击」后探针仍然 PASS。真因不是探针太松，而是**同一个判决被
+  写了两遍** —— `move()` 把 slop 记进 `longDone`、`end()` 又重算一次 `slopExceeded`，删任一处都还有另一处兜着。
+  修法是把"这一串不算 tap"收成**一个** `noTap` 位；重跑后 M4 变红并指名 `a dragged touch still clicked the button`。
+- **M7 是补上去的**：`TOUCH_CANCEL` 原来没有任何断言。平台可以随时撤销一段序列（来电、手势抢占），
+  而**不释放 press 槽的后果是之后所有触摸都被静默丢掉** —— 看起来像"界面卡死"，不像指针缺陷。
+  探针现在钉两条：取消当场不点击、以及**紧接着的那一次 tap 必须仍然有效**。
+
+**判据与验收**
+
+| 项 | 结果 |
+|---|---|
+| `probes/widgets/pointer-touch`（新门） | PASS / 0 failures：tap（press 即时 + click）、拖拽（不点击）、scroller 内延迟 press（130ms 后落地且仍可点）、取消（不留槽）、hover 两态、pick 与引擎四点对账 |
+| 变异 `probes/widgets/pointer-touch/mutation.cjs` | **7/7 全中**，每条红在指名的断言上，`finally` 还原后 sha256 逐字节一致 |
+| 手算几何 | 320×240 窗口、padding 10、gap 8：`chip 10,10,120,32`、`btn 10,50,120,32`、`sw 10,90,80,32`、`scroll 10,130,200,60`、`row 10,130,200,60`；5 个像素点（含根 padding 与三个控件内底左角） |
+| 仍然缺的 | 真触摸（G5）、`hitSlop`/44pt 最小命中（P6）、触控态视觉（P5 后半）、`Env`（E1）、手势仲裁（P3）、多指（P4） |
+
+**没有动的东西**：`as3compiler/` 一行未改（本轮只读核对 `TouchEvent` 类形状与 `hitTestPoint` 语义）；
+`Widget` 契约、41 个 kind 的实现、`Reconciler` 全部保持不变 —— 这正是"兼容层放在协调者层"的意义。
+
+### 3.20 手指能滚：1:1 拖动 + 惯性（第四十二轮 · MOBILE M1 前半）
+
+**接在 M0 后面做哪一件**：`MOBILE.md` §0.1 的第 2 件（S1/S2）。M0 让触摸能"按"，但手机上
+"按得动、滚不动"等于不可用；而这一件**同样不需要真触摸**——合成序列就能验完。
+
+**落地（仍然只动 `asaotui/`）**
+
+| 文件 | 变更 |
+|---|---|
+| `kit/asaot/ui/TouchScrollable.as`（新） | 可选能力接口（与 `WidgetKeys`/`WidgetTeardown` 同型）：`touchDragBegin/To/End/Cancel`。走 kind 注册表解析，**不再用 `kind == "scrollView"` 判** |
+| `PointerRouter` | 越过 press slop 且落在视口里 ⇒ 触摸序列交给视口：**press 被撤回（发 `MOUSE_UP` 不发 `CLICK`）**，后续 move 全部转发；`cancel` 交 `touchDragCancel`（不滑行）；新增 `dragStarts/dragMoves/dragEnds` 计数 |
+| `ScrollViewWidget` | 实现 `TouchScrollable`：**按节点内部两套坐标**（按下点定轴、越 slop 点定锚）、轴锁（选中轴不能滚 ⇒ 消费但不移动）、`moveTo()` 单一写点、`applyGlide()` 纯重绘自走滑行 |
+| `ScrollViewNode` / `scrollView.as` | 新字段 `momentum`（默认 true）与 `decelerationRate`（默认 0.95，范围 (0,1)，**越界抛**，同 `barMode` 体例） |
+| `InputConstants` | `FLING_MIN/STOP_PT_PER_MS`、`FLING_FRAME_MS`（dt 修正的分母）、`FLING_FRESH_MS`（陈旧速度不算甩） |
+
+**四条写进代码的理由（都不是“设计品味”）**
+
+1. **轴用“按下点”、锚用“越 slop 点”**：8pt 的抖动是判“这是拖动”的证据，**不应同时滚内容**，
+   否则一次会抖的点击就把列表带跑一像素。两套坐标分开存。
+2. **press 撤回而不是等它变 click**：`MOUSE_UP` 无 `CLICK`，与真实鼠标“指针离开控件”同形；
+   不撤的后果是**行在列表滚动时一直亮着**，这是移动端被报最多的视觉 glitch。
+3. **滑行是 `markPaint` 自走，不是布局**：每帧只写 offset，**不抬布局位**；停下后不再要帧。
+   （否则一次甩动 = 每帧重解整棵树。）
+4. **程序化滚动取消滑行**：作者写 `offsetY = 0`（"回到顶部"）必须赢过动量；
+   `paint` 把自己的写回**同步进请求账**（`REQ_X/REQ_Y`），于是 `payload` 只对**别人的写**反应。
+
+**探针顺手抽出来的两个真缺陷（比新功能值钱）**
+
+- **整个位移被吞**：`startDrag` 只调 `touchDragBegin` 不调 `touchDragTo`，于是第一个样本是**下一次**
+  move，轴判定拿着一个远离按下的位置去决定——20pt 拖动落在 **0**。修法：把“越 slop 的那一点”
+  也交给接口。
+- **作者的程序化滚动在滑行中看不见**：`payload` 只在 describe 时跑，而滑行只抬 `M_PAINT`，
+  于是滑行期间写的 `offsetY` **永远不被读**，视图与作者打架。修法：`paint` 同步 `REQ_*`，
+  让“请求变了”只剩一种来源。
+
+**判据与验收**
+
+| 项 | 结果 |
+|---|---|
+| `probes/widgets/touch-scroll`（新门） | PASS / 0 failures（26 checks）：20pt→**20px**（精确）、slop 不滚、press 撤回、横向不动竖向列、`momentum:false` 停在**精确** 20、越界钉 180、回中取消滑行、**手指落下冻住滑行**、滑行会自己停 |
+| 变异 `probes/widgets/touch-scroll/mutation.cjs` | **10/10 全中**（半速/反向/锚在按下点/不撤 press/momentum 两向/不锁轴/不夹界/请求不取消滑行/手指落下不停），还原 sha256 逐字节一致 |
+| 手算几何 | 320×240、padding 10、gap 8：`sv 10,10,200,60`、`svf 10,78,200,60`、行 40 高 ⇒ `maxOffsetY = 240-60 = 180` |
+| 刻意不钉的 | 滑行**距离**（帧时钟的函数）。只钉「更远 / 不越界 / 最终停下」，确定性留给 `momentum:false` 的精确相等 |
+| 仍然缺的 | 真触摸（G5）、回弹（S3）、分页（S4）、嵌套轴仲裁（S5）、`hitSlop`（P6）、触控态视觉（P5 后半） |
+
+**顺带修的回归钉**：`PointerRouter.insideScroller` 改成 `scrollerOf`（能力判定）后，
+`probes/widgets/pointer-touch/mutation.cjs` 的两个变异锚点**会变成 SKIP**——已同步改写
+（M2/M3 锚 `scrollerOf`，M4 改锚 `noTap` 赋值行）；改完复跑 **7/7 仍全中**。
+一个“锚点找不到就跳过”的变异机是假绿，这次正好自己咬到了。
+
+**验收台本身的一个真缺陷（用户报的“UI 测试启动就卡在那儿”）**：这些门都是**真窗口**，
+程序出错时不会退出——而 `tools/gates.cjs` 的 `sh()` 与 `tools/probe.cjs` 的构建
+都是**无 timeout 的 `spawnSync`**，于是“一个进程卡住”就等于“整轮门永不返回”。已改：
+
+- `gates.cjs` 的每个子进程都有 15 分钟上限（`ASC_GATE_TIMEOUT_MS` 可降），被杀时**点名**
+  命令并报 `exit 124`，不再是莫名的 `exit null`；`probe.cjs` / `run-gallery.cjs` /
+  `air-sweep.cjs` 的构建同样带上限（`ASC_BUILD_TIMEOUT_MS`）。
+- `run-gallery.cjs` 的 tour 超时（`ASC_TOUR_TIMEOUT_MS`，默认 60s）**现在会杀窗**：以前它
+  故意留着窗让你看，但那正是“测试卡住了”的外观；要看半成品请显式 `ASC_KEEP_WINDOW=1`。
+- 牙齿：`ASC_GATE_TIMEOUT_MS=1200 node tools/gates.cjs` ⇒ 全部子进程按时长被杀、
+  51 行 `[TIMEOUT]`、**命令正常返回**（不是挂死）。来源：adl/AOT 程序写错时**永久不退出**，
+  所以「启动类」调用的上限必须短（≤10s 量级），而这是脚本层自己必须做到的，不靠人记得。
+
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **55** 道门：
+一条命令跑全部 **59** 道门：
 
 ```sh
-node tools/gates.cjs          # 54/54 PASS 才叫绿（定稿记录 reviews/gates-all-33.txt）
+node tools/gates.cjs          # 61/61 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-10-31b.txt）
 ```
 
 > 第十二轮补那次全量：**44/44 PASS**（`reviews/gates-all-26.txt`，exit 0），包括新门 `probe lifecycle`（9 项）

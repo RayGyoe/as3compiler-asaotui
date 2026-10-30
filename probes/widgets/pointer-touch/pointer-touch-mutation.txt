@@ -1,0 +1,33 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE SYNTHETIC EVENT IS AIMED AT THE STAGE: it bubbles from the root, so no node on the path ever sees the press or the click -- a tap is silent and nothing paints pressed
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the button is not pressed on touch-down; the tap did not click the button (0); the button is not pressed before the drag starts; the delayed press never landed inside the scroller; a tap inside a scroller did not click the row; the button is not pressed before the cancel; a tap after the cancel did not press the button; a tap after the cancel did not click;
+     restore: byte-identical (02cf0af142a82c19)
+M2  CAUGHT  EVERY PRESS IS DELAYED: the scroller wait is applied to every container, so a plain button only paints pressed 130ms after the finger went down -- the delay exists to protect scrolling, not to tax buttons
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the button is not pressed on touch-down; the router did not report one press (0); a press outside a scroller was delayed; the button is not pressed before the drag starts; the scroller press was not counted as delayed; the button is not pressed before the cancel; a tap after the cancel did not press the button;
+     restore: byte-identical (43340a11ab3eba5f)
+M3  CAUGHT  NO PRESS IS DELAYED: a row inside a scroller flashes pressed on every scroll, because the drag and the tap are decided by the same immediate press
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a press inside a scroller landed immediately; the scroller press was not counted as delayed; the scroller press was delivered before the delay;
+     restore: byte-identical (43340a11ab3eba5f)
+M4  CAUGHT  SLOP NO LONGER SUPPRESSES THE CLICK: dragging a control also clicks it, which is the "tap fires after a drag" bug every mobile app has shipped at least once
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a dragged touch still clicked the button; a dragged touch was counted as a tap; the scroller tap was not counted as a tap;
+     restore: byte-identical (43340a11ab3eba5f)
+M5  CAUGHT  THE SYNTHETIC GUARD GOES: the hover is re-derived from the node the router itself picked, so the agreement between "our hover" and "the engine hover" becomes true by construction
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a synthetic touch move replaced the engine's hover (chip[chip]);
+     restore: byte-identical (02cf0af142a82c19)
+M7  CAUGHT  A CANCELLED TOUCH LEAVES THE PRESS SLOT SET: the button still learns the press is over, but the router never takes the slot back -- so every later touch is dropped and the window looks frozen
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a tap after the cancel did not press the button; a tap after the cancel did not click;
+     restore: byte-identical (43340a11ab3eba5f)
+M6  CAUGHT  pickAt STOPS ASKING THE ENGINE: the walk returns the deepest node regardless of where the finger is, which is a second definition of "under the finger" -- precisely what the agreement check catches
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL pick at (70,26) is button[row] but the engine hovers chip[chip]; pick at (70,66) is button[row] but the engine hovers button[btn]; pick at (5,5) is button[row] but the engine hovers box[root]; the button is not pressed on touch-down; the router did not report one press (0); a press outside a scroller was delayed; the tap did not click the button (0); the router's last tap was not the button; the button is not pressed before the drag starts; the scroller press was not counted as delayed; the button is not pressed before the cancel; a tap after the cancel did not press the button; a tap after the cancel did not click;
+     restore: byte-identical (02cf0af142a82c19)
+
+MUTATION pointer-touch: 7/7 caught, 0 problem(s)
+RESULT: PASS

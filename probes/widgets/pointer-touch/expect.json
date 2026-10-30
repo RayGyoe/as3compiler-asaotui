@@ -1,0 +1,29 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/pointer-touch/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "Window 320x240. Root is a column, padding 10, gap 8, alignItems flex-start, so children start at x=10 and stack downward. chip is size [120,32] -> 10,10,120,32. btn is size [120,32] after chip + gap 8 -> 10,50,120,32. sw (toggle) is size [80,32] after btn + gap 8 -> 10,90,80,32. scroll is size [200,60] after sw + gap 8 -> 10,130,200,60. row is size [200,120] and is the scroll content, so it keeps its full height and is clipped by the viewport -> 10,130,200,120.",
+    "points": [
+      "(5,5) is root padding: #ffffff.",
+      
+      "(13,79) is the button's bottom-left interior: #2563eb.",
+      
+      "(13,150) is inside the scroll viewport, and the row button fills it: #cccccc."
+    ],
+    "not_pinned": "press/click counters, router decisions, hover arbitration and the pick-vs-engine agreement are asserted inside Main.as and reported through <OUT>.done. They are STATE, not geometry."
+  },
+  "w": 320,
+  "h": 240,
+  "rects": {
+    "root": [0, 0, 320, 240],
+    "chip": [10, 10, 120, 32],
+    "btn": [10, 50, 120, 32],
+    "sw": [10, 90, 80, 32],
+    "scroll": [10, 130, 200, 60],
+    "row": [10, 130, 200, 60]
+  },
+  "points": [
+    { "x": 5, "y": 5, "rgb": "#ffffff" },
+    { "x": 13, "y": 79, "rgb": "#2563eb" },
+    { "x": 13, "y": 150, "rgb": "#cccccc" }
+  ]
+}

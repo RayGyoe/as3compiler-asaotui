@@ -1,0 +1,27 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/touch-scroll/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "Window 320x240. Root is a column, padding 10, gap 8, alignItems flex-start: children start at x=10 and stack downward. sv is size [200,60] -> 10,10,200,60. svf is size [200,60] after sv + gap 8 -> 10,78,200,60. Each viewport holds six 40px rows, so the first row of sv is 10,10,200,40 and the first row of svf is 10,78,200,40.",
+    "range": "Six 40px rows make 240px of content in a 60px viewport: maxOffsetY = 240 - 60 = 180, and there is no horizontal overflow (single column). Asserted inside Main.as.",
+    "points": [
+      "(5,5) is root padding: #ffffff.",
+      "(13,30) is inside the first row of sv, 3px in from its left edge and at mid-height (rows are 40 tall, 10..50): #cccccc.",
+      "(13,98) is inside the first row of svf (78..118): #dddddd."
+    ],
+    "not_pinned": "Offsets after a drag, the press being withdrawn, the axis lock, the coast direction/clamp and the momentum:false exactness are STATE, asserted inside Main.as and reported through <OUT>.done. The coast DISTANCE is deliberately not pinned: it is a function of the frame clock (see the probe header)."
+  },
+  "w": 320,
+  "h": 240,
+  "rects": {
+    "root": [0, 0, 320, 240],
+    "sv": [10, 10, 200, 60],
+    "svf": [10, 78, 200, 60],
+    "s1": [10, 10, 200, 40],
+    "f1": [10, 78, 200, 40]
+  },
+  "points": [
+    { "x": 5, "y": 5, "rgb": "#ffffff" },
+    { "x": 13, "y": 30, "rgb": "#cccccc" },
+    { "x": 13, "y": 98, "rgb": "#dddddd" }
+  ]
+}

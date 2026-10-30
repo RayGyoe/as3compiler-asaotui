@@ -1,0 +1,45 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE DRAG MOVES THE CONTENT BY HALF: the finger and the content do not stay together, which is the whole contract of a 1:1 drag
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a 20pt drag moved the content to 10, want 20; the release offset is 10, want 20; the second fling moved 10, want 20; the third fling started at 10, want 20; the momentum:false list is at 10, want 20; the momentum:false list coasted to 10, want 20; a horizontal swipe moved the vertical list to 10;
+     restore: byte-identical (a2448be0b80d0d19)
+M2  CAUGHT  THE DRAG MOVES THE CONTENT THE WRONG WAY: the list scrolls against the finger
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a 20pt drag moved the content to 0, want 20; the release offset is 0, want 20; the release did not coast (still at 0); the second fling moved 0, want 20; the second release did not coast (still at 0); the third fling started at 0, want 20; the third release did not coast (still at 0); the momentum:false list is at 0, want 20; the momentum:false list coasted to 0, want 20; a horizontal swipe moved the vertical list to 0; a drag past the end landed at 0, want 180;
+     restore: byte-identical (a2448be0b80d0d19)
+M9  CAUGHT  THE DRAG IS ANCHORED AT TOUCH-DOWN: the 8pt of motion that proved "this is a drag" also scrolls, so a tap that wobbles jumps the list
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the slop motion scrolled the list (20); a 20pt drag moved the content to 40, want 20; the release offset is 40, want 20; the third fling started at 40, want 20; the slop motion scrolled the momentum:false list (20); the momentum:false list is at 40, want 20; the momentum:false list coasted to 40, want 20; a horizontal swipe moved the vertical list to 40; a drag past the end landed at 0, want 180;
+     restore: byte-identical (a2448be0b80d0d19)
+M3  CAUGHT  THE PRESS IS NOT WITHDRAWN WHEN A DRAG STARTS: the row stays painted pressed while its list scrolls
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the row stayed pressed after the drag took over;
+     restore: byte-identical (5ec732eca58952b3)
+M4  CAUGHT  MOMENTUM IS IGNORED FOR EVERY VIEWPORT: `momentum:false` becomes a lie and a fling never coasts
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the release did not coast (still at 20); the second release did not coast (still at 40); the third release did not coast (still at 20);
+     restore: byte-identical (a2448be0b80d0d19)
+M5  CAUGHT  MOMENTUM IS FORCED ON FOR EVERY VIEWPORT: the list an author asked to stop dead coasts under the finger
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the momentum:false list coasted to 139.17797571298362, want 20; a horizontal swipe moved the vertical list to 157.44735154296094; a drag past the end landed at 0, want 180;
+     restore: byte-identical (a2448be0b80d0d19)
+M6  CAUGHT  THE AXIS IS NEVER LOCKED: a horizontal swipe nudges a vertical list by its (small) vertical part instead of being consumed
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a horizontal swipe moved the vertical list to 14;
+     restore: byte-identical (a2448be0b80d0d19)
+M7  CAUGHT  A DRAG PAST THE END IS NOT CLAMPED: the view leaves its content and the rest of the frame shows blank space
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a drag past the end landed at 400, want 180;
+     restore: byte-identical (a2448be0b80d0d19)
+M8  CAUGHT  A PROGRAMMATIC SCROLL DOES NOT CANCEL THE COAST: "back to top" is written, then the glide adds its own motion on top and the view drifts back down
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a programmatic scroll did not cancel the glide (at 14.860171918998892); the third fling started at 34.860171918998894, want 20;
+     restore: byte-identical (a2448be0b80d0d19)
+M10  CAUGHT  A FINGER LANDING DOES NOT STOP A COAST: the press is recorded but the viewport is never told, so the list keeps sliding under a finger that is already down
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a finger on a coasting list did not stop it (106.98253189760376 vs 91.27737649834648);
+     restore: byte-identical (5ec732eca58952b3)
+
+MUTATION touch-scroll: 10/10 caught, 0 problem(s)
+RESULT: PASS

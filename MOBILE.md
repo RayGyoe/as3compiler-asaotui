@@ -25,7 +25,9 @@
 | 序 | 事项 | 为什么排第一 | 规模 |
 |---|---|---|---|
 | 1 | `Pointer` 抽象 + 合成 mouse 兼容层（P1/P2） | 不做则 41 个 kind 全部只能靠鼠标；兼容层让它们**不改就动** | M |
+| — | ↳ **✅ 已落地（2026-10-31）** | `Pointer`/`PointerRouter`/`InputConstants` + `UiApp.pickAt` + 合成 mouse 兼容层；门 `probes/widgets/pointer-touch`，变异 7/7。**真触摸输入仍是 G5**（后端不出事件） | Done |
 | 2 | 触摸拖动滚动 + 惯性（S1/S2） | 手机上「滚不动」等于不可用 | M |
+| — | ↳ **✅ S1/S2 已落地（2026-10-31）** | `TouchScrollable` + `ScrollViewWidget` 的 1:1 拖动/轴锁/press 撒回 + 惯性（按 dt 积分，`momentum`/`decelerationRate`）；门 `probes/widgets/touch-scroll`，变异 10/10。**S3 回弹、S4 分页、S5 嵌套仲裁仍未做** | Done |
 | 3 | `Env`（安全区 / 键盘 / 密度 / hasHover）（E1/E2） | 刘海与键盘一挡，界面就残；且 `hasHover` 决定 103 处 hover 是否该跑 | M |
 | 4 | `navStack` + `appBar` + `tabBar`（N1–N3） | 现在**没有"页面"概念**，手机上没有返回栈 | L |
 | 5 | 触控态样式 + `hitSlop` + `pointerEvents`（P5/P6） | 触摸设备没有 hover；小目标点不中 | S |
@@ -86,23 +88,25 @@ NSH 的 common props 里，按压相关是：`onPress` / `onLongPress` / `onPres
 
 | 指标 | 值 |
 |---|---|
-| kit `.as` 文件 | **179** |
+| kit `.as` 文件 | **183** |
 | 注册 kind / 作者工厂 | **41 / 47** |
 | `Style` 字段 | **33**（flexbox 子集 + 视觉；**无 grid、无 z-index**） |
-| 处理 `MouseEvent` 的文件 | **24 / 179**，**174 处**引用 |
-| `hover` 相关引用 | **103 处**（悬停假设遍布控件层） |
+| 处理 `MouseEvent` 的文件 | **26 / 183**，**186 处**引用 |
+| `hover` 相关引用 | **113 处**（悬停假设遍布控件层） |
 | 文档站页数 | **52**（`new DocPage`） |
-| 验收门 | **58**（`node tools/gates.cjs`） |
+| 验收门 | **60**（`node tools/gates.cjs`；含 `probes/widgets/pointer-touch`、`touch-scroll`） |
 | `VirtualListWidget` | **202 行**，固定行高 |
+
+**2026-10-31 复核（M0 + M1 前半落地后，命令不变）**：kit `.as` **183**；`MouseEvent` 耦合 **26 / 183 文件，186 处**（新增的四件都在输入层，没有把鼠标耦合摊到控件上）；`hover` **113**；`TouchEvent` **18**；`inertia` **1**（滑行在 `ScrollViewWidget` 里，不再只是注释）。
 
 ### 2.2 移动端令牌：全 0
 
 | 令牌 | 命中 | 含义 |
 |---|---|---|
-| `TouchEvent` / `Multitouch` / `TouchPhase` | 0 / 0 / 0 | 库内没有任何触摸路径 |
+| `TouchEvent` / `Multitouch` / `TouchPhase` | **18** / 0 / 0 | **已订正（2026-10-31）**：库内**有**触摸**路由**了（`PointerRouter` 与 `UiApp` 的四个监听），但**平台仍不产生事件**（G5）——「有消费者、没有输入源」这一条要分清；多指与 phase 抽象仍为 0 |
 | `safeArea` / `keyboardHeight` / `softKeyboard` | 0 / 0 / 0 | 安全区与键盘 inset 无人消费 |
 | `stageOrientation` / `Capabilities` / `pixelRatio` | 0 / 0 / 0 | 方向、密度、物理像素比都读不到 |
-| `hitSlop` / `pointerEvents` / `longPress` / `pressDelay` | 0 / 0 / 0 / 0 | 按压契约（§1.2 规则二）一个都没有 |
+| `hitSlop` / `pointerEvents` / `longPress` / `pressDelay` | **1** / 0 / **4** / 0 | **部分订正（2026-10-31）**：`longPress` 有常量与计时器（`InputConstants.LONG_PRESS_MS`），`hitSlop` 有 1 处常量（`MIN_HIT_PT`，**尚未接入命中**）；`hitSlop`/`pointerEvents` 的**描述符字段**仍缺，`pressDelay` 仍是常量而不是 per-control 默认值 |
 | `navStack` / `appBar` / `tabBar` / `bottomSheet` | 0 / 0 / 0 / 0 | 手机骨架全缺 |
 | `rubber` / `pinch` | 0 / 0 | 无回弹、无捏合 |
 | `reduceMotion` / `appState` / `screenReader` | 0 / 0 / 0 | 系统偏好与前后台状态拿不到 |
@@ -223,20 +227,20 @@ caret / 选区 / 密码掩码 / 组字都走运行时。所以旧评估里的 E3
 
 | ID | 事项 | 现状证据 | 改法 | 优先级 |
 |---|---|---|---|---|
-| P1 | `Pointer` 抽象：`{id, x, y, phase, isPrimary, pressure}`，统一 touch/pen/mouse | 24 文件直接吃 `MouseEvent`（174 处） | 新增 `asaot.ui.Pointer` + `PointerRouter`；**合成 mouse 兼容层**（primary → `MouseEvent`）让 41 kind 不改就能被触摸驱动 | **P0** |
-| P2 | 按压语义：`pressDelay`(≈130ms) / `longPress`(≈500ms) / `pressSlop`(≈8pt) / 滑出取消 | `pressed` 由 `MOUSE_DOWN` 直接置位 | 字段进描述符（可覆盖），默认值集中在一处常量；滚动容器内自动走 `pressDelay` | **P0** |
+| P1 | `Pointer` 抽象：`{id, x, y, phase, isPrimary, pressure}`，统一 touch/pen/mouse | 24 文件直接吃 `MouseEvent`（174 处） | 新增 `asaot.ui.Pointer` + `PointerRouter`；**合成 mouse 兼容层**（primary → `MouseEvent`）让 41 kind 不改就能被触摸驱动。**✅ 已落地（2026-10-31）**：`Pointer`/`PointerRouter`/`InputConstants` 三件 + `UiApp.pickAt`/`dispatchPointerMouse`；命中用引擎的 `hitTestPoint` 并与 `dispatchMouse` 的 hover 逐个点位对账 | **P0** |
+| P2 | 按压语义：`pressDelay`(≈130ms) / `longPress`(≈500ms) / `pressSlop`(≈8pt) / 滑出取消 | `pressed` 由 `MOUSE_DOWN` 直接置位 | 字段进描述符（可覆盖），默认值集中在一处常量；滚动容器内自动走 `pressDelay`。**✅ 已落地（2026-10-31）**：常量集中在 `InputConstants`，滚动容器判定按 kind 走祖先链；**描述符字段覆盖还没做**（值是常量，不是 per-control 默认值） | **P0** |
 | P3 | 手势识别器：tap / doubleTap / longPress / pan / swipe / pinch，含**仲裁**（同一时刻一个赢家） | 0 命中 | 识别器只回答「谁赢 + 位移/速度」，**不重解布局**（手势期走 transform / `scrollRect`） | P1 |
 | P4 | `claim`（触摸抢占）：控件说「这次触摸归我」，滚动容器据此取消按压 | 现有「临时挂 stage 监听」是鼠标抓取 | 与 S1 同一处；`onStartShouldSetResponder` 的最小等价物 | P1 |
-| P5 | 触控态样式：`Env.hasHover == false` ⇒ 103 处 hover 分支不触发；`pressed` 立即反馈 | `UiApp.as:202–225` 从 `MOUSE_MOVE` 派生 hover | **统一裁决**，不是逐控件加 `if`；`hover` 在触摸上转为 `pressed` 或禁用 | **P0** |
+| P5 | 触控态样式：`Env.hasHover == false` ⇒ 103 处 hover 分支不触发；`pressed` 立即反馈 | `UiApp.as:202–225` 从 `MOUSE_MOVE` 派生 hover | **统一裁决**，不是逐控件加 `if`；`hover` 在触摸上转为 `pressed` 或禁用。**✅ 一半已落地（2026-10-31）**：`UiApp.setHasHover(false)` 一处裁决（清空 hover 链 + 合成 move 不许重新派生，探针两向断言）；**触控态样式（hover 转 pressed 的视觉）还没做** | **P0** |
 | P6 | 最小命中 44pt + `hitSlop`（四边可不同） | `hitSlop` 0；新修 `numberInput` 是第一个热区 | 透明填充（§2.3②）；做成静态门：每个 kind 的命中矩形 ≥ 44×44 | P1 |
-| P7 | 触摸热路径零分配 | AGENTS.md §2.4 的 GC 红线 | move 事件不 new 对象/字符串；指针状态复用同一实例 | **P0** |
+| P7 | 触摸热路径零分配 | AGENTS.md §2.4 的 GC 红线 | move 事件不 new 对象/字符串；指针状态复用同一实例。**部分落地（2026-10-31）**：每个 touch id 复用同一个 `Pointer`，路由判定本身不 new、不拼字符串；**但合成兼容层每派发一次仍要 `new MouseEvent`**（与引擎一次真实事件的量级相同），所以这不是「零分配」，而是「路由不额外分配」；**且本库没有分配计数探针**，因此它是实现约定，不是测量结论 | **P0** |
 
 ### 4.2 S —— 滚动与列表
 
 | ID | 事项 | 现状证据 | 改法 | 优先级 |
 |---|---|---|---|---|
-| S1 | 1:1 触摸拖动 + 取消子项按压 + 抢占 | `ScrollViewWidget.as:32` 自述无动量；`touchDragWords` 0 | 拖动期间把 `pressed` 置灰并取消点击 | **P0** |
-| S2 | 惯性（按 dt 积分，不假设 16ms） | `inertia` 只在注释里（2 处） | `ENTER_FRAME` + 时间差；`decelerationRate` 进描述符 | **P0** |
+| S1 | 1:1 触摸拖动 + 取消子项按压 + 抢占 | ~~`ScrollViewWidget.as:32` 自述无动量；`touchDragWords` 0~~ → **✅ 已落地（2026-10-31）**：`TouchScrollable` 三个回调由 `PointerRouter` 调用；拖动开始时**press 被撤回而不是等它变 click**；轴锁按「按下到越 slop 的主导方向」定一次 | 拖动期间把 `pressed` 置灰并取消点击（已做） | ✅ |
+| S2 | 惯性（按 dt 积分，不假设 16ms） | ~~`inertia` 只在注释里（2 处）~~ → **✅ 已落地（2026-10-31）**：`getTimer()` 实测 dt，`v *= rate^(dt/16.667)`；glide 是**纯重绘**循环（`markPaint`，不抬布局位）；`momentum`/`decelerationRate` 进描述符（非法值**抛**） | `ENTER_FRAME` + 时间差（用帧驱动的 paint 自走代替，同一语义） | ✅ |
 | S3 | 越界回弹（rubber-band）或 Android 拉伸/辉光 | `rubber` 0 | 越界阻尼 + 回位动画；终止条件用速度阈值 | P1 |
 | S4 | 分页吸附（`paging` / `snap`） | `scrollView` 内 `paging` 只出现 1 次，且在「不做」清单里（`ScrollViewWidget.as:33`） | 轮播/引导页必需 | P2 |
 | S5 | 嵌套滚动与轴锁 | 无 | 依赖 P3 仲裁：内层先声明轴，外层让位 | P2 |
@@ -424,8 +428,8 @@ public interface Env {
 
 | 里程碑 | 交付 | 验收（必须可复现） |
 |---|---|---|
-| **M0 触摸可路由** | P1/P2/P5 + 合成 mouse 兼容层 | 新增 `probes/widgets/pointer-touch`：用**合成 touch 序列**驱动 chip/button/switch；现有 `probes/widgets/*` 在触摸驱动下全绿 |
-| **M1 可滚** | S1/S2/S3 | 确定性回放：一次 fling 的位移曲线与手算表一致；越界回弹回位误差 < 1pt |
+| **M0 触摸可路由** | P1/P2/P5 + 合成 mouse 兼容层 | 新增 `probes/widgets/pointer-touch`：用**合成 touch 序列**驱动 chip/button/switch；现有 `probes/widgets/*` 在触摸驱动下全绿。**2026-10-31：前半已达成** —— 探针在门里，驱动 button 的 tap / 拖拽 / scroller 延迟 / 取消 / hover 两态，变异 7/7；**「现有全部探针改触摸驱动」还没做**（它们仍走 `dispatchMouse`） |
+| **M1 可滚** | S1/S2/S3 | 确定性回放：一次 fling 的位移曲线与手算表一致；越界回弹回位误差 < 1pt。**2026-10-31：S1/S2 已达成** —— `probes/widgets/touch-scroll` 钉 1:1 位移（20pt→20px 精确）、slop 不滚动、轴锁、press 撒回、`momentum:false` 停在释放点、拖动越界钉在 180、程序化滚动取消滑行，变异 10/10；**S3 回弹没做**，所以「回位误差 < 1pt」这一条**不适用**；位移曲线只用「更远 / 不越界 / 最终停下」三条粗断言（精确距离是帧时钟的函数，钉死它等于钉死机器的忙闲） |
 | **M2 有环境** | E1/E2/E7 | 模拟 `safeArea=(47,0,34,0)` + `keyboardRect` 后，根 padding 与「输入框滚入可见区」逐项断言 |
 | **M3 有骨架** | N1–N5 | 三页栈：push/pop/系统返回/侧滑；页面状态保持；`navStack` 深度断言 |
 | **M4 可输入** | E3/T1–T4 | 键盘矩形变化 → 焦点框滚入 → 收起复原；`setSelection` 生效 |
@@ -480,11 +484,31 @@ cd asaotui
 node tools/mobile-gap-scan.cjs          # 本文所有计数（只读，不编译、不写文件）
 node tools/mobile-gap-scan.cjs --json   # 机读形态
 node tools/compiler-fingerprint.cjs     # 复核 as3compiler/ 零改动
-node tools/gates.cjs                    # 58 道门（本文未新增门）
+node tools/gates.cjs                    # 61 道门（含本文 M0 的 pointer-touch、M1 的 touch-scroll）
 ```
 
-> 本文**不给门的绿/红判断**（只做静态计数与代码事实）。上一次全绿落盘是 `reviews/gates-all-39.txt`
-> （**58/58**）；此后工作树有并发改动（另有会话在改 `as3compiler/`），要引用门的结论请当场重跑。
+> 本文**不给门的绿/红判断**（只做静态计数与代码事实）。上一次全量落盘是
+> `reviews/gates-all-39.txt`（**58/58**，尚未含这两道新门）；此后工作树有并发改动
+> （另有会话在改 `as3compiler/`），要引用门的结论请当场重跑。
+
+**M0 的落地证据（2026-10-31，`asaotui/` 内，未改编译器一行）**
+
+| 项 | 结果 |
+|---|---|
+| `probes/widgets/pointer-touch` | **PASS / 0 failures**。合成 touch 序列驱动 button（press + click）、scroller 内 button（130ms 延迟 press 后仍可点）、取消序列（不留 press 槽）、hover 两态（`hasHover=false` 无 hover；`true` 时恢复，且合成的 move 不许自我确认） |
+| 变异 `probes/widgets/pointer-touch/mutation.cjs` | **7/7 全中**：合成事件改投 stage / 每个 press 都延迟 / 不延迟 / slop 不再否决点击 / 去掉 synthetic 守卫 / `pickAt` 不问引擎 / 取消后不释放 press 槽 |
+| pick 与引擎对账 | 4 个点位（三个控件中心 + 根 padding）上 `UiApp.pickAt(x,y)` 必须等于引擎 `dispatchMouse` 派生出的 hover 节点 —— 这是「触摸不许自造第二套命中规则」的**测量**，不是声明 |
+| 仍然缺的 | 真触摸（G5：后端不出 `TouchEvent`）、`hitSlop`/44pt 最小命中（P6）、触控态视觉（P5 后半）、`Env`（E1）、手势仲裁（P3）、多指（P4） |
+
+**M1 的落地证据（2026-10-31，同一轮继续，仍未碰编译器）**
+
+| 项 | 结果 |
+|---|---|
+| `probes/widgets/touch-scroll` | **PASS / 0 failures**（26 checks）。六行 40px 内容装 60px 视口（range 180）：20pt 手指 → **20px** 内容（精确）、越 slop 的那 8pt **不滚**、拖动开始时 press **被撒回**、横向滑动**不动竖向列**、`momentum:false` 停在释放点（精确 20）、拖动越界钉在 180、程序化滚动**取消滑行**、手指落下**冻住**滑行、滑行最终**自己停下** |
+| 变异 `probes/widgets/touch-scroll/mutation.cjs` | **10/10 全中**：半速拖动 / 反向拖动 / 锚在按下点 / 不撒 press / 忽略 momentum / 强制 momentum / 不锁轴 / 不夹边界 / 程序化滚动不取消滑行 / 手指落下不停滑行 |
+| 刻意的粗断言 | 滑行的**距离**不钉（它是帧时钟的函数）；只钉「更远 / 不越界 / 最终停下」+
+`momentum:false` 的**精确相等**。把距离钉死等于把探针焊在机器的忙闲上 |
+| 仍然缺的 | 真触摸（G5）、回弹越界（S3）、分页吸附（S4）、嵌套轴仲裁（S5）、`hitSlop`（P6）、触控态视觉（P5 后半） |
 
 编译器事实的**出处行号**（只读）：`as3compiler/src/emit.ts:19688–19747`（`mouseEnabled`/`mouseChildren`
 被命中测试遵守）、`emit.ts:19611`（填充路径命中不看 alpha）、`as3compiler/vendor/window_glue.cc:2510`
