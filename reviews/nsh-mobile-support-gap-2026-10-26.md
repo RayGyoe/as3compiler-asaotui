@@ -380,6 +380,12 @@ NSH 的 a11y **几乎免费**（视图就是平台视图），只需补 `label`/
 | G33 | Android 字体管理器缺失（`sk_platform_fontmgr` 的 `#else` 恒走 CoreText） | 工具链缺口 |
 | G34 | 安全区 / `devicePixelRatio` 无 API（AIR 也无 ⇒ 需自定接口） | **增强** |
 
+> ⚠️ **2026-10-30 更新（编号顺延）**：拟编号 **G29 已被 `overflow`「存了不画」占用**（✅ 结案：
+> **不是编译器缺口** —— `scrollRect`/`mask` 编译器早就有，缺的是库侧消费，见
+> [`compiler-gaps.md`](../compiler-gaps.md) G29）。本表这些**尚未写入**的条目因此整体顺延一位：
+> G29→**G30**、G30→**G31**、G31→**G32**、G32→**G33**、G33→**G34**、G34→**G35**。新编号已落到
+> [`MOBILE.md`](../MOBILE.md) §9 的对照表。
+
 ---
 
 ## 9 证据与复核命令

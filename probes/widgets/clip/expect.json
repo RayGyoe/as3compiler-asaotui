@@ -1,0 +1,41 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/clip/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "layout": "root: column, padding 16, gap 12, explicit [320,160]. All three boxes have an EXPLICIT [120,28]; their strips have an EXPLICIT [200,28] plus minSize [200,28] so the engine cannot shrink them into the box. Children stack in order; y = prevY + prevH + 12 starting at 16 (padding-top); x = 16 (padding-left) for all six nodes.",
+    "rects": {
+      "hidden": "first box -> [16,16,120,28]",
+      "hidden-strip": "the box has no border/padding, so the child sits at the CONTENT origin = the box origin; its own width is 200 and a CLIP MUST NOT RESIZE IT -> [16,16,200,28]",
+      "visible": "y = 16+28+12 = 56 -> [16,56,120,28]",
+      "visible-strip": "-> [16,56,200,28]",
+      "scrollv": "y = 56+28+12 = 96 -> [16,96,120,28]",
+      "scroll-strip": "-> [16,96,200,28]"
+    },
+    "points": {
+      "page": "(4,4) is the root's own background 0xFFFFFF (outside every box)",
+      "hidden-in": "(131,30): local x = 131-16 = 115 < 120, so it is INSIDE the clip and under the strip -> the strip's own 0xFF0000. Proves the clip does not eat what it should show.",
+      "hidden-out": "(145,30): local x = 129 > 120 -> 14px PAST the box, still inside the strip's 200px of layout. Clipped => the page behind (0xFFFFFF). THIS IS THE TEETH: with no clip the strip paints here (0xFF0000), which is exactly the G29 defect.",
+      "visible-out": "(139,70): local x = 123 > 120 on the UNCLIPPED control row (y 56..84) -> the strip paints all 200px => 0x2563EB. Without this control the two points above could not distinguish 'clipped' from 'never painted'.",
+      "scroll-in": "(131,110): 'scroll' clips like 'hidden' -> 0xF59E0B",
+      "scroll-out": "(145,110): 14px past the box -> page 0xFFFFFF"
+    },
+    "program_asserts": "The clip rectangle is (0,0,120,28) -- x/y 0 means PURE CLIP (a non-zero origin is scrollRect's content SHIFT, which scrollView owns) and w/h are the BORDER box (a padding-box window would shave the node's own background). 'visible' installs nothing. The clip lives on the BOX, never on the child, and the child's own scrollRect stays null (a scrollView/image inside a clipped card must keep its own crop). A re-solve that lands on the same extents REUSES the cached rectangle (extra.clipLast) instead of allocating. Hit testing follows the clip: a click 14px past the window does NOT reach the spilling strip, a click inside it does, and the same past-the-box point on the unclipped control DOES reach its strip."
+  },
+  "w": 320,
+  "h": 160,
+  "rects": {
+    "hidden": [16, 16, 120, 28],
+    "hidden-strip": [16, 16, 200, 28],
+    "visible": [16, 56, 120, 28],
+    "visible-strip": [16, 56, 200, 28],
+    "scrollv": [16, 96, 120, 28],
+    "scroll-strip": [16, 96, 200, 28]
+  },
+  "points": [
+    { "x": 4, "y": 4, "rgb": "#FFFFFF" },
+    { "x": 131, "y": 30, "rgb": "#FF0000" },
+    { "x": 145, "y": 30, "rgb": "#FFFFFF" },
+    { "x": 139, "y": 70, "rgb": "#2563EB" },
+    { "x": 131, "y": 110, "rgb": "#F59E0B" },
+    { "x": 145, "y": 110, "rgb": "#FFFFFF" }
+  ]
+}

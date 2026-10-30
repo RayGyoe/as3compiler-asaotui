@@ -21,9 +21,11 @@
 //   5. textArea   -- multi-line: `rows` lines tall, and Return INSERTS. The decisive
 //                    half is the negative: Enter must NOT commit (in a single-line
 //                    field it does), so onCommit stays empty until the blur.
-//   6. decoration -- `textDecoration: "underline" | "line-through"` drawn by US (the
-//                    runtime's renderer never paints TextFormat.underline; see
-//                    compiler-gaps G28), from the field's own line metrics. The
+//   6. decoration -- `textDecoration: "underline" | "line-through"` drawn by US, from
+//                    the field's own line metrics. (The runtime paints
+//                    TextFormat.underline itself since v0.4.303 -- G28 closed -- but
+//                    this style must also do line-through, which has no AIR property,
+//                    so the kit keeps all three on one rule set.) The
 //                    assertion is geometric and glyph-independent: the string is
 //                    "H    H", the sample point sits in the four-space GAP where no
 //                    glyph can put ink, so "this pixel is the text colour" can only
@@ -469,7 +471,7 @@ function finish():void
 
 function writeText(path:String, t:String):void
 {
-    var f:File = new File(path);
+    var f:File = File.applicationDirectory.resolvePath(path);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeUTFBytes(t);
@@ -511,7 +513,7 @@ function writeBmp(path:String, bd:BitmapData):void
             ba.writeByte(pxv[i]);
         }
     }
-    var f:File = new File(path);
+    var f:File = File.applicationDirectory.resolvePath(path);
     var fs:FileStream = new FileStream();
     fs.open(f, FileMode.WRITE);
     fs.writeBytes(ba, 0, 0);

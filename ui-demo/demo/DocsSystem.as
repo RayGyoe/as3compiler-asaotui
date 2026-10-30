@@ -308,25 +308,32 @@ package demo
                     ]);
                 }),
 
-                new DocSection("overflow: accepted, not yet painted", [
-                    "`overflow` is where painting stops: `visible` (default), `hidden` (clip to the padding",
-                    "box), `scroll` (reserved for a scroll view). The value is validated at describe time",
-                    "and handed to the layout engine -- but NO painter clips with it yet (registered",
-                    "as G29). Both strips below are 200 wide, both boxes 120: with `hidden` the strip still",
-                    "paints its full width, and the box's own grey is hidden BEHIND it.",
-                    "So treat it as reserved, not as a mask. What DOES clip today is component-level:",
-                    "`scrollView` clips its viewport, and `image` with \"cover\" crops via scrollRect."
+                new DocSection("overflow: where painting stops", [
+                    "`overflow` is where a box stops painting: `visible` (default), `hidden`, `scroll`.",
+                    "The layout engine has always taken it; the NODE now consumes it too -- as a clip",
+                    "window on the box, so a child that does not fit stops at the edge instead of",
+                    "painting over its neighbours. That was library work, not a compiler fix: the gap",
+                    "registered as compiler-gaps G29 turned out to be a field nobody read, because",
+                    "`scrollRect` and `mask` already clip identically on both runtimes.",
+                    "Both strips below are 200 wide inside 120-wide boxes: the upper one shows all of",
+                    "its width, the lower one is cut at the box's border box.",
+                    "The window is the BORDER box, not the padding box: the node's own background and",
+                    "border ride in the same sprite, so a padding-box window would shave them. Two",
+                    "consequences: hit testing follows the clip (a spilling child stops being",
+                    "interactive, which is what `overflow: hidden` means everywhere else), and the",
+                    "node's own box shadow is clipped too -- put a shadow on a WRAPPER when both are",
+                    "wanted. `overflow: \"scroll\"` clips like `hidden`; the scrolling itself is",
+                    "`scrollView`'s job, and it keeps its own viewport crop."
                 ], [
-                    "box({ width: 120, overflow: \"hidden\" }, [ strip ])   // accepted; not painted yet",
-                    "// clipping that exists today:",
-                    "//   scrollView({ ... })                      the viewport clips its content",
-                    "//   image({ scaleMode: \"cover\" })           crops through scrollRect"
+                    "box({ width: 120, overflow: \"visible\" }, [ stripOf(200) ])   // 200 wide, spills",
+                    "box({ width: 120, overflow: \"hidden\"  }, [ stripOf(200) ])   // cut at 120",
+                    "// `scroll` clips the same way; use scrollView when you want to scroll"
                 ], 116, function ():Node
                 {
                     return column({ gap: 6 }, [
                         overflowRow("visible", A),
                         overflowRow("hidden", B),
-                        text("identical: the child keeps its 200px on both (G29)",
+                        text("cut at the box edge: the strip keeps its 200px of LAYOUT",
                             { key: "stCap8", style: MONO, ariaName: "" })
                     ]);
                 }),
@@ -1046,12 +1053,11 @@ package demo
             return box({ style: StyleRefinement.from(o), ariaName: "" });
         }
 
-        // A 120-wide box holding a 200-wide strip. The TWO ROWS ARE DELIBERATELY IDENTICAL: no
-        // painter honours `overflow` yet (G29), and a demo that pretended otherwise would be
-        // the one thing this site must never be -- a picture that disagrees with the pixels.
-        // The strip keeps its width through `minSize`, NOT through a flex field: a flex field
-        // REPLACES the item's base size, and on a clipped box this engine then resolves that
-        // basis on the WRONG axis (measured: a 200x28 strip came out 200 TALL).
+        // A 120-wide box holding a 200-wide strip. `visible` shows all 200; `hidden`
+        // clips at the box (UiNode.applyOverflowClip -> backing.scrollRect). The strip
+        // keeps its width through `minSize`, NOT through a flex field: a flex field
+        // REPLACES the item's base size, and on a clipped box this engine then resolves
+        // that basis on the WRONG axis (measured: a 200x28 strip came out 200 TALL).
         private static function overflowRow(ov:String, c:uint):Node
         {
             return row({ gap: 10, alignItems: "center" }, [

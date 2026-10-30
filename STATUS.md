@@ -128,7 +128,7 @@
 >
 > 本表每一行都有可复核的命令。**不要采信本表，跑它。**
 生成日期：2026-10-25（第十九轮补：G24/G25/G26 修好之后的**库侧妥协编码审计** —— 图标通道的曲线细分与弧拒绝**全部撤除**，12 处「因为引擎做不到」的陈旧注释改写为「这是设计选择」；第二十轮补：G27 修好之后的同一套审计 —— `emcc` PE 转发器与 `.scratch/emcc-shim/` **整体删除**，`--check` 改问编译器自己的 `doctor`；第二十二轮补：四件「有槽位没行为」的空缺（`list`/`table`/`tabs` 键盘导航、
-`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制）；第二十四轮补：**输入面最后四件**（右键 + 点锚菜单 / 双击 / `splitPane` / 键位系统 `ActionRegistry`+`KeyStroke`+`ContextExpr`+`Control.action`+`tabIndex`），顺手拆掉两个只报「条文」不报「代码」的门 —— `kind-coverage` 把字符串里的调用当成了真调用、`demo-options` 的共享键表是手抄的副本）；第二十五轮补：**运行时主题切换**（`ThemeTokens` 47 slot + `Theme.setTheme` 的 epoch 管线 + `UiApp` 的 `Dirty.THEME` 消费者 + 18 个自绘控件改读调色板；`setControlDefault` 改成跨 swap 存活的 override 层），判据 `probes/widgets/theme` **75 checks**、变异 **8/8**） · 对应 `kit/` **179 个 .as** · 第二十六轮补：**性能排查**（用户报「感觉性能有重大问题」——实测坐实且不在引擎：重复 key 检查是 O(n²)，占无变化 describe 的 98%，300 个按钮 39.3ms → 1.0ms；文本测量无缓存、`measureValid` 只写不读，占 layout 的 85%，单点文本变化整帧 13.3ms → 1.7ms；一个「paintAll→paintDirty」的优化被 `stick` 探针否决并已回退） · 一次性验收：`node tools/gates.cjs`（**58 道门**）
+`accordion` 多开、`image` 的 `cover`、文字装饰自绘），新增缺口登记 **G28**（`TextFormat.underline` 不被绘制，✅ **已于 v0.4.303 在运行时修掉**，见 `compiler-gaps.md` G28）；第二十四轮补：**输入面最后四件**（右键 + 点锚菜单 / 双击 / `splitPane` / 键位系统 `ActionRegistry`+`KeyStroke`+`ContextExpr`+`Control.action`+`tabIndex`），顺手拆掉两个只报「条文」不报「代码」的门 —— `kind-coverage` 把字符串里的调用当成了真调用、`demo-options` 的共享键表是手抄的副本）；第二十五轮补：**运行时主题切换**（`ThemeTokens` 47 slot + `Theme.setTheme` 的 epoch 管线 + `UiApp` 的 `Dirty.THEME` 消费者 + 18 个自绘控件改读调色板；`setControlDefault` 改成跨 swap 存活的 override 层），判据 `probes/widgets/theme` **75 checks**、变异 **8/8**） · 对应 `kit/` **179 个 .as** · 第二十六轮补：**性能排查**（用户报「感觉性能有重大问题」——实测坐实且不在引擎：重复 key 检查是 O(n²)，占无变化 describe 的 98%，300 个按钮 39.3ms → 1.0ms；文本测量无缓存、`measureValid` 只写不读，占 layout 的 85%，单点文本变化整帧 13.3ms → 1.7ms；一个「paintAll→paintDirty」的优化被 `stick` 探针否决并已回退） · 一次性验收：`node tools/gates.cjs`（**58 道门**）
 
 ---
 
@@ -288,6 +288,11 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 - `boxShadow` 落在 **background 形状**上，不是 backing：backing 上的滤镜会连 label/图标/子节点一起投影，
   那是**文字投影不是盒子投影**；只画了文字的 kind（无 `shapeA`）落到字段自身，两者皆无则**抛错**而不是静默丢弃；
   `spread != 0` / `inset == true` 也抛错（`DropShadowFilter` 没有对应旋钮，近似就是画了作者没要的阴影）；
+- **`overflow` 自 G29 结案起真的裁剪**（`UiNode.applyOverflowClip()` → `backing.scrollRect = rect(0,0,absW,absH)`，
+  矩形缓存于 `extra["clipLast"]`、只在边长变化时重写）。三条口径：边界是**边框盒**（底色/描边与内容同处一颗
+  sprite，按 padding 盒裁会把表面削细）、**命中测试跟着裁**（溢出的子件不再可点）、**节点自身的 box shadow
+  也被裁**（阴影是 backing 内的滤镜 ⇒ 两者都要就挂 wrapper）。钉子 `probes/widgets/clip`，变异 **6 条全红**；
+  圆角不参与裁剪（`scrollRect` 是矩形，异形才用 `mask`）；
 - 布局验收基准**不是 `adl`**（AIR 无 flexbox），而是 W3C flexbox / 浏览器；
 - 仍刻意缺席：`grid`（引擎不实现；seam 层面也会抛错）。`cursor` 第十五轮落地：**继承**语义（子节点未设则
   沿祖先链取），值为 `auto`/`arrow`/`button`/`hand`/`ibeam`（与 `flash.ui.MouseCursor` 同名字面量），
@@ -967,7 +972,7 @@ G25/G27 一样已在 v0.4.239 / v0.4.240 修完。
 | **键盘导航** | `WidgetKeys` 接口第三轮就定了，实现者 8 个；`list`/`table`/`tabs` **只认鼠标点击**（§3.1 第 231 行自己写着「tabs 还没接方向键、list 还没接上下键」） | 三者都 `implements WidgetKeys`（实现者 11 个）：`list`/`table` 用 **CLAMP**（Up/Down/Home/End/PageUp/PageDown），`tabs` 用 **WRAP**（Left/Right/Home/End）—— 不是口味差异：listbox/grid 是**序列**（ARIA 语义），tab strip 是**环**。**端点也消费按键**（夹紧在端部时仍返回 true），否则键会落到滚动祖先。virtual table 选中后 `reveal()` 把行滚进**已挂载窗口**（否则 index 对、模型动了、屏幕上什么都没有）。三者 `tabEnabled = true` 才进 Tab 环 | `probes/widgets/keys`（**36 项**）；变异 **4/4**（list 端部回绕、tabs 端部夹紧、virtual 不 reveal、键写 `extra` 而不写 Binding） |
 | **`accordion` 多开** | `AccordionNode` 自述「Single-open is the only mode … `multi` is NOT implemented」；`openIndices` 传进来会被**静默忽略** | `mode` 收 `single`/`multi`：multi 走 `openIndices`（一组），single 走 `activeIndex`（一个），**两者互斥、错配直接抛**（AGENTS.md §2.5）。集合**升序重建**、比较与顺序无关；`onToggle(i)` 报被点击的那个 index。header 的 key 带上**本 accordion 的 key 前缀**（同页两处 accordion 过去都出 `h0`，`findByKey` 只会拿到先来的那个） | `probes/widgets/accordion`（**18 项**，含 4 组拒绝组合）；变异 **4/4**（填色只认 `k==0`；工厂只挂第一个 open panel；toggle 用 `[target]` 替换集合；互斥 guard 改 `if (false)`） |
 | **`image` 的 `cover`** | `scaleMode` 只有 `fit`/`stretch`/`none`，`cover` **直接抛错** | `cover` = 等比放大到**铺满**再裁剪，用 `scrollRect` 开窗。两个坑都是实测出来的：① 窗口必须**除以缩放系数**（renderer 把窗口 clip 在对象自身矩阵里，24 单位的盒子在 3x 图上等于 72 设备像素 ⇒ 图被裁没，三个采样点全 `#ffffff`）；② **退出 cover 必须清 `scrollRect`**，否则下一个模式继承一个没人要的裁剪 | `probes/widgets/imaging`（**31 项**，含窗口矩形 + 三点像素 + 退出 cover 的复检）；变异 **8/8**（新增 max→min、窗口单位、退出不清窗口） |
-| **下划线 / 删除线 / 上划线** | `TextFormat.underline` 设得上、读得回、`clone` 得走，**绘制路径没有一处读它**（`as_tf_html_emit_run` 第一句就是 `(void)underline`）⇒ 登记 **G28** | 不走 `TextFormat.underline`，改用 `getLineMetrics()` **逐行自绘**：`TextStyle.textDecoration`（`none`/`underline`/`line-through`/`overline`，默认 `none`，随 `inheritFrom`/`copy` 级联），`PaintKit.decorate(n)` 在 14 个 kind 的 `paint()` 末尾画。`getLineMetrics` 与字形**同源**，所以线画在第几行、从哪个 x 起、多宽，都跟字形出自同一次布局 | `probes/widgets/textfx`（**18 项**：装饰相位在**字形够不到的四空格空隙**取样，并用同页一个无装饰节点做负例）；变异 **8/8**（M6 不画、M7 画错位置、M8 忽略行首 `lm.x`） |
+| **下划线 / 删除线 / 上划线** | `TextFormat.underline` 设得上、读得回、`clone` 得走，**绘制路径没有一处读它**（`as_tf_html_emit_run` 第一句就是 `(void)underline`）⇒ 登记 **G28** | 不走 `TextFormat.underline`，改用 `getLineMetrics()` **逐行自绘**：`TextStyle.textDecoration`（`none`/`underline`/`line-through`/`overline`，默认 `none`，随 `inheritFrom`/`copy` 级联），`PaintKit.decorate(n)` 在 14 个 kind 的 `paint()` 末尾画。`getLineMetrics` 与字形**同源**，所以线画在第几行、从哪个 x 起、多宽，都跟字形出自同一次布局 | `probes/widgets/textfx`（**18 项**：装饰相位在**字形够不到的四空格空隙**取样，并用同页一个无装饰节点做负例）；变异 **8/8**（M6 不画、M7 画错位置、M8 忽略行首 `lm.x`）。⚠️ **2026-10-30 追记**：G28 已由编译器侧修掉（v0.4.303，按 `adl` 的 1 设备像素口径自绘），所以库侧保留这三档的理由不再是「运行时画不出来」，而是**`line-through`/`overline` 没有任何 AIR 属性可委派 + 三档共用同一套行度量**；`textfx` 的装饰断言因此现在钉的是**库自己的线**，不再兼作缺口证据 |
 
 一条方法论，比这四件本身更值钱：**「属性对、屏幕错」这一类缺陷，探针必须在只有那条行为才会
 改变像素的地方取样** —— 键盘（只有按键才动）、multi（只有两个 panel 同时开才出现的填色）、

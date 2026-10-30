@@ -8,9 +8,11 @@
 // about.
 //
 // `textDecoration` (2026-10-26) is the DECORATION LINE under/through/over a run:
-// "none" | "underline" | "line-through" | "overline". It is ours to draw, because
-// `TextFormat.underline` exists in AIR but our renderer never paints it -- see
-// PaintKit.decorate for the geometry and compiler-gaps.md G28 for the gap. One
+// "none" | "underline" | "line-through" | "overline". It is still ours to draw even
+// though the runtime now paints `TextFormat.underline` itself (compiler-gaps.md G28,
+// closed in as-aot v0.4.303): strikethrough and overline have no AIR property to
+// delegate to, and all three come out of one set of line metrics. See
+// PaintKit.decorate for the geometry. One
 // value at a time (no CSS-style combination): the library draws one line per text
 // line and a second band is not a capability anyone asked for.
 //

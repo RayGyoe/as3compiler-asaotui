@@ -439,11 +439,16 @@ package asaot.ui
 
         // ---- text decoration ------------------------------------------------
         //
-        // `TextFormat.underline` is a real AIR field and our runtime carries it, but the
-        // RENDERER never paints it (the HTML run emitter drops it with "underline not
-        // yet modeled", and the plain-text path never had it either -- see
-        // compiler-gaps.md G28). So a decoration line is drawn HERE, from the field's
-        // own line metrics. `getLineMetrics` is a real API in this runtime (measured
+        // A decoration line is drawn HERE, from the field's own line metrics -- and not by
+        // delegating to `TextFormat.underline`. That property used to be parsed and never
+        // painted (compiler-gaps.md G28); the runtime paints it itself as of as-aot
+        // v0.4.303, so the underline is no longer a gap to cover. This style still draws
+        // all three kinds, for two reasons that outlive G28: strikethrough and overline
+        // have NO `TextFormat` property to delegate to (AIR has neither -- they are our
+        // additions), and one rule set drawn from one set of line metrics cannot disagree
+        // with itself about where a line is.
+        //
+        // `getLineMetrics` is a real API in this runtime (measured
         // against adl: ascent/descent/leading per line, and `x` is the line's left edge
         // INCLUDING the 2 px text inset plus any alignment shift), which is what makes it
         // the right anchor: there is no second text model to drift from the painted one.

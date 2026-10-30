@@ -18,7 +18,7 @@
 | 事实 | 证据 |
 |---|---|
 | 库是**纯 AS3**，**零 `flash.*` 导入**（只有内部 `asaot.ui.*`） | `grep -rn "import" seam/asaot/` 只有 `asaot.ui.LayoutEngine` / `asaot.ui.LayoutConstants` |
-| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十七组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/23/26/44/14/26/18 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **52/52**（含 G16/G19/G20 三道与 `build.sh web` 一道） |
+| **自家 AOT** 已把库编成原生程序并跑通 | [`layout-check/`](layout-check/README.md)：文本半边 **133 checks, 0 failures**（`RESULT: PASS`）+ 视觉半边 **12 checks, 0 failures**；`kit` **十七组控件/交互探针**（19/41/48/41/14/43/43/77/65/25/54/23/26/44/14/26/18 checks）全绿；[`tools/gates.cjs`](tools/gates.cjs) 一条命令复现 **58/58**（含 G16/G19/G20 三道与 `build.sh web` 一道；最近一次全量见 [`reviews/gates-all-39.txt`](reviews/gates-all-39.txt)） |
 | **AIR**（`mxmlc`→`adl`）也能编能跑，且数值逐字符一致 | [`air-check/`](air-check/README.md)、[`diff-check/`](diff-check/README.md) |
 | **真实用户缺陷**也在这条路上定位（不是猜测） | 2026-10-24 的两份截图报告：弹层被盖住 ⇒ **不是编译器问题**（引擎无 z-index，靠 `UiNode.lifted` 改 reparent，见 `STATUS.md` §3.3 第 19 条）；输入框提示文字/文字复制 ⇒ **一个是库缺陷、一个是本文件 G20** |
 
@@ -559,7 +559,7 @@
 
 ---
 
-## G27 —— Windows 上 `--package web` 直接 spawn 不了 `emcc`（POSIX 脚本 + `:` 拼的 PATH）✅ **已修**（阶段二百七十六，v0.4.240）
+### G27 —— Windows 上 `--package web` 直接 spawn 不了 `emcc`（POSIX 脚本 + `:` 拼的 PATH）✅ **已修**（阶段二百七十六，v0.4.240）
 
 | 项 | 内容 |
 |---|---|
@@ -575,22 +575,25 @@
 
 ---
 
-## G28 —— `TextFormat.underline` / HTML `<u>` **只被解析、不被绘制**
+### G28 —— `TextFormat.underline` / HTML `<u>` **只被解析、不被绘制** —— ✅ **已修（阶段三百四十二，v0.4.303）**
 
 | 项 | 内容 |
 |---|---|
 | 现象（我方实测） | 给 `TextField` 的 `defaultTextFormat.underline = true`（或 `htmlText` 里的 `<u>`）后，**文字照常出现在正确位置，颜色/字号/粗斜体都对，只是没有那条线**。`probes/widgets/textfx` 的装饰相位在「本应是横线的那一行」取到 `#ffffff`（同一行在库自绘之后是 `#111827`）—— 即**渲染器从未画过它**，不是我方取样点的问题 |
-| 代码事实 | `src/emit.ts:20901-20903`：`as_tf_html_emit_run(... bool underline)` 的第一句就是 `(void)underline; // underline not yet modeled by the TextStyle subset`。`TextFormat.underline` 字段本身是**存在**的（构造见 `:20124`，`equals`/`clone`/`reset` 都带上它，`:21269`/`:21283`/`:21293`）—— 所以「设得上、读得回、复制得走」，**唯独布局与绘制路径没有任何一处读它** |
-| 判定 | **遗留欠账**（AIR 有、我们无）。分类依据：`flash.text.TextFormat.underline` 是 AIR 的**已定义属性**，AIR 会渲染它 ⇒ 属对齐缺口，不是「AIR 没有所以算增强」。⚠️ 诚实标注证据等级：**我方行为已实测**（上面的探针像素），**AIR 侧本次未跑 `adl` 逐像素对照** ——「有 API 却不渲染」与 AIR 的名声不符，故按欠账记，立案时先补一次 `adl` 实测 |
+| 代码事实（**修前**，保留作证据） | `src/emit.ts:20901-20903`：`as_tf_html_emit_run(... bool underline)` 的第一句就是 `(void)underline; // underline not yet modeled by the TextStyle subset`。`TextFormat.underline` 字段本身是**存在**的（构造见 `:20124`，`equals`/`clone`/`reset` 都带上它，`:21269`/`:21283`/`:21293`）—— 所以「设得上、读得回、复制得走」，**唯独布局与绘制路径没有任何一处读它** |
+| 判定 | **遗留欠账**（AIR 有、我们无）。分类依据：`flash.text.TextFormat.underline` 是 AIR 的**已定义属性**，AIR 会渲染它 ⇒ 属对齐缺口，不是「AIR 没有所以算增强」。~~⚠️ AIR 侧未跑 `adl` 逐像素对照~~ ⇒ **2026-10-30 补测完毕，且 air 的画法与任何直觉都不同**（见下一行的「AIR 口径」） |
+| **AIR 口径（2026-10-30 补测，`adl 51.4.1`，证据台 `as3compiler/temp/g28/`）** | ① **一条 1 设备像素**的横线，8/12/24/48/96 五种字号**全都一样**（AIR **不用**字体自带的 underline metrics —— 那会给出 `size/14`，@48 就是 3.4 px）；② 落点 `floor(2 + ascent + descent/2)`（12px `_typewriter` ⇒ **y=15**、24px ⇒ 25），`TextFormat.leading` 只抬行盒、**不移动**它；③ 横向覆盖该范围的**整个前进宽度**（含行尾空格），颜色取 run 自己的 `color`；④ 每个**视觉行**一条（硬换行 + 每一处自动换行）；⑤ **对布局零影响** —— `textWidth`/`textHeight`/`getLineMetrics` 有/无该 flag **逐位相同**；⑥ `underline=false` 的 run 把线**断开**（`htmlText` 读回 `"<U>ab</U>cd<U>ef</U>"`，两段）；⑦ `htmlText` 里没有被标签覆盖的文字**继承** `defaultTextFormat` 的 `underline`（`bold`/`italic` 同结论） |
 | 影响面 | 纯文本表现层。**布局不受影响**（行高/断行不因下划线变化），所以既不影响命中测试，也不影响任何几何断言 —— 这也正是它一直没被发现的原因：**每一个属性断言都是对的** |
 | 库侧处置（第三十一轮，2026-10-25） | **不走 `TextFormat.underline`**，改用 `getLineMetrics()` **逐行自绘**：`TextStyle.textDecoration`（取 `none` / `underline` / `line-through` / `overline`，默认 `none`，随 `inheritFrom`/`copy` 级联）→ `PaintKit.decorate(n)` 在 14 个 kind 的 `paint()` 末尾画。**为什么自绘是对的而不是绕行**：`getLineMetrics` 与文字绘制同源（同一套排版结果），所以线画在第几行、从哪个 x 起、有多宽，都跟字形**同一次**布局算出来；等编译器补上 underline 只是把 1px 线的工作交接回去，库侧的形状与像素位置不变 |
 | 对编译器的主张 | ① `as_tf_html_emit_run` 把 `underline` 落到 run 上（现有 run 表已经是「begin, end, TextFormat」三元组，直接 `f->underline` 置 true 即可，不必加字段）；② `as_tf_paragraph`/绘制阶段按行画 1px 线（`getLineMetrics` 已有 `x/width/ascent/descent`，与 AIR 的落点一致）；③ `htmlText` 的 `<u>` **已经**解析到那个 bool（`:21193` `strcmp(nm,"u")==0`），缺的只是「传下去 + 画出来」 |
+| **编译器侧落地（阶段三百四十二，v0.4.303）** | **画在我们自己的绘制 pass 里，不用 Skia 的 `TextDecoration`** —— 后者按 `fontSize/14` 与字面的 `underlinePosition` 画，与上表的 1px 口径**不可能**对齐。`sk_text_run` 加 `int underline`（`src/runtime.ts` 与 `vendor/skia_text_glue.cc` 两份**同序**，单元钉按字段名序列比对防漂移；**不进**段落缓存键，因为它不是排版输入）；新增生成侧 `as_tf_paint_underline(tf, canvas, ox, oy)`，在 `as_skia_textlayout_paint` **之后**、选区反色层**之前**调用（字形在上、选区也要盖住这条线）；先快出（基准格式与 run 表都没有下划线就直接返回），再把「哪些字节被下划线」解析成区间（run 上 `underline` **显式设置过**（`tag != 0`）就以它为准，没设过的 run 与空隙取基准格式），每行按行盒算 y（Skia 的 `fBaseline - fAscent` 比 AIR 的盒高半个 leading，故行偏移以第一行为基准），glue 用 `getRectsForRange(kMax,kTight)` 取每行前进框、按竖直中线匹配、画 `1.0f` 高矩形。**顺带修了两处**：① `getLineMetrics` 的行盒此前取「行首字符的 run」，实测应为「该行**最高**的 run」（12px 与 24px 混排报 `20/6 h=26`，与 run 顺序无关），新增 `as_tf_line_fmt()` 供两处共用；② `htmlText` 未被标签覆盖的文字此前丢 `bold`/`italic`/`underline`（`as_tf_html_set` 硬编码 `false`），改为与 `font/size/color/leading` 一样继承基准格式。**库侧可撤可不撤**：`PaintKit.decorate` 画在同源 `getLineMetrics` 上，形状与位置不变；要不要把那 1px 交接回运行时属库的取舍（**`line-through`/`overline` 仍必须自绘**，AIR 的 `TextFormat` 没有这两个属性）。口径全文 `as3compiler/docs/zh-cn/flash-text.md` §15，钉子 `as3compiler/examples/text-underline.as`（12 断言）+ `unit: display/Underline`（17 钉） |
 | 证据落盘 | `probes/widgets/textfx`（**18 checks**：shadow/gradient/wrap/ellipsis/textArea 之外，新增 `underline` 与 `line-through` 的像素断言 —— 在**字形够不到的四空格空隙**里取样，并用同页一个无装饰节点做负例，才排除「这段像素其实是字形」）；变异 `probes/widgets/textfx/mutation.cjs` **8/8**（M6 不画、M7 画错位置、M8 忽略行首 `lm.x`） |
 | 附带的增强（AIR 没有对应物） | `line-through` 与 `overline` **不在** `TextFormat` 里（AIR 的 TextFormat 无 strikethrough 属性）⇒ 这两档是**增强**，按 AGENTS.md §1.5 的要求 **opt-in**（默认 `none`，不写就与 AIR 同构）且**不静默**（未知拼写直接 THROW） |
+| 状态 | ✅ **已修（阶段三百四十二，v0.4.303）**：`TextFormat.underline` 与 `htmlText` 的 `<u>` 都真的画出来了，口径逐条按上表 `adl` 实测；`as3compiler` 全量回归 **582/582** |
 
 ---
 
-## G29 —— 样式字段 `overflow` **被接受、被校验、也进了布局引擎，但两侧画笔都不裁剪**
+### G29 —— 样式字段 `overflow` **被接受、被校验、也进了布局引擎，但两侧画笔都不裁剪** —— ✅ **已判定：不是编译器缺口**（阶段三百四十三，v0.4.304）；缺的是**库侧消费**
 
 | 项 | 内容 |
 |---|---|
@@ -599,8 +602,11 @@
 | 影响面 | **纯观感**：布局尺寸、命中测试、滚动位置全都不受影响（`overflow` 不改任何 rect），所以每一个几何断言都是对的 —— 这正是它一直没被发现的原因。反过来说，**用它当遮罩的写法会静默失效**：内容照旧溢出、盖住邻居 |
 | 库侧处置（2026-10-26） | **不假装能演**：`style` 页的 overflow 一节改为「`overflow`: accepted, not yet painted」，两格故意做成一模一样，文案直说两条都是 200px 且指向本文档。同时给出**今天真能裁剪**的两条路：`scrollView`（viewport 自己裁剪）与 `image({ scaleMode: "cover" })`（`scrollRect` 裁切） |
 | 另一条同源陷阱 | 同一格最初的写法是 `flexShrink: 0` + `flexBasis: 200`（因为「任何 flex 字段都会替换 item 的 base size」）。结果在 `overflow: hidden` 的父盒里，子件把那个 basis 落到了**错的轴**上：实测 `200×28` 的条子画成了 **200 高**（截图取样 y 506..805） |
-| 对编译器的主张 | ① 原生画笔（`as_ui_*`，C++ 侧）在 `OVERFLOW_HIDDEN` 时对子树做 `clipRect`（Skia `SkCanvas::save/clipRect/restore`，边界用 padding box）；② 库侧 `PaintKit.paint()` 同一档在 AS3 臂上用 `DisplayObject.scrollRect` 或 `mask` 做等价裁剪，两臂共用一套「padding box」几何；③ 两者的钉子都应落在「同一个 200px 子件在 120px 父盒里，像素只画到 120」这条断言上 |
-| 状态 | **已登记，未修**。⚠️ 证据等级：**native 臂逐像素实测**（`GalleryApp.exe`）；**AIR 臂未逐像素实测**，但两臂共用同一份 `kit/asaot/ui/PaintKit.as`，代码上同样一处 clip 都没有 ⇒ 按同一结论记，立案前补一次 `adl` 取样 |
+| 对编译器的主张（**2026-10-30 收窄：①那一条作废**） | ① ~~原生画笔（`as_ui_*`，C++ 侧）~~ —— **`as_ui_*` 只存在于 `u1-prototype/`（旧的 Yoga 原型），当前库里根本没有第二个画笔**，两臂（AOT 与 `adl`）跑的是**同一份纯 AS3 `kit/asaot/ui/PaintKit.as`**，故这一条无对象；② 库侧 `PaintKit`/`UiNode` 用 `DisplayObject.scrollRect` 或 `mask` 做裁剪（**这两条路编译器早就给全了**，见下一行）；③ 钉子落在「同一个 200px 子件在 120px 父盒里，像素只画到 120」这条断言上 |
+| **编译器侧取证（阶段三百四十三，v0.4.304）** | 十格双端**逐像素相同**（`as3compiler/temp/g29/`：`src/Main.as`…`src4/Main.as` 四份 `adl 51.4.1` 探针 + `ours.as`…`ours4.as` 镜像，父盒 120×28、子件 200×28，全部 `BitmapData.draw` 采样）：不裁剪对照 `x=20..219`；`scrollRect=(0,0,120,28)` → `20..139`（第 120 个像素在内、第 121 个在外）；`mask` 同尺寸形状 → 与 `scrollRect` 逐像素相同；孙件（`inner.x=50`）→ `70..139`（**整棵子树**都裁，不是只裁直接子件）；`BlurFilter(8,8)` 的**外溢被切掉**；`cacheAsBitmap` 先烘后裁边界不变；嵌套（外 120、内 `x=70` 宽 80）取交集 `90..139`；300 宽 `TextField` 子件 → `20..139`；跨界的 4px 描边只剩 `20..23`；**50% alpha 的绿遮罩不削弱内容**（仍 `0xFF0000`，二值模板口径）。⇒ **编译器侧无缺口**，`overflow: hidden` 今天就能在纯 AS3 里做出来。钉子：`as3compiler/examples/overflow-clip.as`（上表十格）+ `unit: render/OverflowClip`（6 条**作用域**钉子）；口径全文 `as3compiler/docs/zh-cn/skia.md` §6.16 |
+| **库侧落地（2026-10-30，已完成）** | 计划里的写法只对了一半，实施时改了一处、加了两条钉子：① 窗口由 `UiNode.applyOverflowClip()` 在 **`arrangeSelf`** 里写（裁剪是几何，不是装饰），`hidden`/`scroll` ⇒ `backing.scrollRect = rect(0,0,absW,absH)`（`x/y` 恒 0 = 只裁不平移），`visible` ⇒ `scrollRect = null`；矩形缓存在 `extra["clipLast"]`，**只在两条边长变化时重写** —— 不只是为了 AGENTS §2.4 的「不许每帧分配」：`scrollRect` 的 setter **存的是拷贝**，所以「读回来比对」根本检测不出未变，必须自己留一份；② **边界从 padding box 改成 BORDER box**（原计划错了）：`box` 自己的 `background`/`borderColor` 画在**同一个 backing 里**，按 padding box 裁会把底色/描边一起削掉（`overflow:"hidden"` + `padding:8` 会让表面明显内缩）。CSS 能在 padding 边裁，是因为它把底色与描边画在裁剪**之外**；这里只有一颗 sprite，边框盒是唯一能让盒子看起来还像个盒子的边。代价是子件仍可画进 padding/border 区 —— 而这正是「裁到盒子为止」的正常预期；③ 三条后果都写进了 `style` 页正文与代码注释：**命中测试跟着裁**（`as_pick_hit_m` 走同一窗口 ⇒ 溢出的子件不再可点，与 CSS 一致）、**节点自身的 box shadow 也被裁**（阴影是 backing 内的滤镜 ⇒ 两者都要就挂在 wrapper 上）、**圆角不参与裁剪**（`scrollRect` 是矩形；异形才需要 `mask`）；④ 判定用 **`lastStyle.overflow`（本节点自己的声明）**，不是 `resolved.overflow`：这套级联**每个字段都沿父链解析**，祖先的 `hidden` 会落到后代的 resolved 上；照 resolved 裁，就会给作者没要求裁剪的节点装上窗口，而恰恰有两个节点自带 `scrollRect` —— `scrollView` 在**内容节点**上用它滚动、`image({scaleMode:"cover"})` 用它裁切，`scrollRect` 是**单槽不是栈**，第二个窗口会把它顶掉。CSS 也不继承 `overflow`；今天没有任何 kind 默认值设它，所以「作者自己的 refinement」就是全部真相；⑤ 钉子 `probes/widgets/clip`（已进 `tools/gates.cjs` 名单）：三行同尺寸 120×28 盒子各装一条 200×28 条子，`hidden`/`scroll`/`visible`（**对照组**），断言 = 窗内像素 + **窗外 4px 像素**（牙）+ 子件 rect（裁剪不是缩尺寸）+ `scrollRect` 恰为 `(0,0,120,28)` + 缓存矩形不重分配 + **窗内点击到达 / 窗外点击不到**；⑥ 变异已实测：删掉 `arrangeSelf` 里那一行 `applyOverflowClip()`，**6 条断言全红**（两处窗外像素变回条子色、两条 `scrollRect` 检查、缓存同一性、以及窗外点击数 1→2），随后已还原 |
+| **顺带量到的独立残差（已入编译器 `遗留待开发`，与 G29 无关）** | 裁剪边恰为 `.5` 时 AIR 用**银行家舍入**（`100.5→100`、`120.5→120`、`122.5→122`、`121.5→122`、`123.5→124`），AOT 走 Skia `clipRect`（半上入）⇒ 整数部分为**偶**的那一半 `.5` 场合**多画 1 设备像素**。整数几何、`.25/.75/.9` 等非 `.5` 小数**逐位相同** ⇒ 对本行「120 vs 200」这类判据零影响 |
+| 状态 | ✅ **已结案**：编译器侧**不是缺口**（阶段三百四十三，v0.4.304 —— AOT 与 `adl 51.4.1` 十格**逐像素相同**，子树裁剪两条路 `scrollRect` / `mask` 都在）；**库侧消费已于 2026-10-30 落地**（上一行），`style` 页的 overflow 一节从「accepted, not yet painted」改为「画到哪儿停」，演示两格现在**真的不一样**。⚠️ 证据等级：**本轮已经补上 AIR 臂的逐像素取样**（旧登记的「AIR 臂未实测」作废），两臂也确实共用同一份 `PaintKit.as` —— 推论与实测现在同向 |
 
 ---
 
@@ -620,6 +626,7 @@
 | **G11「同源两次构建产出不同的 C」** | **不是缺口，已结案**：不是生成器随机，而是**测量在另一个进程正改写的编译器树上进行**。失败构建在 `阶段二四七` 提交前 **24 分钟**；同一个坏法在**同一分钟、另一个程序**的产物里原样出现，且两者 84 秒内**收敛**（20→1→0 条 C 错）；冻结树上 5 次构建**逐字节同一份 C**。旧处置「先重跑一次」已废止，改为**先看编译器树状态** | [`reviews/probe-g11-nondeterminism-2026-10-23.md`](reviews/probe-g11-nondeterminism-2026-10-23.md)、[`probes/g11-nondeterminism/`](probes/g11-nondeterminism/) |
 | **`Array(x)` 是「复制数组」吗** | **不是缺口，是 AS3 事实**：`Array(3)` 得长度 3 的空位数组、`Array([1,2])` 得**长度 1** 且 `[0]` 就是那个数组、`Array(a) === a` 为 false。双臂实测一致（8 格 AGREE；门 §7b）⇒ 库内**禁止**用 `Array(v)` 做「单值/列表归一」，一律 `OptionSupport.list(v)` | [`probes/array-coerce/`](probes/array-coerce/) |
 | **`stage.showWindow()` 不返回**（而是把主线程交给帧/消息循环） | **是我方窗口后端的已知平台事实，不是缺口**（要改成非阻塞得动整个事件循环架构）。但它的后果必须写明：**顶层语句在 `showWindow` 之后永不执行，包括 `var x = …` 的初值**；`setTimeout` 也必须在它之前注册。AIR 桌面端不阻塞 ⇒ 同一份源码在 AIR 里这些变量会被正常初始化。⇒ 写窗口程序时**所有 setup 前置** | `probes/array-scope/Main.as` 头注释（SETUP ORDER）、`examples/*window*.as` |
+| **G29「`overflow` 存了不画」是编译器缺口吗** | **不是缺口，已结案**：编译器**早就有**做这件事的两条路 —— `DisplayObject.scrollRect` 与 `mask`，`adl 51.4.1` 与我们 AOT 十格**逐像素相同**（子树/孙件/跨界描边/滤镜外溢/`cacheAsBitmap` 烘焙/嵌套/`TextField` 子件/半透明遮罩）。缺的只是**库侧消费**（`UiNode.applyOverflowClip()`，2026-10-30 已落地）。⚠️ 顺带量到一条**真**差异但与裁剪无关：裁剪边恰为 `.5` 且整数部分为偶时 AIR 取银行家舍入、我们半上入 ⇒ 多画 1 设备像素（已按 `遗留待开发` 入编译器仓库） | [`as3compiler/examples/overflow-clip.as`](../as3compiler/examples/overflow-clip.as)、[`as3compiler/temp/g29/`](../as3compiler/temp/g29/)、`probes/widgets/clip` |
 | **「节点的布局盒是 26×219，为什么只有文字那一段可点」** | **不是缺口，是 AIR 的规则**：拾取问的是**绘制内容区域**（`as_pick_hit_local` → `as_obj_region_hit_local(o, lx, ly, 1)`，`emit.ts:17966`），不是布局盒 —— 画了填充/描边的 Sprite 才算命中，空 Sprite 再大也穿过去。编译器自己的注释就是按 `adl 51.4.1` 实测写下的（`emit.ts:17969-17982`）。**库侧的应对不是绕路，而是正确写法**：行的底噪用 `Fill.fromArgb(0, 0, 0, 0)` 铺满（alpha 0 也是「画了」，因为这不是像素测试），`tooltip`/`menu` 一类纯文字浮层同理 | `probes/widgets/inputs`（`tree` 每行的可点区域）、`STATUS.md` 缺陷 #24 |
 
 ---

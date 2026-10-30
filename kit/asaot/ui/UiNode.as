@@ -37,6 +37,7 @@ package asaot.ui
     import flash.events.EventDispatcher;
     import flash.events.MouseEvent;
     import flash.filters.DropShadowFilter;
+    import flash.geom.Rectangle;
     import flash.text.TextField;
 
     public class UiNode
@@ -78,6 +79,10 @@ package asaot.ui
         public var extra:Object;
         // `extra` key holding the last APPLIED box-shadow stack (see applyShadow).
         private static const SHADOW_LAST:String = "shadowLast";
+        // `extra` key holding the clip rectangle currently on `backing.scrollRect`
+        // (see applyOverflowClip). Kept because the scrollRect SETTER stores a COPY,
+        // so reading the property back cannot detect "unchanged".
+        private static const CLIP_LAST:String = "clipLast";
 
         // ---- control payload (mirrored from the description node) --------
         // The input key of the last PaintKit.measureField call on this node. Lives
@@ -1037,6 +1042,8 @@ package asaot.ui
             this.backing.visible = this.visible && s.visibility != "hidden";
             this.backing.alpha = isNaN(s.opacity) ? 1.0 : s.opacity;
             if (this.state.disabled != 0) this.backing.alpha = this.backing.alpha * PaintKit.DISABLED_ALPHA;
+            // The clip window is geometry, so it belongs to arrange, not paint.
+            this.applyOverflowClip();
 
             // The inner display objects are placed by the kind, which reads the
             // solved rect back through PaintKit (insetX/insetY/contentW/H).
@@ -1078,6 +1085,91 @@ package asaot.ui
             }
             this.backing.x = this.absX;
             this.backing.y = this.absY;
+        }
+
+        // ---- the `overflow` clip window ---------------------------------
+        // `overflow` had been accepted, validated and handed to the layout engine
+        // since the style layer existed, but NOTHING consumed it: a 200px child in a
+        // 120px `overflow: "hidden"` box painted all 200px and covered its
+        // neighbours -- that was compiler-gaps G29, closed here (2026-10-30). The
+        // compiler side was measured BEFORE this
+        // was written -- `adl 51.4.1` against our AOT over ten pixel cases, all
+        // bit-identical (as3compiler/temp/g29/; as3compiler docs/zh-cn/skia.md 6.16):
+        // a subtree, a grandchild, a straddling stroke, a filter's spill, a
+        // cacheAsBitmap bake and NESTED clips are all cut at the same edge. So this
+        // consumes an existing capability; it does not work around a missing one.
+        //
+        // WHY `scrollRect` AND NOT `mask`: scrollRect costs a RECTANGLE, a mask costs
+        // a second display object with an outline that has to track this box by hand,
+        // and the same ten cases show AIR clips both identically. scrollRect shifts
+        // the CONTENT by -x/-y and clips at its own w/h anchored on the object's
+        // origin, so x=y=0 is a pure clip -- which is what `overflow` means.
+        //
+        // WHICH EDGE: the BORDER box (0,0,absW,absH), not the padding box. The node's
+        // own background and border are painted INSIDE this same backing, so a
+        // padding-box window would shave the background down by the padding ring --
+        // `overflow: hidden` plus `padding: 8` would visibly inset the surface. CSS
+        // clips at the padding edge, but CSS paints the background/border OUTSIDE the
+        // clip; here the chrome and the content share one sprite, so the border box is
+        // the only edge that leaves the box looking like a box. The cost is that a
+        // child may still paint into the padding/border area, which is what a user
+        // reading "clip to this box" expects anyway.
+        //
+        // TWO CONSEQUENCES, both intended and both documented in the style page:
+        //  * hit testing follows the clip (the runtime's pick window IS the scrollRect),
+        //    so a child spilling out stops receiving the mouse -- and a child spilling
+        //    out is exactly what overflow:hidden says must not be interactive;
+        //  * the node's OWN box shadow is clipped too, because the shadow rides on a
+        //    filter INSIDE the backing. Put the shadow on a WRAPPER when both are
+        //    wanted. (CSS keeps its own shadow; this is the one divergence, and it is
+        //    cheaper than a second sprite per node.)
+        //
+        // OWN DECLARATION ONLY (`lastStyle.overflow`), never `resolved.overflow`.
+        // This cascade resolves EVERY field through the parent, so an ancestor's
+        // `hidden` lands on every descendant's resolved style too. Keying off that
+        // would put a clip on nodes the author never asked to clip, and the two that
+        // matter are already carrying a `scrollRect` of their own: `scrollView` writes
+        // one on the CONTENT node to scroll, and `image({scaleMode: "cover"})` writes
+        // one to crop -- a second window here would overwrite it (the rect is a single
+        // slot, not a stack). CSS agrees: `overflow` is not inherited. No kind default
+        // sets `overflow` today, so the author's own refinement is the whole story.
+        //
+        // ZERO steady-state allocation: one Rectangle is kept in `extra` and rewritten
+        // only when one of the two extents moves. That matters twice over -- an arrange
+        // runs per layout, and the scrollRect setter copies on write, so re-assigning
+        // an unchanged rectangle would allocate every frame as well as dirty an
+        // ancestor's auto-bake fingerprint.
+        private function applyOverflowClip():void
+        {
+            if (this.backing == null || this.extra == null) return;
+            var ov:String = this.lastStyle != null ? this.lastStyle.overflow : null;
+            var want:Boolean = ov == "hidden" || ov == "scroll";
+            var last:Rectangle = this.extra[CLIP_LAST] as Rectangle;
+            if (!want)
+            {
+                if (last != null)
+                {
+                    this.backing.scrollRect = null;
+                    this.extra[CLIP_LAST] = null;
+                }
+                return;
+            }
+            var w:Number = this.absW;
+            var h:Number = this.absH;
+            if (!(w > 0)) w = 0;
+            if (!(h > 0)) h = 0;
+            if (last != null && last.width == w && last.height == h) return;
+            if (last == null)
+            {
+                last = new Rectangle(0, 0, w, h);
+                this.extra[CLIP_LAST] = last;
+            }
+            else
+            {
+                last.width = w;
+                last.height = h;
+            }
+            this.backing.scrollRect = last;
         }
 
         // ---- pass 3: paint ----------------------------------------------

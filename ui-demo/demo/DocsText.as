@@ -113,10 +113,12 @@ package demo
                     "textDecoration draws a rule under, through or over EVERY line, from the line metrics the",
                     "layout pass already produced -- so the rule and the glyphs cannot disagree about where a line",
                     "is, and a wrapped run carries a rule per line rather than one long line across the wrap.",
-                    "It is NOT TextFormat.underline. That property can be set, read back and cloned, and the paint",
-                    "path never looks at it (compiler-gaps.md G28), so the library draws the rule itself.",
-                    "strikethrough and overline are ADDITIONS: AIR's TextFormat has no property for either. An",
-                    "unknown value THROWS rather than silently drawing nothing."
+                    "It does not go through TextFormat.underline: that property's gap (compiler-gaps.md G28) was",
+                    "closed in v0.4.303, so the runtime paints its own underline now, but this style must also",
+                    "cover strikethrough and overline -- AIR's TextFormat has no property for either -- and drawing",
+                    "all three from one set of line metrics is what keeps them on the same row.",
+                    "strikethrough and overline are therefore ADDITIONS: AIR has no equivalent. An unknown value",
+                    "THROWS rather than silently drawing nothing."
                 ], [
                     "text(\"underlined\", { style: { text: { textDecoration: \"underline\" } } })",
                     "text(\"struck out\", { style: { text: { textDecoration: \"line-through\" } } })",

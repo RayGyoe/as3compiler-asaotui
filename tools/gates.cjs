@@ -160,8 +160,9 @@
 //                the first stop as a solid keeps the left edge dark and only the ramp check
 //                sees it; and a text area that CONSUMES Return still compiles, still renders,
 //                and quietly reverts the field instead of inserting a line break.
-//                The three new ones are textDecoration (G28's workaround, so they pin the
-//                WORKAROUND and not a compiler defect): PaintKit.decorate(n) never called
+//                The three new ones are textDecoration (G28's workaround: G28 itself is
+//                fixed as of as-aot v0.4.303, so these pin the LIBRARY's own rule set --
+//                all three kinds off one set of line metrics -- and not a compiler defect): PaintKit.decorate(n) never called
 //                (the property is parsed, cascaded and never reaches the shape -- a model
 //                assertion would still pass); line-through drawn where the underline goes
 //                (one line, wrong place, which is why the probe samples the STRIKE node
@@ -360,6 +361,15 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // markThemeDirty -- its teeth are tools/mutation-widget-theme.cjs (8/8).
                  'widgets/theme',
                  'widgets/actions',
+                 // `clip` is the pin for compiler-gaps G29, which the library closed by
+                 // finally CONSUMING a style field nothing read: three 120x28 boxes with
+                 // the same 200x28 strip inside, one `overflow: "hidden"`, one "scroll",
+                 // one "visible" as the CONTROL. Teeth: deleting the one
+                 // `applyOverflowClip()` call in UiNode.arrangeSelf leaves SIX assertions
+                 // red -- the two 'past the box' pixels (the strip paints there again), both
+                 // scrollRect checks, the cache-identity check and the click count (the
+                 // spilling child takes the mouse again). Measured, then reverted.
+                 'widgets/clip',
                  // probes/perf is not a pixel probe but a stopwatch: 300 keyed buttons,
                  // timed idle / describe / one-node-change / solve / paint phases.
                  // Its one assertion is a 15ms ceiling on a NO-CHANGE describe
@@ -388,7 +398,11 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
   const r = sh(process.execPath,
     ['src/index.ts', '../asaotui/layout-check/CheckMain.as', ...seam,
      '--run', '--cc', clang,
-     '-I', './vendor/curl/include', '-L', './vendor/curl/lib/windows-x64', '-l', 'zlib'], COMPILER);
+     // The manifest is the ONE place that knows which include/link flags a host
+     // needs; spelling them here by hand was Windows-only (`-L .../windows-x64`,
+     // `-l zlib` -- on macOS clang reads that as "a file called libzlib.a" and the
+     // link dies before a single check runs).
+     '--manifest', 'examples/window.build.example.json'], COMPILER);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /---- (\d+) checks, (\d+) failures ----/.exec(out);
   record('layout-check text half' + (m ? ' (' + m[1] + ' checks, ' + m[2] + ' failures)' : ''), r.status, out);

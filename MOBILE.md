@@ -468,7 +468,7 @@ public interface Env {
 |---|---|
 | `reviews/nsh-mobile-support-gap-2026-10-26.md` | 评估与证据留档（NSH 是什么、三条路线、七条借鉴） |
 | **本文** | **可执行清单**：编号、API 形状、里程碑、验收 |
-| `compiler-gaps.md` | B 组的唯一登记处（**已登记**：G2 无障碍 / G3 Tab 序 / G5 触摸无输入源；**拟新增、尚未写入**：G29 键盘与方向族 / G30 移动端打包 / G31 Skia+SDL 移动产物 / G32 Web 臂不接 pointer/keydown / G33 Android 字体 / G34 安全区与密度） |
+| `compiler-gaps.md` | B 组的唯一登记处（**已登记**：G2 无障碍 / G3 Tab 序 / G5 触摸无输入源；**拟新增、尚未写入**：G30 键盘与方向族 / G31 移动端打包 / G32 Skia+SDL 移动产物 / G33 Web 臂不接 pointer/keydown / G34 Android 字体 / G35 安全区与密度。⚠️ **编号已顺延一位**：原拟的 G29 已被 `overflow`「存了不画」占用（✅ 2026-10-30 结案：不是编译器缺口），评审文档 [`reviews/nsh-mobile-support-gap-2026-10-26.md`](reviews/nsh-mobile-support-gap-2026-10-26.md):376 里的 G29 按**旧编号**读，即此处的 **G30**） |
 | `STATUS.md` | 库当前完成度（41 kind / 47 工厂 / 33 字段 / 58 门） |
 
 ---
