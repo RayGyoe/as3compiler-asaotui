@@ -13,7 +13,7 @@
 ## 0 三句话结论
 
 1. **控件数量不是主要缺口。** 拿 NSH 的 48 个 element 逐项对表：我们有**等价物 19 个、语义不同 14 个**、
-   真正缺且该做 **9 个**、明确不做 **6 个**。我们 41 个 kind 里的绝大多数都能在 NSH 清单里找到直接对应。
+   真正缺且该做 **9 个**、明确不做 **6 个**。我们 44 个 kind 里的绝大多数都能在 NSH 清单里找到直接对应。
 2. **真正缺的是三层地基**：**输入层**（`TouchEvent` 类有、输入源没有：全库 0 命中）、
    **环境层**（安全区 / 键盘矩形 / 密度 / 屏幕阅读器：0 命中）、**导航结构**（`navStack`/`tabBar`/`sheet`：0 命中）。
 3. **但有三块底座已经存在，只是库没用起来**（§2.3）：`pointerEvents` 语义（`mouseEnabled`/`mouseChildren`
@@ -26,13 +26,15 @@
 |---|---|---|---|
 | 1 | `Pointer` 抽象 + 合成 mouse 兼容层（P1/P2） | 不做则 41 个 kind 全部只能靠鼠标；兼容层让它们**不改就动** | M |
 | — | ↳ **✅ 已落地（2026-10-31）** | `Pointer`/`PointerRouter`/`InputConstants` + `UiApp.pickAt` + 合成 mouse 兼容层；门 `probes/widgets/pointer-touch`，变异 7/7。**真触摸输入仍是 G5**（后端不出事件） | Done |
-| 2 | 触摸拖动滚动 + 惯性（S1/S2） | 手机上「滚不动」等于不可用 | M |
-| — | ↳ **✅ S1/S2 已落地（2026-10-31）** | `TouchScrollable` + `ScrollViewWidget` 的 1:1 拖动/轴锁/press 撒回 + 惯性（按 dt 积分，`momentum`/`decelerationRate`）；门 `probes/widgets/touch-scroll`，变异 10/10。**S3 回弹、S4 分页、S5 嵌套仲裁仍未做** | Done |
+| 2 | 触摸拖动滚动 + 惯性（S1/S2/S3） | 手机上「滚不动」等于不可用 | M |
+| — | ↳ **✅ S1/S2/S3 已落地（2026-10-31）** | `TouchScrollable` + `ScrollViewWidget` 的 1:1 拖动/轴锁/press 撒回 + 惯性（按 dt 积分，`momentum`/`decelerationRate`）+ **越界回弹**（`overscroll: "rubber"\|"none"`，iOS 曲线阻尼、释放后按 dt 弹簧回位、**作者态 `offsetY` 全程不出界**，拉伸另报 `overscrollY`）；门 `probes/widgets/touch-scroll`，变异 **14/14**。**S4 分页、S5 嵌套仲裁仍未做** | Done |
 | 3 | `Env`（安全区 / 键盘 / 密度 / hasHover）（E1/E2） | 刘海与键盘一挡，界面就残；且 `hasHover` 决定 103 处 hover 是否该跑 | M |
 | — | ↳ **✅ E1/E2 已落地（2026-10-31）** | `Env`/`EnvBase`/`DesktopEnv`/`SafeArea` + `UiApp.bindEnv`（订阅、`hasHover` 一处裁决）+ 根容器的 `safeArea:` 折进 **padding**；门 `probes/widgets/env`，变异 **7/7**。**键盘矩形、`appState`、`reduceMotion`、`isDark` 只有投递、没有消费者**（S7/E5/E7/E8） | Done |
-| 4 | `navStack` + `appBar` + `tabBar`（N1–N3） | 现在**没有"页面"概念**，手机上没有返回栈 | L |
+| 4 | `navStack` + `appBar` + `tabBar`（C1/C2/C3） | 现在**没有"页面"概念**，手机上没有返回栈 | L |
+| — | ↳ **✅ C1/C2/C3 已落地（2026-10-31）** | `navStack`（页常驻挂载 + `visible` 切换、每页 `absolute/inset:0/pct(1)` 由工厂强加、`onBack` 只表达意图）+ `appBar`（三槽 `row` 布局、`large` 标题按 `collapse` 一个数收进 compact 行、收的是 **CLIP**）+ `tabBar`（`flexGrow:1` 等分 cell、选中态是 cell 的 text-tint patch、每格报**自己的** index）；门 `probes/widgets/{navstack,appbar,tabbar}`，变异 **7/7 · 8/8 · 7/7**。**过渡动画、`safeArea` 底部实测、`tabBar` 指示条仍未做** | Done（骨架） |
 | 5 | 触控态样式 + `hitSlop` + `pointerEvents`（P5/P6） | 触摸设备没有 hover；小目标点不中 | S |
 | 6 | 列表四件 + 下拉刷新（S6/C4） | 列表只能当展示用，不能当列表用 | M |
+| — | ↳ **✅ 一半已落地（2026-10-31）** | `onVisible(first,last)` + `scrollToIndex`（门 `probes/widgets/vlist`，26 项 / 变异 **10/10**）。**`estimated` 变高、`sticky` 吸顶、`refreshControl`(C4) 仍未做** | 部分 |
 
 ---
 
@@ -160,7 +162,7 @@ caret / 选区 / 密码掩码 / 组字都走运行时。所以旧评估里的 E3
 | `Text` | `text` | ✓ | 字号缩放（E4） |
 | `Image` | `image` / `avatar` / `icon` | ✓ | — |
 | `Scroll` | `scrollView` | ~ | 触摸拖动、惯性、回弹、吸附（S1–S4） |
-| `List` | `vlist` | ~ | 变高、吸顶、`onVisible`、`scrollToIndex`（S6） |
+| `List` | `vlist` | ~ | **`onVisible` / `scrollToIndex` 已有（S6 一半）**；变高、吸顶仍缺（S6） |
 | `Canvas` | （用 `Graphics` 直画） | ✗缺 | 无「画布元素」形态；作者要自定义 kind 才行 |
 | `Shader` | — | — | 不做 |
 | `WebView` | — | — | 不做 |
@@ -242,10 +244,10 @@ caret / 选区 / 密码掩码 / 组字都走运行时。所以旧评估里的 E3
 |---|---|---|---|---|
 | S1 | 1:1 触摸拖动 + 取消子项按压 + 抢占 | ~~`ScrollViewWidget.as:32` 自述无动量；`touchDragWords` 0~~ → **✅ 已落地（2026-10-31）**：`TouchScrollable` 三个回调由 `PointerRouter` 调用；拖动开始时**press 被撤回而不是等它变 click**；轴锁按「按下到越 slop 的主导方向」定一次 | 拖动期间把 `pressed` 置灰并取消点击（已做） | ✅ |
 | S2 | 惯性（按 dt 积分，不假设 16ms） | ~~`inertia` 只在注释里（2 处）~~ → **✅ 已落地（2026-10-31）**：`getTimer()` 实测 dt，`v *= rate^(dt/16.667)`；glide 是**纯重绘**循环（`markPaint`，不抬布局位）；`momentum`/`decelerationRate` 进描述符（非法值**抛**） | `ENTER_FRAME` + 时间差（用帧驱动的 paint 自走代替，同一语义） | ✅ |
-| S3 | 越界回弹（rubber-band）或 Android 拉伸/辉光 | `rubber` 0 | 越界阻尼 + 回位动画；终止条件用速度阈值 | P1 |
+| S3 | 越界回弹（rubber-band）或 Android 拉伸/辉光 | ~~`rubber` 0~~ → **✅ 已落地（2026-10-31）**：阻尼用 iOS 那条 `f(x)=(x·dim·c)/(dim+c·x)`（c=0.55，渐近到视口尺寸），释放后指数弹簧（`SPRING_RATE` 0.72/60Hz 帧，按实测 dt 积分）**收到 <0.5px 即写 0**；`overscroll: "none"` 关掉；滚动条与滚轮**一律硬夹**（离散操作，桌面语义） | 越界阻尼 + 回位动画；终止条件用速度阈值 | P1 |
 | S4 | 分页吸附（`paging` / `snap`） | `scrollView` 内 `paging` 只出现 1 次，且在「不做」清单里（`ScrollViewWidget.as:33`） | 轮播/引导页必需 | P2 |
 | S5 | 嵌套滚动与轴锁 | 无 | 依赖 P3 仲裁：内层先声明轴，外层让位 | P2 |
-| S6 | 列表四件：变高估算 / 吸顶分组 / `onVisible` / `scrollToIndex` | `estimated`/`sticky`/`onVisible`/`scrollToIndex` 全 0 | `vlist` 202 行是固定行高；四件里**先做 `scrollToIndex` + `onVisible`**（最便宜且最常用） | P1 |
+| S6 | 列表四件：变高估算 / 吸顶分组 / `onVisible` / `scrollToIndex` | **两件已落地（2026-10-31）**：`onVisible(first,last)`（窗口变化时回调，含首次；惰性加载的钩子）与 `scrollToIndex`（**一次性请求**，改成 change-detection，轮子不会把窗口拽回去）；**`estimated` 变高与 `sticky` 吸顶分组仍为 0** | 剩余两件：变高估算要重写窗口算术（行高不再是常数），吸顶分组要一个**窗口之外**的定位层（当前 `vlist` 是纯裁剪，窗口里只有挂载的行） | P1 |
 | S7 | 键盘焦点滚入可见区 | 无 | 依赖 E1 的 `keyboardRect` | P1 |
 | S8 | 滚动条移动端化：不常显、滚动时淡入、可隐藏 | 现有 `auto/always/never`（桌面语义） | 加 `"fade"` 取值 | P2 |
 
@@ -320,9 +322,9 @@ caret / 选区 / 密码掩码 / 组字都走运行时。所以旧评估里的 E3
 
 | ID | 组件 | 为什么必须 | 形状要点 | 规模 | 优先级 |
 |---|---|---|---|---|---|
-| C1 | `navStack` + `navPage` | 没有页面就没有返回栈 | `pages` 数组 + 当前索引；header 由 appBar 提供；过渡动画独立于布局 | L | **P0** |
-| C2 | `appBar` | 页面骨架 | 左/中/右三槽；`large` 变体随滚动收起；安全区顶部内边距 | M | **P0** |
-| C3 | `tabBar` | 手机一级导航 | 底部、图标 + 标签、选中态、安全区底部内边距 | M | **P0** |
+| C1 | `navStack` + `navPage` | 没有页面就没有返回栈 | `pages` 数组 + 当前索引；header 由 appBar 提供；过渡动画独立于布局。**✅ 已落地（2026-10-31）**：`navStack(pages, opts)` + `NavStackNode`（`activeIndex`/-1=栈顶、`onBack` 接 `Keyboard.BACK`）；页面**全部常驻挂载**、只有栈顶 `visible`（这才是"页面状态不丢"的实现），代价写进注释：隐藏页每帧仍参与 measure/arrange | **P0** ；**补强（2026-10-31 第四十六轮）**：BACK 只在**可见**的栈上生效（`visibleChain` 沿 `parent` 查 `visible`） —— 否则「一个 tab 一个栈」的常态组合下一次返回会掀掉所有 tab 的历史；`pages: []` 是合法值（挂 0 个子节点）；**仍缺**：转场动画、边滑返回。 |
+| C2 | `appBar` | 页面骨架 | 左/中/右三槽；`large` 变体随滚动收起；安全区顶部内边距。**✅ 已落地（2026-10-31）**：`appBar(opts)` —— `leading`/`title`（String 包成 text）/`trailing` 三槽，`large` 时多一行大标题、`collapse`(0..`largeExtra`) 把它**裁**进 compact 行；高度=56+extra 由 kind 拥有（作者别传 `style.height`） | **P0** ；**补强（2026-10-31 第四十六轮）**：`leading`/`trailing` 接受 **Node 或 Node[]**（>1 自动包成 row，非 Node **抛**） —— 之前 `as Node` 把数组静默丢掉，文档站自己的 `trailing: [icon(...)]` 从未上屏；`safeArea: "top"` 的折回 0 现在会重排（inset 变化显式标脏），bar 47→103→56 两侧都有断言。 |
+| C3 | `tabBar` | 手机一级导航 | 底部、图标 + 标签、选中态、安全区底部内边距。**✅ 已落地（2026-10-31）**：`tabBar(opts)` —— `items` 定长、cell 等分（第 5 个 tab 让别的更窄而不是横滚）；String `icon` 是 SVG path 且**由 bar 染色**（Node icon 保留作者颜色）；点当前 tab **仍上报**（"回到本节顶部"才可表达） | **P0** ；**补强（2026-10-31 第四十六轮）**：`items` 缩短时删掉的格子**不在树上**（不是变透明）；Node icon 保留作者颜色（bar 只染字符串路径）；`safeArea: "bottom"` 34→90→56 两侧断言，且底部那条带是 **bar 自己的背景**（inset 是 padding，不是缝）；**仍缺**：指示条。 |
 | C4 | `refreshControl` | 列表标配 | 阈值 + 阻尼 + 释放触发；与 `vlist`/`scrollView` 联动 | M | **P0** |
 | C5 | `actionSheet` + 两键 `alert` | 危险操作确认 | destructive 色调；底部呈现；取消按钮固定 | S | P1 |
 | C6 | `swipeableRow` | 列表标配 | 左滑/右滑、阈值、回弹、与滚动竞争（P3 仲裁） | M | P1 |
@@ -446,7 +448,7 @@ public interface Env {
 | 里程碑 | 交付 | 验收（必须可复现） |
 |---|---|---|
 | **M0 触摸可路由** | P1/P2/P5 + 合成 mouse 兼容层 | 新增 `probes/widgets/pointer-touch`：用**合成 touch 序列**驱动 chip/button/switch；现有 `probes/widgets/*` 在触摸驱动下全绿。**2026-10-31：前半已达成** —— 探针在门里，驱动 button 的 tap / 拖拽 / scroller 延迟 / 取消 / hover 两态，变异 7/7；**「现有全部探针改触摸驱动」还没做**（它们仍走 `dispatchMouse`） |
-| **M1 可滚** | S1/S2/S3 | 确定性回放：一次 fling 的位移曲线与手算表一致；越界回弹回位误差 < 1pt。**2026-10-31：S1/S2 已达成** —— `probes/widgets/touch-scroll` 钉 1:1 位移（20pt→20px 精确）、slop 不滚动、轴锁、press 撒回、`momentum:false` 停在释放点、拖动越界钉在 180、程序化滚动取消滑行，变异 10/10；**S3 回弹没做**，所以「回位误差 < 1pt」这一条**不适用**；位移曲线只用「更远 / 不越界 / 最终停下」三条粗断言（精确距离是帧时钟的函数，钉死它等于钉死机器的忙闲） |
+| **M1 可滚** | S1/S2/S3 | 确定性回放：一次 fling 的位移曲线与手算表一致；越界回弹回位误差 < 1pt。**2026-10-31：S1/S2/S3 全部达成** —— S3 的「回位误差 < 1pt」是**字面成立**（弹簧在 0.5px 处直接写 0，误差为 0，不是「小于 1」），且拉伸本身有像素证据（回弹时视口底部露出的是**视口自己的背景**，不是内容）。原 S1/S2 说明：**2026-10-31：S1/S2 已达成** —— `probes/widgets/touch-scroll` 钉 1:1 位移（20pt→20px 精确）、slop 不滚动、轴锁、press 撒回、`momentum:false` 停在释放点、拖动越界钉在 180、程序化滚动取消滑行，变异 10/10；**S3 回弹（2026-10-31）已补上**，「回位误差 < 1pt」现按字面验收；位移曲线只用「更远 / 不越界 / 最终停下」三条粗断言（精确距离是帧时钟的函数，钉死它等于钉死机器的忙闲） |
 | **M2 有环境** | E1/E2/E7 | 模拟 `safeArea=(47,0,34,0)` + `keyboardRect` 后，根 padding 与「输入框滚入可见区」逐项断言。**2026-10-31：E1/E2 已达成** —— `probes/widgets/env` 用 FakeEnv 把同一棵树推过 47/0/34/0 → 全 0 → 仅底 34 → 再回 47，逐项断言根 padding（51/4/38/4）、盒子不缩、未声明的子节点不动、只认声明过的边，并钉「一次平台改动 = 一次通知」与重绑退订；变异 7/7。**`keyboardRect` 与「滚入可见区」没做（S7）**，`appState` 停帧也没做（E7），所以这条**只算三分之二** |
 | **M3 有骨架** | N1–N5 | 三页栈：push/pop/系统返回/侧滑；页面状态保持；`navStack` 深度断言 |
 | **M4 可输入** | E3/T1–T4 | 键盘矩形变化 → 焦点框滚入 → 收起复原；`setSelection` 生效 |
@@ -501,7 +503,7 @@ cd asaotui
 node tools/mobile-gap-scan.cjs          # 本文所有计数（只读，不编译、不写文件）
 node tools/mobile-gap-scan.cjs --json   # 机读形态
 node tools/compiler-fingerprint.cjs     # 复核 as3compiler/ 零改动
-node tools/gates.cjs                    # 62 道门（含本文 M0 的 pointer-touch、M1 的 touch-scroll、M2 的 env）
+node tools/gates.cjs                    # 65 道门（含本文 M0 的 pointer-touch、M1 的 touch-scroll、M2 的 env）
 ```
 
 > 本文**不给门的绿/红判断**（只做静态计数与代码事实）。上一次全量落盘是
@@ -538,7 +540,7 @@ node tools/gates.cjs                    # 62 道门（含本文 M0 的 pointer-t
 | 变异 `probes/widgets/touch-scroll/mutation.cjs` | **10/10 全中**：半速拖动 / 反向拖动 / 锚在按下点 / 不撒 press / 忽略 momentum / 强制 momentum / 不锁轴 / 不夹边界 / 程序化滚动不取消滑行 / 手指落下不停滑行 |
 | 刻意的粗断言 | 滑行的**距离**不钉（它是帧时钟的函数）；只钉「更远 / 不越界 / 最终停下」+
 `momentum:false` 的**精确相等**。把距离钉死等于把探针焊在机器的忙闲上 |
-| 仍然缺的 | 真触摸（G5）、回弹越界（S3）、分页吸附（S4）、嵌套轴仲裁（S5）、`hitSlop`（P6）、触控态视觉（P5 后半） |
+| 仍然缺的 | 真触摸（G5）、分页吸附（S4）、嵌套轴仲裁（S5）、`hitSlop`（P6）、触控态视觉（P5 后半）；**回弹越界（S3）已补（2026-10-31）** |
 
 编译器事实的**出处行号**（只读）：`as3compiler/src/emit.ts:19688–19747`（`mouseEnabled`/`mouseChildren`
 被命中测试遵守）、`emit.ts:19611`（填充路径命中不看 alpha）、`as3compiler/vendor/window_glue.cc:2510`

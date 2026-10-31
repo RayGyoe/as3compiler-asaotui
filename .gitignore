@@ -136,12 +136,20 @@ icudtl.dat
 /probes/**/*.step
 /probes/**/*.bmp
 /probes/**/*.rects.txt
+# 探针的退出码与转录（第四十六轮新增）：`tools/probe.cjs` 在 exit 钩子里写
+# `<name>.gate-status`，池子的失败转录是 `<name>.gate.log`。一个探针一个字节级的
+# 标记文件，每跑一次门就重写一次 —— 不忽略的话 `git status` 里会多出几十条。
+/probes/**/*.gate-status
+/probes/**/*.gate.log
+# 画廊窗口自己的 stdout（同上：长命子进程的 stdio 指向文件，而不是继承父进程的管道）
+/ui-demo/**/*.run.log
 # 2.4 MB 帧缓冲，verify-visual.cjs 每次重新生成
 /layout-check/*.bmp
 # 每跑一次就变的测量日志（计时随负载浮动 ±1ms；anim 那份还是**追加**写、会无限增长）。
 # durable 版本是 review/README 里的表格，不是这些转瞬即变的数字——不然每跑一次门都会把工作树弄脏。
 /probes/**/*.log.txt
 /probes/**/*.samples.txt
+/probes/**/*.dbg.txt
 /probes/vec-vs-arr/vec-aot.txt
 /probes/vec-vs-arr/vec-air.txt
 

@@ -868,9 +868,16 @@ package asaot.ui
         // One side: an edge that does not claim the inset keeps the AUTHOR's value
         // untouched (NaN included -- a NaN side means "unset", and turning it into 0
         // would make this node start writing a padding the author never wrote).
+        //
+        // A CLAIMED edge is always DEFINITE, even at inset 0. That looks pointless
+        // on the fold side (0 + nothing is nothing) and is not: `applyEngineStyle`
+        // only writes the engine's padding when `resolved.padding` is non-null, so a
+        // claimed node whose padding went back to "unset" would leave the LAST
+        // inset in the engine -- exactly the stale 103px bar that
+        // probes/widgets/appbar caught when the env went back to zero.
         private static function safeSide(v:Number, mask:int, bit:int, inset:Number):Number
         {
-            if ((mask & bit) == 0 || inset == 0) return v;
+            if ((mask & bit) == 0) return v;
             return (isNaN(v) ? 0 : v) + inset;
         }
 
@@ -895,6 +902,16 @@ package asaot.ui
             if (t == this.safeTop && r == this.safeRight && b == this.safeBottom && l == this.safeLeft) return;
             this.safeTop = t; this.safeRight = r; this.safeBottom = b; this.safeLeft = l;
             this.resolveStyle(true);
+            // A RE-RESOLVE IS NOT ENOUGH TO REACH THE LAYOUT. `keepPrevious` leaves
+            // the diff baseline where it was, so a fold that goes BACK to the value
+            // the padding had before the inset appeared diffs to zero: the engine
+            // style is rewritten, but no measure bit is raised anywhere, and the
+            // tree keeps the notched geometry until some unrelated reflow. (Found by
+            // probes/widgets/appbar, which unbinds a 47pt env and re-measures the
+            // bar: it stayed 103 instead of going back to 56.) An inset change IS a
+            // layout input, so it says so here, where it happens.
+            this.dirty |= Dirty.M_PAINT;
+            this.markLayoutDirty();
         }
 
         // Push the SUPPORTED style surface onto the layout engine. Uses ONLY the

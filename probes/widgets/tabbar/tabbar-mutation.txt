@@ -1,0 +1,50 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  the handler reports the LAST index instead of its own -- this is the AS3 loop-closure trap the factory exists to avoid: every cell of a `for (var i ...)` loop shares one binding, so three different taps all report "the last tab"
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL tapping cell 0 reported 1 picks, last 2, want [0];
+     restore: byte-identical (e9e6cf62e47b6682)
+M2  CAUGHT  the cells stop growing -- three cells size to their own content, so the strip no longer fills the bar and a tap near the right edge can land on nothing
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL cell t0 is 0,204,24,56, want x=0 w=106.66666666666667; cell t1 is 24,204,24,56, want x=106.66666666666667 w=106.66666666666667; cell t2 is 48,204,24,56, want x=213.33333333333334 w=106.66666666666667; the last cell ends at 72, want 320; tapping cell 0 reported 1 picks, la
+     restore: byte-identical (e9e6cf62e47b6682)
+M3  CAUGHT  the tint is applied to every cell EXCEPT the current one -- the bar highlights the tabs you are not on
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the selected label is #6b7280, want the accent #2563eb; an unselected label is #2563eb, want the muted #6b7280; an unselected label is #2563eb, want the muted #6b7280; the selected icon is #6b7280, want the accent #2563eb; an unselected icon is #2563eb, want the muted #6b
+     restore: byte-identical (e9e6cf62e47b6682)
+M4  CAUGHT  the ICON is built with the muted tint -- the label still highlights, so the bar looks like it half-works (the icon never follows the selection)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the selected icon is #6b7280, want the accent #2563eb;
+     restore: byte-identical (e9e6cf62e47b6682)
+M5  CAUGHT  the bar never paints its surface -- the cells still tint correctly, so nothing looks wrong until you point it at a dark page and the bar disappears
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the pixel inside the bar is #ffffff, want the bar's own #222222; the pixel just past the cell boundary is #ffffff, want the bar's #222222 (the over-long label painted into the next tab); the pixel in the home-indicator band is #ffffff, want the bar's own #222222 (the inse
+     FAIL  pixel (10,210) want #222222 got #ffffff
+     restore: byte-identical (a40b00e7a1189854)
+M6  CAUGHT  `barHeight` is ignored -- the strip is always 56, so a bar the author made taller to clear the home indicator floats away from the bottom edge
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a 72px bar is 0,204,320,56, want y=188 h=72;
+     restore: byte-identical (e9e6cf62e47b6682)
+M7  CAUGHT  the LABEL keeps its own untinted style -- the cell is tinted but the text is patched back to the muted colour, so the selected tab looks exactly like the others
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the selected label is #6b7280, want the accent #2563eb; after the tap the selected label is #6b7280, want the accent;
+     restore: byte-identical (e9e6cf62e47b6682)
+M8  CAUGHT  a NODE icon is re-built through the string path -- the author's own node is thrown away (it is not a path string), so a custom badge/avatar in a cell silently disappears
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the Node icon was not mounted (a String-only icon path drops it);
+     restore: byte-identical (e9e6cf62e47b6682)
+M9  CAUGHT  the `safeArea:` opt is not mirrored onto the descriptor -- no bar claims the bottom inset, so the cells sit on the very bottom edge under the home indicator and the bar is 56 tall, not 90
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL bar is 0,204,320,56 not 0,170,320,90; cell t0 is 0,204,160,56 not 0,170,160,56;
+     restore: byte-identical (6139c4f234e048d4)
+M10  CAUGHT  the label sizes to its TEXT instead of to the cell -- an over-long label is laid out at its intrinsic width (164px in a 160px cell) and paints across the boundary into the next tab, because a cell does not clip
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the label box is -39.235595703125,236.5,238.47119140625,13, want x=0 w=160 (the cell's width, so ellipsis has something to truncate to); the long label was not truncated at all; the painted label is 49 chars, want fewer than the source's 49; the pixel just past the cell b
+     restore: byte-identical (e9e6cf62e47b6682)
+M11  CAUGHT  the label is pinned to the cell but told nothing about overflow -- the field clips mid-glyph with no ellipsis, so the run ends in a half letter instead of a "…"
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the long label was not truncated at all; the painted label is 49 chars, want fewer than the source's 49; the painted run is 238.47119140625px in a 160px box; the pixel just past the cell boundary is #222223, want the bar's #222222 (the over-long label painted into the nex
+     restore: byte-identical (e9e6cf62e47b6682)
+
+MUTATION tabbar: 11/11 caught, 0 problem(s)
+RESULT: PASS

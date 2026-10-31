@@ -45,6 +45,25 @@ package asaot.ui
         // stalled frame both land in the same place.
         public static const FLING_FRAME_MS:Number = 16.667;
 
+        // Overscroll resistance (MOBILE.md S3). The rubber-band curve is the iOS one,
+        // f(x) = (x * dim * c) / (dim + c * x): the stretch rises fast and then flattens
+        // with an asymptote at the viewport dimension, so a finger gets the message
+        // "there is nothing more here" without dragging the pane off-screen. 0.55 is
+        // the constant every UIKit clone copies; it is a CONVENTION, not a measurement
+        // (this workspace has no touch backend to feel it -- G5).
+        public static const OVERSCROLL_RESIST:Number = 0.55;
+
+        // How much of the bounce is left after ONE 60Hz frame. Corrected for the real
+        // frame time exactly like the glide (S2), so a 120Hz window returns in the same
+        // WALL-CLOCK time. 0.72 puts a 47px bounce back on the wall in ~230ms.
+        public static const SPRING_RATE:Number = 0.72;
+
+        // The bounce is over below this distance (px). M1's acceptance is "回位误差 <
+        // 1pt"; stopping at half a pixel and writing EXACTLY zero makes the error zero
+        // rather than "less than one". An exponential decay never reaches zero on its
+        // own, so without a floor the spring would repaint forever.
+        public static const SPRING_STOP_PX:Number = 0.5;
+
         // A velocity sample older than this is not a flick. A finger that stops for a
         // few frames and then lifts was PLACING the content; treating its stale speed
         // as a throw makes a list coast away under a user who thought they had stopped.

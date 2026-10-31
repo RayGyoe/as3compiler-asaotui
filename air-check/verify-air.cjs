@@ -11,17 +11,26 @@
 // in project docs -- this is a local runner, not a doc).
 const fs = require('fs');
 const path = require('path');
-const { mxmlcRun } = require('../../tools/mxmlc-run.cjs');
+// '../tools', not '../../tools': air-check/ is ONE level inside asaotui, so the old
+// path resolved outside the workspace and this file could not even start (measured:
+// "Cannot find module '../../tools/mxmlc-run.cjs'").
+const { mxmlcRun } = require('../tools/mxmlc-run.cjs');
 const { spawnSync } = require('child_process');
 
 const HERE = __dirname;
-const AIR = process.env.AIRSDK_HOME || 'D:/Adobe/Flex_Sdk/AIRSDK_51.4.1';
-const MXMLC = path.join(AIR, 'bin', process.platform === 'win32' ? 'mxmlc.bat' : 'mxmlc');
+// The SDK root comes from the workspace's ONE resolver (../tools/air-sdk.cjs):
+// AIRSDK_HOME first, then PATH, then the install locations. This file used to
+// default to a hard-coded 'D:/Adobe/Flex_Sdk/...' -- on macOS that is a guaranteed
+// miss, and it reported "no mxmlc" with the SDK two directories away.
+const { resolveAirSdk, describe } = require('../tools/air-sdk.cjs');
+const SDK_INFO = resolveAirSdk();
+const AIR = SDK_INFO.root;
+const MXMLC = SDK_INFO.mxmlc;
 const noBuild = process.argv.includes('--no-build');
 
 function fail(msg) { console.error('FAIL ' + msg); process.exit(1); }
 
-if (!fs.existsSync(MXMLC)) fail('no mxmlc at ' + MXMLC + ' (set AIRSDK_HOME)');
+if (!MXMLC) fail(describe(SDK_INFO));
 
 // ---- 1) mxmlc: compile the whole seam library (LayoutEngine.as + its impls) ----
 if (!noBuild) {
@@ -30,22 +39,26 @@ if (!noBuild) {
   const r = mxmlcRun(MXMLC, ['-output=aircheck.swf', '-source-path=../seam', 'AirMain.as'],
     { cwd: HERE, encoding: 'utf8', timeout: 300000 });
   const out = ((r.stdout || '') + (r.stderr || '')).trim();
-  const rebuilt = fs.existsSync('aircheck.swf') && fs.statSync('aircheck.swf').mtimeMs !== t0;
+  // mxmlc ran with cwd=HERE, so its output is THERE -- statting the bare name resolved
+  // against this process's cwd and threw ENOENT on a build that had just succeeded.
+  const swf = path.join(HERE, 'aircheck.swf');
+  const rebuilt = fs.existsSync(swf) && fs.statSync(swf).mtimeMs !== t0;
   console.log('mxmlc exit=' + r.status + '  rebuilt=' + rebuilt
-    + '  swf=' + fs.statSync('aircheck.swf').size + ' bytes');
+    + '  swf=' + fs.statSync(swf).size + ' bytes');
   if (out) console.log(out.split('\n').slice(0, 20).join('\n'));
   if (r.status !== 0 || /Error|错误/i.test(out)) fail('mxmlc reported errors');
 }
 
 // ---- 2) adl: run it (adl never exits by itself -> run-adl.cjs holds a timeout) ----
-const t1 = fs.existsSync('air-out.txt') ? fs.statSync('air-out.txt').mtimeMs : 0;
+const OUT = path.join(HERE, 'air-out.txt');
+const t1 = fs.existsSync(OUT) ? fs.statSync(OUT).mtimeMs : 0;
 const env = Object.assign({}, process.env, { AIRSDK_HOME: AIR });
 const r2 = spawnSync(process.execPath, [path.join(HERE, 'run-adl.cjs'), 'app-air.xml', '90000'],
   { cwd: HERE, encoding: 'utf8', timeout: 180000, env });
 console.log('adl exit=' + r2.status + '  ' + ((r2.stdout || '') + (r2.stderr || '')).trim().split('\n').slice(-3).join(' | '));
-if (!fs.existsSync('air-out.txt')) fail('air-out.txt was never written -- the AIR app did not run');
-const fresh = fs.statSync('air-out.txt').mtimeMs !== t1;
-console.log('air-out.txt refreshed=' + fresh + '  bytes=' + fs.statSync('air-out.txt').size);
+if (!fs.existsSync(OUT)) fail('air-out.txt was never written -- the AIR app did not run');
+const fresh = fs.statSync(OUT).mtimeMs !== t1;
+console.log('air-out.txt refreshed=' + fresh + '  bytes=' + fs.statSync(OUT).size);
 
 // ---- 3) diff the AIR GOT lines against the Yoga and AOT arms -------------------
 const got = (f) => fs.readFileSync(f, 'utf8').split('\n').filter((l) => l.startsWith('GOT ')).map((l) => l.trim());

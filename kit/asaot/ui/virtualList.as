@@ -7,7 +7,9 @@
 //       offsetY: 0,                     // row-granular; snapped here
 //       overscan: 1,                    // extra rows above/below (default 0)
 //       renderRow: function (i:int):Node { return ...; },   // REQUIRED
-//       onScroll: function (y:Number):void { ... }
+//       onScroll: function (y:Number):void { ... },
+//       onVisible: function (first:int, last:int):void { ... },
+//       scrollToIndex: 120               // -1 (default) = no request
 //   })
 //
 // WHAT THE AUTHOR MUST DO. `renderRow(i)` is called ONCE PER MOUNTED ROW, not once
@@ -73,6 +75,8 @@ package asaot.ui
         // probes/g16-ternary-null keeps the AOT deviation set empty; the guard
         // stays because "optional Function" is what it says.
         if (opts.onScroll != null) n.onScroll = (opts.onScroll as Function);
+        if (opts.onVisible != null) n.onVisible = (opts.onVisible as Function);
+        if (opts.scrollToIndex != null) n.scrollToIndex = int(opts.scrollToIndex);
         if (opts.overscan != null) n.overscan = int(opts.overscan);
         if (n.overscan < 0) n.overscan = 0;
         if (n.ariaName == null || n.ariaName == "") n.ariaName = "list of " + count;

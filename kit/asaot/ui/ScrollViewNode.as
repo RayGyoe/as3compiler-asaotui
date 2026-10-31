@@ -11,18 +11,23 @@
 //
 //   * `offsetY` (this class, author-owned) is the POSITION REQUEST -- the initial
 //     scroll and the value the author sets to scroll programmatically;
-//   * the LIVE position belongs to the node (it must survive a re-render that
-//     rebuilds the description from an unchanged model).
+//   * the LIVE position belongs to the node: a re-render does not move the viewport
+//     unless the description asks it to, and moving never re-runs layout.
 //
-// The rule the widget implements: if the description's offset CHANGES between
-// frames it moves the view; if it is unchanged the view keeps where the user
-// scrolled it. So both authoring styles work --
+// The rule the widget implements: the description's offset is compared against the
+// LIVE position; a difference is a request to move. So both authoring styles work --
 //
 //   A) rebuild the description every render(): keep the offset in your model and
-//      update it from `onScroll`, or the next render simply re-passes the old value
-//      (which is unchanged, so it does not fight the wheel);
-//   B) build the description once and mutate it: the wheel handler writes back into
-//      `offsetY` itself, so this class is always the author's live handle.
+//      MIRROR it from `onScroll`. Mirroring is not optional in this style: a
+//      description that still carries the value from before the user scrolled says
+//      "go back there", so a re-render for any other reason would snap the viewport
+//      back (the widget cannot tell a stale copy from a deliberate "back to top");
+//   B) build the description once and mutate it: the wheel and drag handlers write
+//      back into `offsetY` itself, so this class is always the author's live handle.
+//
+// A request is the only way to scroll programmatically, which means the same value
+// cannot be requested twice in a row while it is already the live position: the
+// usual "back to top" button works because it differs from where the user is.
 //
 // `contentW/H` and `maxOffsetX/Y` are OUTPUTS, written during paint from the
 // engine's solved child rects.
@@ -55,6 +60,19 @@
 // `paint` and asks for its own next frame (markPaint), so coasting never re-solves
 // layout. That is also why `decelerationRate` is read at glide time from the
 // description: a theme or a model that changes it mid-glide is honoured.
+//
+// OVERSCROLL (MOBILE.md S3). `overscroll` is "rubber" (the default: a finger that
+// drags past an end stretches the content against a damped resistance and it springs
+// back when released) or "none" (the drag simply stops at the end). THE STRETCH IS
+// NOT THE OFFSET: `offsetX`/`offsetY` stay clamped to the range at all times, so an
+// author's model never sees a negative offset and `offsetY == maxOffsetY` still means
+// "at the end". The stretch is published separately as `overscrollX`/`overscrollY`
+// (outputs, signed px, 0 when at rest) -- that is what the clip is drawn at, and what
+// a probe can assert.
+//
+// Only a FINGER can overscroll: a wheel notch and a scrollbar drag both clamp (they
+// are discrete moves, and a desktop user expects the wall to be a wall). So
+// `overscroll` is opt-out for the mobile case, not a desktop behaviour change.
 //
 // STICK TO BOTTOM (`stickToBottom`) is for logs, chats and consoles: the view keeps
 // following the END of the content while it grows, and stops following the moment the
@@ -91,6 +109,10 @@ package asaot.ui
         public var momentum:Boolean;        // touch fling keeps going after the lift
         public var decelerationRate:Number; // velocity multiplier per 60Hz frame, (0,1)
 
+        public var overscroll:String;   // "rubber" | "none"
+        public var overscrollX:Number;  // out: current stretch, signed px (0 at rest)
+        public var overscrollY:Number;  // out
+
         public var scrollbarX:String;   // "auto" | "always" | "never"
         public var scrollbarY:String;
         public var barThickness:Number; // px, the overlay bar's width
@@ -116,6 +138,9 @@ package asaot.ui
             this.onScroll = null;
             this.momentum = true;
             this.decelerationRate = 0.95;
+            this.overscroll = "rubber";
+            this.overscrollX = 0;
+            this.overscrollY = 0;
             this.scrollbarX = "auto";
             this.scrollbarY = "auto";
             this.barThickness = 10;
@@ -140,6 +165,16 @@ package asaot.ui
             if (s == "auto" || s == "always" || s == "never") return s;
             throw new Error("asaot.ui.scrollView: " + opt + " must be \"auto\", \"always\""
                 + " or \"never\", got '" + s + "'");
+        }
+
+        // "rubber" | "none", anything else THROWS. Same reasoning as barMode: a typo
+        // (`overscroll: true`) must not silently mean "whatever the default was".
+        public static function overMode(v:Object, opt:String):String
+        {
+            var s:String = String(v);
+            if (s == "rubber" || s == "none") return s;
+            throw new Error("asaot.ui.scrollView: " + opt + " must be \"rubber\" or"
+                + " \"none\", got '" + v + "'");
         }
 
         // The share of the velocity surviving one 60Hz frame, anything outside (0,1)

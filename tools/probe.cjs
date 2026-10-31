@@ -51,8 +51,25 @@ if (!fs.existsSync(path.join(dir, 'Main.as'))) {
   process.exit(2);
 }
 
+// ---- 0: publish the exit code for the pool ---------------------------------
+// In an `exit` hook, so EVERY path reports -- an early `process.exit(2)` (no
+// Main.as, a build failure, a missing expect.json) would otherwise leave a pool
+// slot waiting for its deadline after the process is long gone.
+process.on('exit', (code) => {
+  try { fs.writeFileSync(path.join(dir, name + '.gate-status'), String(code)); }
+  catch (e) { /* the pool falls back to its deadline */ }
+});
+
 // ---- 1: clean previous evidence (a stale artifact has faked a pass before) ---
 const OUTS = [name + '.bmp', name + '.bmp.rects.txt', name + '.rects.txt', name + '.done', name + '.log',
+  // The exit status, published for tools/gates.cjs's probe pool: it starts several
+  // probes at once and polls this file instead of waiting on a child handle (the
+  // pool's main thread is blocked, so no 'exit' event could ever be delivered).
+  name + '.gate-status',
+  // NOT `name + '.gate.log'`: that is the POOL's transcript for this probe (written by
+  // tools/gates.cjs, truncated by it before the spawn), not an artifact of this run.
+  // Deleting it here unlinked the pool's own evidence -- a failing probe left a
+  // status file, a generated .c and NO log to read.
   // A probe may leave a stage breadcrumb here (see probes/widgets/scrollbar): the
   // file is the probe's own, and printing it on TIMEOUT names the stage that died.
   name + '.step'];
@@ -107,7 +124,14 @@ if (b.status === null && b.signal) {
 }
 if (b.status !== 0) {
   console.error('[probe] BUILD FAILED (exit ' + b.status + ')');
-  console.error(buildOut.split(/\r?\n/).slice(-40).join('\n'));
+  // ERRORS FIRST, THEN THE TAIL. A build of this kit emits hundreds of clang
+  // warnings, so "the last 40 lines" is all warnings and the one line that says
+  // what broke scrolls off the top -- a failing probe with a perfectly clean-looking
+  // transcript.
+  const errs = buildOut.split(/\r?\n/).filter((l) => /\berror\b|Error #|Cannot|not found|Unhandled/i.test(l));
+  if (errs.length) console.error('---- ' + errs.length + ' error line(s) ----\n' + errs.slice(0, 30).join('\n'));
+  console.error('---- last 20 lines ----');
+  console.error(buildOut.split(/\r?\n/).slice(-20).join('\n'));
   process.exit(1);
 }
 

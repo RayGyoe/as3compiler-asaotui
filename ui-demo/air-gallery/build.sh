@@ -229,6 +229,12 @@ win_of() {
 # AIRSDK_HOME is this project's one way of naming the SDK (never a hardcoded machine
 # path). Falling back to PATH is not a hidden default -- it is how the SDK is
 # installed on the dev box -- and the resolved root is printed either way.
+#
+# The last resort is tools/air-sdk.cjs, the SAME resolver the gate runner and the
+# probes use. It exists because "not on PATH" is not "not installed": on this box
+# the SDK sits in ~/Documents/Software/AIRSDK/AIRSDK_51.4.1 while PATH still holds a
+# bin/ directory from an uninstalled 51.2.1, so this function used to report "no AIR
+# SDK found" with a working SDK two directories away.
 sdk_root() {
   if [ -n "${AIRSDK_HOME:-}" ]; then printf '%s\n' "$AIRSDK_HOME"; return 0; fi
   local t p
@@ -238,6 +244,9 @@ sdk_root() {
     printf '%s\n' "$(cd -- "$(dirname -- "$p")/.." && pwd)"
     return 0
   done
+  if [ -n "${NODE:-}" ]; then
+    "$NODE" "$HERE/../tools/air-sdk.cjs" --print 2>/dev/null && return 0
+  fi
   return 1
 }
 

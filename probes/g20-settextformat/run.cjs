@@ -31,7 +31,14 @@ const DIR = __dirname;
 const UI = path.resolve(DIR, '..', '..');
 const COMPILER = path.resolve(UI, '..', 'as3compiler');
 const clang = process.env.ASC_CC || 'clang';
-const SDK = process.env.AIRSDK_HOME || 'D:/Adobe/Flex_Sdk/AIRSDK_51.4.1';
+// The SDK is resolved by the workspace's ONE resolver (tools/air-sdk.cjs): env
+// first, then PATH, then the install locations -- and a hit only counts if this
+// HOST can run the launcher. The old fallback here was a hard-coded Windows path
+// ('D:/Adobe/Flex_Sdk/...'), which on macOS is a guaranteed miss: the runner
+// reported "AIR SDK not found" with the SDK sitting two directories away.
+const { resolveAirSdk, describe } = require('../../tools/air-sdk.cjs');
+const SDK_INFO = resolveAirSdk();
+const SDK = SDK_INFO.root;
 const skipAir = process.env.ASC_SKIP_AIR === '1';
 
 const AOT_TXT = path.join(DIR, 'g20-settextformat-aot.txt');
@@ -80,10 +87,10 @@ const aotExit = aotRun.status === null ? 'signal ' + aotRun.signal : aotRun.stat
 // --------------------------------------------------------------- AIR arm -----
 let air = null;
 if (!skipAir) {
-  const mxmlc = path.join(SDK, 'bin', process.platform === 'win32' ? 'mxmlc.bat' : 'mxmlc');
-  const adl = path.join(SDK, 'bin', process.platform === 'win32' ? 'adl.exe' : 'adl');
-  if (!fs.existsSync(mxmlc) || !fs.existsSync(adl)) {
-    console.error('[g20] AIR SDK not found under ' + SDK + ' (set AIRSDK_HOME, or ASC_SKIP_AIR=1)');
+  const mxmlc = SDK_INFO.mxmlc; const adl = SDK_INFO.adl;
+  if (!SDK_INFO.complete) {
+    console.error(describe(SDK_INFO));  // names every location tried, not just one guess
+    console.error('  (set AIRSDK_HOME, or ASC_SKIP_AIR=1 to skip the AIR arm)');
     process.exit(2);
   }
   console.log('[g20] building the AIR arm with mxmlc');

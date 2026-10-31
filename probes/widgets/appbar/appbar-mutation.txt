@@ -1,0 +1,63 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  the bar row is a BOX instead of a `row(...)` -- a box takes its axis from `BoxNode.direction`, which defaults to column, so the three slots stack and every rect in the probe is wrong (this is the measured trap: `flexDirection: "row"` in a box style is simply ignored)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL lead is 140,0,40,20 not 12,16,40,24; trail is 130,36,60,20 not 248,16,60,24; the title centre is at x=160, want 150 (centred between the slots, NOT the bar's 160); the collapsed large bar's title centre is at x=160, want 95 (left-aligned at the mid box's start, NOT the co
+     FAIL  rect lead[x] want 12 got 140
+     FAIL  rect lead[y] want 16 got 0
+     FAIL  rect lead[h] want 24 got 20
+     ... and 5 more
+     restore: byte-identical (71f91f2dc0f7670b)
+M2  CAUGHT  the bar padding tuple is written [vertical, horizontal] instead of [horizontal, vertical] -- the leading slot loses its 12px left edge and the row loses 12px of height on both sides
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL lead is 0,16,40,24 not 12,16,40,24; trail is 260,16,60,24 not 248,16,60,24; the collapsed large bar's title centre is at x=83, want 95 (left-aligned at the mid box's start, NOT the compact 150); the trailing list is 260,16,60,24 not 248,16,60,24; the first action is 260,1
+     FAIL  rect lead[x] want 12 got 0
+     FAIL  rect trail[x] want 248 got 260
+     restore: byte-identical (71f91f2dc0f7670b)
+M3  CAUGHT  the large area ignores `collapse` -- the bar stays at its open height while the author scrolls, which is the whole difference between a header and a large header
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a half-collapsed bar is 104 tall, want 84 (56+48-20); the large title area is 0,56,320,48 not 0,56,320,28; a bar 8px from closed is 104 tall, want 64 (56+8); the pixel under the bar is #00ff00, want the root's #FFFFFF (an unclipped title hangs over the content);
+     restore: byte-identical (71f91f2dc0f7670b)
+M4  CAUGHT  a fully collapsed large bar keeps the extra row mounted (height 0) and drops the compact title -- the bar is the right height but shows no title at all
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the collapsed large bar mounted no title;
+     restore: byte-identical (71f91f2dc0f7670b)
+M5  CAUGHT  the bar stops clipping itself -- the collapsing title is 32px tall in an 8px row and hangs over whatever is below the bar for the whole gesture (the sampled pixel turns green)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the pixel under the bar is #00ff00, want the root's #FFFFFF (an unclipped title hangs over the content);
+     restore: byte-identical (5947384725805c5c)
+M6  CAUGHT  the compact title is mounted even while the large area is open -- the same Node is placed in two slots, so the title leaves the place the probe hand-computed for it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the title top-left is 60,12,70,32 not 12,56,70,32; the title top is 60,12,70,32 not 12,56,70,32;
+     restore: byte-identical (71f91f2dc0f7670b)
+M7  CAUGHT  the centre slot always centres -- a LARGE bar must keep its title left-aligned when it collapses, otherwise the title jumps sideways at the end of the scroll
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the collapsed large bar's title centre is at x=150, want 95 (left-aligned at the mid box's start, NOT the compact 150);
+     restore: byte-identical (71f91f2dc0f7670b)
+M8  CAUGHT  a String title is not wrapped -- the factory hands a String to `as Node` (null) and the bar renders with no title at all
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a String title mounted no text node;
+     restore: byte-identical (71f91f2dc0f7670b)
+M9  CAUGHT  a slot is taken with `as Node` again -- `trailing: [a, b]` (the shape the gallery documents, and the reason this mutation exists) is not a Node, so the actions vanish silently
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the bar row has 2 slots with a list trailing, want 3 (lead, mid, the list); the trailing list is missing; the trailing list mounted ? nodes, want 2 -- `trailing: [a, b]` used to be dropped entirely; the first action is missing; the second action is missing; the first acti
+     restore: byte-identical (71f91f2dc0f7670b)
+M10  CAUGHT  a claimed safe-area edge with a zero inset keeps the value UNSET -- the engine is only given padding when it is non-null, so the last inset stays in the engine and the bar stays 103
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL bar is 0,0,320,103 not 0,0,320,56; lead is 12,63,40,24 not 12,16,40,24;
+     FAIL  rect bar[h] want 56 got 103
+     FAIL  rect lead[y] want 16 got 63
+     FAIL  rect trail[y] want 16 got 63
+     ... and 2 more
+     restore: byte-identical (cbe2cd7ec7b735ff)
+M11  CAUGHT  an inset change only re-resolves -- `keepPrevious` leaves the diff baseline, so folding the inset back to zero raises no measure bit and the old geometry survives until another reflow
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL bar is 0,0,320,103 not 0,0,320,56; lead is 12,63,40,24 not 12,16,40,24;
+     FAIL  rect bar[h] want 56 got 103
+     FAIL  rect lead[y] want 16 got 63
+     FAIL  rect trail[y] want 16 got 63
+     ... and 2 more
+     restore: byte-identical (cbe2cd7ec7b735ff)
+
+MUTATION appbar: 11/11 caught, 0 problem(s)
+RESULT: PASS

@@ -15,6 +15,12 @@
 // quickly the coast dies. Both are read at glide time, so a render() that changes
 // them mid-flight is honoured.
 //
+// `overscroll` is "rubber" (the default: a finger that drags past an end stretches the
+// content against a damped resistance and it springs back on release) or "none" (the
+// drag stops dead at the end). It only ever applies to a FINGER -- the wheel and the
+// scrollbar thumbs clamp on every platform. `offsetX`/`offsetY` stay inside the range
+// in both modes; the stretch is reported separately in `overscrollX`/`overscrollY`.
+//
 // Give it an explicit size: a viewport has no meaningful intrinsic size, so an
 // auto axis falls back to 200x150 (ScrollViewWidget.DEFAULT_W/H) rather than
 // collapsing to zero.
@@ -43,6 +49,8 @@ package asaot.ui
             if (opts.momentum != null) n.momentum = Boolean(opts.momentum);
             if (opts.decelerationRate != null)
                 n.decelerationRate = ScrollViewNode.decelRate(opts.decelerationRate, "decelerationRate");
+            if (opts.overscroll != null)
+                n.overscroll = ScrollViewNode.overMode(opts.overscroll, "overscroll");
             if (opts.onScroll != null) n.onScroll = opts.onScroll;
             // The bar modes are validated HERE, at factory time: an unknown string
             // that silently became "auto" is exactly the fallback AGENTS.md 2.5

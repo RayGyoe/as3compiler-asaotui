@@ -1,0 +1,45 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  the pages stop being absolute -> a stack lays them out as a COLUMN, so every page is a third of the box and the visible one is at the wrong offset
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL page pa is 20,20,240,53.33333333333333 not 20,20,240,160 (absolute inset 0); page pb is 20,73.33333333333333,240,53.33333333333333 not 20,20,240,160 (absolute inset 0); page pc is 20,126.66666666666666,240,53.33333333333333 not 20,20,240,160 (absolute inset 0); the pixel 
+     restore: byte-identical (002f7820553a3400)
+M2  CAUGHT  every page stays visible -> the hidden pages paint over each other (the pixel shows the FIRST page, not the top one) and a click reaches a page nobody can see
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL page A is visible while C is on top; page B is visible while C is on top; page B is visible while C is on top;
+     restore: byte-identical (002f7820553a3400)
+M3  CAUGHT  `activeIndex` is ignored (the FIRST page is always "top") -> the stack shows the home page no matter what the model says
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL page A is visible while C is on top; the top page C is not visible; the pixel inside the stack is #111111, want C's #333333; page B is not visible after the pop; after the pop the stack shows #111111, want B's #222222; a click on the VISIBLE page B did not reach it (0); b
+     restore: byte-identical (1f65bd8133b04b36)
+M4  CAUGHT  the page style is REPLACED instead of patched -> every page loses its own background and text, which is the difference between a container and a container that eats your node
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the pixel inside the stack is #ffffff, want C's #333333; after the pop the stack shows #ffffff, want B's #222222; a click on the VISIBLE page B did not reach it (0); after the push the stack shows #ffffff, want C's #333333; after BACK the stack shows #ffffff, want A's #11
+     FAIL  pixel (30,30) want #111111 got #ffffff
+     restore: byte-identical (002f7820553a3400)
+M5  CAUGHT  only the top page is mounted -> the stack looks perfect until you go back and find the page below it gone (this is the "fake stack" the probe exists to reject)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL page pa is missing; page pb is missing; the hidden stack has 1 pages, want 2;
+     FAIL  rect pa: not reported by the probe
+     FAIL  pixel (30,30) want #111111 got #333333
+     restore: byte-identical (002f7820553a3400)
+M6  CAUGHT  the BACK filter is dropped -> any key (the probe sends 'A') pops the stack, so a desktop user typing in a field navigates away
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a non-BACK key raised onBack (1); the BACK key raised onBack 2 times, want 1;
+     restore: byte-identical (680f11aecbb7ed26)
+M7  CAUGHT  the author's onBack is never called -> BACK is consumed and nothing happens, the worst of both worlds (the platform gesture is spent, the app does not move)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the BACK key raised onBack 0 times, want 1; the author's back handler did not pop (depth 2); page B is still mounted after the back pop; after BACK the stack shows #404040, want A's #111111;
+     FAIL  pixel (30,30) want #111111 got #404040
+     restore: byte-identical (680f11aecbb7ed26)
+M8  CAUGHT  the on-screen check is dropped -> the stage listener answers in EVERY mounted stack, so one BACK gesture pops the tab the user is on AND every tab they cannot see (the probe keeps a second stack in a hidden tab and counts its callbacks)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the BACK key reached a HIDDEN stack (2 callbacks) -- one gesture would unwind every tab's history;
+     restore: byte-identical (680f11aecbb7ed26)
+M9  CAUGHT  an empty stack gets a blank PLACEHOLDER page mounted -> "no pages" becomes "one empty page", which is a different value from the author's (`pages: []` must mount nothing and still report depth 0)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the empty stack mounted 1 children;
+     restore: byte-identical (002f7820553a3400)
+
+MUTATION navstack: 9/9 caught, 0 problem(s)
+RESULT: PASS

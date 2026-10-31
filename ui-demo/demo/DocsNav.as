@@ -5,10 +5,15 @@ package demo
     import asaot.ui.AccordionNode;
     import asaot.ui.Node;
     import asaot.ui.accordion;
-    import asaot.ui.button;
+    import asaot.ui.appBar;
     import asaot.ui.breadcrumb;
+    import asaot.ui.button;
     import asaot.ui.column;
+    import asaot.ui.icon;
+    import asaot.ui.navStack;
     import asaot.ui.row;
+    import asaot.ui.slider;
+    import asaot.ui.tabBar;
     import asaot.ui.tabs;
     import asaot.ui.text;
     import asaot.ui.style.StyleRefinement;
@@ -208,6 +213,112 @@ package demo
                             { style: DocsDemo.MONO, ariaName: "" }),
                         text("a second accordion keyed side would own side:h0 -- no collision.",
                             { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
+                })
+
+            ];
+
+            if (id == "navStack") return [
+                new DocSection("Pages that stay mounted", [
+                    "Only the top page is VISIBLE; every page is measured and laid out regardless.",
+                    "That is the whole point of a stack: a page keeps its scroll offset and its",
+                    "typed text across a push and a pop, because its nodes were never rebuilt.",
+                    "`activeIndex` picks the top (-1, the default, means the last page). `onBack`",
+                    "is the system BACK key; a desktop window has none, so the buttons here",
+                    "drive the same state the key would."
+                ], [
+                    "navStack([home, detail], { key: \"nav\", activeIndex: model.depth,",
+                    "                           onBack: function ():void { model.depth = 0; } })",
+                    "// the pages overlap (absolute, inset:0) -- a stack is not a column"
+                ], 186, function ():Node
+                {
+                    var depth:int = int(m.num("nav.i", 0));
+
+                    var pageA:Node = column({ key: "navA", style: StyleRefinement.from({
+                        background: 0xF8FAFC, padding: 10, gap: 6 }) }, [
+                        text("Page one -- press Next", { style: DocsDemo.LABEL, ariaName: "" }),
+                        button({ label: "Next", key: "navNext",
+                            onClick: function ():void { m.put("nav.i", 1); } })
+                    ]);
+                    var pageB:Node = column({ key: "navB", style: StyleRefinement.from({
+                        background: 0xEEF2FF, padding: 10, gap: 6 }) }, [
+                        text("Page two -- press Back", { style: DocsDemo.LABEL, ariaName: "" }),
+                        button({ label: "Back", key: "navBack",
+                            onClick: function ():void { m.put("nav.i", 0); } })
+                    ]);
+                    return column({ gap: 6 }, [
+                        navStack([pageA, pageB], { key: "demoNav",
+                            activeIndex: depth,
+                            onBack: function ():void { m.put("nav.i", 0); },
+                            style: StyleRefinement.from({ size: [340, 148],
+                                background: 0xFFFFFF }) }),
+                        text("activeIndex " + depth, { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+            ];
+
+            if (id == "appBar") return [
+                new DocSection("Large title, collapsed by one number", [
+                    "The bar folds a large title into the compact row as the page scrolls: `collapse`",
+                    "goes 0 (open, `largeExtra` taller) to `largeExtra` (shut), and the fold is a",
+                    "CLIP -- the title slides under the compact row instead of jumping rows.",
+                    "Its height is the bar's to own, so a `style.height` would only fight it."
+                ], [
+                    "appBar({ key: \"bar\", title: \"Inbox\", large: true,",
+                    "         leading: icon(\"M15 6l-6 6 6 6\"), trailing: [icon(\"...\")],",
+                    "         collapse: model.collapse })   // 0 .. largeExtra (48)",
+                    "// safeArea: \"top\" adds the notch inset as PADDING -- the background",
+                    "// still covers it, the row starts below it"
+                ], 200, function ():Node
+                {
+                    var coll:Number = m.num("bar.c", 0);
+                    return column({ key: "demoBarWrap", gap: 6, style: StyleRefinement.from({
+                        size: [340, null] }) }, [
+                        appBar({ key: "demoBar", title: "Inbox", large: true,
+                            collapse: coll,
+                            leading: icon("M15 6l-6 6 6 6",
+                                { size: [24, 24], color: 0x334155 }),
+                            trailing: [ icon("M4 5h16M4 12h16M4 19h16",
+                                { size: [24, 24], color: 0x334155 }) ],
+                            style: StyleRefinement.from({ background: 0xFFFFFF }) }),
+                        slider("collapse " + int(coll), { key: "barC",
+                            value: coll / 48,
+                            onChange: function (v:Number):void { m.put("bar.c", v * 48); } })
+                    ]);
+                }),
+            ];
+
+            if (id == "tabBar") return [
+                new DocSection("Equal cells, one selected", [
+                    "`items` is fixed-length on purpose: the cells share the bar equally, so a fifth",
+                    "tab makes the others narrower instead of scrolling. The selected state is a",
+                    "TINT (accent for the current tab, muted otherwise) applied to the cell, so a",
+                    "badge or a custom node inside the cell inherits it too.",
+                    "A tap on the CURRENT tab is still reported -- that is how \"scroll this section",
+                    "to the top\" stays expressible."
+                ], [
+                    "tabBar({ key: \"tabs\", selectedIndex: model.tab, barHeight: 56,",
+                    "         items: [ { key: \"home\", label: \"Home\", icon: \"M4 20 V10 L12 4 L20 10 V20 Z\" },",
+                    "                  { key: \"find\", label: \"Search\", icon: \"M11 4 A7 7 0 1 1 10.99 4 Z M15.5 15.5 L20 20\" },",
+                    "                  { key: \"me\",   label: \"Me\",   icon: \"M4 20 A8 8 0 0 1 20 20 Z\" } ],",
+                    "         onSelect: function (i:int):void { model.tab = i; } })"
+                ], 132, function ():Node
+                {
+                    var sel:int = int(m.num("tab.i", 1));
+                    return column({ key: "demoTabsWrap", gap: 6, style: StyleRefinement.from({
+                        size: [340, null] }) }, [
+                        tabBar({ key: "demoTabs", selectedIndex: sel, barHeight: 56,
+                            items: [
+                                { key: "tA", label: "Home",
+                                  icon: "M4 20 V10 L12 4 L20 10 V20 Z" },
+                                { key: "tB", label: "Search",
+                                  icon: "M11 4 A7 7 0 1 1 10.99 4 Z M15.5 15.5 L20 20" },
+                                { key: "tC", label: "Me",
+                                  icon: "M4 20 A8 8 0 0 1 20 20 Z" }
+                            ],
+                            onSelect: function (i:int):void { m.put("tab.i", i); },
+                            style: StyleRefinement.from({ background: 0xFFFFFF }) }),
+                        text("selectedIndex " + sel, { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];

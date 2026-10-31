@@ -6,7 +6,7 @@
 > 深水区（布局引擎 + 三端差分）做透；**控件集从 4 个扩到 41 个 kind / 47 个工厂**（第二批 media/feedback/data 九件、
 > 第三批**浮层六件 dialog/drawer/popover/menu/toast/select**、第五批**列表虚拟化 `virtualList` + 选择三件**
 > `tree`/`combobox`/`datePicker` 均已落地）；
-> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**53 页 / 10 组**，每页两个 live 示例 + 产生它的源码），
+> **样式面从 18 字段补到 33 字段**；**组件文档站已跑起来**（`ui-demo/demo/DocsMain.as`，**56 页 / 10 组**，每页两个 live 示例 + 产生它的源码），
 > 且**每个注册过的 kind 都在画廊里看得见**（`tools/kind-coverage.cjs` 扫描门：**41/41**，变异 4/4）；
 > **浮层走第二棵保留树**（`View.renderOverlay()` + `UiApp.overlayRoot`），主树因此不再为弹层重解布局。
 > 第四轮（2026-10-24）补的是**交互动线**：`disabled` + `hover/pressed/focused` 四态绘制、`textField` 编辑回写、
@@ -135,6 +135,135 @@
 > 且「手指底下是谁」不是库自算的矩形，而是与引擎 hover **逐点对账**过的。真触摸仍挂在 **G5**
 > （窗口后端不产生 `TouchEvent`），所以这一轮的诚实说法是：**路由与按压语义可验，平台输入仍缺**。
 
+> 第四十六轮（2026-10-31）**回头把 C1/C2/C3 三件做扎实**：三个真缺陷、八条新断言、两次全量门。
+> 这一轮全部由「读代码 + 补相位」挖出来，没有一条靠猜：
+> **① `appBar` 的槽位写 `opts.x as Node` ⇒ 传数组就静默丢掉**。文档站 `appBar` 页**自己的示例**是
+> `trailing: [icon(...)]`，所以那只汉堡图标从第一版起就没上过屏——没有报错、没有告警、靠肉眼也看不出
+> （bar 只是右边空了一点）。修法是工厂里归一：`Node` 原样、`Array` 长度 1 取出、长度 >1 用 `row(...)` 包一层
+> （gap 8，与 bar 自己的一致），非 Node 成员**抛**。探针加相位 9：两个 24/28 宽的动作必须落在 248 与 280，
+> 即与单槽同一个盒（24+8+28=60）。
+> **② `navStack` 的 BACK 是 stage 监听 ⇒ 每个挂载的栈都听得见**。手机 app 的常态组合是「一个 tab 一个
+> `navStack`，全挂载、只显一个」，于是**一次系统返回会掀掉所有 tab 的历史**（用户看不见的那些也在退）。
+> 修法：`visibleChain(n)` 沿 `parent` 检查自己的与所有祖先的 `visible`，隐藏栈直接忽略该键——与
+> `UiApp.pickAt` 对像素用的是同一条规则。探针在隐藏 tab 里多挂一个栈并计它的回调；删掉这段检查，
+> 变异 M8 立刻红。
+> **③ `safeArea` 退回 0 不会重排（两处叠加，缺一不可）**：`applyEngineStyle` 只在 `resolved.padding`
+> **非 null** 时才写引擎，所以「折回 unset」等于**不写**，引擎里留着上次的 47；而 `setSafeInsets` 走的是
+> `resolveStyle(true)`（`keepPrevious`），diff 基线停在加 inset 之前 ⇒ 折回 0 时 diff 归零、**没有任何
+> measure 脏位**。症状：退出全屏/刘海消失后 bar 永远停在 103px，直到下一次无关重排。修法：声明过的边
+> **必须产出定值**（inset 0 也写 0，未声明的边仍保留作者的 NaN），且 inset 变化要显式 `markLayoutDirty()`。
+> 探针的铁律是**先加 inset、再撤掉**：appbar 47pt → 103px → 56px、tabbar 34pt → 90px → 56px，
+> 并把底部 34px 那条带的像素钉成 bar 自己的颜色（证明 inset 是 PADDING 而不是 bar 下方的空隙）。
+> 三件新能力也补上了断言：`items` 从 3 缩到 2 时**删掉的那格必须不在树上**（而不是变透明）、
+> `icon:` 是 Node 时保留作者颜色（bar 只染字符串路径）、`pages: []` 是合法值（挂 0 个子节点，不崩）。
+> 判据：`probes/widgets/navstack` **16 checks / 变异 9/9**、`probes/widgets/appbar` **22 checks / 变异 11/11**、
+> `probes/widgets/tabbar` **13 checks / 变异 9/9**（三个探针的 program 内断言都比之前多）。
+> 全量门：**50 PASS / 14 FAIL / 1 SKIP**（`reviews/gates-macos-2026-10-31h.txt`，**65 道门**）。
+> 13 个红与上轮**完全同一批**（9 个要 AIR SDK、`G11` 采样窗口、`imaging` 只有告警、`choice` 的老 1.5px）；
+> 第 14 个是 `widgets/touch-scroll` 的**惯性 coast 断言**在整机负载下偶发（`still at 109.70`）——
+> 单跑 3 次全绿，机制是 coast 用 `getTimer` 实测 dt 积分，一帧被系统拖长就直接衰减到 0。**这是 flake，
+> 不是回归**，但也说明那条断言对负载敏感，值得下一轮改成「至少推进了一步」而不是「明显滑了一段」。
+
+> 第四十七轮（2026-10-31）**「本机没装 AIR SDK」这个 SKIP 是假的，错在检测**。用户贴出 TalkMED 打包脚本
+> `bin-aot/build-aot.sh` 问「你那个脚本是怎么找 SDK 的」，一对照就看出来：那个脚本**先问环境变量、再按候选路径
+> 逐个验证**（`[ -f "$c/src/index.ts" ]`），而我们的四份检测（`gates.cjs` 的 `airSdkRoot()`、`mxmlc-check.cjs` 与
+> `air-sweep.cjs` 各一份 `sdkFromPath()`、`ui-demo/air-gallery/build.sh` 的 `sdk_root()`）**只问 `AIRSDK_HOME`
+> 和 `PATH`**，而且**十个探针 runner** 与 `air-check/verify-air.cjs` 里还写死了 `'D:/Adobe/Flex_Sdk/AIRSDK_51.4.1'`
+> 这个 Windows 兜底（`tools/mutation-docs-tour.cjs` 的 env 默认值也是它）。**在 macOS 上，这个兜底等于「保证找不到」。**
+> 实测本机：`AIRSDK_HOME` **未设置**、`PATH` 里那条 `.../AIRSDK_51.2.1/bin` **目录已不存在**（是旧版本卸载后的残留），
+> 而 SDK 真身在 `~/Documents/Software/AIRSDK/AIRSDK_51.4.1` —— `mxmlc` 编文档站 **1.8 s**，`adl` 跑完 **56 页**。
+> 所以「本机没装 SDK」这个结论从第四十一轮起就是**检测的错觉**，代价是 10 道门四轮没测。
+> 修法不是到处加 `||`，而是把「SDK 在哪」收敛成**一个**答案：`tools/air-sdk.cjs`
+> ① 顺序 `--sdk` → `AIRSDK_HOME` → `PATH` → **按安装位置搜**（`~/Documents/Software/AIRSDK/*`、`~/AIRSDK*`、
+> `~/Desktop`、`/Applications`、`/opt`、`/usr/local`、仓内 vendored，每个父目录**只下一层**，容器目录再下一层抓
+> `AIRSDK_*` 子目录）；② 命中必须**结构化验证**：`bin/mxmlc`（POSIX 还要可执行）或 `bin/mxmlc.bat`（Windows），
+> **按宿主平台选拼写，两个列表不相交** —— SDK 是一个 zip 带全平台启动器，`bin/adl.exe` 存在**不代表** macOS 能跑；
+> ③ 同机多个版本按**版本号**取最新、`complete`（mxmlc 与 adl 都有）优先；
+> ④ `--sdk` 指了个跑不起来的目录时**报错而不是偷偷换成搜到的那个**（「我要这个」和「随便给我一个」是两件事）；
+> ⑤ 每个位置试过都记账，`--why` 能列出来 —— 「没装」这句话本身就是上一轮最贵的错误信息。
+> 12 个文件收敛到它（`gates.cjs` / `mxmlc-check.cjs` / `air-sweep.cjs` / `build.sh` / 9 个探针 runner /
+> `air-check/verify-air.cjs`）。**门**：新第 66 道 `AIR SDK resolution`，11 个用例全在 `temp/airsdk-check/` 夹具树上跑
+> （HOME 重定向到夹具、PATH 清空），覆盖：最新完整装赢得过旧装、名字最新但 `bin/` 空的不算 SDK、只有
+> `adl.exe`+`mxmlc.bat` 的 Windows 树在 POSIX 上不算、mxmlc 有而 adl 无标 `complete=false`、`--sdk` 不可用不回落、
+> `AIRSDK_HOME` 有效时优先、`AIRSDK_HOME` 是别的系统的路径时**继续找**（这正是本机的情形）、`PATH` 指向过期
+> `bin/` 时**继续找**、`ASC_NO_AIR_SCAN=1` 真不做搜索、CLI `--print` 与模块答案一致、miss 时 `exit 3` 且报出搜索过的地方。
+> 变异 `tools/mutation-air-sdk.cjs` **5/5**（结构校验去掉 / 版本排行反向 / `--sdk` 回落 / `ASC_NO_AIR_SCAN` 失效 /
+> `complete` 只看 mxmlc），且**先验基线必须绿**（会变异的跑法若基线就是红的，什么也证明不了）。
+> 顺手修好 `air-check/verify-air.cjs`（**这个文件此前根本跑不起来**，与本轮无关）：`require('../../tools/mxmlc-run.cjs')`
+> 指到了工作区外面（`air-check/` 只比 `asaotui/` 深一层，应为 `../tools`），且 mxmlc 用 `cwd: HERE` 写的
+> `aircheck.swf` 之后却按**进程 cwd** 去 `statSync` ⇒ 编译刚成功就 `ENOENT`。修好后实测：mxmlc 11968 B、
+> `adl exit=0`、`air-out.txt` 105 行 GOT、**与 yoga 臂和 as3 臂各 105 行全同**（两条 `*** IDENTICAL ***`）。
+> 写这个门时**自己先被咬了两口**：① 夹具里 `AIRSDK_60.0` 只有 `mxmlc.bat`+`adl.exe`，旧实现照样判「可用」——
+> 因为 `isLauncher` 的候选表是 `['mxmlc','mxmlc.bat']` 混排，而 0755 的 `.bat` 过得了 `access(X_OK)`；改成**按平台
+> 不交叠**的列表才红；② `scan()` 里原先排了一次序、选中时又排一次，两处一致 ⇒ 反转任意一处都**不会**改结果
+> （变异 M2 首跑 stayed green），删掉冗余那次，排行的唯一真相留在选中处。
+
+> 第四十六轮（2026-10-31）**不改判据，只改跑法**。用户的原话是「改代码几分钟测试几小时」——
+> 全量门从 **45 分钟**降到 **6.3 分钟**（`reviews/gates-macos-2026-10-31i.txt`：**52 PASS / 2 FAIL / 11 SKIP**，**380 s**，65 道门）。
+> ① **探针块改有界并发**：39 个探针按 6 路跑（`--jobs N` / `ASC_GATE_JOBS`），每个探针本来就有自己的目录和
+> 构建指纹，互不干扰；**计时类探针（`perf`/`anim`/`feedback`/`motion`/`touch-scroll`）单独串行** ——
+> 它们的断言是「15ms 上限」「10 帧里重画了几次」「coast 按实测 dt 积分了多少」，混在构建噪声里只会假红
+> （实测：`touch-scroll` 在 6 路池里报 `the third release did not coast (still at 20)`，单跑必绿）。
+> ② **每道门打印自己的耗时**，长跑不再「看起来卡住」；`--only <regex>` 只跑相关的门，其余如实打 `[OMIT]` ——
+> **被 stub 过的门一律不许报 PASS**（空 transcript 会让里面每条断言都平凡成立），这是把「快」和「诚实」分开的那条线。
+> ③ **AIR 参考臂在缺 SDK 时改报 `exit 3` / SKIP**：以前是先把 AOT 臂建完再报红，9 道门每道白烧几分钟，
+> 还把「本机没装 SDK」算成这个工作区的错。
+> 顺带修掉**三个真缺陷**（都不是本轮新写的代码，是一直红着、或一直没被看见的）：
+> ① `ui-demo/air-run.cjs` 的 `killImage` 只有 Windows 的 `taskkill`，macOS 上抛 ENOENT 又被「没在跑」这个
+> 注释吞掉 ⇒ 每跑一次画廊就留一个 `GalleryApp` 窗口（实测一台机器攒了 **7 个**，最老的 1.5 小时）。而它
+> **继承了父进程的 stdout** ⇒ `spawnSync` 等管道关闭等到 420 s 门闸超时 ⇒ `gallery tour` 与
+> `descriptor DPI A/B` 各报 **420 s**（真值 22 s / 43 s），两道门白等 14 分钟。修法三件一起：
+> `killall -q <name>`（按**进程名**精确匹配，不是 `pkill -f` 的子串——那条曾把别人的进程一起杀了）、
+> 先按自己 spawn 的 pid 杀（带进程组，窗口跟着走）、窗口的 stdout 改指 `gallery.run.log`
+> （**grandchild 不许持有父进程的管道**）。
+> ② 编译器保留名表漏了 `poll`/`ppoll`/`select`/`pollfd`/`fd_set` 一族：`probes/widgets/imaging` 里一个
+> AS3 自由函数 `poll()` 生成 C 后与 `<poll.h>` 撞名（`static declaration of 'poll' follows non-static
+> declaration`，连带 `too few arguments to function call, expected 3, have 0`），这道门**长期红着**，而
+> `probe.cjs` 只打印尾部 40 行 ⇒ 真错误埋在几百行 clang 告警里。补进 `symbols.ts` 的 `C_RESERVED_SEED`
+> 后 **31/31 绿**（`poll.h` 本来就在 `gen-c-reserved.ts` 的 POSIX 头列表里，是没落进提交的那张表）；
+> `probe.cjs` 失败时改为**先打 error 行、再打尾部**。
+> ③ `buildsh-gpu` 门在 macOS 上断言 `--gpu gl` 必须退出 0，而 `build.sh` 是**故意拒绝**的（gl 是 Windows 后端）
+> ⇒ 这道门在 mac 上永远红。改成「非 Windows 时断言**拒绝** + 说明原因 + 不写描述符」，变异 M1 同步改为打
+> 本机真正会跑的 `d3d12`（同一行、同一个缺陷），5/5。
+> 剩下两道红都是既有的：`widgets/choice` 的老 1.5px 文本居中断言、`G11` 的 `1/5 hashes`（编译器树在
+> 采样窗口内被动过）。
+
+> 第四十五轮（2026-10-31）落地 MOBILE.md §5 的 **C1/C2/C3 —— 手机骨架三件**（`navStack` / `appBar` / `tabBar`），
+> 这是移动端第一次真正出现「页面」这个概念，也是第一次新增 kind 而不只是给旧 kind 加字段。
+> 三条决定值得单独记：
+> **① `navStack` 的页面全部常驻挂载，只切 `visible`** —— 这不是偷懒，而是「页面状态不丢」的唯一实现：
+> 卸载再重建的栈即使把 `offsetY` 拷回来，也丢失了输入框里的未提交文本、焦点、正在跑的动画；代价是隐藏页
+> 每帧仍参与 measure/arrange（注释里如实写明，不假装免费）。探针因此**同时断言像素与节点身份**：
+> push→pop 回来后 `sv`/`svr0` 必须还是**同一个对象**，只查像素的话「卸载+重建+拷 offset」的假栈也能过。
+> **② 页面尺寸由工厂强加，不要求作者知道栈的当前盒子**（`position:absolute` + `inset:0` + `size:[pct(1),pct(1)]`）。
+> 实测两次才对：只给 `inset:0` 不给空盒定尺寸、给 `flexGrow:1` 在 absolute wrapper 里不长、`pct(1)` 塌成 0
+> ——三种「显然」的写法都失败，最后是「absolute 页 + 带尺寸的栈」这一条同时满足两者。
+> **③ `appBar` 的大标题收进 compact 行用的是 CLIP 而不是换行**：`collapse` 从 0 走到 `largeExtra` 时，
+> 标题的顶端**不动**、高度被裁，所以 8px 剩余时看到的是半行字而不是跳一下。四个停靠点（0 / 28 / 48 / 溢出钳制）
+> 都有像素与矩形断言。
+> 期间抓到**一个真缺陷**：容器的背景不是引擎画的 —— `AppBarWidget`/`TabBarWidget` 的 `paint` 一开始是空的，
+> 于是 bar 的 `background` 从来没上屏（像素断言直接报 `#ffffff`，而根容器也是白的，只看截图会以为「没问题」）。
+> 修法是照 `BoxWidget` 的形态：`build` 里在 `backing` 的第 0 个孩子放 `Shape`，`paint` 里
+> `PaintKit.paintBox + decorate`。
+> 判据：`probes/widgets/navstack` **16 checks / 变异 7/7**、`probes/widgets/appbar` **22 checks / 变异 8/8**、
+> `probes/widgets/tabbar` **13 checks / 变异 7/7**；文档站新增三页（共 **56 页**），`kind-coverage` 回到 **44/44**。
+> 仍然缺的：页面过渡动画、`tabBar` 指示条、`safeArea` 底部的**真机实测**（桌面 env 全 0，只能验折 padding 的通道）。
+
+> 第四十四轮（2026-10-31）把 MOBILE.md 的 **S3 越界回弹**补齐、并把 **S6 四件里的两件**（`onVisible` +
+> `scrollToIndex`）落地 —— 两处都在**已有的两个 kind 里**，一个 kind 都没新增。回弹的关键决定是**语义分家**：
+> `offsetY` 是「作者态」，`overscrollY` 是「拉伸量」，**手指是唯一能让 offset 出界的东西**（滚轮/拖 thumb
+> 一律硬夹，桌面语义不变），所以拖到尽头再往回拉时作者的模型**不会被污染**（断言：拖到 220px 越界，
+> `offsetY` 仍是 180、`overscrollY` 30~50）。阻尼用 iOS 那条 `f(x)=(x·dim·c)/(dim+c·x)`，回位是指数弹簧
+> （按 `getTimer` 实测 dt 积分，<0.5px 直接写 **0**，所以 M1 的「回位误差 <1pt」是**误差为 0**）。
+> 证据除了数值还有**像素**：拉伸时视口底部露出的必须是视口自己的 `#F5F5F5`，回位后必须变回行色。
+> `scrollToIndex` 则踩到一个**只有跑起来才会发现**的库级坑：**在帧内 (`paint`/`payload`) 调用作者的
+> `onScroll`，作者在回调里做的 `view.invalidate()` 会被 `UiApp.reflow` 结尾的 `_pending = 0` 清掉** ——
+> 模型已经到 2400、树却永远停在 0..8。改法是把请求**移出帧内**（0ms 定时器回到事件循环，与滚轮/按键/
+> 点击同一条时序），并且做成 **change-detection**（值不变不重复生效，否则用户滚走后任何一次无关 re-render
+> 都会把窗口拽回模型里那个旧值）。判据 `probes/widgets/touch-scroll` **26 checks / 变异 14/14**、
+> `probes/widgets/vlist` **26 checks / 变异 10/10**（新增 4 个变异里有一个专门守「请求必须在帧外」：
+> 挪回帧内立刻红）。
+
 > 第四十三轮（2026-10-31）补的是**环境层（MOBILE.md E1/E2）**：`Env`（接口）/ `EnvBase`（可写 +
 > compare-before-notify）/ `DesktopEnv`（桌面地板）/ `SafeArea`（`safeArea:` 选项的解析），
 > `UiApp.env` + `bindEnv`（重绑退订、`bindEnv(null)` **抛**）。消费侧只有两条，而且都是「一处裁决」：
@@ -157,10 +286,10 @@
 | L2 显示树 / 协调 / 数据流 | ✅ 可用（累计修 28 个缺陷，见 §3.3） | keyed reconciler + `markLayoutDirty` 上传 + Observable/Binding；**两棵保留树**（主树 + 浮层树） |
 | L2 事件 | ✅ **鼠标 + 键盘/焦点** | 悬停/按下/点击；`UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab/Shift+Tab 焦点环**（遍历保留树，浮层内是焦点陷阱）、`Esc`、方向键、`Enter`/`Space` 激活；控件用**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`probes/widgets/interact` 25 项）。边界：Tab 环上限 64（`compiler-gaps.md` G3）、无按键重复/快捷键表。**触摸（第四十一轮）**：合成 `TouchEvent` 序列经 `PointerRouter` 走同一条 press/click 通路；`pickAt` 与引擎 hover 逐点对账。**真触摸输入仍是 G5** |
 | L2 动画 | ✅ **样式 5 字段 + layout 字段 + 浮层入/退场** | 样式 `paint` 字段：`opacity`/`background`/`borderColor`/`textColor`/`cornerRadius`；样式 **`layout` 字段**：`width`/`height`/`padding`(T/R/B/L)/`gap`(X/Y)——写回后 `applyEngineStyle()` + `markLayoutDirty()`，**每帧重解布局**，落地即停（`probes/widgets/anim` 14 项 + `probes/widgets/motion` 23 项）；显示对象级：`OverlayMotion`（入场 140ms ease-out / **退场 120ms ease-in**，墙钟，每帧从引擎读基准，不累加），见 §3.4 |
-| L3 控件库 | ✅ **47 个工厂 / 41 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` 已落地。**41 个 kind 全部上了文档站**，由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 文档站是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
+| L3 控件库 | ✅ **50 个工厂 / 44 个 kind** | 见 §2；第三批浮层六件（dialog/drawer/popover/menu/toast/select）+ 第五批 `virtualList`（列表虚拟化）/`tree`/`combobox`/`datePicker` + 第六批手机骨架 `navStack`/`appBar`/`tabBar` 已落地。**44 个 kind 全部上了文档站**，由 `tools/kind-coverage.cjs` 自动核验：kind → 注册它的节点类 → 构造该类的工厂函数 → 文档站是否**调用**了其中之一。顺带修掉一处**陈旧计数**：文档原写「34 个 kind」，实际注册表有 35 个（`scrollView` 加进来后从没被计过数）——现在这个数字由门看着 |
 | L3 样式面 | ✅ **33 字段** | 见 §3.2；仅剩 `grid` 刻意缺席（`cursor` 第十五轮已落地） |
 | L3 浮层（第二棵树） | ✅ **六件 + 一套 chrome + 翻转/子菜单/入退场** | `View.renderOverlay()`；主树先解、浮层树后解后画、置顶；**越界自动翻转**（四向 + 夹回窗口）、`menu` 支持**子菜单**（子菜单就是普通 anchored popover）、**入场 140ms / 退场 120ms**；`probes/widgets/overlay` **65 项**（变异 **9/9**）+ `probes/widgets/flip` **54 项**（变异 **5/5**）+ `probes/widgets/motion` **23 项**（变异 **7/7**） |
-| L3 组合能力 | ✅ **53 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 53 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
+| L3 组合能力 | ✅ **56 页组件文档站** | `ui-demo/demo/Docs*.as`（18 个文件）+ `ui-demo/run-gallery.cjs`：左侧 10 组 / 56 页索引，右侧每页 = 标题 + 摘要 + meta + 若干节，每节 = 标题 + 说明 + **live demo** + **产生它的源码**（同一次 render ⇒ 源码不漂移）；控件驱动切页、手算矩形 + 浮层树销毁判据；**`--air-app` 构建 ⇒ 高分辨率已实测**（`ui-demo/check-dpi.cjs`：standard 1000×700 / high 1500×1050） |
 | L3 主题 | ✅ **运行时换肤（47 slot）** | `ThemeTokens.light()/dark()` + `Theme.setTheme(t)`：**拷入**、重建每 kind 基线、重建浮层 chrome、bump `themeEpoch()`；`UiApp` 把 epoch 变化翻译成「全树 `lastStyleStale` + `M_PAINT` + 一次 `Dirty.THEME` 重新 describe」⇒ **下一帧整棵树变**，且**不动几何**。暗色的状态混合方向与亮色相反（press 比 hover 更亮），`knob` 保持纯白。作者自定义经 `setControlDefault` 落在 **override 层**，跨 swap 存活。判据 `probes/widgets/theme` **75 项**（变异 **8/8**）；四条取色通路与三件探针自身的教训见 `reviews/theme-2026-10-27.md` |
 | L3 可访问性 | ⚠️ 半成品 | `role`/`ariaName` **仍只是字段**（无消费者）；但 `Control.tabEnabled` 现在真被 Tab 环读（`UiApp.collectFocus`）、`Element.disabled` 真阻断点击与导航 |
 
@@ -1209,10 +1338,42 @@ kit 只挂窗口。四条硬规则（每条都有探针断言）：
 一条命令跑全部 **62** 道门：
 
 ```sh
-node tools/gates.cjs          # 62/62 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-10-31c.txt）
+node tools/gates.cjs          # 65/65 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-10-31h.txt）
 ```
 
-> 第四十三轮（E1/E2）后的全量：**46 PASS / 15 FAIL / 1 SKIP**（`reviews/gates-macos-2026-10-31c.txt`，**62 道门**）。
+> 第四十七轮（**SKIP 是假的**）后的全量：**64 PASS / 2 FAIL / 0 SKIP，549 s**（`reviews/gates-macos-2026-10-31j.txt`，**66 道门**）。
+> 前四轮一直把 10 道门（9 条 AIR 参考臂 + `docs app on AIR (adl)`）记成「本机没装 AIR SDK」——**这句是错的**，
+> 错在检测：它只问 `AIRSDK_HOME` 与 `PATH`，而本机 SDK 装在 `~/Documents/Software/AIRSDK/AIRSDK_51.4.1`，
+> `PATH` 里那条是**已卸载的 51.2.1 的 `bin/`**（`ls` 直接 `No such file`）。`tools/air-sdk.cjs` 现在是唯一解析器
+> （env → PATH → 安装位置，命中必须验证**本机真能跑**那个 launcher），四份各写一遍的检测全部收敛；
+> 10 条 SKIP 全部变成**真测量且全绿**（`adl` 全站 56 页 / 15 弹层 / 指针钻 / **0 运行时错误**）。
+> 新增第 66 道门 `AIR SDK resolution`（11 cases，变异 5/5，夹具在 `temp/airsdk-check/`、HOME 重定向、PATH 清空，
+> 所以「本机有没有 SDK」不会让用例假绿）。549 s 的增量**全部来自新做的测量**：那 10 道门以前立刻 `exit 3`，一秒不花。
+> 剩 2 红与上轮同批（`widgets/choice` 文本竖排 1.5px；`G11` `1/5 hashes` —— `as3compiler/` 里有并发会话的 3 个 `M` 文件）。
+
+> 第四十六轮（跑法提速 + 三个真缺陷）后的全量：**52 PASS / 2 FAIL / 11 SKIP，380 s**（`reviews/gates-macos-2026-10-31i.txt`，**65 道门**）。
+> 与上一版（`31h`：50 PASS / 14 FAIL / 1 SKIP，45 分钟）的差别**全部来自跑法与三个修复**，判据一条没松：
+> ① **11 个 SKIP 是「本机没有参考运行时」**（9 道 AIR 臂改报 `exit 3`，以前是先建 AOT 臂再报红；
+> 另 2 道是 G11「编译器源码在采样窗口内动过」与 `docs app on AIR`）。**SKIP 不是绿**，它只是老实说「没测到」。
+> ② `widgets/imaging` 由红转绿（保留名表补 `poll` 一族），`build.sh --gpu` 由红转绿（mac 上断言的是「拒绝」）。
+> ③ 剩两道红是既有问题、与本轮无关：`widgets/choice` 一条文本竖直居中差 1.5px 的老断言、`G11` 的 `1/5 hashes`。
+
+> 第四十五轮（navStack/appBar/tabBar）后的全量：**51 PASS / 13 FAIL / 1 SKIP**（`reviews/gates-macos-2026-10-31g.txt`，**65 道门**）。
+> 三道新门 `widgets/navstack`(16) / `widgets/appbar`(22) / `widgets/tabbar`(13) 全部 PASS，
+> `gallery tour: 56 component pages` 与 `gallery kind coverage 44/44` 也回到绿（本轮新增三页，否则覆盖率门会红）。
+> 13 个红全是**环境或历史遗留**，与前几轮同一批、本轮一个都没碰：**9 个要 AIR SDK**（本机 `AIRSDK_HOME`
+> 仍指向 Windows 路径 ⇒ `AIR arm (mxmlc)`、`build.sh --gpu`、`G14/G19/G20/G21/G22`、`Vector vs Array`、
+> `style fromAny`、`Array(x)`），`G11` 因编译器树在 5 次构建窗口内被动过而报 `1/5 hashes`，
+> `probe widgets/imaging` 只有告警没有判定，`probe widgets/choice` 一条**文本竖直居中差 1.5px** 的老断言。
+> 上一轮红着的 `G13 air-app reach`（当时是并发会话在改 `as3compiler/`）本轮**转绿**——树现在是 CLEAN。
+
+> 第四十四轮（S3 回弹 + S6 两件）后的全量：**48 PASS / 13 FAIL / 1 SKIP**（`reviews/gates-macos-2026-10-31d.txt`，**62 道门**）。
+> 13 个红全部是**环境或历史遗留**，本轮一个都没碰：**10 个要 AIR SDK**（`AIRSDK_HOME` 在本机仍是
+> `D:/Adobe/Flex_Sdk/...` 这条 Windows 默认值 ⇒ `G14/G19/G20/G21/G22/Vector/style-fromAny/Array(x)`、
+> `AIR arm (mxmlc)`、`build.sh --gpu`），`G11` 是它的 clang 错误帽夹具随编译器变强而失效（它自己把证据追加到
+> `probes/g11-nondeterminism/`），`probe widgets/imaging` 只有告警没有判定，`probe widgets/choice` 一条
+> **文本竖直居中差 1.5px** 的断言（自 10-30a 起就红，与本轮无关）。两个新门 `widgets/touch-scroll`、
+> `widgets/vlist` 均 **PASS**。
 > 15 道红没有一道来自本轮：**9 道是本机没装 AIR SDK**（`exit 2`）；**2 道（G13 / descriptor DPI）是并发会话
 > 正在改 `as3compiler/` 造成的构建失败**（生成的 C 报 `static declaration of 'RangeError_new' follows
 > non-static declaration`，而报错的那几个程序一行 `asaot.ui` 都不含）；`G11` 因树脏报 `0/0`；其余 3 道
@@ -1250,7 +1411,7 @@ node tools/gates.cjs          # 62/62 PASS 才叫绿（最新落盘 reviews/gate
 | **环境层（第四十三轮，E1/E2）** | `node tools/probe.cjs probes/widgets/env` | **43 checks**，0 failures：`DesktopEnv` 的九个答案（含 `locale == Capabilities.language` 的镜像断言）、insets 折进根 padding（`4+47 / 4 / 4+34 / 4`）且**盒子仍是 320×240**、只认声明过的边、未声明的节点不动、47→0→仅底 34→47 的往返、**一次平台改动 = 一次通知**、重绑退订、`bindEnv(null)` 抛、`hasHover` 两态；变异 `probes/widgets/env/mutation.cjs` **7/7**（不折 inset / 每个节点都宣称四条边 / inset 落到错误的边 / 不从 Env 取 `hasHover` / 重绑不退订 / 改动不唤醒帧 / 桌面地板编一个安全区） |
 | **指针钻：死节点上的 roll-out（第十二轮补，G25）** | `AIRSDK_HOME=<sdk> node tools/air-sweep.cjs` + `node tools/listener-wiring.cjs` + `node tools/probe.cjs probes/lifecycle` | `air-sweep` 行末报 **3107 node(s) hovered and 348 of them destroyed**、0 errors（每页离开前悬停该页每个叶子，切页**下一拍**投递 `mouseOut`）；静态扫描 **29 wired / 0 raw**；探针 **9 项** 0 failures；变异 4/4 + 3/3 |
 | **滑块拖拽 + 回调参数（第九轮补）** | `node tools/probe.cjs probes/widgets/callback` + `node tools/callback-arity.cjs` | **24 checks**，0 failures（只点**未绑定**控件：checkbox/toggle/radio + 滑块的按下→拖动→越界夹紧→松手→松手后移动无效→纯点击）；变异 `probes/widgets/callback/mutation.cjs` **8/8**；静态门 15 调用 / 81 声明 / **0 违规**，变异 `tools/mutation-callback-arity.cjs` **6/6** |
-| **多页 App（组件文档站，53 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **53 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
+| **多页 App（组件文档站，56 页）** | `cd asaotui/ui-demo && node run-gallery.cjs` | **56 页** tour 全绿（start→box→…→toastHost 四组逐页编译、布局、拉像素）+ **8 张** `gallery-page*.png`（1× 与 1.5× 各一套）+ `RESULT: PASS`；tour 还把「无 engine 节点 / 零矩形 / backing 未挂」三类静默失败**升级为判据**（变异自证：把目录页的 `image` 设成 0×0 ⇒ 红并点名 page 4），并对浮层树断言「切页后 `stage.numChildren` 回到基线、`findByKey(ovlDlg)` 为 null」（变异 `ui-demo/mutation-gallery-teardown.cjs` **2/2**）；另加**两条浮层像素判据**：scrim `#999999`、面板 `#ffffff`（钉住「入场动画落地」，见 §3.3 第 15 条） |
 | **画廊覆盖全部 kind** | `node tools/kind-coverage.cjs` | **41/41** 个注册 kind 都被画廊调用（0 个「无工厂」kind = 无作者面缺口）+ `RESULT: PASS`；**变异** `tools/mutation-kind-coverage.cjs` **3/3**（把 tree 调用改名；新增一个 kind+工厂却没人用——这正是**发生过两次**的回归；把调用藏进 `//` 注释——扫描器第一版就是这样把散文算成了代码） |
 | **高分辨率（HiDPI）自证** | `cd asaotui/ui-demo && node check-dpi.cjs` | `standard` 700×560(1×) vs `high` 1050×840(1.5×)，且两次 tour 文本**逐字节相同** |
 | **单页登录 App** | `cd asaotui/ui-demo && node build-and-run.cjs` | 8 项手算断言 + `750×563` 截图（1.5×）+ `RESULT: PASS` |

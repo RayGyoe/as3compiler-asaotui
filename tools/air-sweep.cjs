@@ -83,30 +83,24 @@ for (let i = 0; i < argv.length; i++) {
 const timeoutS = Number(process.env.AIR_SWEEP_TIMEOUT || 240);
 
 // ---- the AIR SDK ------------------------------------------------------------
-function sdkFromPath() {
-  const dirs = (process.env.PATH || '').split(path.delimiter);
-  for (let d of dirs) {
-    if (!d) continue;
-    const m = /^\/mnt\/([A-Za-z])\/(.*)$/.exec(d);      // WSL spelling -> Windows
-    if (m) d = m[1].toUpperCase() + ':/' + m[2];
-    for (const n of ['adl.exe', 'adl', 'mxmlc.bat', 'mxmlc']) {
-      if (fs.existsSync(path.join(d, n))) return path.resolve(d, '..');
-    }
-  }
-  return null;
-}
-const sdk = sdkArg || process.env.AIRSDK_HOME || sdkFromPath();
-if (!sdk) {
-  console.log('[air-sweep] no AIR SDK: pass --sdk <root>, set AIRSDK_HOME, or put its bin/ on PATH');
+// Resolved by the workspace's ONE resolver (tools/air-sdk.cjs): env first, then
+// PATH, then the install locations, and a hit only counts if this HOST can run the
+// launcher. The PATH-only scan this replaces answered "no SDK" on a box that had
+// the SDK installed but not on PATH, and the gate then reported SKIP.
+const { resolveAirSdk, describe } = require('./air-sdk.cjs');
+const SKIP_AIR = process.env.ASC_SKIP_AIR === '1';
+if (SKIP_AIR) { console.log('[air-sweep] ASC_SKIP_AIR=1 -- nothing measured'); process.exit(3); }
+const SDK_INFO = resolveAirSdk(sdkArg);
+if (!SDK_INFO.adl) {
+  console.log(describe(SDK_INFO));
+  console.log('[air-sweep] no AIR SDK: pass --sdk <root>, set AIRSDK_HOME, or install one where'
+    + ' tools/air-sdk.cjs scans (--why lists every location)');
   process.exit(3);
 }
+const sdk = SDK_INFO.root;
+const adl = SDK_INFO.adl;
 const win = process.platform === 'win32';
-const adl = path.join(sdk, 'bin', win ? 'adl.exe' : 'adl');
-if (!fs.existsSync(adl)) {
-  console.log('[air-sweep] no adl at ' + adl + ' -- is the SDK root right?');
-  process.exit(3);
-}
-console.log('[air-sweep] AIR SDK: ' + sdk);
+console.log('[air-sweep] AIR SDK: ' + sdk + '  (via ' + SDK_INFO.source + ')');
 
 // ---- derive the catalog and the popup keys from the sources -----------------
 // Comments are blanked (string-aware is not needed here: no demo string contains

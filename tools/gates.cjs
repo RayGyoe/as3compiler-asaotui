@@ -287,12 +287,94 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { spawnSync, spawn } = require('child_process');
 
 const UI = path.resolve(__dirname, '..');
 const COMPILER = path.resolve(UI, '..', 'as3compiler');
 const clang = process.env.ASC_CC || 'clang';
 const kit = require(path.join(UI, 'ui-demo', 'kit-list.cjs'));
+
+// ---------------------------------------------------------------------------
+// HOW THE GATES RUN: IN PARALLEL, BOUNDED, AND FILTERABLE.
+//
+// Every gate here is an independent build + program: no gate reads another's
+// output, and each probe owns its own directory. Running them one at a time made
+// a full pass take 40+ minutes on a 12-core machine, which is the point where the
+// suite stops being run at all -- and a suite nobody runs certifies nothing.
+//
+//   ASC_GATE_JOBS=6        how many PROBES may build/run at once (default 6)
+//   --jobs N               the same, from the command line
+//   --only <regex>         run only the gates whose name matches (case-insensitive).
+//                          Unselected gates are STUBBED, not silently passed --
+//                          see the `stubbed` counter in `record()`.
+//   ASC_GATE_TIMEOUT_MS    per-gate ceiling (default 420s). A hung child is killed.
+//   ASC_PROBE_DEADLINE_MS  per-probe ceiling inside the pool (default 360s).
+//
+// Only the PROBE block is concurrent (it is ~50 of the ~66 gates and ~90% of the
+// wall clock). The rest are single builds that already finish in seconds, and
+// leaving them serial keeps their shared `ui-demo/` outputs uncontended. The
+// STOPWATCH probes are taken out of the pool on purpose: `perf` asserts a 15ms
+// ceiling on a no-change describe, and a frame-counting probe (`anim`, `feedback`,
+// `motion`) counts repaints across frames -- both would measure the pool's own load
+// instead of the kit. They run alone, after the pool drains, and say so.
+const ARGV = process.argv.slice(2);
+const argVal = (flag) => {
+  const i = ARGV.indexOf(flag);
+  return i >= 0 && i + 1 < ARGV.length ? ARGV[i + 1] : null;
+};
+const ONLY = argVal('--only') || process.env.ASC_GATE_ONLY || '';
+const ONLY_RE = ONLY ? new RegExp(ONLY, 'i') : null;
+const JOBS = Math.max(1, Number(argVal('--jobs') || process.env.ASC_GATE_JOBS || 6));
+const omitted = [];
+const T0 = Date.now();
+let lastRecordAt = Date.now();
+const secs = (ms) => (ms / 1000).toFixed(1) + 's';
+
+// STOPWATCH PROBES: correct only when nothing else is hogging the cores.
+//   perf     -- asserts a 15ms ceiling on a no-change describe.
+//   anim     -- a 400ms transition must INTERPOLATE, so it is sampled per frame.
+//   feedback -- counts repaints across 10 frames (a spinner).
+//   motion   -- same shape: a paint-sweep count, not a pixel.
+//   touch-scroll -- the coast integrates WALL-CLOCK dt, so a starved window coasts
+//               for fewer frames and "the third release did not coast (still at 20)"
+//               fires. Measured: green alone, red inside a 6-wide build pool.
+// Everything else asserts geometry and exact pixels, which do not care how busy the
+// machine is.
+const SOLO_PROBES = ['perf', 'widgets/anim', 'widgets/feedback', 'widgets/motion',
+  'widgets/touch-scroll'];
+
+// ---- the AIR reference runtime, resolved ONCE -------------------------------
+// Nine gates run a second arm under real AIR (mxmlc + adl). Each of them builds
+// the AOT arm FIRST, so a missing SDK used to cost minutes per gate and then
+// report a RED that blames this workspace for the state of the machine. A missing
+// reference runtime is "could not measure" -- exit 3, reported as SKIP, never as
+// a pass, and the AOT arm is not built either (an arm with nothing to compare
+// against proves nothing, and building it is what cost the minutes).
+//
+// THE SKIP ITSELF WAS WRONG FOR THREE ROUNDS. This function used to ask only
+// AIRSDK_HOME and PATH; on the dev box the SDK lives in
+// ~/Documents/Software/AIRSDK/AIRSDK_51.4.1 and the PATH entry
+// (".../AIRSDK_51.2.1/bin") was a leftover from an uninstalled version, so nine
+// gates reported "the AIR reference runtime is not installed" while mxmlc
+// compiled the docs app in 1.8 s. "Not on PATH" is not "not installed": the
+// resolution now goes through tools/air-sdk.cjs (env -> PATH -> install
+// locations, each verified as a launcher THIS HOST can run), and the banner
+// states which root was used, so a SKIP can no longer be mistaken for a fact.
+const { resolveAirSdk, describe: describeAirSdk } = require('./air-sdk.cjs');
+const SKIP_AIR = process.env.ASC_SKIP_AIR === '1';
+const AIR_SDK = SKIP_AIR
+  ? { root: null, complete: false, source: 'ASC_SKIP_AIR', notes: [], tried: [] }
+  : resolveAirSdk();
+const AIR_ROOT = AIR_SDK.complete ? AIR_SDK.root : null;
+// State the answer ONCE, before any gate runs. Nine gates depend on it, so "why did those
+// nine skip" must be answerable from the top of the transcript, not by re-deriving it.
+if (AIR_ROOT) console.log('[air] reference runtime: ' + AIR_ROOT + '  (via ' + AIR_SDK.source + ')');
+else if (SKIP_AIR) console.log('[air] reference runtime: SKIPPED ON PURPOSE (ASC_SKIP_AIR=1)');
+else console.log('[air] ' + describeAirSdk(AIR_SDK).replace(/^\[air-sdk\] /, '[air] '));
+// Only when there IS a root: `--sdk null` would be printed in a [OMIT]/[skip] line and
+// read as if a path had been chosen.
+const AIR_SDK_ARGS = AIR_SDK.root ? ['--sdk', AIR_SDK.root] : [];
+const AIR_RUNNER = /(obj-array-identity|g16-ternary-null|g19-roundrect|g20-settextformat|g21-gettextformat|g22-closure-statics|vec-vs-arr|style-fromany|array-coerce|mxmlc-check\.cjs|air-sweep\.cjs)/;
 
 // EVERY CHILD IS BOUNDED, AND THAT IS NOT AN OPTIMISATION.
 //
@@ -306,14 +388,39 @@ const kit = require(path.join(UI, 'ui-demo', 'kit-list.cjs'));
 // sweep), not a budget anyone should need; `ASC_GATE_TIMEOUT_MS` lowers it. A killed
 // child is reported as 124 with a `[TIMEOUT]` line naming the command, never as a
 // silent `exit null`.
-const GATE_TIMEOUT_MS = Number(process.env.ASC_GATE_TIMEOUT_MS || 900000);
+// 7 minutes, not 15: the ceiling exists for a CHILD THAT HANGS, and every gate
+// that is legitimately slow (the two diorama tours, the web/emcc arm) is measured
+// at well under two. A 15-minute ceiling meant one bad gate looked exactly like
+// "the suite is just slow" for a quarter of an hour.
+const GATE_TIMEOUT_MS = Number(process.env.ASC_GATE_TIMEOUT_MS || 420000);
+// A gate whose commands were STUBBED by --only must never be reported as a pass:
+// its "output" is empty and every assertion in it would trivially hold. `record()`
+// drops any gate that issued a stubbed command since the previous record.
+let stubbed = 0;
+let lastStubCommand = '';
 const sh = (cmd, args, cwd, env) => {
+  const joined = [String(cmd), ...args].join(' ');
+  if (ONLY_RE && !ONLY_RE.test(joined)) {
+    stubbed++;
+    lastStubCommand = joined;
+    return { status: 0, stdout: '', stderr: '' };
+  }
+  if (!AIR_ROOT && AIR_RUNNER.test(joined)) {
+    return {
+      status: 3, stdout: '[skip] the AIR reference runtime is not installed: ' + describeAirSdk(AIR_SDK)
+        + '\n         (ASC_SKIP_AIR=1 suppresses this search on purpose). The AOT arm was not'
+        + ' built either -- a comparison arm with nothing to compare against proves nothing.\n',
+      stderr: '',
+    };
+  }
+  const t = Date.now();
   const r = spawnSync(cmd, args, {
     cwd, encoding: 'utf8', maxBuffer: 1 << 28,
     env: env ? { ...process.env, ...env } : process.env,
     timeout: GATE_TIMEOUT_MS,
     killSignal: 'SIGKILL',
   });
+  r.ms = Date.now() - t;
   if (r.status === null && r.signal) {
     console.log('[TIMEOUT] ' + path.basename(String(cmd)) + ' ' + args.join(' ')
       + '  killed after ' + Math.round(GATE_TIMEOUT_MS / 1000) + 's'
@@ -327,7 +434,23 @@ const tail = (s, n) => (s || '').split(/\r?\n/).filter((l) => l.trim() !== '').s
 
 const gates = [];
 const skipped = [];
-function record(name, code, detail) {
+function record(name, code, detail, ms) {
+  // --only: a gate this run did not execute. Reported in ONE line at the end, and
+  // never counted either way -- an unselected gate is neither green nor red.
+  if (ONLY_RE && !ONLY_RE.test(name)) { omitted.push(name); stubbed = 0; return; }
+  // A stubbed gate (some command in it was skipped because --only filtered it) has
+  // an empty transcript, so every assertion in it would trivially hold. Refuse it.
+  // Reaching this point means the NAME matched (the check above runs first), so the
+  // stub is the pattern's fault -- say so instead of reporting 0/0 in silence.
+  if (stubbed > 0) {
+    omitted.push(name);
+    console.log('[OMIT] ' + name + '\n       --only "' + ONLY + '" matched this gate name but not its command:'
+      + ' `' + lastStubCommand.slice(0, 90) + '`; widen the pattern');
+    stubbed = 0;
+    return;
+  }
+  const took = '   ' + secs(ms != null ? ms : Date.now() - lastRecordAt);
+  lastRecordAt = Date.now();
   // Exit 3 is the one "could not measure" code any gate may return (only the G11
   // determinism gate does today): every assertion inside it was green, but the tree
   // it measured on was being edited by another session. It is reported as SKIP and
@@ -336,18 +459,98 @@ function record(name, code, detail) {
   // silent, and the summary always states how many gates were skipped.
   if (code === 3) {
     skipped.push({ name, detail });
-    console.log('[SKIP] ' + name + '  (exit 3: nothing violated, the compiler source MOVED mid-run)');
-    const why = /blocked by: .*/.exec(detail || '');
-    if (why) console.log('       ' + why[0]);
+    const why = /\[skip\][^\n]*/.exec(detail || '')
+      || /blocked by: .*/.exec(detail || '');
+    console.log('[SKIP] ' + name + '  (exit 3: '
+      + (why ? why[0].replace(/^\[skip\] /, '') : 'nothing violated, the compiler source MOVED mid-run') + ')' + took);
     return;
   }
   gates.push({ name, code, detail });
-  console.log('[' + (code === 0 ? 'PASS' : 'FAIL') + '] ' + name + '  (exit ' + code + ')');
+  console.log('[' + (code === 0 ? 'PASS' : 'FAIL') + '] ' + name + '  (exit ' + code + ')' + took);
   if (code !== 0) console.log(tail(detail, 12));
 }
 
+// ---- the probe pool ---------------------------------------------------------
+// `probe.cjs` is ALREADY one bounded gate (build timeout, run timeout, kill by
+// pid), so the pool only has to bound the batch's wall clock and keep the output
+// attributed. It spawns children detached (each probe's window lands in its own
+// process group, so the deadline kill takes the window with it) and polls for the
+// `.gate-status` file the probe writes in its exit hook. Polling, not waiting:
+// the pool's main thread is BLOCKED in `Atomics.wait`, and with the event loop
+// parked no 'exit' event could ever be delivered -- while one `spawnSync` per
+// probe is exactly the serial run this replaces.
+const PROBE_DEADLINE_MS = Number(process.env.ASC_PROBE_DEADLINE_MS || 360000);
+const sleepCell = new Int32Array(new SharedArrayBuffer(4));
+const sleepSync = (ms) => { Atomics.wait(sleepCell, 0, 0, ms); };
+
+function runProbes(list) {
+  const picked = list.filter((p) => !ONLY_RE || ONLY_RE.test('probes/' + p));
+  if (ONLY_RE) for (const p of list) if (picked.indexOf(p) < 0) omitted.push('probe ' + p);
+  const solo = picked.filter((p) => SOLO_PROBES.indexOf(p) >= 0);
+  const wide = picked.filter((p) => SOLO_PROBES.indexOf(p) < 0);
+  const t = Date.now();
+  runProbeBatch(wide, JOBS, 'parallel x' + JOBS);
+  runProbeBatch(solo, 1, 'solo -- stopwatch probes: nothing else may be building');
+  if (picked.length) console.log('[probes] ' + picked.length + ' probe(s) in ' + secs(Date.now() - t));
+}
+
+function runProbeBatch(names, width, mode) {
+  if (!names.length) return;
+  console.log('[probes] ' + names.length + ' probe(s), ' + mode);
+  const queue = names.slice();
+  const running = [];
+  const results = [];   // reported in LIST order, not completion order
+  while (queue.length || running.length) {
+    while (running.length < width && queue.length) {
+      const p = queue.shift();
+      const dir = path.join(UI, 'probes', p);
+      const base = path.basename(dir);
+      const statusP = path.join(dir, base + '.gate-status');
+      const logP = path.join(dir, base + '.gate.log');
+      // Deleted BEFORE the spawn: the probe writes this file in its exit hook, so a
+      // stale one from the previous run would be read as this run's verdict.
+      try { fs.unlinkSync(statusP); } catch (e) { /* absent is the point */ }
+      const fd = fs.openSync(logP, 'w');
+      const child = spawn(process.execPath, ['tools/probe.cjs', 'probes/' + p], {
+        cwd: UI, detached: true, stdio: ['ignore', fd, fd],
+      });
+      fs.closeSync(fd);
+      running.push({ p, child, statusP, logP, t: Date.now(), deadline: Date.now() + PROBE_DEADLINE_MS });
+    }
+    sleepSync(120);
+    for (let i = running.length - 1; i >= 0; i--) {
+      const it = running[i];
+      let code = null;
+      if (fs.existsSync(it.statusP)) {
+        code = Number(fs.readFileSync(it.statusP, 'utf8').trim());
+      } else if (Date.now() > it.deadline) {
+        console.log('[TIMEOUT] probe ' + it.p + ' killed after '
+          + Math.round(PROBE_DEADLINE_MS / 1000) + 's (ASC_PROBE_DEADLINE_MS)');
+        try { process.kill(-it.child.pid, 'SIGKILL'); } catch (e) { /* win32 / gone */ }
+        try { process.kill(it.child.pid, 'SIGKILL'); } catch (e) { /* gone */ }
+        code = 124;
+      }
+      if (code == null) continue;
+      running.splice(i, 1);
+      results.push({ p: it.p, code, logP: it.logP, ms: Date.now() - it.t });
+      // A live line per probe: a batch that takes minutes must still look alive.
+      console.log('   ... ' + it.p + (code === 0 ? ' pass ' : ' EXIT ' + code + ' ')
+        + secs(Date.now() - it.t)
+        + '  [' + (names.length - queue.length - running.length) + '/' + names.length + ']');
+    }
+  }
+  // Attributed in LIST order: a log whose line order matches the list is one a
+  // human can diff against the gate list. A FAILED probe keeps its transcript.
+  for (const r of results) {
+    const out = fs.existsSync(r.logP) ? fs.readFileSync(r.logP, 'utf8') : '';
+    const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);
+    record('probe ' + r.p + (m ? ' (' + m[1] + ' checks, ' + m[2] + ' failures)' : ''), r.code, out, r.ms);
+    if (r.code === 0) { try { fs.unlinkSync(r.logP); } catch (e) { /* fine */ } }
+  }
+}
+
 // ---- 1..3: pure-AS3 probes (windowed; probe.cjs owns build+run+assert) -------
-for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim',
+const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav', 'widgets/anim',
                  'widgets/feedback', 'widgets/media', 'widgets/data', 'widgets/overlay',
                  'widgets/interact', 'widgets/flip', 'widgets/motion', 'widgets/vlist',
                  'widgets/choice', 'redraw', 'widgets/popup', 'widgets/typing', 'widgets/scrollbar',
@@ -380,6 +583,36 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // frame clock. Teeth: probes/widgets/touch-scroll/mutation.cjs 9/9,
                  // including a programmatic scroll that must cancel a coast in flight.
                  'widgets/touch-scroll',
+                 // `navstack` is the first MOBILE.md C-family gate (C1): a real stack
+                 // -- every page mounted at the stack's box, only the top one visible
+                 // AND pickable, and BACK delivered with no focus anywhere. The
+                 // assertion it exists for is the one a fake stack cannot pass: after
+                 // a push/pop the page below is at the offset the user left it, in the
+                 // SAME nodes (identity), so page state is not rebuilt. It also keeps a
+                 // stack in a HIDDEN tab and counts its callbacks, because the BACK key
+                 // is a stage listener and must not unwind four tabs at once. Teeth:
+                 // probes/widgets/navstack/mutation.cjs 9/9 -- including "only the top
+                 // page is mounted", "every page stays visible" and the on-screen check.
+                 'widgets/navstack',
+                 // `appbar` is C2: the three slots as LAYOUT (leading/trailing pinned
+                 // at the padding edges, the title centred in what is left), the large
+                 // title collapsed by ONE author-driven number at four stops, and the
+                 // clip that keeps a shrinking row's title off the content below. It is
+                 // also the gate that measured "a box's style.flexDirection is ignored;
+                 // only BoxNode.direction matters", the one that caught a `trailing: [a, b]`
+                 // LIST being dropped by `as Node`, and the one that caught a safe-area
+                 // inset NOT being undone when the env went back to zero (the bar stayed
+                 // notched: `applyEngineStyle` only writes padding when it is non-null, and
+                 // `setSafeInsets` re-resolved without raising a layout bit). Teeth:
+                 // probes/widgets/appbar/mutation.cjs 11/11.
+                 'widgets/appbar',
+                 // `tabbar` is C3: equal cells that fill the bar, the selected state read
+                 // back as `resolved.text.color` against Theme.tokens(), the three taps
+                 // that prove each cell reports ITS OWN index (the AS3 loop-closure trap),
+                 // a shrinking `items` dropping the stale cell, a Node icon keeping the
+                 // author's colour, and the home indicator as 34px of bar PADDING. Teeth:
+                 // probes/widgets/tabbar/mutation.cjs 9/9.
+                 'widgets/tabbar',
                  // `icon` (SVG path data: cubic subdivision, stroke scaling, and the
                  // refusals an arc and a junk command must get) joined with the icons
                  // batch; it is the only probe in the kit that drives a PARSER.
@@ -435,12 +668,9 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
                  // timed idle / describe / one-node-change / solve / paint phases.
                  // Its one assertion is a 15ms ceiling on a NO-CHANGE describe
                  // (39.3ms when the duplicate-key check was quadratic, 1.0ms now).
-                 'perf']) {
-  const r = sh(process.execPath, ['tools/probe.cjs', 'probes/' + p], UI);
-  const out = (r.stdout || '') + (r.stderr || '');
-  const m = /PROBE \S+: (\d+) checks, (\d+) failures/.exec(out);
-  record('probe ' + p + (m ? ' (' + m[1] + ' checks, ' + m[2] + ' failures)' : ''), r.status, out);
-}
+                 'perf'];
+
+runProbes(PROBES);
 
 // ---- 3b: the animator and the paint-sweep regression ------------------------
 // `widgets/anim` is the animator's acceptance; `redraw` is the pin for the
@@ -593,7 +823,10 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // 81 KB compile that the default arm depends on.
 //   mutation: tools/mutation-air-arm.cjs (2/2, restoring each file by hash).
 {
-  const r = sh(process.execPath, ['tools/mxmlc-check.cjs',
+  // --sdk passes the ALREADY RESOLVED root: an env var does not reliably reach a
+  // native child in this workspace (measured), and the child would then have to
+  // search the same locations again to arrive at the same answer.
+  const r = sh(process.execPath, ['tools/mxmlc-check.cjs', ...AIR_SDK_ARGS,
     '--root', 'ui-demo/demo/DocsAir.as',
     '--src', 'ui-demo', '--src', 'kit', '--src', 'seam',
     '--out', 'ui-demo/air-gallery/GalleryApp.swf'], UI);
@@ -695,7 +928,7 @@ for (const p of ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav
 // drill moved to those; the invariant is the same, and the `destroyed=` floor still
 // proves the drill meets torn-down nodes instead of grading a blind test.)
 {
-  const r = sh(process.execPath, ['tools/air-sweep.cjs'], UI);
+  const r = sh(process.execPath, ['tools/air-sweep.cjs', ...AIR_SDK_ARGS], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /\[air-sweep\] (\d+)\/(\d+) page\(s\) visited, (\S+)\/(\d+) popup\(s\) opened, (\d+) runtime error\(s\), (\d+) node\(s\) captured and (\d+) of them destroyed/.exec(out);
   record('docs app on AIR (adl): every page, popups open, pointer drill, no runtime error'
@@ -842,9 +1075,13 @@ const G16_KNOWN = [];
   const aotIds = [...new Set([...out.matchAll(/FAIL  id (\d+): our AOT says/g)].map((m) => m[1]))]
     .sort((a, b) => Number(a) - Number(b));
   const armBad = /the REFERENCE disagrees|arm wrote only/.test(out);
-  const same = !armBad && aotIds.join(',') === G16_KNOWN.join(',');
+  // `r.status === 0` IS PART OF IT. With no AIR runtime the command is skipped and
+  // the transcript is empty -- reading the deviation set out of an empty string
+  // would report "AOT deviations: none" for a comparison that never ran.
+  const same = r.status === 0 && !armBad && aotIds.join(',') === G16_KNOWN.join(',');
+  // 3 ("could not measure") is propagated: a skipped AIR arm is not a red.
   record('G16 ternary-null (20 cases, AOT vs AIR) -- AOT deviations: '
-    + (aotIds.join(',') || 'none'), same ? 0 : 1,
+    + (aotIds.join(',') || 'none'), r.status === 3 ? 3 : (same ? 0 : 1),
     out + (same ? '' : '\nThe AOT deviation set is no longer the recorded one ([' + G16_KNOWN.join(',') + ']).'
       + '\nG16 is FIXED (stage 266), so any deviation here is a REGRESSION: find the emitter change that'
       + '\nbrought the zero-value collapse back (unifyType null-family rule, src/emit.ts).'
@@ -979,6 +1216,31 @@ const G16_KNOWN = [];
   record('Array(x) wraps on both runtimes (8 cases, AOT vs AIR)' + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
 }
 
+// ---- 7c: where the AIR SDK is ----------------------------------------------------
+// This gate exists because of a SKIP that lied for three rounds: nine gates reported
+// "the AIR reference runtime is not installed" while mxmlc compiled the docs app in
+// 1.8 s. The detection asked only AIRSDK_HOME and PATH; the SDK was in
+// ~/Documents/Software/AIRSDK/AIRSDK_51.4.1 and the PATH entry named an uninstalled
+// 51.2.1. `tools/air-sdk.cjs` now asks env -> PATH -> install locations and accepts a
+// hit only after verifying a launcher THIS HOST can run (the SDK is one zip for every
+// platform, so `bin/adl.exe` existing says nothing about macOS).
+//
+// It runs on EVERY machine, including one with no SDK: that is exactly when its answer
+// matters. The cases are hermetic (a fixture under temp/, HOME redirected, PATH
+// emptied), so a machine's own SDK cannot make a case pass that the fixture was
+// supposed to fail.
+//   mutation: tools/mutation-air-sdk.cjs (5/5 -- structural check removed / version
+//   ranking reversed / --sdk falls through / ASC_NO_AIR_SCAN ignored / complete from
+//   mxmlc alone; the resolver is restored by hash and the baseline is checked first,
+//   because a harness that mutates without a green baseline proves nothing).
+{
+  const r = sh(process.execPath, ['tools/air-sdk-check.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /RESULT: (\S+.*)/.exec(out);
+  record('AIR SDK resolution: env -> PATH -> install locations, verified per host'
+    + (m ? ' (' + m[1].trim() + ')' : ''), r.status, out);
+}
+
 // ---- 8: the instrument that certifies "we did not touch the compiler" -------
 // Instant (pure string parsing, no build). It is a gate because every
 // "as3compiler/ is unchanged" claim in this workspace rests on this one tool, and
@@ -997,10 +1259,15 @@ const failed = gates.filter((g) => g.code !== 0);
 const total = gates.length + skipped.length;
 console.log('');
 console.log('==== ' + (gates.length - failed.length) + '/' + total + ' gates PASS'
-  + (skipped.length ? ', ' + skipped.length + ' SKIPPED' : '') + ' ====');
+  + (skipped.length ? ', ' + skipped.length + ' SKIPPED' : '')
+  + (omitted.length ? ', ' + omitted.length + ' NOT SELECTED (--only ' + ONLY + ')' : '')
+  + '  in ' + secs(Date.now() - T0) + ' ====');
 if (failed.length) {
   console.log('FAILED: ' + failed.map((f) => f.name).join(' | '));
   process.exit(1);
 }
 if (skipped.length) console.log('SKIPPED: ' + skipped.map((s) => s.name).join(' | '));
+if (omitted.length && (process.env.ASC_GATE_VERBOSE === '1')) {
+  console.log('NOT SELECTED: ' + omitted.join(' | '));
+}
 console.log('RESULT: PASS' + (skipped.length ? ' (with ' + skipped.length + ' skipped)' : ''));

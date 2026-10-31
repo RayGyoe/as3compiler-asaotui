@@ -83,6 +83,8 @@ for (const arm of arms) {
     + size.resolution + ') ========');
   const r = spawnSync(process.execPath, ['run-gallery.cjs'], {
     cwd: here, stdio: 'inherit', env: { ...process.env, ASC_AIR_DIR: arm.dir, ASC_NO_OPEN: '1' },
+    // BOUNDED: an arm that hangs must fail the A/B, not freeze the gate run.
+    timeout: 400000, killSignal: 'SIGKILL',
   });
   const png = path.join(here, arm.dir, 'gallery-page0.png');
   const px = fs.existsSync(png) ? pngSize(png) : null;

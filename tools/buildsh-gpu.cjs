@@ -81,10 +81,22 @@ const appXml = read(XML);
 const appRender = (/<renderMode>([^<]*)<\/renderMode>/.exec(appXml) || [])[1];
 const derived = [];
 
+// `gl` is the WGL/OpenGL bridge: Windows-only, and build.sh REFUSES it elsewhere
+// (macOS composites on Metal). That refusal is a fact worth pinning too, so the mode
+// is not dropped from the table -- it is asserted against the expectation the host
+// can actually have. Without this the gate reported two reds on every macOS run for
+// a behaviour that is correct.
+const WINDOWS_ONLY = new Set(['gl']);
 for (const m of MODES) {
   const r = buildsh(['desc', '--gpu', m.flag]);
   const name = 'app.' + m.flag + '.xml';
   const file = path.join(APP, name);
+  if (WINDOWS_ONLY.has(m.flag) && process.platform !== 'win32') {
+    check(r.status !== 0, '--gpu ' + m.flag + ' is refused off Windows', 'exit ' + r.status);
+    check(/Windows-only/.test(r.out), '--gpu ' + m.flag + ' refusal says why', r.out.slice(-400));
+    check(!fs.existsSync(file), '--gpu ' + m.flag + ' writes no descriptor when refused', name);
+    continue;
+  }
   check(r.status === 0, '--gpu ' + m.flag + ' exits 0', 'exit ' + r.status + '\n' + r.out.slice(-400));
   if (!fs.existsSync(file)) {
     check(false, '--gpu ' + m.flag + ' derives ' + name, 'not written\n' + r.args);

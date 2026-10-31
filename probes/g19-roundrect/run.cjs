@@ -29,9 +29,20 @@ const { spawnSync, execFileSync } = require('child_process');
 const DIR = __dirname;
 // This probe lives in asaotui/probes/g19-roundrect, the compiler one level up and over.
 const ROOT = path.resolve(DIR, '..', '..', '..', 'as3compiler');
-const SDK = process.env.AIRSDK_HOME || 'D:/Adobe/Flex_Sdk/AIRSDK_51.4.1';
-const MXMLC = path.join(SDK, 'bin', process.platform === 'win32' ? 'mxmlc.bat' : 'mxmlc');
-const ADL = path.join(SDK, 'bin', process.platform === 'win32' ? 'adl.exe' : 'adl');
+// The SDK is resolved by the workspace's ONE resolver (tools/air-sdk.cjs): env
+// first, then PATH, then the install locations -- and a hit only counts if this
+// HOST can run the launcher. The old fallback here was a hard-coded Windows path
+// ('D:/Adobe/Flex_Sdk/...'), which on macOS is a guaranteed miss: the runner
+// reported "AIR SDK not found" with the SDK sitting two directories away.
+const { resolveAirSdk, describe } = require('../../tools/air-sdk.cjs');
+const SDK_INFO = resolveAirSdk();
+const SDK = SDK_INFO.root;
+const MXMLC = SDK_INFO.mxmlc; const ADL = SDK_INFO.adl;
+if (!SDK_INFO.complete) {
+  console.error(describe(SDK_INFO));  // every location tried, not one guess at a path
+  console.error('  (set AIRSDK_HOME, or ASC_SKIP_AIR=1 to skip the AIR arm)');
+  process.exit(2);
+}
 
 // Negative radii are the ONE documented deviation from AIR (see emit.ts /
 // compiler-gaps.md G19): AIR inks up to |r|/2 outside the box, we clamp to a square

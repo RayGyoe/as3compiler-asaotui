@@ -45,30 +45,21 @@ for (const r of roots) if (!fs.existsSync(r)) { console.error('no such root file
 // value was set by the calling script and arrived empty here). An argument never
 // gets that wrong, so a caller that already knows the root passes it explicitly;
 // the variable stays supported for everyone else.
-const sdk = sdkArg || process.env.AIRSDK_HOME || sdkFromPath();
+//
+// The fallback is the workspace's ONE resolver (tools/air-sdk.cjs), not a PATH scan:
+// "not on PATH" is not "not installed" -- this box had the SDK in
+// ~/Documents/Software/AIRSDK/AIRSDK_51.4.1 with a stale 51.2.1/bin on PATH, and the
+// old PATH-only fallback answered "no AIR SDK" while mxmlc compiled in 1.8 s.
+const { resolveAirSdk, describe } = require('./air-sdk.cjs');
+const resolved = resolveAirSdk(sdkArg);
+const sdk = resolved.root;
 if (!sdk) {
-  console.error('mxmlc-check.cjs: no AIR SDK -- pass --sdk <root>, or set AIRSDK_HOME, or put its bin/ on PATH');
+  console.error('mxmlc-check.cjs: no AIR SDK -- ' + describe(resolved).replace(/^\[air-sdk\] /, ''));
   process.exit(2);
 }
-
-// Last resort so a caller does not have to restate the SDK: walk PATH looking for
-// the SDK's own bin/ tools. PATH entries arrive in three spellings in this
-// workspace (D:\x, D:/x, and WSL's /mnt/d/x), and only the first two are visible to
-// a Windows node, so the POSIX form is translated before the lookup.
-function sdkFromPath() {
-  const dirs = (process.env.PATH || '').split(path.delimiter);
-  for (let d of dirs) {
-    if (!d) continue;
-    const m = /^\/mnt\/([A-Za-z])\/(.*)$/.exec(d);
-    if (m) d = m[1].toUpperCase() + ':/' + m[2];
-    for (const n of ['adl.exe', 'adl', 'mxmlc.bat', 'mxmlc']) {
-      if (fs.existsSync(path.join(d, n))) return path.resolve(d, '..');
-    }
-  }
-  return null;
-}
-// mxmlc is a .bat on Windows, a shell script elsewhere.
-const mxmlc = path.join(sdk, 'bin', process.platform === 'win32' ? 'mxmlc.bat' : 'mxmlc');
+// mxmlc is a .bat on Windows, a shell script elsewhere -- the resolver already
+// picked the host's own launcher, so this line cannot get the platform wrong.
+const mxmlc = resolved.mxmlc;
 if (!fs.existsSync(mxmlc)) { console.error('mxmlc-check.cjs: no mxmlc at ' + mxmlc); process.exit(2); }
 
 const outSwf = out || path.join(path.dirname(roots[0]), '.mxmlc-check.swf');

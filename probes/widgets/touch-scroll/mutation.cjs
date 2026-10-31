@@ -49,16 +49,16 @@ const MUTATIONS = [
     file: 'kit/asaot/ui/kind/ScrollViewWidget.as',
     why: 'THE DRAG MOVES THE CONTENT BY HALF: the finger and the content do not stay '
       + 'together, which is the whole contract of a 1:1 drag',
-    find: '            this.moveTo(n, axis, start - (pos - anchor), maxOff);',
-    replace: '            this.moveTo(n, axis, start - (pos - anchor) * 0.5, maxOff);',
+    find: '            var raw:Number = start - (pos - anchor);',
+    replace: '            var raw:Number = (start - (pos - anchor)) * 0.5;',
     expect: 'a 20pt drag moved the content to 10',
   },
   {
     id: 'M2',
     file: 'kit/asaot/ui/kind/ScrollViewWidget.as',
     why: 'THE DRAG MOVES THE CONTENT THE WRONG WAY: the list scrolls against the finger',
-    find: '            this.moveTo(n, axis, start - (pos - anchor), maxOff);',
-    replace: '            this.moveTo(n, axis, start + (pos - anchor), maxOff);',
+    find: '            var raw:Number = start - (pos - anchor);',
+    replace: '            var raw:Number = start + (pos - anchor);',
     expect: 'a 20pt drag moved the content to 0',
   },
   {
@@ -132,6 +132,42 @@ const MUTATIONS = [
     find: '                    var ts:TouchScrollable = this.scrollableOf(sv);\n                    if (ts != null) ts.touchPress(sv);',
     replace: '                    // (mutation) the coast is left running',
     expect: 'a finger on a coasting list did not stop it',
+  },
+  {
+    id: 'M11',
+    file: 'kit/asaot/ui/kind/ScrollViewWidget.as',
+    why: 'THE STRETCH IS NOT DAMPED: a hard drag pulls the content 220px off its own end instead of the '
+      + 'damped ~40px the rubber-band curve gives',
+    find: '                over = dampOver(raw - clampTo(raw, maxOff), limit);',
+    replace: '                over = raw - clampTo(raw, maxOff);',
+    expect: 'want ~40 (damped',
+  },
+  {
+    id: 'M12',
+    file: 'kit/asaot/ui/kind/ScrollViewWidget.as',
+    why: 'A RELEASE WHILE STRETCHED DOES NOT SPRING BACK: the pane stays past its end until something else '
+      + 'moves it (S3 without the return half)',
+    find: '                n.extra[(axis == 1) ? SPRING_Y : SPRING_X] = 1;',
+    replace: '                n.extra[(axis == 1) ? SPRING_Y : SPRING_X] = 0;',
+    expect: 'the pane did not return to the end',
+  },
+  {
+    id: 'M13',
+    file: 'kit/asaot/ui/kind/ScrollViewWidget.as',
+    why: 'THE STRETCH NEVER REACHES THE PIXELS: the offset is tracked and published, but the clip is drawn '
+      + 'at the clamped position, so nothing moves on screen',
+    find: '            var vy:Number = oy + overY;',
+    replace: '            var vy:Number = oy;',
+    expect: 'the bottom of the stretched pane is',
+  },
+  {
+    id: 'M14',
+    file: 'kit/asaot/ui/kind/ScrollViewWidget.as',
+    why: '`overscroll: "none"` IS IGNORED: a pane whose author said it must not move bounces anyway, which '
+      + 'is the form-list bug the mode exists to prevent',
+    find: '            if (sv0.overscroll == "rubber")',
+    replace: '            if (true)',
+    expect: "overscroll:'none' still stretched by",
   },
 ];
 

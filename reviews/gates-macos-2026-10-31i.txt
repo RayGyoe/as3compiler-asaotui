@@ -1,0 +1,130 @@
+[probes] 34 probe(s), parallel x6
+   ... widgets/nav pass 16.2s  [1/34]
+   ... widgets/chip pass 16.7s  [2/34]
+   ... widgets/display pass 17.2s  [3/34]
+   ... widgets/form pass 18.2s  [4/34]
+   ... widgets/media pass 19.7s  [5/34]
+   ... widgets/data pass 23.2s  [6/34]
+   ... widgets/flip pass 16.4s  [7/34]
+   ... widgets/overlay pass 20.7s  [8/34]
+   ... widgets/vlist pass 19.1s  [9/34]
+   ... widgets/interact pass 20.6s  [10/34]
+   ... redraw pass 16.5s  [11/34]
+   ... widgets/choice EXIT 1 20.5s  [12/34]
+   ... widgets/popup pass 19.5s  [13/34]
+   ... widgets/callback pass 19.1s  [14/34]
+   ... widgets/scrollbar pass 19.2s  [15/34]
+   ... widgets/textfx pass 16.7s  [16/34]
+   ... lifecycle pass 17.2s  [17/34]
+   ... widgets/typing pass 21.3s  [18/34]
+   ... widgets/pointer pass 18.6s  [19/34]
+   ... widgets/imaging pass 17.0s  [20/34]
+   ... widgets/stick pass 18.7s  [21/34]
+   ... widgets/table2 pass 19.6s  [22/34]
+   ... widgets/pointer-touch pass 19.7s  [23/34]
+   ... widgets/navstack pass 18.7s  [24/34]
+   ... widgets/appbar pass 20.1s  [25/34]
+   ... widgets/icon pass 16.5s  [26/34]
+   ... widgets/tabbar pass 19.2s  [27/34]
+   ... widgets/accordion pass 16.5s  [28/34]
+   ... widgets/keys pass 19.8s  [29/34]
+   ... widgets/inputs pass 20.0s  [30/34]
+   ... widgets/theme pass 17.0s  [31/34]
+   ... widgets/clip pass 16.5s  [32/34]
+   ... widgets/actions pass 17.6s  [33/34]
+   ... widgets/env pass 18.8s  [34/34]
+[PASS] probe widgets/nav (41 checks, 0 failures)  (exit 0)   16.2s
+[PASS] probe widgets/chip (19 checks, 0 failures)  (exit 0)   16.7s
+[PASS] probe widgets/display (48 checks, 0 failures)  (exit 0)   17.2s
+[PASS] probe widgets/form (41 checks, 0 failures)  (exit 0)   18.2s
+[PASS] probe widgets/media (43 checks, 0 failures)  (exit 0)   19.7s
+[PASS] probe widgets/data (77 checks, 0 failures)  (exit 0)   23.2s
+[PASS] probe widgets/flip (54 checks, 0 failures)  (exit 0)   16.4s
+[PASS] probe widgets/overlay (65 checks, 0 failures)  (exit 0)   20.7s
+[PASS] probe widgets/vlist (26 checks, 0 failures)  (exit 0)   19.1s
+[PASS] probe widgets/interact (25 checks, 0 failures)  (exit 0)   20.6s
+[PASS] probe redraw (14 checks, 0 failures)  (exit 0)   16.5s
+[FAIL] probe widgets/choice (44 checks, 1 failures)  (exit 1)   20.5s
+[probe] building choice
+[probe] built probes/widgets/choice/Main
+PROBE choice: 44 checks, 1 failures
+  FAIL  program verdict: FAIL the child row's label is at 60,77.5 not 60,79 (the label is vertically centred in the 26pt row);
+RESULT: FAIL
+[PASS] probe widgets/popup (26 checks, 0 failures)  (exit 0)   19.5s
+[PASS] probe widgets/callback (24 checks, 0 failures)  (exit 0)   19.1s
+[PASS] probe widgets/scrollbar (44 checks, 0 failures)  (exit 0)   19.2s
+[PASS] probe widgets/textfx (18 checks, 0 failures)  (exit 0)   16.7s
+[PASS] probe lifecycle (9 checks, 0 failures)  (exit 0)   17.2s
+[PASS] probe widgets/typing (18 checks, 0 failures)  (exit 0)   21.3s
+[PASS] probe widgets/pointer (23 checks, 0 failures)  (exit 0)   18.6s
+[PASS] probe widgets/imaging (31 checks, 0 failures)  (exit 0)   17.0s
+[PASS] probe widgets/stick (15 checks, 0 failures)  (exit 0)   18.7s
+[PASS] probe widgets/table2 (22 checks, 0 failures)  (exit 0)   19.6s
+[PASS] probe widgets/pointer-touch (30 checks, 0 failures)  (exit 0)   19.7s
+[PASS] probe widgets/navstack (16 checks, 0 failures)  (exit 0)   18.7s
+[PASS] probe widgets/appbar (22 checks, 0 failures)  (exit 0)   20.1s
+[PASS] probe widgets/icon (66 checks, 0 failures)  (exit 0)   16.5s
+[PASS] probe widgets/tabbar (13 checks, 0 failures)  (exit 0)   19.2s
+[PASS] probe widgets/accordion (18 checks, 0 failures)  (exit 0)   16.5s
+[PASS] probe widgets/keys (36 checks, 0 failures)  (exit 0)   19.8s
+[PASS] probe widgets/inputs (50 checks, 0 failures)  (exit 0)   20.0s
+[PASS] probe widgets/theme (75 checks, 0 failures)  (exit 0)   17.0s
+[PASS] probe widgets/clip (33 checks, 0 failures)  (exit 0)   16.5s
+[PASS] probe widgets/actions (73 checks, 0 failures)  (exit 0)   17.6s
+[PASS] probe widgets/env (43 checks, 0 failures)  (exit 0)   18.8s
+[probes] 5 probe(s), solo -- stopwatch probes: nothing else may be building
+   ... widgets/anim pass 16.0s  [1/5]
+   ... widgets/feedback pass 15.9s  [2/5]
+   ... widgets/motion pass 17.0s  [3/5]
+   ... widgets/touch-scroll pass 22.4s  [4/5]
+   ... perf pass 14.8s  [5/5]
+[PASS] probe widgets/anim (14 checks, 0 failures)  (exit 0)   16.0s
+[PASS] probe widgets/feedback (43 checks, 0 failures)  (exit 0)   15.9s
+[PASS] probe widgets/motion (23 checks, 0 failures)  (exit 0)   17.0s
+[PASS] probe widgets/touch-scroll (26 checks, 0 failures)  (exit 0)   22.4s
+[PASS] probe perf (1 checks, 0 failures)  (exit 0)   14.8s
+[probes] 39 probe(s) in 198.0s
+[PASS] layout-check text half (133 checks, 0 failures)  (exit 0)   7.8s
+[PASS] ui-demo CheckUi (33 checks, 0 failures)  (exit 0)   13.9s
+[PASS] layout-check visual half (12 checks, 0 failures)  (exit 0)   10.3s
+[PASS] gallery tour: 56 component pages (incl. the overlay tree), hand-computed rects (PASS)  (exit 0)   21.5s
+[PASS] gallery kind coverage: all registered widgets are shown (44/44)  (exit 0)   0.1s
+[PASS] docs demos pass only options the factories read (0 unknown)  (exit 0)   0.1s
+[PASS] author callbacks carry their documented argument (24 calls / 179 handlers) (0 violations)  (exit 0)   0.1s
+[SKIP] AIR arm (build.sh default) compiles under mxmlc  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[PASS] build.sh --gpu selects renderMode + backend, app.xml untouched (27 checks, 0 failures)  (exit 0)   0.3s
+[PASS] build.sh web: toolchain spawned, argv pinned, refusals, staged dir untracked (25 checks, 0 failures)  (exit 0)   1.0s
+[SKIP] docs app on AIR (adl): every page, popups open, pointer drill, no runtime error  (exit 3: nothing violated, the compiler source MOVED mid-run)   0.0s
+[PASS] kit listeners are all releasable (UiNode.listen + destroySubtree) (45 wired, 0 raw)  (exit 0)   0.0s
+[PASS] G13 air-app reach: closure keeps 5/5, both faces build+run (PASS)  (exit 0)   12.4s
+[PASS] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (PASS)  (exit 0)   41.7s
+[PASS] style scan: no Object-typed local is used as a condition (0 found)  (exit 0)   0.1s
+[FAIL] G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (1/5 hashes)  (exit 1)   72.2s
+   -> same program, three different C files, errors decaying to zero in 84 s: the tree was mid-edit.
+E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04:00:19 +0800)
+   my build broke on:      Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   artifact-1 (04:00:10) broke on: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   -> identical hazard set, from two different programs, 9 seconds apart: one tree state.
+---- verdict ----
+FAIL: artifact-1-struct-time__.c: expected clang to hit its error cap, it did not
+FAIL: artifact-1-struct-time__.c: 0 errors, expected at least 16
+FAIL: artifact-1-struct-time__.c: kinds [] != expected [Date._time, ServerSocketConnectEvent.socket, TextField.___restrict]
+FAIL: artifact-2-struct-socket-1-error.c: clang reported 0 errors, expected 1
+FAIL: artifact-2-struct-socket-1-error.c: kinds [] != expected [ServerSocketConnectEvent.socket]
+---- evidence appended to probes/g11-nondeterminism/run-2026-10-31.txt ----
+[SKIP] G14 array-in-Object-slot identity (26 cases, AOT vs AIR)  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[SKIP] G16 ternary-null (20 cases, AOT vs AIR) -- AOT deviations: none  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[SKIP] G19 drawRoundRect, AOT vs AIR  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[SKIP] G20 setTextFormat replaces the range (AOT vs AIR)  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[SKIP] G21 getTextFormat reads the run table (AOT vs AIR)  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[SKIP] G22 closure statics initialise (AOT vs AIR, emitted C audited)  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[SKIP] Vector vs Array throughput, both runtimes  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[SKIP] style fromAny is total: 19 cases, AOT vs AIR  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[SKIP] Array(x) wraps on both runtimes (8 cases, AOT vs AIR)  (exit 3: the AIR reference runtime is not installed; set AIRSDK_HOME to the SDK root, or ASC_SKIP_AIR=1 to say so on purpose. The AOT arm was not built either -- a comparison arm with nothing to compare against proves nothing.)   0.0s
+[PASS] fingerprint porcelain parsing: no dropped records (PASS)  (exit 0)   0.0s
+
+==== 52/65 gates PASS, 11 SKIPPED  in 379.7s ====
+FAILED: probe widgets/choice (44 checks, 1 failures) | G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (1/5 hashes)
+real 379.69
+user 885.45
+sys 48.36

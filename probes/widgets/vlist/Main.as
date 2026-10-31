@@ -57,6 +57,7 @@ var COUNT:int = 1000;
 class VListModel extends Observable
 {
     public var off:Number = 0;
+    public var to:int = -1;
 }
 
 class VListProbe extends View
@@ -84,7 +85,9 @@ class VListProbe extends View
                 count: COUNT,
                 offsetY: model.off,
                 renderRow: rowFor,
-                onScroll: scrolled
+                onScroll: scrolled,
+                onVisible: seenRows,
+                scrollToIndex: model.to
             })
         ]);
     }
@@ -104,6 +107,19 @@ function scrolled(y:Number):void
     onScrollSaw = y;
     model.off = y;
     view.invalidate(Dirty.ALL);
+}
+
+// The lazy-loading hook (MOBILE.md S6). Counted, not just recorded: a report on every
+// frame would pass a 'the window was seen' assertion and still be a callback storm.
+var seenFirst:int = -99;
+var seenLast:int = -99;
+var seenCalls:int = 0;
+
+function seenRows(first:int, last:int):void
+{
+    seenFirst = first;
+    seenLast = last;
+    seenCalls = seenCalls + 1;
 }
 
 var model:VListModel = new VListModel();
@@ -208,6 +224,10 @@ function ready():void
         fail("y=175 is " + hex(rgbAt(bd, 30, 175)) + " -- row 8 painted outside the viewport (the clip is missing)");
 
     SolvesAtStart = app.layoutSolves;
+    // The lazy-loading hook says the same thing the description does, on the FIRST
+    // paint (a list that reports nothing until it scrolls cannot fetch its first page).
+    if (seenFirst != 0 || seenLast != 8)
+        fail("onVisible first reported " + seenFirst + ".." + seenLast + ", want 0..8 (the mounted window)");
     say("ready: window " + desc.firstIndex + ".." + desc.lastIndex + " mounted " + vl.children.length
         + " keys " + keysOf(vl) + " solves " + SolvesAtStart);
 
@@ -249,6 +269,9 @@ function afterWheel():void
         fail("y=175 is " + hex(rgbAt(bd, 30, 175)) + " -- the clip was lost after scrolling");
     if (app.layoutSolves <= SolvesAtStart)
         fail("a different window did not re-solve layout (" + SolvesAtStart + " -> " + app.layoutSolves + ")");
+
+    if (seenFirst != 3 || seenLast != 11)
+        fail("onVisible reported " + seenFirst + ".." + seenLast + " after the wheel, want 3..11");
 
     say("afterWheel: window " + desc.firstIndex + ".." + desc.lastIndex + " off " + desc.offsetY
         + " keys " + keysOf(vl) + " solves " + app.layoutSolves);
@@ -296,6 +319,55 @@ function afterHome():void
     if (onScrollSaw != 0)
         fail("Home's onScroll reported " + onScrollSaw + " not 0");
     say("afterHome: window " + desc.firstIndex + ".." + desc.lastIndex);
+
+    // ---- `scrollToIndex`: the AUTHOR asks for a row (S6) ------------------
+    model.to = 120;
+    view.invalidate(Dirty.ALL);
+    setTimeout(afterScrollTo, 350);
+}
+
+function afterScrollTo():void
+{
+    var vl:UiNode = app.findByKey("vl");
+    var desc:VirtualListNode = VirtualListNode(vl.desc);
+    if (desc.firstIndex != 120)
+        fail("scrollToIndex 120 landed on row " + desc.firstIndex + " not 120");
+    if (desc.lastIndex != 128)
+        fail("scrollToIndex 120 window ends at " + desc.lastIndex + " not 128");
+    // The index is converted to a row-aligned OFFSET before it reaches the author, so
+    // the model still holds one number that means the same thing the wheel produces.
+    if (onScrollSaw != 2400)
+        fail("scrollToIndex 120 reported " + onScrollSaw + " to onScroll, not 2400 (120 rows x 20)");
+    if (seenFirst != 120 || seenLast != 128)
+        fail("onVisible reported " + seenFirst + ".." + seenLast + " after scrollToIndex, want 120..128");
+    say("afterScrollTo: window " + desc.firstIndex + ".." + desc.lastIndex + " onScroll " + onScrollSaw);
+    // Now scroll away from it with the wheel: the model still carries `to = 120`.
+    stage.dispatchWheel(100, 100, -1);
+    setTimeout(afterScrollToWheel, 350);
+}
+
+function afterScrollToWheel():void
+{
+    var vl:UiNode = app.findByKey("vl");
+    var desc:VirtualListNode = VirtualListNode(vl.desc);
+    if (desc.firstIndex != 123)
+        fail("the wheel after scrollToIndex landed on row " + desc.firstIndex + " not 123");
+    // AN UNRELATED RE-RENDER MUST NOT RE-APPLY THE REQUEST. `scrollToIndex` is a
+    // CHANGE, not a position (see VirtualListNode's header): an author who keeps the
+    // field in the model -- the natural thing -- would otherwise get their list yanked
+    // back to row 120 on every render, which is the bug this assertion exists for.
+    view.invalidate(Dirty.ALL);
+    setTimeout(afterScrollToStable, 350);
+}
+
+function afterScrollToStable():void
+{
+    var vl:UiNode = app.findByKey("vl");
+    var desc:VirtualListNode = VirtualListNode(vl.desc);
+    if (desc.firstIndex != 123)
+        fail("a re-render re-applied scrollToIndex and yanked the window back to row "
+            + desc.firstIndex + " (want 123, where the wheel left it)");
+    say("afterScrollToStable: window " + desc.firstIndex + ".." + desc.lastIndex);
 
     // ---- an AUTHOR-SUPPLIED offset past the end -------------------------
     // The wheel and the keys clamp before they report; an author who writes

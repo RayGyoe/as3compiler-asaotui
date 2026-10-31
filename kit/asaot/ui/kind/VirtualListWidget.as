@@ -25,13 +25,13 @@
 // directions.
 package asaot.ui.kind
 {
-    import asaot.ui.Dirty;
     import asaot.ui.Node;
     import asaot.ui.PaintKit;
     import asaot.ui.UiNode;
     import asaot.ui.VirtualListNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetKeys;
+    import asaot.ui.WidgetTeardown;
 
     import asaot.ui.style.Size;
     import asaot.ui.style.Length;
@@ -41,8 +41,10 @@ package asaot.ui.kind
     import flash.display.Shape;
     import flash.events.MouseEvent;
     import flash.geom.Rectangle;
+    import flash.utils.clearTimeout;
+    import flash.utils.setTimeout;
 
-    public class VirtualListWidget implements Widget, WidgetKeys
+    public class VirtualListWidget implements Widget, WidgetKeys, WidgetTeardown
     {
         public static const DEFAULT_H:Number = 200;
 
@@ -52,6 +54,12 @@ package asaot.ui.kind
         private static const STEP_KEY:String = "step";
         private static const APPLIED:String = "clip";
         private static const DEFAULT_STEP:int = 3;   // rows per wheel notch
+        // The last `scrollToIndex` honoured (the request is a CHANGE, like
+        // ScrollViewNode's offset) and the window last reported to `onVisible`.
+        private static const REQ_IDX:String = "reqidx";
+        private static const PENDING:String = "pend";
+        private static const REQ_TMR:String = "reqtmr";
+        private static const VISIBLE:String = "vis";
 
         public function build(n:UiNode):void
         {
@@ -68,6 +76,26 @@ package asaot.ui.kind
             n.extra[RH_KEY] = v.rowHeight;
             n.extra[COUNT_KEY] = v.count;
             n.extra[OFF_KEY] = v.offsetY;
+            // `scrollToIndex` IS DETECTED HERE, NOT IN PAINT. A re-render whose only
+            // difference is a non-visual field (a fresh `scrollToIndex` on an otherwise
+            // identical tree) reconciles to the same structure and is NOT repainted --
+            // measured: paint kept reading the previous description and the request sat
+            // unhonoured until something else happened to dirty the node. payload runs on
+            // every reconcile with the new description, so the change is seen here and
+            // the paint bit is raised to guarantee the frame that honours it.
+            var want:int = v.scrollToIndex;
+            var seen:Object = n.extra[REQ_IDX];
+            if (seen == null || int(seen) != want)
+            {
+                n.extra[REQ_IDX] = want;
+                // A first description with an index (a model that OPENS on row 120) counts
+                // as a change, so the initial request is honoured too.
+                if (want >= 0)
+                {
+                    n.extra[PENDING] = want;
+                    this.scheduleRequest(n);
+                }
+            }
             // A different window is a different set of children; the reconciler sees
             // that on its own, so nothing here asks for a reflow.
             return false;
@@ -89,6 +117,15 @@ package asaot.ui.kind
             var w:Number = PaintKit.w1(n);
             var h:Number = PaintKit.h1(n);
             PaintKit.paintBox(n, n.resolved, w, h);
+
+            var desc:VirtualListNode = VirtualListNode(n.desc);
+            // `onVisible` is held back while a `scrollToIndex` is in flight: the window
+            // the author is about to describe is the NEW one, and reporting the stale
+            // one first would make every jump produce two sightings.
+            if (n.extra[PENDING] == null && n.extra[REQ_TMR] == null)
+            {
+                this.reportVisible(n, desc);
+            }
 
             // Assign only on change: the runtime copies the rectangle (see
             // ScrollViewWidget), so assigning every paint allocates a Rectangle for a
@@ -163,6 +200,54 @@ package asaot.ui.kind
             v.offsetY = y;
             if (v.onScroll != null) v.onScroll(y);
             n.app.markPaint(n);
+        }
+
+        // The window changed: tell the author which rows are on screen. Change-detected
+        // against the last report, so a re-render for any other reason is silent.
+        private function reportVisible(n:UiNode, v:VirtualListNode):void
+        {
+            var vis:Array = n.extra[VISIBLE] as Array;
+            if (vis == null) { vis = [-1, -1]; n.extra[VISIBLE] = vis; }
+            if (int(vis[0]) == v.firstIndex && int(vis[1]) == v.lastIndex) return;
+            vis[0] = v.firstIndex;
+            vis[1] = v.lastIndex;
+            if (v.onVisible != null) v.onVisible(v.firstIndex, v.lastIndex);
+        }
+
+        // The request leaves the frame pass. THE REASON IS MEASURED, not stylistic:
+        // UiApp.reflow ends with `_pending = 0`, so a `view.invalidate()` that the
+        // author makes from our `onScroll` would be cleared in the same pass that
+        // raised it -- the author's model would hold row 120 and the tree would still
+        // show row 0, forever. A 0ms timer puts the callback back in the event loop,
+        // where every other callback in this kit runs (a wheel notch, a key, a click),
+        // and the author's invalidate survives to the next frame.
+        //
+        // One timer is enough however many changes arrive: the flush reads the LATEST
+        // pending index, so a burst of re-descriptions collapses into one request.
+        private function scheduleRequest(n:UiNode):void
+        {
+            if (n.extra[REQ_TMR] != null) return;
+            var self:VirtualListWidget = this;
+            n.extra[REQ_TMR] = setTimeout(function ():void { self.flushIndexRequest(n); }, 0);
+        }
+
+        private function flushIndexRequest(n:UiNode):void
+        {
+            n.extra[REQ_TMR] = null;
+            var pend:Object = n.extra[PENDING];
+            n.extra[PENDING] = null;
+            if (pend == null) return;
+            this.request(n, int(pend));
+        }
+
+        // A list destroyed with a request in flight must not have a timer holding the
+        // node (the same reason ToastWidget cancels its dismiss timer).
+        public function teardown(n:UiNode):void
+        {
+            var t:Object = n.extra[REQ_TMR];
+            if (t != null) clearTimeout(int(t));
+            n.extra[REQ_TMR] = null;
+            n.extra[PENDING] = null;
         }
 
         private function firstRow(n:UiNode):int

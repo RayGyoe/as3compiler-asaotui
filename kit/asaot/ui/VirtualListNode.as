@@ -23,6 +23,20 @@
 // this widget assigns Rectangle(0, 0, w, h) -- the rows are already positioned
 // inside the viewport because only the visible slice was mounted. Getting that
 // backwards is exactly how the last row would paint below the viewport.
+//
+// PROGRAMMATIC SCROLLING AND LAZY LOADING (MOBILE.md S6). Two fields, because they
+// answer two different questions and both have to respect "the model is the window":
+//
+//   * `scrollToIndex` (-1 = no request) asks for a row to become the FIRST mounted
+//     row. It is a REQUEST, not a position: a change from the last value the widget
+//     saw fires `onScroll` once and nothing more, so an author who keeps the field in
+//     the model does not fight the wheel (the same rule ScrollViewNode documents for
+//     `offsetY`). Ask for the same index again after the user scrolled away and you
+//     must clear it to -1 first -- in both cases the value is the MESSAGE, not the
+//     state;
+//   * `onVisible(first, last)` is called when the mounted window CHANGES, including
+//     the first paint. That is the hook for "fetch the page that contains row 400":
+//     the author never has to recompute which rows are on screen.
 package asaot.ui
 {
     import asaot.ui.kind.VirtualListWidget;
@@ -35,6 +49,8 @@ package asaot.ui
         public var overscan:int;     // extra rows above and below the window
         public var renderRow:Function;   // function(index:int):Node
         public var onScroll:Function;    // function(offsetY:Number):void
+        public var onVisible:Function;   // function(first:int, last:int):void
+        public var scrollToIndex:int;    // -1 = no request; a CHANGE scrolls it to the top
 
         // Published by the factory so an author (or a probe) can assert what got
         // mounted WITHOUT walking children: the window is the whole point.
@@ -59,6 +75,8 @@ package asaot.ui
             this.overscan = 0;
             this.renderRow = null;
             this.onScroll = null;
+            this.onVisible = null;
+            this.scrollToIndex = -1;
             this.firstIndex = 0;
             this.lastIndex = -1;
             this.visibleCount = 0;

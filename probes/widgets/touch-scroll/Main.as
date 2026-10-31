@@ -19,9 +19,16 @@
 //     the deterministic half of that is the `momentum: false` viewport, which must stop
 //     at EXACTLY the release offset.
 //
-// WHAT IS NOT COVERED, ON PURPOSE: rubber-band overscroll (S3), paging/snap (S4),
-// nested-scroller arbitration (S5) and anything a real platform does with a real
-// finger (G5). Do not read this probe as "mobile scrolling works".
+// WHAT IS NOT COVERED, ON PURPOSE: paging/snap (S4), nested-scroller arbitration (S5)
+// and anything a real platform does with a real finger (G5). Do not read this probe as
+// "mobile scrolling works".
+//
+// OVERSCROLL (S3) IS COVERED, and the pair of numbers is the whole point: the AUTHOR'S
+// offset stays clamped at the end while `overscrollY` (what the clip is drawn at) is
+// ~40px past it, and the pixels prove the stretch reached the frame buffer (the bottom
+// of the pane shows the pane's OWN background instead of content). Then the release
+// must write EXACTLY zero -- M1's acceptance is "回位误差 < 1pt", and an exponential
+// decay that is allowed to approach zero would repaint forever.
 import asaot.ui.*;
 import asaot.ui.style.*;
 import flash.display.BitmapData;
@@ -55,6 +62,13 @@ var dragBase:int = 0;
 // app scrolls programmatically ("back to top") -- and the whole point of that phase is
 // that a request cancels a coast.
 var svModelOffset:Number = 0;
+var dbg:String = "";
+
+// Case (A) of ScrollViewNode's contract: the model MIRRORS the viewport, and a
+// programmatic scroll is a CHANGE in it (0 after the user scrolled to 120). The
+// mirror is what makes "re-pass the model every render" harmless -- the description
+// equals the last value the author declared, so it is not a new request.
+function svScrolled(y:Number):void { svModelOffset = y; }
 
 class ScrollProbe extends View
 {
@@ -72,11 +86,12 @@ class ScrollProbe extends View
     {
         return column({ key: "root", style: ROOT }, [
             // Six 40px rows in a 60px viewport: content 240, so the range is 180.
-            scrollView({ key: "sv", style: SV, decelerationRate: 0.9, offsetY: svModelOffset }, [
+            scrollView({ key: "sv", style: SV, decelerationRate: 0.9, offsetY: svModelOffset,
+                         onScroll: svScrolled }, [
                 mkRow("s1", ROW), mkRow("s2", ROW), mkRow("s3", ROW),
                 mkRow("s4", ROW), mkRow("s5", ROW), mkRow("s6", ROW)
             ]),
-            scrollView({ key: "svf", style: SV, momentum: false }, [
+            scrollView({ key: "svf", style: SV, momentum: false, overscroll: "none" }, [
                 mkRow("f1", ROWF), mkRow("f2", ROWF), mkRow("f3", ROWF),
                 mkRow("f4", ROWF), mkRow("f5", ROWF), mkRow("f6", ROWF)
             ])
@@ -279,6 +294,11 @@ function phaseRequestCancelled():void
     expect(sv.offsetY == 0, "a programmatic scroll did not cancel the glide (at " + sv.offsetY + ")");
     touchAt(TouchEvent.TOUCH_BEGIN, 8, 100, 40);
     touchAt(TouchEvent.TOUCH_MOVE, 8, 100, 20);
+    var dbgSv:ScrollViewNode = ScrollViewNode(app.findByKey("sv").desc);
+    dbg = dbg + "fling3 after m1: model=" + svModelOffset
+        + " desc=" + dbgSv.offsetY + " max=" + dbgSv.maxOffsetY
+        + " content=" + dbgSv.contentH + " maxOverscroll=" + dbgSv.overscrollY
+        + " drags=" + app.router.dragStarts + "\n";
     setTimeout(phaseFling3Mid, 40);
 }
 
@@ -395,11 +415,95 @@ function phaseClamp():void
     touchAt(TouchEvent.TOUCH_BEGIN, 5, 100, 50);
     touchAt(TouchEvent.TOUCH_MOVE, 5, 100, 40);      // cross the slop, anchor at 40
     touchAt(TouchEvent.TOUCH_MOVE, 5, 100, -360);    // 400pt further up: far past the end
-    // 400pt of finger from offset 0 is 400px, the range is 180: clamped, and NOT
-    // rubber-banded (that is S3 and this widget does not claim it).
+    // 400pt of finger from offset 0 is 400px, the range is 180: the AUTHOR-FACING offset
+    // is clamped (the stretch is a separate number -- see the next phase).
     expect(sv.offsetY == 180, "a drag past the end landed at " + sv.offsetY + ", want 180");
     touchAt(TouchEvent.TOUCH_END, 5, 100, -360);
-    setTimeout(phaseValidate, 250);
+    // Let the bounce that this release started finish before the next phase measures one.
+    setTimeout(phaseOver, 500);
+}
+
+// ---- phase 7b: overscroll (S3) -- the stretch, its pixels, and the spring back ----
+function phaseOver():void
+{
+    stageMark("overscroll: past the end stretches");
+    var sv:ScrollViewNode = ScrollViewNode(app.findByKey("sv").desc);
+    var node:UiNode = app.findByKey("sv");
+    expect(sv.overscroll == "rubber", "the default overscroll mode is '" + sv.overscroll + "', want 'rubber'");
+    expect(sv.overscrollY == 0, "the previous bounce had not settled (stretch " + sv.overscrollY + ")");
+    touchAt(TouchEvent.TOUCH_BEGIN, 9, 100, 50);
+    touchAt(TouchEvent.TOUCH_MOVE, 9, 100, 40);       // cross the slop, anchor at 40
+    touchAt(TouchEvent.TOUCH_MOVE, 9, 100, -360);    // 400pt from 0: 220px past the range
+    // THE AUTHOR'S OFFSET DOES NOT LEAVE THE RANGE. This is the contract that makes
+    // `offsetY == maxOffsetY` keep meaning "at the end" while the pixels are elsewhere.
+    expect(sv.offsetY == 180, "the stretch moved the AUTHOR's offset to " + sv.offsetY + ", want 180");
+    // The stretch itself is published by PAINT (`overscrollY` is an output, like
+    // `maxOffsetY`), so it cannot be read in the same tick as the event.
+    setTimeout(phaseOverMeasure, 150);
+}
+
+function phaseOverMeasure():void
+{
+    stageMark("overscroll: the stretch, in numbers and in pixels");
+    var sv:ScrollViewNode = ScrollViewNode(app.findByKey("sv").desc);
+    var oy:Number = sv.overscrollY;
+    // The iOS curve: f(x) = x*dim*c/(dim + c*x) with dim = 60 (the viewport) and c = 0.55,
+    // so 220px of excess is 220*60*0.55/(60+0.55*220) = 40.1px of stretch. COARSE, because
+    // the exact value is a curve constant: what matters is that it is damped (not 220),
+    // bounded (not 0) and moves the pixels.
+    expect(oy > 30 && oy < 50, "the stretch is " + oy + "px, want ~40 (damped, not the raw 220)");
+    // The clip is drawn at offset + stretch, so the bottom of the pane has nothing to
+    // show and its OWN background (0xF5F5F5, style SV) is revealed where content used
+    // to be. Without the stretch this pixel is a row's #CCCCCC.
+    var bd:BitmapData = frameShot();
+    expect(rgbAt(bd, 30, 65) == 0xF5F5F5,
+        "the bottom of the stretched pane is " + hex(rgbAt(bd, 30, 65)) + ", want the pane's #F5F5F5");
+    // ... and the TOP still shows content (the stretch slid it, it did not blank it).
+    expect(rgbAt(bd, 30, 15) == 0xCCCCCC,
+        "the top of the stretched pane is " + hex(rgbAt(bd, 30, 15)) + ", want a row's #CCCCCC");
+    setTimeout(phaseOverRelease, 100);
+}
+
+function phaseOverRelease():void
+{
+    stageMark("overscroll: release springs back");
+    touchAt(TouchEvent.TOUCH_END, 9, 100, -360);
+    // 40px at rate 0.72/frame is under the 0.5px floor in ~14 frames (~230ms). 700ms is
+    // "long after" on purpose: the assertion is the END STATE, not the curve.
+    setTimeout(phaseOverSettled, 700);
+}
+
+function phaseOverSettled():void
+{
+    stageMark("overscroll: settled exactly at the end");
+    var sv:ScrollViewNode = ScrollViewNode(app.findByKey("sv").desc);
+    // EXACT, and that is the M1 acceptance criterion: a spring that stops at 0.4px and
+    // keeps asking for frames would pass 'offsetY == 180' and still be wrong.
+    expect(sv.overscrollY == 0, "the pane did not return to the end (stretch " + sv.overscrollY + ")");
+    expect(sv.offsetY == 180, "the pane landed at " + sv.offsetY + " after the bounce, want 180");
+    var bd:BitmapData = frameShot();
+    expect(rgbAt(bd, 30, 65) == 0xCCCCCC,
+        "after the bounce the bottom of the pane is " + hex(rgbAt(bd, 30, 65)) + ", want a row's #CCCCCC");
+    // ---- `overscroll: "none"` must not stretch at all ----
+    var svf:ScrollViewNode = ScrollViewNode(app.findByKey("svf").desc);
+    expect(svf.overscroll == "none", "the overscroll:'none' viewport reports '" + svf.overscroll + "'");
+    touchAt(TouchEvent.TOUCH_BEGIN, 10, 100, 120);
+    touchAt(TouchEvent.TOUCH_MOVE, 10, 100, 110);     // slop crossed, anchor at 110
+    touchAt(TouchEvent.TOUCH_MOVE, 10, 100, -300);    // 410pt from offset 20: past the end
+    expect(svf.offsetY == 180, "the 'none' viewport is at " + svf.offsetY + ", want 180 (clamped)");
+    setTimeout(phaseNoneMeasure, 150);
+}
+
+function phaseNoneMeasure():void
+{
+    stageMark("overscroll:none -- clamped, and NO stretch");
+    var svf:ScrollViewNode = ScrollViewNode(app.findByKey("svf").desc);
+    expect(svf.overscrollY == 0, "overscroll:'none' still stretched by " + svf.overscrollY + "px");
+    var bd:BitmapData = frameShot();
+    expect(rgbAt(bd, 30, 135) == 0xDDDDDD,
+        "the 'none' pane's bottom is " + hex(rgbAt(bd, 30, 135)) + ", want row #DDDDDD (nothing stretched)");
+    touchAt(TouchEvent.TOUCH_END, 10, 100, -300);
+    setTimeout(phaseValidate, 300);
 }
 
 // ---- phase 8: the rate is validated at factory time --------------------
@@ -425,11 +529,26 @@ function phaseValidate():void
     catch (e:Error) { threw = true; }
     expect(!threw, "a valid decelerationRate was refused");
 
+    threw = false;
+    try { scrollView({ overscroll: "bounce" }); }
+    catch (e:Error) { threw = true; }
+    expect(threw, "overscroll 'bounce' (a mode that does not exist) was accepted");
+
+    threw = false;
+    try
+    {
+        var none:ScrollViewNode = ScrollViewNode(scrollView({ overscroll: "none" }));
+        expect(none.overscroll == "none", "overscroll:'none' was not stored (" + none.overscroll + ")");
+    }
+    catch (e:Error) { threw = true; }
+    expect(!threw, "overscroll:'none' was refused");
+
     setTimeout(finish, 150);
 }
 
 function finish():void
 {
+    writeText(OUT + ".dbg.txt", dbg);
     writeText(OUT + ".done", failures == "" ? "PASS" : "FAIL " + failures);
 }
 
@@ -459,6 +578,27 @@ function rectOf(n:UiNode):String
 {
     if (n == null) return "MISSING";
     return n.absX + "," + n.absY + "," + n.absW + "," + n.absH;
+}
+
+// The frame buffer, read back 1:1 from the compositor output (no DPI scaling, no
+// window chrome) -- the same source <OUT>.bmp is written from.
+function frameShot():BitmapData
+{
+    var bd:BitmapData = new BitmapData(W, H, true, 0xFF000000);
+    bd.draw(stage);
+    return bd;
+}
+
+function rgbAt(bd:BitmapData, x:int, y:int):uint
+{
+    return bd.getPixel(x, y) & 0xFFFFFF;
+}
+
+function hex(c:uint):String
+{
+    var s:String = c.toString(16);
+    while (s.length < 6) s = "0" + s;
+    return "#" + s;
 }
 
 // The stage survives in `<name>.step`, never in `.done`: tools/probe.cjs only prints the

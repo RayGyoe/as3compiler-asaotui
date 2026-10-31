@@ -1,0 +1,40 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/navstack/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "320x260 window, root column with padding 20 and gap 10 and a WHITE background. The navStack is the only child and carries an explicit size [240,160], so it sits at (20,20) with a 240x160 box. Each page is position:absolute with a pct(1) size, so all three pages are the SAME rect as the stack -- a stack is an overlap, not a column.",
+    "final_state": "The probe ends AFTER the BACK-key step, which the author's handler answers by popping to a one-page stack: page A on top. So the final frame contains page A only, and pb / sv / svr* are legitimately absent from the tree (asserted in-program, before this frame).",
+    "points": [
+      "(30,30) is inside the stack (20..260 x 20..180) and page A fills it, so it is A's background #111111."
+    ],
+    "not_pinned": "Everything that needs a mid-run state is asserted in Main.as and reported through <OUT>.done: the three wrappers' visibility, a click MISSED on a hidden page and DELIVERED on the visible one, the wheel notch, the push/pop round trip that must keep page B's scrollView at row 3, and the Keyboard.BACK / non-BACK split. expect.json can only describe the final frame."
+  },
+  "w": 320,
+  "h": 260,
+  "rects": {
+    "root": [
+      0,
+      0,
+      320,
+      260
+    ],
+    "nav": [
+      20,
+      20,
+      240,
+      160
+    ],
+    "pa": [
+      20,
+      20,
+      240,
+      160
+    ]
+  },
+  "points": [
+    {
+      "x": 30,
+      "y": 30,
+      "rgb": "#111111"
+    }
+  ]
+}

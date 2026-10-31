@@ -1,0 +1,40 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/tabbar/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "320x260 window, root column (white, no padding): a flexGrow spacer then the tabBar, so the bar is ON THE BOTTOM: (0,204,320,56). The three cells are inside the bar and are NOT pinned here -- 320/3 is not an integer, so their arithmetic (+/-1 tolerance) is asserted in Main.as instead of being frozen into a JSON number.",
+    "final_state": "The probe returns to three items, selectedIndex 1, barHeight 56 and a DESKTOP env before finishing, so the last frame is the first frame -- including the 34pt home indicator having been applied and removed again (bar 204, 56 tall), which is itself the assertion that the inset fold is reversible. The mid-run steps are asserted in Main.as: the tint of each label and icon, the three tap indices, the re-tap, selectedIndex -1, the 72px bar, `items` shrinking to two tabs (stale cell gone, 160 each), the author's Node icon at x=70 keeping its colour, and the 90px bar with the cells at y=170 over a painted indicator band.",
+    "points": [
+      "(10,210) is inside cell t0, above its centred content, so it is the bar's own background #222222.",
+      "(160,100) is the spacer above the bar -> the root's white #FFFFFF."
+    ],
+    "not_pinned": "The tint (accent vs muted on each label), the three tap indices, the re-tap, selectedIndex -1 and the 72px bar are all asserted mid-run in Main.as: a label's colour is `resolved.text.color`, which the harness compares against Theme.tokens() rather than against a number this file would have to remember."
+  },
+  "w": 320,
+  "h": 260,
+  "rects": {
+    "root": [
+      0,
+      0,
+      320,
+      260
+    ],
+    "bar": [
+      0,
+      204,
+      320,
+      56
+    ]
+  },
+  "points": [
+    {
+      "x": 10,
+      "y": 210,
+      "rgb": "#222222"
+    },
+    {
+      "x": 160,
+      "y": 100,
+      "rgb": "#FFFFFF"
+    }
+  ]
+}

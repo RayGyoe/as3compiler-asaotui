@@ -53,7 +53,7 @@ Windows-only, which AIR's XSD has no slot for — `as3compiler/docs/zh-cn/compil
 (`ASC_RENDER_WINGPU=1` plus the backend's own define), because a mode that never
 reached the build renders **identically** to the software one and would look honoured.
 
-Nothing about this is observable by eye — all five modes draw the same 50 pages — so
+Nothing about this is observable by eye — all five modes draw the same 56 pages — so
 `../tools/buildsh-gpu.cjs` pins the descriptor and the argv for every mode, and
 `../tools/mutation-buildsh-gpu.cjs` (5/5) shows that gate goes red when the mapping,
 the refusal of unknown modes, or the one-line-diff invariant is broken. The last one

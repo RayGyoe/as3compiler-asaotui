@@ -31,11 +31,19 @@ const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest
 const MUTATIONS = [
   {
     id: 'M1',
-    why: 'the gl mode stops naming its backend (parsed, printed, never passed)',
+    why: 'the named-backend mode stops naming its backend (parsed, printed, never passed)',
     file: SH,
-    find: "    gl)     DESC=app.gl.xml;     RENDER=gpu;    BACKEND=gl ;;",
-    replace: "    gl)     DESC=app.gl.xml;     RENDER=gpu;    BACKEND= ;;",
-    expect: 'passes --gpu-backend gl'
+    // `gl` is REFUSED off Windows (macOS composites on Metal), so blaming it there
+    // would make the mutation invisible and the sweep would report a MISS that says
+    // nothing about the code. Aim it at the backend-carrying mode the HOST actually
+    // exercises: `gl` on Windows, `d3d12` everywhere else. Same line, same defect.
+    find: process.platform === 'win32'
+      ? '    gl)     DESC=app.gl.xml;     RENDER=gpu;    BACKEND=gl ;;'
+      : '    d3d12)  DESC=app.d3d12.xml;  RENDER=gpu;    BACKEND=d3d12 ;;',
+    replace: process.platform === 'win32'
+      ? '    gl)     DESC=app.gl.xml;     RENDER=gpu;    BACKEND= ;;'
+      : '    d3d12)  DESC=app.d3d12.xml;  RENDER=gpu;    BACKEND= ;;',
+    expect: process.platform === 'win32' ? 'passes --gpu-backend gl' : 'passes --gpu-backend d3d12'
   },
   {
     id: 'M2',

@@ -415,10 +415,16 @@ package demo
             if (id == "virtualList") return [
                 new DocSection("Only the visible rows exist", [
                     "count 10000 and nine mounted rows: the window is row-granular and the factory",
-                    "recomputes it, so scrolling mounts and unmounts rows like any other reconcile."
+                    "recomputes it, so scrolling mounts and unmounts rows like any other reconcile.",
+                    "`onVisible(first, last)` says which rows are mounted (the lazy-loading hook);",
+                    "`scrollToIndex` is a ONE-SHOT request: it is honoured when the value CHANGES,",
+                    "so a re-render that still carries it does nothing -- and asking for the same",
+                    "row twice means passing -1 in between (the row was already the target)."
                 ], [
                     "virtualList({ key: \"log\", size: [280, 104], rowHeight: 26, count: 10000,",
                     "              offsetY: model.off, overscan: 1,",
+                    "              onVisible: function (first:int, last:int):void { fetch(first, last); },",
+                    "              scrollToIndex: model.jumpTo,   // -1 = none",
                     "              renderRow: function (i:int):Node { return text(\"row \" + i); },",
                     "              onScroll: function (y:Number):void { model.off = y; } })"
                 ], 132, function ():Node
@@ -507,12 +513,17 @@ package demo
                     "(`momentum`, default true; `decelerationRate`, default 0.95 per 60Hz frame); a finger",
                     "landing on a gliding pane stops it. It is",
                     "not demonstrable here: this window's backend produces no touch events at all",
-                    "(compiler-gaps.md G5), so on a desktop this pane is wheel and thumb only. There is",
-                    "still no elastic edge (no overscroll bounce)."
+                    "(compiler-gaps.md G5), so on a desktop this pane is wheel and thumb only -- and",
+                    "the WHEEL and the THUMB stop dead at the end on every platform, on purpose.",
+                    "A finger is the only thing that overscrolls: past an end it stretches against a",
+                    "damped resistance and springs back on release (`overscroll`, default \"rubber\";",
+                    "\"none\" for a pane that must not move). The author-facing `offsetY` stays inside",
+                    "the range throughout -- the stretch is reported separately as `overscrollY`."
                 ], [
                     "// wheel -> offsetY; dragging a thumb writes the same offset back",
                     "// scrollbarX/scrollbarY: \"auto\" | \"always\" | \"never\"",
-                    "// touch: 1:1 drag + coast; momentum: false stops at the release offset"
+                    "// touch: 1:1 drag + coast; momentum: false stops at the release offset",
+                    "// overscroll: \"rubber\" (default) | \"none\""
                 ], 76, function ():Node
                 {
                     return text("Drag the thumb in the panel above; its source stays in sync.",

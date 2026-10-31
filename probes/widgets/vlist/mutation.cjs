@@ -79,6 +79,42 @@ const MUTATIONS = [
     replace: '            if (v.onScroll != null) v.offsetY = y;',
     expect: 'onScroll reported -1',
   },
+  {
+    id: 'M7',
+    file: 'kit/asaot/ui/kind/VirtualListWidget.as',
+    why: 'scrollToIndex` IS NEVER HONOURED: the author asks for row 120 and the list keeps showing row 0 '
+      + '(the request is the only way an index reaches the window)',
+    find: '                if (want >= 0)',
+    replace: '                if (false)',
+    expect: 'scrollToIndex 120 landed on row',
+  },
+  {
+    id: 'M8',
+    file: 'kit/asaot/ui/kind/VirtualListWidget.as',
+    why: 'NOT CHANGE-DETECTED: every re-render re-applies it, so a list the user scrolled '
+      + 'away from is yanked back to the row the model still names',
+    find: '            if (seen == null || int(seen) != want)',
+    replace: '            if (true)',
+    expect: 're-applied scrollToIndex and yanked the window back',
+  },
+  {
+    id: 'M9',
+    file: 'kit/asaot/ui/kind/VirtualListWidget.as',
+    why: 'INSIDE THE FRAME PASS (no timer): the author\'s invalidate is cleared by '
+      + '`_pending = 0` at the end of that same pass, so the model says row 120 and the tree keeps row 0',
+    find: '            if (n.extra[REQ_TMR] != null) return;',
+    replace: '            this.flushIndexRequest(n); return;',
+    expect: 'scrollToIndex 120 landed on row',
+  },
+  {
+    id: 'M10',
+    file: 'kit/asaot/ui/kind/VirtualListWidget.as',
+    why: '`onVisible` IS NEVER CALLED: a lazily-loading list never learns which rows exist, so the first '
+      + 'page is never fetched',
+    find: '            if (v.onVisible != null) v.onVisible(v.firstIndex, v.lastIndex);',
+    replace: '            // (mutation) the author is never told',
+    expect: 'onVisible first reported',
+  },
 ];
 
 function runProbe() {

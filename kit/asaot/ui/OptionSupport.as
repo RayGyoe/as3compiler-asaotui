@@ -69,6 +69,18 @@ package asaot.ui
             }
         }
 
+        // A click handler bound to ONE index, for a container that reports WHICH of
+        // its cells was pressed (tabBar, and anything else built as a strip).
+        //
+        // It must be a FACTORY RETURNING A CLOSURE, not a closure written in the
+        // caller's loop: AS3 hoists `var i` per function, not per iteration, so
+        // every cell of a `for (var i ...)` loop would report the LAST index. The
+        // parameter here is a fresh binding per call.
+        public static function tapIndex(cb:Function, idx:int):Function
+        {
+            return function ():void { if (cb != null) cb(idx); };
+        }
+
         // "A single value or a list" -- NOT `Array(v)`.
         //
         // `Array(v)` is the Array CONSTRUCTOR called as a function, so it always

@@ -1,0 +1,58 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/appbar/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "320x260 window, root column with NO padding and a WHITE background, whose ONLY child is the appBar: bar (0,0,320,56); lead (12,16,40,24) -- 12px horizontal padding, (56-24)/2 = 16 vertically; trail (248,16,60,24) -- 320-12-60. Nothing is mounted under the bar on purpose, so a title that escaped the bar's clip would land on the root's white and be visible. The bar paints a NON-white colour (#123456) so the safe-area phase can tell the bar's own inset band from the root.",
+    "final_state": "The probe returns to the COMPACT bar (large:false, collapse:0, a Node title, a single trailing slot, and a DESKTOP env) before finishing, so the last frame is the same tree as phase 1 -- including the 47pt notch having been applied and removed again (bar 56, lead y=16), which is itself the assertion that the inset fold is reversible. The mid-run steps are asserted in Main.as: 104 -> 84 -> 64 -> 56, the clipped title at collapse 40, the overshoot clamp, the String-title wrapping, `trailing: [a, b]` landing as two actions at 248/280, and the 103px notched bar with the slots at y=63.",
+    "points": [
+      "(16,28) is inside the leading slot -> #AA0000.",
+      "(300,28) is inside the trailing slot -> #0000AA.",
+      "(160,200) is the root's own background below the bar -> #FFFFFF."
+    ],
+    "not_pinned": "The title's own rect is NOT pinned: its width is the font's, and a rect pin on a text node would be a pin on the host's font metrics, not on the widget. Its CENTRE (150, 28) is asserted in Main.as instead, which is the layout claim, together with the pixel inside it (#00FF00, its own background)."
+  },
+  "w": 320,
+  "h": 260,
+  "rects": {
+    "root": [
+      0,
+      0,
+      320,
+      260
+    ],
+    "bar": [
+      0,
+      0,
+      320,
+      56
+    ],
+    "lead": [
+      12,
+      16,
+      40,
+      24
+    ],
+    "trail": [
+      248,
+      16,
+      60,
+      24
+    ]
+  },
+  "points": [
+    {
+      "x": 16,
+      "y": 28,
+      "rgb": "#AA0000"
+    },
+    {
+      "x": 300,
+      "y": 28,
+      "rgb": "#0000AA"
+    },
+    {
+      "x": 160,
+      "y": 200,
+      "rgb": "#FFFFFF"
+    }
+  ]
+}

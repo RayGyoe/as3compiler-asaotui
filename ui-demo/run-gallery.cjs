@@ -66,6 +66,11 @@ const appDir = path.join(here, appDirName);
 // app dir, not the runner's own: two app dirs (the `high` demo and check-dpi.cjs's
 // `standard` twin) must never overwrite each other's screenshots.
 const outDir = appDir;
+// The window's own stdout/stderr. NOT inherited: this program exits while the window
+// is still up, and a grandchild holding the parent's pipe makes every `spawnSync`
+// caller (tools/gates.cjs) block until the pipe closes -- which is what turned a 22s
+// tour into two gates reported at the full 420s ceiling.
+const RUN_LOG = path.join(outDir, OUT + '.run.log');
 // Normally `<appDir>/app.xml`. build.sh's `--gpu <mode>` generates
 // `app.<mode>.xml` beside it instead of editing the tracked descriptor, because
 // check-dpi.cjs requires air-gallery/app.xml and its `standard` twin to differ in
@@ -106,8 +111,17 @@ if (!fs.existsSync(descriptor)) {
 }
 
 function killWindow() {
+  // BY PID FIRST. The window is the one WE launched, so its pid is exact; the image
+  // sweep below only exists for a leftover from an earlier, unrelated run (and for
+  // the early call that happens before anything is launched).
+  if (launchedPid) {
+    for (const target of [-launchedPid, launchedPid]) {
+      try { process.kill(target, 'SIGKILL'); } catch (e) { /* already gone / win32 */ }
+    }
+  }
   killImage(EXE);
 }
+let launchedPid = 0;
 
 // The window's logical size and requested resolution come from the descriptor, and
 // the tour's hand-computed rects are derived from it, so it is read rather than
@@ -243,8 +257,13 @@ if (!fs.existsSync(exe)) {
 
 // ---- 5) run ---------------------------------------------------------------
 console.log('[gallery] launching ' + exe + ' (cwd ' + path.relative(here, outDir).split(path.sep).join('/')
-  + ', detached)' + ', so the tour writes its evidence there');
-const child = spawn(exe, [], { cwd: outDir, detached: true, stdio: 'inherit' });
+  + ', detached, stdout -> ' + path.basename(RUN_LOG) + ')' + ', so the tour writes its evidence there');
+// `spawn` takes an FD, not a path (`spawnSync` would take a path): open, hand over,
+// close on our side so the window is the only holder.
+const runFd = fs.openSync(RUN_LOG, 'w');
+const child = spawn(exe, [], { cwd: outDir, detached: true, stdio: ['ignore', runFd, runFd] });
+fs.closeSync(runFd);
+launchedPid = child.pid;
 child.unref();
 
 const donePath = path.join(outDir, OUT + '.done');

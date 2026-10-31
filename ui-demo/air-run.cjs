@@ -62,12 +62,29 @@ function initialWindowBlock(descriptor) {
   return { block: xml.slice(m.index, m.index + m[0].length), start: m.index, end: m.index + m[0].length };
 }
 
-// Windows holds the image file of a running process, so a leftover window makes the
-// next build fail with "permission denied" -- kill it first, and treat "not running"
-// as the normal case rather than an error.
+// Kill any window running this image. Windows holds the image file of a running
+// process, so a leftover window makes the next build fail with "permission
+// denied"; on POSIX the file stays writable but a leftover window still steals the
+// focus of the next run -- and, worse, it INHERITED this process's stdout, so any
+// parent that waits for the pipe to close (gates.cjs's `spawnSync`) sits there until
+// its timeout. "Not running" is the normal case, not an error.
+//
+// THIS WAS WINDOWS-ONLY for a long time: `taskkill` throws ENOENT on macOS, the
+// throw was swallowed as "not running", and every demo window therefore survived
+// the runner. Measured cost: seven orphan `GalleryApp` processes on one machine and
+// two gates (the gallery tour, the descriptor DPI A/B) each reported at EXACTLY the
+// 420s gate ceiling while doing 22s of work.
 function killImage(exeName) {
+  const base = String(exeName).replace(/\.exe$/i, '');
   try {
-    execFileSync('taskkill', ['/F', '/IM', exeName], { stdio: 'ignore' });
+    if (process.platform === 'win32') {
+      execFileSync('taskkill', ['/F', '/IM', String(exeName)], { stdio: 'ignore' });
+    } else {
+      // `killall` matches the process NAME exactly (comm), not a substring of the
+      // command line -- the same rule that made `pkill -f Main` dangerous: every
+      // probe here is built as `Main`, and `-f` reached unrelated processes.
+      execFileSync('killall', ['-q', base], { stdio: 'ignore' });
+    }
   } catch (e) {
     // Not running: that is the normal case.
   }

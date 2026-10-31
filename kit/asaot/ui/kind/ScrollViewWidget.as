@@ -29,10 +29,15 @@
 // (compensated for the scroll, like the background). They are real mouse targets
 // because a Graphics fill is a pick region (as_shape_region_hit).
 //
-// WHAT A SCROLLVIEW STILL DOES NOT DO: no elastic overscroll, no paging/snap, no
-// nested-scroller arbitration, no keyboard paging, no double-click-to-maximise. A wheel
+// WHAT A SCROLLVIEW STILL DOES NOT DO: no paging/snap, no nested-scroller
+// arbitration, no keyboard paging, no double-click-to-maximise. A wheel
 // is `wheelStep` per delta unit; the bars ARE draggable and a click on the track pages
 // by one viewport (this is the honest list; anything else would be a lie in the docs).
+//
+// OVERSCROLL (MOBILE.md S3) is the one axis where the honest list got shorter: a
+// FINGER that drags past an end stretches the content and it springs back (see
+// `touchDragTo`/`applySpring`). The wheel and the scrollbar still stop dead at the
+// wall, and `overscroll: "none"` turns the bounce off for a pane that must not move.
 //
 // TOUCH DRAG AND MOMENTUM (MOBILE.md S1/S2) go through TouchScrollable, called by
 // PointerRouter once the finger has left the press slop inside this viewport:
@@ -141,6 +146,16 @@ package asaot.ui.kind
         private static const GLIDE_V:String = "gv";
         private static const GLIDE_T:String = "gt";
         private static const GLIDE_AXIS:String = "ga";
+        // The stretch beyond an end, per axis, in OFFSET space (signed px: negative past
+        // the start, positive past the end) and the spring-back state. They are SEPARATE
+        // from LIVE_X/LIVE_Y on purpose: the author-facing offset never leaves the range
+        // (see ScrollViewNode's header), so `offsetY == maxOffsetY` keeps meaning "at the
+        // end" while the pixels are 40px past it.
+        private static const OVER_X:String = "ovx";
+        private static const OVER_Y:String = "ovy";
+        private static const SPRING_X:String = "sprx";
+        private static const SPRING_Y:String = "spry";
+        private static const SPRING_T:String = "sprt";
 
         private static const DEFAULT_W:Number = 200;
         private static const DEFAULT_H:Number = 150;
@@ -202,11 +217,13 @@ package asaot.ui.kind
             if (requested(n, REQ_X, LIVE_X, sv.offsetX))
             {
                 this.stopGlide(n);
+                this.settleNow(n);
                 n.dirty |= Dirty.M_PAINT;
             }
             if (requested(n, REQ_Y, LIVE_Y, sv.offsetY))
             {
                 this.stopGlide(n);
+                this.settleNow(n);
                 n.dirty |= Dirty.M_PAINT;
             }
             if (optionsChanged(n, sv)) n.dirty |= Dirty.M_PAINT;
@@ -307,6 +324,8 @@ package asaot.ui.kind
             // A glide advances the offset BEFORE anything reads it, so the clamp below
             // and every output (scrollRect, bars, onScroll) see one position, not two.
             this.applyGlide(n);
+            // ... and so does the spring-back, for the same reason.
+            this.applySpring(n);
             var w:Number = PaintKit.w1(n);
             var h:Number = PaintKit.h1(n);
 
@@ -326,6 +345,7 @@ package asaot.ui.kind
                 if (out[0] + out[2] > cw) cw = out[0] + out[2];
                 if (out[1] + out[3] > ch) ch = out[1] + out[3];
             }
+
             var maxX:Number = cw - w;
             if (maxX < 0) maxX = 0;
             var maxY:Number = ch - h;
@@ -350,11 +370,22 @@ package asaot.ui.kind
             n.extra[LIVE_X] = ox;
             n.extra[LIVE_Y] = oy;
 
+            // The stretch is a SECOND position, and it is what the pixels follow: the
+            // clip and everything that must stay pinned are placed at vx/vy, while
+            // `ox`/`oy` (clamped) stay the answer to "where is the view". Two numbers on
+            // purpose -- ScrollViewNode's header has the why.
+            var overX:Number = this.overOf(n, OVER_X);
+            var overY:Number = this.overOf(n, OVER_Y);
+            var vx:Number = ox + overX;
+            var vy:Number = oy + overY;
+
             if (n.shapeA != null)
             {
-                // Compensate for the slide (see the header).
-                n.shapeA.x = ox;
-                n.shapeA.y = oy;
+                // Compensate for the slide (see the header). At the STRETCH position, so
+                // the pane's own background stays pinned under the bounce instead of
+                // sliding up with the content and leaving a hole behind it.
+                n.shapeA.x = vx;
+                n.shapeA.y = vy;
             }
             PaintKit.paintBox(n, n.resolved, w, h);
             // A VIEWPORT IS A WHEEL TARGET OVER ITS WHOLE BOX, not only where its
@@ -389,16 +420,16 @@ package asaot.ui.kind
             // scrolling is a per-frame path and section 7 forbids per-frame garbage.
             var applied:Array = n.extra[APPLIED] as Array;
             if (applied == null) { applied = [0, 0, 0, 0]; n.extra[APPLIED] = applied; }
-            if (applied[0] != ox || applied[1] != oy || applied[2] != w || applied[3] != h)
+            if (applied[0] != vx || applied[1] != vy || applied[2] != w || applied[3] != h)
             {
-                n.backing.scrollRect = new Rectangle(ox, oy, w, h);
-                applied[0] = ox;
-                applied[1] = oy;
+                n.backing.scrollRect = new Rectangle(vx, vy, w, h);
+                applied[0] = vx;
+                applied[1] = vy;
                 applied[2] = w;
                 applied[3] = h;
             }
 
-            this.paintBars(n, w, h, maxX, maxY, ox, oy);
+            this.paintBars(n, w, h, maxX, maxY, ox, oy, vx, vy);
 
             // Publish the outputs, then report a real move. The CLAMPED position is
             // written back into the description so `offsetY` is always the effective
@@ -408,14 +439,21 @@ package asaot.ui.kind
             sv.offsetY = oy;
             // Mirror the write-back into the request bookkeeping: the author's handle and
             // the widget's own output are now the same value, so payload can tell an
-            // authors' request from this frame's slide (and cancel a glide only for the
-            // former).
+            // author's request from this frame's slide (and cancel a glide only for the
+            // former). THIS IS WHY A STALE DESCRIPTION RENAMES ITSELF A REQUEST: the
+            // comparison in payload is against the LIVE position, so an author who
+            // re-passes an old offsetY (because their model did not follow onScroll)
+            // does not "leave the view alone" -- it is read as "go back", and the view
+            // snaps. ScrollViewNode's header states the two authoring styles; only the
+            // mirroring one (A) is safe.
             n.extra[REQ_X] = ox;
             n.extra[REQ_Y] = oy;
             sv.contentW = cw;
             sv.contentH = ch;
             sv.maxOffsetX = maxX;
             sv.maxOffsetY = maxY;
+            sv.overscrollX = overX;
+            sv.overscrollY = overY;
             var reported:Array = n.extra[REPORTED] as Array;
             if (reported == null) { reported = [0, 0]; n.extra[REPORTED] = reported; }
             if (reported[0] != ox || reported[1] != oy)
@@ -431,7 +469,7 @@ package asaot.ui.kind
         // is on screen: the numbers written into `n.extra[BARS]` here are exactly
         // what barIndexAt() tests against.
         private function paintBars(n:UiNode, w:Number, h:Number, maxX:Number, maxY:Number,
-                                   ox:Number, oy:Number):void
+                                   ox:Number, oy:Number, vx:Number, vy:Number):void
         {
             var bars:Array = n.extra[BARS] as Array;
             if (bars == null) { bars = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; n.extra[BARS] = bars; }
@@ -500,9 +538,10 @@ package asaot.ui.kind
             {
                 n.backing.setChildIndex(n.shapeB, n.backing.numChildren - 1);
             }
-            // The bars are chrome: they must not slide with the content.
-            n.shapeB.x = ox;
-            n.shapeB.y = oy;
+            // The bars are chrome: they must not slide with the content -- not even with
+            // the STRETCH, or a bounce would carry the scrollbar off its own track.
+            n.shapeB.x = vx;
+            n.shapeB.y = vy;
 
             var hover:int = int(n.extra[HOVER]);
             var drag:int = int(n.extra[DRAG]);
@@ -658,6 +697,8 @@ package asaot.ui.kind
 
         private function beginDrag(n:UiNode, axis:int, e:MouseEvent):void
         {
+            // A thumb drag is a discrete move, like a wheel notch: no stretch survives it.
+            this.settleNow(n);
             n.extra[DRAG] = axis;
             n.extra[DRAG_PTR] = (axis == 1) ? e.stageY : e.stageX;
             n.extra[DRAG_OFF] = (axis == 1) ? Number(n.extra[LIVE_Y]) : Number(n.extra[LIVE_X]);
@@ -745,6 +786,10 @@ package asaot.ui.kind
             this.endDrag(n);
             n.extra[GLIDE_V] = null;
             n.extra[TD_AXIS] = 0;
+            n.extra[OVER_X] = 0;
+            n.extra[OVER_Y] = 0;
+            n.extra[SPRING_X] = 0;
+            n.extra[SPRING_Y] = 0;
         }
 
         // ---- touch drag (TouchScrollable, MOBILE.md S1/S2) ----------------------
@@ -763,7 +808,9 @@ package asaot.ui.kind
         {
             // Grabbing a coasting list stops it dead where it is: the finger took over,
             // and a glide that keeps running under a held finger reads as "it ran away".
+            // A bounce in flight is the same story (a drag will write its own stretch).
             this.stopGlide(n);
+            this.settleNow(n);
             n.extra[TD_AXIS] = 0;
             n.extra[TD_X] = x;
             n.extra[TD_Y] = y;
@@ -819,7 +866,19 @@ package asaot.ui.kind
             var maxOff:Number = (axis == 1) ? Number(n.extra[MAX_Y]) : Number(n.extra[MAX_X]);
             var anchor:Number = (axis == 1) ? Number(n.extra[TD_Y]) : Number(n.extra[TD_X]);
             var start:Number = (axis == 1) ? Number(n.extra[TD_OFFY]) : Number(n.extra[TD_OFFX]);
-            this.moveTo(n, axis, start - (pos - anchor), maxOff);
+            var raw:Number = start - (pos - anchor);
+            // The stretch is computed from the RAW drag against the clamped offset, and
+            // only when the author kept the bounce on. It is damped per PIXEL OF EXCESS,
+            // not applied to the whole drag: a finger 400px past the end gets ~47px of
+            // stretch on a 60px viewport, so the wall still feels like a wall.
+            var sv0:ScrollViewNode = ScrollViewNode(n.desc);
+            var over:Number = 0;
+            if (sv0.overscroll == "rubber")
+            {
+                var limit:Number = (axis == 1) ? PaintKit.h1(n) : PaintKit.w1(n);
+                over = dampOver(raw - clampTo(raw, maxOff), limit);
+            }
+            this.moveTo(n, axis, raw, maxOff, over);
         }
 
         public function touchDragEnd(n:UiNode, x:Number, y:Number):void
@@ -828,6 +887,19 @@ package asaot.ui.kind
             var axis:int = int(n.extra[TD_AXIS]);
             n.extra[TD_AXIS] = 0;
             if (axis != 1 && axis != 2) return;
+            // A RELEASE WHILE STRETCHED IS A SPRING-BACK, NOT A FLING -- and it comes
+            // BEFORE the momentum check, because a `momentum: false` pane must still
+            // return to the wall (its bounce has nothing to do with coasting). Nothing
+            // is launched from a stretch: the finger already asked for what is past the
+            // end, and there is nothing there.
+            var overKey:String = (axis == 1) ? OVER_Y : OVER_X;
+            if (overOf(n, overKey) != 0)
+            {
+                n.extra[(axis == 1) ? SPRING_Y : SPRING_X] = 1;
+                n.extra[SPRING_T] = getTimer();
+                n.app.markPaint(n);
+                return;
+            }
             var sv:ScrollViewNode = ScrollViewNode(n.desc);
             if (!sv.momentum) return;
             var v:Number = Number(n.extra[TD_VEL]);
@@ -840,7 +912,8 @@ package asaot.ui.kind
             var maxOff:Number = (axis == 1) ? Number(n.extra[MAX_Y]) : Number(n.extra[MAX_X]);
             var off:Number = liveOf(n, (axis == 1) ? LIVE_Y : LIVE_X);
             // Already against the wall in the direction of travel: a fling cannot push
-            // past the end (that would need overscroll, which this widget does not do).
+            // past the end -- the stretch is the FINGER's, and it is already springing
+            // back by the time this runs.
             if (v > 0 && off >= maxOff) return;
             if (v < 0 && off <= 0) return;
             n.extra[GLIDE_AXIS] = axis;
@@ -851,23 +924,93 @@ package asaot.ui.kind
 
         public function touchDragCancel(n:UiNode):void
         {
+            var axis:int = int(n.extra[TD_AXIS]);
             n.extra[TD_AXIS] = 0;
             this.stopGlide(n);
+            // A revoked series still has to put the view back: a cancelled touch does
+            // not mean "the pane may stay 40px past its end" (and usually it means the
+            // platform is drawing something on top of us, which is the worst moment to
+            // leave content hanging off the edge).
+            if (axis == 1 && overOf(n, OVER_Y) != 0)
+            {
+                n.extra[SPRING_Y] = 1;
+                n.extra[SPRING_T] = getTimer();
+                n.app.markPaint(n);
+            }
+            else if (axis == 2 && overOf(n, OVER_X) != 0)
+            {
+                n.extra[SPRING_X] = 1;
+                n.extra[SPRING_T] = getTimer();
+                n.app.markPaint(n);
+            }
         }
 
         // One writer for "put the viewport at this offset", shared by the drag and the
-        // glide so they cannot drift apart.
-        private function moveTo(n:UiNode, axis:int, off:Number, maxOff:Number):void
+        // glide so they cannot drift apart. `over` is the stretch beyond the ends: the
+        // clamped `off` is what the author sees, the stretch is what the pixels do.
+        private function moveTo(n:UiNode, axis:int, off:Number, maxOff:Number, over:Number):void
         {
             if (isNaN(off)) off = 0;
             if (off < 0) off = 0;
             if (off > maxOff) off = maxOff;
+            var moved:Boolean = false;
+            var overKey:String = (axis == 1) ? OVER_Y : OVER_X;
+            if (isNaN(over)) over = 0;
+            if (overOf(n, overKey) != over)
+            {
+                n.extra[overKey] = over;
+                moved = true;
+            }
             var key:String = (axis == 1) ? LIVE_Y : LIVE_X;
-            if (Number(n.extra[key]) == off) return;
-            n.extra[key] = off;
-            var sv:ScrollViewNode = ScrollViewNode(n.desc);
-            if (axis == 1) sv.offsetY = off; else sv.offsetX = off;
-            n.app.markPaint(n);
+            if (Number(n.extra[key]) != off)
+            {
+                n.extra[key] = off;
+                var sv:ScrollViewNode = ScrollViewNode(n.desc);
+                if (axis == 1) sv.offsetY = off; else sv.offsetX = off;
+                moved = true;
+            }
+            if (moved) n.app.markPaint(n);
+        }
+
+        private function overOf(n:UiNode, key:String):Number
+        {
+            var o:Object = n.extra[key];
+            if (o == null) return 0;
+            var v:Number = Number(o);
+            return isNaN(v) ? 0 : v;
+        }
+
+        private function clampTo(v:Number, max:Number):Number
+        {
+            if (isNaN(v)) return 0;
+            if (v < 0) return 0;
+            if (v > max) return max;
+            return v;
+        }
+
+        // The rubber-band curve (iOS's): rises fast, flattens at the viewport dimension,
+        // sign preserved. A linear or a plain 0.5x damping both let a hard drag pull the
+        // content arbitrarily far off the screen; this one has a ceiling.
+        private function dampOver(excess:Number, dim:Number):Number
+        {
+            if (excess == 0 || dim <= 0) return 0;
+            var a:Number = excess < 0 ? -excess : excess;
+            var c:Number = InputConstants.OVERSCROLL_RESIST;
+            var out:Number = (a * dim * c) / (dim + c * a);
+            return excess < 0 ? -out : out;
+        }
+
+        // Zero the stretch NOW. A wheel notch, a programmatic scroll or the start of a
+        // drag all mean "the view is being put somewhere", so a bounce in flight is
+        // obsolete -- and letting it run would fight whatever is writing the offset.
+        private function settleNow(n:UiNode):void
+        {
+            n.extra[SPRING_X] = 0;
+            n.extra[SPRING_Y] = 0;
+            var changed:Boolean = false;
+            if (overOf(n, OVER_X) != 0) { n.extra[OVER_X] = 0; changed = true; }
+            if (overOf(n, OVER_Y) != 0) { n.extra[OVER_Y] = 0; changed = true; }
+            if (changed) n.app.markPaint(n);
         }
 
         private function stopGlide(n:UiNode):void
@@ -912,6 +1055,40 @@ package asaot.ui.kind
             if (!done) n.app.markPaint(n);
         }
 
+        // The spring-back (the other half of MOBILE.md S3). Same shape as the glide:
+        // MEASURED dt, the rate corrected per 60Hz frame, and PAINT-ONLY (a bounce moves
+        // the clip and nothing else, so it must not re-solve layout). It stops below half
+        // a pixel and writes EXACTLY zero -- M1 asks for a return error under 1pt, and a
+        // decay allowed to approach zero asymptotically would ask for frames forever.
+        private function applySpring(n:UiNode):void
+        {
+            var sx:int = int(n.extra[SPRING_X]);
+            var sy:int = int(n.extra[SPRING_Y]);
+            if (sx == 0 && sy == 0) return;
+            var now:Number = getTimer();
+            var last:Object = n.extra[SPRING_T];
+            var dt:Number = (last == null) ? 0 : (now - Number(last));
+            if (dt < 0) dt = 0;
+            n.extra[SPRING_T] = now;
+            var k:Number = Math.pow(InputConstants.SPRING_RATE, dt / InputConstants.FLING_FRAME_MS);
+            var running:Boolean = false;
+            if (sx != 0)
+            {
+                var vx:Number = this.overOf(n, OVER_X) * k;
+                if (Math.abs(vx) < InputConstants.SPRING_STOP_PX) { vx = 0; n.extra[SPRING_X] = 0; }
+                else running = true;
+                n.extra[OVER_X] = vx;
+            }
+            if (sy != 0)
+            {
+                var vy:Number = this.overOf(n, OVER_Y) * k;
+                if (Math.abs(vy) < InputConstants.SPRING_STOP_PX) { vy = 0; n.extra[SPRING_Y] = 0; }
+                else running = true;
+                n.extra[OVER_Y] = vy;
+            }
+            if (running) n.app.markPaint(n);
+        }
+
         // One wheel notch scrolls the axis that can scroll. Vertical wins when both
         // can: a horizontal-only viewport (a film strip) is the case that needs the
         // fallback, and a shift-wheel would need a modifier the runtime's wheel event
@@ -936,6 +1113,7 @@ package asaot.ui.kind
         // `scrollV - delta`): a POSITIVE delta scrolls toward the START.
         private function scrollY(n:UiNode, dx:Number):Boolean
         {
+            this.settleNow(n);
             var maxOff:Number = Number(n.extra[MAX_Y]);
             var oy:Number = Number(n.extra[LIVE_Y]) + dx;
             if (oy < 0) oy = 0;
@@ -949,6 +1127,7 @@ package asaot.ui.kind
 
         private function scrollX(n:UiNode, dx:Number):Boolean
         {
+            this.settleNow(n);
             var maxOff:Number = Number(n.extra[MAX_X]);
             var ox:Number = Number(n.extra[LIVE_X]) + dx;
             if (ox < 0) ox = 0;
