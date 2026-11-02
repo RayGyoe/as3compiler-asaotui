@@ -3,8 +3,9 @@
 This branch is a build output, not a source tree. Do not edit it by hand.
 
 It is the `web` arm of `ui-demo/` in [RayGyoe/as3compiler-asaotui](https://github.com/RayGyoe/as3compiler-asaotui):
-the same 43-page component documentation site that the desktop arms render, compiled
-by `as-aot` to WASI and linked by emcc into a single page.
+the same component documentation site that the desktop arms render -- one page per
+kind, plus the six reference pages about the framework itself -- compiled by
+`as-aot` to WASI and linked by emcc into a single page.
 
 Source, and the command that reproduces these files:
 
