@@ -79,7 +79,16 @@ package demo
                     text(p.title, { key: "docTitle", style: DocsStyle.DOC_TITLE, ariaName: "Component" }),
                     text(p.blurb, { key: "docBlurb", style: DocsStyle.DOC_BLURB, ariaName: "Summary" }),
                     text(meta, { key: "docMeta", style: DocsStyle.DOC_META, ariaName: "Details" }),
-                    scrollView({ key: "docScroll", style: DocsStyle.DOC_SCROLL, wheelStep: 40 }, [
+                    // `scrollbarGutter: "stable"` -- the page's cards are `pct(1)`, so the
+                    // bar gets its own 10px lane and never sits on a code block's last
+                    // column. See ScrollViewNode's header for why this is a switch.
+                    scrollView({ key: "docScroll", style: DocsStyle.DOC_SCROLL,
+                                 scrollbarGutter: "stable",
+                                 barThickness: DocsStyle.DOC_GUTTER,
+                                 // `never` on the cross axis: a reading column does not
+                                 // scroll sideways, and a reserved BOTTOM lane would
+                                 // spare a bar that can never appear.
+                                 scrollbarX: "never", wheelStep: 40 }, [
                         this.docColumn(secs)
                     ])
                 ])
@@ -113,7 +122,10 @@ package demo
             return column({ key: "side", style: DocsStyle.SIDE, ariaName: "Index" }, [
                 text("asaot.ui", { key: "brand", style: DocsStyle.BRAND, ariaName: "Product" }),
                 text("pure-AS3 UI toolkit", { key: "tag", style: DocsStyle.TAG, ariaName: "Tagline" }),
-                scrollView({ key: "nav", style: DocsStyle.NAV, wheelStep: 26 }, [
+                scrollView({ key: "nav", style: DocsStyle.NAV,
+                             scrollbarGutter: "stable",
+                             barThickness: DocsStyle.DOC_GUTTER,
+                             scrollbarX: "never", wheelStep: 26 }, [
                     column({ key: "navCol", style: colStyle }, rows)
                 ]),
                 text(pages.length + " components  -  one page each",

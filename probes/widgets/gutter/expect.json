@@ -1,0 +1,40 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/gutter/Main.as. Never regenerate these by running the probe -- the whole point of the probe is the RECT of the content, and a rect copied out of the run would agree with whatever the widget did.",
+  "_derivation": {
+    "root": "column, align-items flex-start, padding 20, gap 10, size [320,200] -> root (0,0,320,200); content starts at x=20, y=20.",
+    "over": "First child, style size [200,40] -> (20,20,200,40). Default `scrollbarGutter` is \"overlay\": nothing is reserved.",
+    "overc": "Its only child is size [pct(1), 30] -> 100% of the OVERLAY content box, which is the whole 200 -> (20,20,200,30). This is the control: overlay still lets a full-width child run under the bar's lane (stage x 210..220).",
+    "stable": "Second child, y = 20 + 40 + 10 = 70, size [200,40] -> (20,70,200,40).",
+    "stablec": "`scrollbarGutter: \"stable\"` + `scrollbarY: \"always\"` + `scrollbarX: \"never\"` folds the bar's 10px into the node's RIGHT padding, so the content box is 190 wide: a [pct(1), 30] child becomes (20,70,190,30). THIS IS THE ASSERTION THE WHOLE PROBE EXISTS FOR -- an overlay build reports 200 here.",
+    "horiz": "Third child, y = 70 + 40 + 10 = 120, size [200,30] -> (20,120,200,30).",
+    "horizc": "`scrollbarGutter: \"stable\"` + `scrollbarX: \"always\"` + `scrollbarY: \"never\"` folds the 10px into the BOTTOM padding: the content box is 200x20, and the [pct(1), 25] child keeps its width (200) and its height (25) -> (20,120,200,25). The lane is on the axis the bar is on, not always on the right -- and it narrowed NOTHING on the other axis.",
+    "outputs": "contentW/H are the content's extent, measured from the same solved rects. svStable.contentW 190 (not 200) and maxOffsetX 0: reserving the lane must NOT invent a horizontal range -- a gutter that trades an overlap for a scrollbar nobody asked for is not a fix. svHoriz.contentH is 25 and maxOffsetY 5: the bottom lane IS 10px of real space, so a 25 tall band in a 30 tall viewport now has 5px to scroll (an overlay build reports 0, which is the mutation's red). svOver stays 200 / 0, i.e. the default mode is untouched.",
+    "points": {
+      "over_under_lane": "(215,30) is overlay-local (195,10): inside the 200-wide band, and inside the right 10px where the bar's lane WOULD be. #EE1111 proves overlay still paints the content there.",
+      "stable_stops": "(205,80) is stable-local (185,10) -- inside the 190-wide band, 5px short of the lane with its 2px inset. #11EE11.",
+      "stable_bar": "(215,80) is stable-local (195,10): the lane itself. The viewport is 40 tall with a 30 tall content, so maxOffsetY is 0 and thumbLen floors to the whole track; the thumb is drawn inset 2, i.e. local x 192..198, y 2..38 -> stage 212..218, 72..108. (215,80) is on the thumb: #B9C2D0.",
+      "no_hbar": "(150,105) is stable-local (130,35), where a horizontal track would be painted (local y 30..40) if a spurious range had appeared. scrollbarX is \"never\" and the band stops at y=100, so this is the root's white: #FFFFFF.",
+      "horiz_band": "(30,135) is horiz-local (10,15): above the 10px bottom lane, inside the 25-tall band. #1111EE.",
+      "horiz_bar": "(150,145) is horiz-local (130,25): the bottom lane, on the thumb (local x 2..198, y 22..28 -> stage 142..148). #B9C2D0."
+    }
+  },
+  "w": 320,
+  "h": 200,
+  "rects": {
+    "root": [0, 0, 320, 200],
+    "over": [20, 20, 200, 40],
+    "overc": [20, 20, 200, 30],
+    "stable": [20, 70, 200, 40],
+    "stablec": [20, 70, 190, 30],
+    "horiz": [20, 120, 200, 30],
+    "horizc": [20, 120, 200, 25]
+  },
+  "points": [
+    { "x": 215, "y": 30, "rgb": "#EE1111" },
+    { "x": 205, "y": 80, "rgb": "#11EE11" },
+    { "x": 215, "y": 80, "rgb": "#B9C2D0" },
+    { "x": 150, "y": 105, "rgb": "#FFFFFF" },
+    { "x": 30, "y": 135, "rgb": "#1111EE" },
+    { "x": 150, "y": 145, "rgb": "#B9C2D0" }
+  ]
+}

@@ -175,6 +175,17 @@ package asaot.ui
         public var safeBottom:Number;
         public var safeLeft:Number;
 
+        // ---- chrome gutter (scrollView's `scrollbarGutter: "stable"`) -------
+        // The lane a kind reserves for chrome it paints on an edge: right and
+        // bottom px that the CONTENT must not be laid out in. Folded into
+        // `resolved.padding` exactly like the safe area, and for the same reason --
+        // padding is what the engine solves against. The kind owns the numbers
+        // (ScrollViewWidget derives them from its bar options in `payload`); this
+        // node only owns the fold, so there is ONE place where "author padding +
+        // platform inset + chrome lane" is added up.
+        public var gutterRight:Number;
+        public var gutterBottom:Number;
+
         // ---- backing internals ------------------------------------------
         public var shapeA:Shape;
         public var shapeB:Shape;
@@ -262,6 +273,7 @@ package asaot.ui
             this.tabIndex = -1;
             this.safeAreaMask = SafeArea.NONE;
             this.safeTop = 0; this.safeRight = 0;
+            this.gutterRight = 0; this.gutterBottom = 0;
             this.safeBottom = 0; this.safeLeft = 0;
             this.onRightClick = null;
             this.onDoubleClick = null;
@@ -646,7 +658,8 @@ package asaot.ui
             // `resolved`, the engine write below, PaintKit's content box and the
             // animator all see the SAME padding. See foldSafePadding for why it is
             // padding and not a second field.
-            if (this.safeAreaMask != SafeArea.NONE) this.foldSafePadding();
+            if (this.safeAreaMask != SafeArea.NONE || this.gutterRight != 0
+                || this.gutterBottom != 0) this.foldInsets();
             var f:int = Style.diffFlags(this.previous, this.resolved);
             if ((f & 1) != 0) { this.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE | Dirty.M_PAINT; this.markLayoutDirty(); }
             if ((f & 2) != 0) { this.dirty |= Dirty.M_MEASURE | Dirty.M_PAINT; this.markLayoutDirty(); }
@@ -823,13 +836,13 @@ package asaot.ui
             }
         }
 
-        // ---- the safe area, folded into padding (MOBILE.md E1/E2) ---------
+        // ---- the safe area + the chrome gutter, folded into padding -------
         //
         // MOBILE.md E2 asks for the platform's insets to be consumed in ONE place.
         // That place is this node's own PADDING, and this pair of methods is the
-        // whole mechanism: `foldSafePadding` puts author padding + env inset into
-        // `resolved.padding` on a re-resolve, and `setSafeInsets` is how UiApp
-        // changes the env half afterwards.
+        // whole mechanism: `foldInsets` puts author padding + env inset + the kind's
+        // chrome lane into `resolved.padding` on a re-resolve, and `setSafeInsets` /
+        // `setScrollGutter` are how the two non-author halves change afterwards.
         //
         // WHY PADDING AND NOT A DEDICATED `inset` FIELD: the engine applies padding,
         // but so does everything that READS it -- PaintKit.insetY/contentH place a
@@ -853,13 +866,20 @@ package asaot.ui
         // tween. Nothing in the kit declares both today, and the probe does not claim
         // it; a fixed inset across a padding tween needs the animator to know which
         // part of the number is the author's.
-        private function foldSafePadding():void
+        //
+        // THE CHROME GUTTER IS ADDED LAST, and only on the edges a kind asked for
+        // (`gutterRight` / `gutterBottom`, which is where a scrollView's bar lane
+        // lives). An edge with no gutter keeps whatever the fold above decided --
+        // including NaN, so a node that never asked for a lane keeps its "unset".
+        private function foldInsets():void
         {
             var p:Edges = this.resolved.padding;
             var t:Number = safeSide(p != null ? p.top : NaN, this.safeAreaMask, SafeArea.TOP, this.safeTop);
             var r:Number = safeSide(p != null ? p.right : NaN, this.safeAreaMask, SafeArea.RIGHT, this.safeRight);
             var b:Number = safeSide(p != null ? p.bottom : NaN, this.safeAreaMask, SafeArea.BOTTOM, this.safeBottom);
             var l:Number = safeSide(p != null ? p.left : NaN, this.safeAreaMask, SafeArea.LEFT, this.safeLeft);
+            if (this.gutterRight != 0) r = (isNaN(r) ? 0 : r) + this.gutterRight;
+            if (this.gutterBottom != 0) b = (isNaN(b) ? 0 : b) + this.gutterBottom;
             if (p != null && sameNum(p.top, t) && sameNum(p.right, r)
                 && sameNum(p.bottom, b) && sameNum(p.left, l)) return;
             this.resolved.padding = new Edges(t, r, b, l);
@@ -910,6 +930,27 @@ package asaot.ui
             // probes/widgets/appbar, which unbinds a 47pt env and re-measures the
             // bar: it stayed 103 instead of going back to 56.) An inset change IS a
             // layout input, so it says so here, where it happens.
+            this.dirty |= Dirty.M_PAINT;
+            this.markLayoutDirty();
+        }
+
+        // A KIND'S CHROME LANE, pushed in by the kind itself (today only
+        // ScrollViewWidget, for `scrollbarGutter: "stable"`). Same contract as
+        // setSafeInsets above, and for the same reasons: the fold lives in
+        // `resolved.padding`, so a CHANGE has to re-resolve (the old number cannot be
+        // subtracted back out -- a theme swap re-resolves in between and the base is
+        // gone), and a re-resolve with `keepPrevious` raises no bits when the fold
+        // lands back on the value it had before, so the layout is marked dirty HERE,
+        // where the change happens.
+        //
+        // Zero means "no lane", not "a zero-px lane": the fold skips an edge whose
+        // gutter is 0 and leaves the author's value (NaN included) alone.
+        public function setScrollGutter(right:Number, bottom:Number):void
+        {
+            if (right == this.gutterRight && bottom == this.gutterBottom) return;
+            this.gutterRight = right;
+            this.gutterBottom = bottom;
+            this.resolveStyle(true);
             this.dirty |= Dirty.M_PAINT;
             this.markLayoutDirty();
         }

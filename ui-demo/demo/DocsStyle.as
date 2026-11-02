@@ -128,6 +128,11 @@ package demo
         public static const DOC_COL:StyleRefinement = StyleRefinement.from({
             flexDirection: "column", size: [Length.pct(1), null], gap: SEC_GAP
         });
+        // The lane the reading pane keeps for its scrollbar (`scrollbarGutter:
+        // "stable"`). The docs tour hand-computes the content column's width, so this
+        // number is shared with it instead of each side writing 10; it is also passed
+        // to the factory as `barThickness`, which is what makes the lane this wide.
+        public static const DOC_GUTTER:Number = 10;
 
         // ---- section styles -------------------------------------------------
         public static const SEC:StyleRefinement = StyleRefinement.from({

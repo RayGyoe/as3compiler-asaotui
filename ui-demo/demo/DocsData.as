@@ -479,7 +479,10 @@ package demo
                 // documented, so the source under it has to be what produced it.
                 new DocSection("Scrollbars on both axes", [
                     "A bar appears where the content overflows: drag the thumb, or click the track",
-                    "to page by one viewport. Bars are OVERLAY chrome -- they never change a rect."
+                    "to page by one viewport. `scrollbarGutter` decides where it sits: `\"overlay\"`",
+                    "(the default) paints the bar over the content and changes no rect, `\"stable\"`",
+                    "reserves its lane so the content stops short of it -- which is what this",
+                    "page does: its cards end where the bar begins."
                 ], [
                     "scrollView({ key: \"sv2\", scrollbarX: \"always\",",
                     "             scrollbarY: \"always\", barThickness: 10,",
@@ -523,6 +526,7 @@ package demo
                 ], [
                     "// wheel -> offsetY; dragging a thumb writes the same offset back",
                     "// scrollbarX/scrollbarY: \"auto\" | \"always\" | \"never\"",
+                    "// scrollbarGutter: \"overlay\" (default) | \"stable\" (own lane)",
                     "// touch: 1:1 drag + coast; momentum: false stops at the release offset",
                     "// overscroll: \"rubber\" (default) | \"none\""
                 ], 76, function ():Node

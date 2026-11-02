@@ -7,8 +7,11 @@
 //       box({ style: { height: 40, background: 0x11EE11 } })
 //   ])
 //
-// Scrollbars are on by default (`scrollbarX`/`scrollbarY`: "auto"). They are drawn
-// over the viewport, so they do not change any rect this node is laid out in.
+// Scrollbars are on by default (`scrollbarX`/`scrollbarY`: "auto"). With the default
+// `scrollbarGutter: "overlay"` they are drawn over the viewport and change no rect
+// this node is laid out in; with `"stable"` the bar's lane is reserved and the
+// content is laid out beside it (see ScrollViewNode's header for which pane wants
+// which).
 //
 // A finger can scroll it (MOBILE.md S1) and coasts after the lift unless
 // `momentum: false`; `decelerationRate` (default 0.95, a fraction in (0,1)) sets how
@@ -65,6 +68,8 @@ package asaot.ui
             // offending option.
             if (opts.scrollbarX != null) n.scrollbarX = ScrollViewNode.barMode(opts.scrollbarX, "scrollbarX");
             if (opts.scrollbarY != null) n.scrollbarY = ScrollViewNode.barMode(opts.scrollbarY, "scrollbarY");
+            if (opts.scrollbarGutter != null)
+                n.scrollbarGutter = ScrollViewNode.gutterMode(opts.scrollbarGutter, "scrollbarGutter");
             if (opts.barThickness != null) n.barThickness = Number(opts.barThickness);
             if (opts.barColor != null) n.barColor = uint(opts.barColor);
             if (opts.barHoverColor != null) n.barHoverColor = uint(opts.barHoverColor);

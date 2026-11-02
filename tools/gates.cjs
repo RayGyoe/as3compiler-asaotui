@@ -561,6 +561,17 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
                  // `stick` (scroll that follows its own content) were each green by hand
                  // for a while before this line existed.
                  'widgets/pointer', 'widgets/imaging', 'widgets/table2', 'widgets/stick',
+                 // `gutter` is `scrollbarGutter: "stable"` (the 2026-11-03 report that a
+                 // bar SITS ON the content): the lane is folded into the node's padding,
+                 // so the same three viewports declare the same content and the ONE
+                 // difference is the mode. It is the only probe whose subject is the
+                 // engine's content box rather than a bar, and the only one that asserts
+                 // a bar is NOT on a pixel: the bar is opaque, so a covered lane and a
+                 // reserved lane look identical -- only the solved rect tells them apart.
+                 // Teeth: probes/widgets/gutter/mutation.cjs 3/3 (no lane requested; the
+                 // fold dropped; the bar painted one lane in, so the CONTENT case is
+                 // clear and the bar is on top of it).
+                 'widgets/gutter',
                  // `pointer-touch` is the MOBILE.md M0 pin: a SYNTHESIZED TouchEvent
                  // series (G5 means no backend produces one) goes through PointerRouter
                  // into the same press/click vocabulary the 41 kinds already speak, with

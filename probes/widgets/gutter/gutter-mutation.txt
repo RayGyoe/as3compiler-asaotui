@@ -1,0 +1,20 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE WIDGET NEVER ASKS FOR THE LANE: a description that says "stable" lays its content out in the whole box, i.e. the mode is a no-op
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL stable content width is 200 not 190; reserving the lane invented a horizontal range of 10;
+     FAIL  rect stablec[w] want 190 got 200
+     restore: byte-identical (35c2988a06b53c07)
+M2  CAUGHT  THE NODE FOLDS NOTHING: the request arrives and the right gutter is dropped from the padding fold, so the content keeps the full width
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL stable content width is 200 not 190; reserving the lane invented a horizontal range of 10;
+     FAIL  rect stablec[w] want 190 got 200
+     restore: byte-identical (3d71f7cf70564997)
+M3  CAUGHT  THE BAR IS PAINTED ONE LANE FURTHER IN: the content is clear of the lane and the thumb sits over the content instead of in its lane
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the stable band does not stop before the lane is #e8edf5 not #11ee11;
+     FAIL  pixel (205,80) want #11EE11 got #e8edf5
+     restore: byte-identical (35c2988a06b53c07)
+
+MUTATION gutter: 3/3 caught, 0 problem(s)
+RESULT: PASS

@@ -21,13 +21,22 @@
 // a viewport compressing its content is never what the author meant, and an
 // explicit `flexShrink` still wins because the check is `anyFlex`.
 //
-// THE SCROLLBARS ARE PAINTED, NOT LAID OUT. They are overlay chrome: adding two
-// bars as layout children would make the viewport's content width depend on
-// whether a bar is showing (the classic scrollbar-gutter feedback loop), and the
-// engine's rects are what the rest of the kit (and the docs tour) reason about.
-// So they are two Graphics draws on `n.shapeB`, positioned in VIEWPORT space
-// (compensated for the scroll, like the background). They are real mouse targets
-// because a Graphics fill is a pick region (as_shape_region_hit).
+// THE SCROLLBARS ARE PAINTED, NOT LAID OUT -- unless the author asked for
+// `scrollbarGutter: "stable"` (ScrollViewNode's header has the trade). In the default
+// "overlay" mode they are chrome over the content: adding two bars as layout
+// children would make the viewport's content width depend on whether a bar is
+// showing (the classic scrollbar-gutter feedback loop), and the engine's rects are
+// what the rest of the kit (and the docs tour) reasons about. So they are two
+// Graphics draws on `n.shapeB`, positioned in VIEWPORT space (compensated for the
+// scroll, like the background). They are real mouse targets because a Graphics fill
+// is a pick region (as_shape_region_hit).
+//
+// IN "stable" THE LANE IS RESERVED INSTEAD: the node folds the bar's thickness into
+// its PADDING (UiNode.setScrollGutter -> foldInsets), so the engine lays the content
+// out beside the lane and nothing is ever painted under a bar. The reservation is
+// per AXIS ENABLED, never per bar showing -- "is a bar needed" is answered BY the
+// layout, so letting it decide the content width is the loop above with the arrow
+// reversed.
 //
 // WHAT A SCROLLVIEW STILL DOES NOT DO: no paging/snap, no nested-scroller
 // arbitration, no keyboard paging, no double-click-to-maximise. A wheel
@@ -238,6 +247,13 @@ package asaot.ui.kind
                 }
             }
             if (optionsChanged(n, sv)) n.dirty |= Dirty.M_PAINT;
+            // The chrome lane (see the header). `setScrollGutter` re-resolves and raises
+            // the layout bits itself when the number actually changes, so an unchanged
+            // mode costs one comparison per axis on every re-render.
+            var lane:Number = barThicknessOf(sv);
+            var stable:Boolean = sv.scrollbarGutter == "stable";
+            n.setScrollGutter(stable && sv.scrollbarY != "never" ? lane : 0,
+                              stable && sv.scrollbarX != "never" ? lane : 0);
             return false;   // the viewport's own size is the style's business
         }
 
@@ -247,17 +263,31 @@ package asaot.ui.kind
             if (o == null)
             {
                 o = [sv.scrollbarX, sv.scrollbarY, sv.barThickness, sv.barColor,
-                     sv.barHoverColor, sv.trackColor];
+                     sv.barHoverColor, sv.trackColor, sv.scrollbarGutter];
                 n.extra[OPTIONS] = o;
                 return true;
             }
             var diff:Boolean = String(o[0]) != sv.scrollbarX || String(o[1]) != sv.scrollbarY
                 || Number(o[2]) != sv.barThickness || uint(o[3]) != sv.barColor
-                || uint(o[4]) != sv.barHoverColor || uint(o[5]) != sv.trackColor;
+                || uint(o[4]) != sv.barHoverColor || uint(o[5]) != sv.trackColor
+                || String(o[6]) != sv.scrollbarGutter;
             if (!diff) return false;
             o[0] = sv.scrollbarX; o[1] = sv.scrollbarY; o[2] = sv.barThickness;
             o[3] = sv.barColor; o[4] = sv.barHoverColor; o[5] = sv.trackColor;
+            o[6] = sv.scrollbarGutter;
             return true;
+        }
+
+        // The bar's thickness, clamped once so the PIXELS and the RESERVED LANE can
+        // never disagree: a 2px bar with a 10px lane would leave an 8px gap nobody can
+        // explain, and a 40px bar with a 10px lane would paint over the content it was
+        // supposed to keep clear of.
+        private static function barThicknessOf(sv:ScrollViewNode):Number
+        {
+            var t:Number = sv.barThickness;
+            if (isNaN(t) || t < 4) t = BAR_T;
+            if (t > 24) t = 24;
+            return t;
         }
 
         // HAS THE DESCRIPTION'S OWN OFFSET CHANGED SINCE THE LAST ONE?
@@ -352,6 +382,7 @@ package asaot.ui.kind
             // final by the time any of this runs.
             var eng:Object = n.app.engine;
             var out:Array = n.app.rectScratch;
+            var sv:ScrollViewNode = ScrollViewNode(n.desc);
             var cw:Number = 0;
             var ch:Number = 0;
             for (var i:int = 0; i < n.children.length; i++)
@@ -363,11 +394,21 @@ package asaot.ui.kind
                 if (out[1] + out[3] > ch) ch = out[1] + out[3];
             }
 
-            var maxX:Number = cw - w;
+            // THE RANGE IS MEASURED AGAINST THE CONTENT BOX THE AUTHOR CAN SEE, which
+            // is the whole box in "overlay" mode and the box MINUS THE BAR'S LANE in
+            // "stable" (the lane is a padding on this node, so well-behaved content
+            // already stops at it and both subtractions below are no-ops). In "stable"
+            // a child that still insists on the full width -- an explicit `size: [200]`
+            // in a 190px content box -- keeps its old meaning: it overflows, and the
+            // bar gets an axis to scroll, exactly as it would in a browser.
+            var lane:Number = barThicknessOf(sv);
+            var stable:Boolean = sv.scrollbarGutter == "stable";
+            var laneR:Number = stable && sv.scrollbarY != "never" ? lane : 0;
+            var laneB:Number = stable && sv.scrollbarX != "never" ? lane : 0;
+            var maxX:Number = cw - (w - laneR);
             if (maxX < 0) maxX = 0;
-            var maxY:Number = ch - h;
+            var maxY:Number = ch - (h - laneB);
             if (maxY < 0) maxY = 0;
-            var sv:ScrollViewNode = ScrollViewNode(n.desc);
             var ox:Number = clamp(Number(n.extra[LIVE_X]), maxX);
             var oy:Number;
             if (sv.stickToBottom && atBottom(n, maxY))
@@ -489,9 +530,7 @@ package asaot.ui.kind
             if (n.shapeB == null) return;
 
             var sv:ScrollViewNode = ScrollViewNode(n.desc);
-            var t:Number = sv.barThickness;
-            if (isNaN(t) || t < 4) t = BAR_T;
-            if (t > 24) t = 24;
+            var t:Number = barThicknessOf(sv);
             // An always-visible bar on an axis that cannot scroll would cover content
             // for no reason; "always" is honoured as the author's explicit choice.
             var wantY:Boolean = sv.scrollbarY == "always" || (sv.scrollbarY == "auto" && maxY > 0);

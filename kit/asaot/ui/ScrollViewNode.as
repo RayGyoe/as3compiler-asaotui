@@ -45,11 +45,28 @@
 //
 // SCROLLBARS. `scrollbarX`/`scrollbarY` are "auto" (the default: the bar is
 // there when the content overflows on that axis), "always" (the author asked for
-// the bar even when there is nothing to scroll) or "never". The bars are OVERLAY
-// chrome, not layout: showing one does not narrow the content, because a viewport
-// whose content width depends on whether a bar is showing is the scrollbar-gutter
-// feedback loop. The geometry is the widget's; `barThickness` and the three
-// colours are yours.
+// the bar even when there is nothing to scroll) or "never". The geometry is the
+// widget's; `barThickness` and the three colours are yours.
+//
+// `scrollbarGutter` says WHERE THE BAR SITS RELATIVE TO THE CONTENT:
+//
+//   * "overlay" (the default) -- the bar is painted OVER the content, a lane the
+//     content is free to use. Nothing about the layout changes, and the last
+//     `barThickness` px of a full-width child is behind the bar;
+//   * "stable" -- THAT LANE IS RESERVED. The bar gets the rightmost (bottom-most)
+//     `barThickness` px of the box to itself and the content is laid out in what is
+//     left, so nothing is ever painted under a bar. Reserved per AXIS ENABLED, not
+//     per bar actually showing, which is the whole reason this is a switch and not
+//     an inference: "is a bar needed" is answered by the layout, so letting it
+//     decide the content width is the classic scrollbar-gutter feedback loop. A
+//     pane whose content fits therefore keeps an empty lane (CSS
+//     `scrollbar-gutter: stable` makes the same trade).
+//
+// WHICH ONE TO PICK. "overlay" is right for a pane whose children are explicitly
+// sized to the viewport (a film strip of fixed cells) -- reserving would make them
+// overflow and grow a horizontal bar. "stable" is right for a reading pane (prose,
+// forms, settings), where the children are `pct(1)` and a bar over the last word is
+// the defect being fixed.
 //
 // The wheel scrolls the vertical axis when it can and falls back to the
 // horizontal one otherwise (a film strip should still respond to a wheel). A
@@ -130,7 +147,8 @@ package asaot.ui
 
         public var scrollbarX:String;   // "auto" | "always" | "never"
         public var scrollbarY:String;
-        public var barThickness:Number; // px, the overlay bar's width
+        public var scrollbarGutter:String;  // "overlay" | "stable" (see the header)
+        public var barThickness:Number; // px, the bar's width (and the stable lane's)
         public var barColor:uint;       // thumb, resting
         public var barHoverColor:uint;  // thumb, hovered or dragged
         public var trackColor:uint;     // the groove behind the thumb
@@ -159,6 +177,7 @@ package asaot.ui
             this.overscrollY = 0;
             this.scrollbarX = "auto";
             this.scrollbarY = "auto";
+            this.scrollbarGutter = "overlay";
             this.barThickness = 10;
             // From the palette, read here rather than stored as a const: the node is
             // rebuilt by the factory on every render pass, so the ctor is the one
@@ -181,6 +200,16 @@ package asaot.ui
             if (s == "auto" || s == "always" || s == "never") return s;
             throw new Error("asaot.ui.scrollView: " + opt + " must be \"auto\", \"always\""
                 + " or \"never\", got '" + s + "'");
+        }
+
+        // "overlay" | "stable", anything else THROWS. Same reasoning as barMode: a
+        // typo must not silently pick one of two visually different layouts.
+        public static function gutterMode(v:Object, opt:String):String
+        {
+            var s:String = String(v);
+            if (s == "overlay" || s == "stable") return s;
+            throw new Error("asaot.ui.scrollView: " + opt + " must be \"overlay\" or"
+                + " \"stable\", got '" + s + "'");
         }
 
         // "rubber" | "none", anything else THROWS. Same reasoning as barMode: a typo

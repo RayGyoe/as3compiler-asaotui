@@ -331,7 +331,27 @@ function ready():void
         + " children " + app.stageContainer.numChildren);
 
     clickAt(sel, 120, 17);
-    setTimeout(afterSelOpen, 360);
+    awaitLifted("sel", true, afterSelOpen);
+}
+
+// A PROBE MUST NOT READ A SLOW FRAME AS A BROKEN LIFT. Each transition below used to
+// be one fixed `setTimeout(..., 360)`, which is enough on an idle machine and was NOT
+// enough on 2026-11-03 when the gate pool built six probes at once: phase 5's reopen
+// was measured before the frame that re-parents the owner had run, and the probe
+// reported the FIX as missing (26 checks, 2 failures) while passing standalone. So a
+// transition now waits for the contract itself, up to ~3s, and then goes on REGARDLESS
+// -- the assertions downstream still name what is wrong, rather than a timeout doing it.
+function awaitLifted(key:String, want:Boolean, then:Function):void
+{
+    var tries:int = 0;
+    var step:Function = function ():void
+    {
+        var n:UiNode = app.findByKey(key);
+        if ((n != null && n.lifted == want) || tries >= 50) { then(); return; }
+        tries++;
+        setTimeout(step, 60);
+    };
+    setTimeout(step, 30);
 }
 
 // ==================== phase 1: the select is open ==========================
@@ -363,7 +383,7 @@ function afterSelOpen():void
 
     // Click "High" (row 2): the click path must survive the re-parenting.
     clickAbs("sel:drop", 150, 124);
-    setTimeout(afterSelPick, 360);
+    awaitLifted("sel", false, afterSelPick);
 }
 
 // ==================== phase 2: the list closed again ======================
@@ -383,7 +403,7 @@ function afterSelPick():void
 
     var cb:UiNode = app.findByKey("cb");
     clickAt(cb, 200, 17);
-    setTimeout(afterCbOpen, 360);
+    awaitLifted("cb", true, afterCbOpen);
 }
 
 // ==================== phase 3: the combobox ===============================
@@ -401,7 +421,7 @@ function afterCbOpen():void
     // caret placement for its field -- see ComboBoxWidget.onClickAt), so the list is
     // dismissed the way a user dismisses it: by picking a row (Berlin, row 1).
     clickAbs("cb:drop", 150, 336);
-    setTimeout(afterCbClose, 360);
+    awaitLifted("cb", false, afterCbClose);
 }
 
 function afterCbClose():void
@@ -414,7 +434,7 @@ function afterCbClose():void
 
     var dp:UiNode = app.findByKey("dp");
     clickAt(dp, 120, 17);
-    setTimeout(afterDpOpen, 360);
+    awaitLifted("dp", true, afterDpOpen);
 }
 
 // ==================== phase 4: the date picker ============================
@@ -432,7 +452,7 @@ function afterDpOpen():void
 
     var dp2:UiNode = app.findByKey("dp");
     clickAt(dp2, 120, 17);
-    setTimeout(afterDpClose, 360);
+    awaitLifted("dp", false, afterDpClose);
 }
 
 function afterDpClose():void
@@ -443,7 +463,7 @@ function afterDpClose():void
     var sel:UiNode = app.findByKey("sel");
     if (sel == null) { fail("the select is gone before the unmount phase"); finish(); return; }
     clickAt(sel, 120, 17);
-    setTimeout(afterReopenForUnmount, 360);
+    awaitLifted("sel", true, afterReopenForUnmount);
 }
 
 function afterReopenForUnmount():void

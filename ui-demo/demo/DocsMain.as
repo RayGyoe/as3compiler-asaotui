@@ -116,6 +116,11 @@ package demo
             var winH:Number = this.stage.stageHeight;
             var docX:Number = DocsStyle.NAV_W + DocsStyle.PAD_X;         // 280
             var docW:Number = winW - DocsStyle.NAV_W - DocsStyle.PAD_X * 2;   // 688
+            // ... and the CONTENT is one scrollbar lane narrower, because the page
+            // pane declares `scrollbarGutter: "stable"`: the bar owns the rightmost
+            // DOC_GUTTER px and the cards stop short of it. `docScroll` (the viewport)
+            // is still `docW`; only what is inside it moves.
+            var docCW:Number = docW - DocsStyle.DOC_GUTTER;                   // 678
             var docY:Number = 100;   // 24 top pad + 30 title + 4 + 18 blurb + 4 + 16 meta + 4
             var docH:Number = winH - docY - 16;                            // 584
             var navH:Number = winH - 68 - 16 - 4 - 16;                       // 596: foot + gap + bottom pad
@@ -137,8 +142,8 @@ package demo
             // is a card with 14px padding around a 20px heading, an 8px gap and a
             // 44px button: 14+20+8+44+14 = 100. At 76 the button was drawn across
             // the surface's own border.
-            this.problems = this.problems + this.rect("b0", docX, docY, docW, 288);
-            this.problems = this.problems + this.rect("b0:code", docX, 284, docW, 104);
+            this.problems = this.problems + this.rect("b0", docX, docY, docCW, 288);
+            this.problems = this.problems + this.rect("b0:code", docX, 284, docCW, 104);
 
             var sv:UiNode = this.app.findByKey("docScroll");
             if (sv == null || sv.desc == null)
