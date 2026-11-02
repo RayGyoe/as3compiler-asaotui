@@ -14,20 +14,31 @@
 //   * the LIVE position belongs to the node: a re-render does not move the viewport
 //     unless the description asks it to, and moving never re-runs layout.
 //
-// The rule the widget implements: the description's offset is compared against the
-// LIVE position; a difference is a request to move. So both authoring styles work --
+// The rule the widget implements:
+//
+//   * a description that NEVER MENTIONS AN OFFSET is never scrolled by a re-render.
+//     `offsetDeclared` (set by the factory for `offset` / `offsetX` / `offsetY`) is
+//     what makes "my model says 0" distinguishable from "I never said anything about
+//     the offset" -- afterwards both are the number 0, and reading the second one as
+//     a request is what threw a reader back to the top whenever a page re-rendered
+//     for ANY other reason (found on the docs site: the page viewport declares no
+//     offset, and closing a dialog re-described the page);
+//   * a DECLARED offset that differs from the LIVE position is a request to move, so
+//     the canonical "back to top" button works with `offsetY: 0` no matter what the
+//     description said last time;
+//   * a declared offset that EQUALS the live position does nothing, which is what
+//     makes both authoring styles work:
 //
 //   A) rebuild the description every render(): keep the offset in your model and
-//      MIRROR it from `onScroll`. Mirroring is not optional in this style: a
-//      description that still carries the value from before the user scrolled says
-//      "go back there", so a re-render for any other reason would snap the viewport
-//      back (the widget cannot tell a stale copy from a deliberate "back to top");
+//      MIRROR it from `onScroll`. A stale copy (no mirroring) is a request to go back
+//      there -- that is the documented trade of declaring an offset at all;
 //   B) build the description once and mutate it: the wheel and drag handlers write
 //      back into `offsetY` itself, so this class is always the author's live handle.
+//      A value that CHANGES on a description that never declared one is honoured too
+//      (there is no live-vs-declared ambiguity left to resolve).
 //
-// A request is the only way to scroll programmatically, which means the same value
-// cannot be requested twice in a row while it is already the live position: the
-// usual "back to top" button works because it differs from where the user is.
+// Which is why the same value cannot be requested twice in a row while it is already
+// the live position: the request IS the difference.
 //
 // `contentW/H` and `maxOffsetX/Y` are OUTPUTS, written during paint from the
 // engine's solved child rects.
@@ -98,6 +109,10 @@ package asaot.ui
     {
         public var offsetX:Number;      // request (see the header)
         public var offsetY:Number;
+        // TRUE when the DESCRIPTION named an offset (`offset` / `offsetX` / `offsetY`
+        // in the factory opts). A description that names none leaves the live position
+        // alone forever; see the header for why the flag exists at all.
+        public var offsetDeclared:Boolean;
         public var wheelStep:Number;    // px per wheel delta unit
         public var contentW:Number;     // out: the content's extent
         public var contentH:Number;
@@ -129,6 +144,7 @@ package asaot.ui
             this.role = "group";
             this.offsetX = 0;
             this.offsetY = 0;
+            this.offsetDeclared = false;
             this.wheelStep = 24;
             this.contentW = 0;
             this.contentH = 0;

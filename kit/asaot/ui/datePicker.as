@@ -79,8 +79,8 @@ package asaot.ui
                                ariaName: "", visible: n.open });
 
         // ---- the month header ---------------------------------------------
-        // row(), not box(): a BoxNode's `direction` field overrides the style's
-        // flexDirection and defaults to "column" (see the note in tree.as).
+        // row(), not box(): box() honours the style's flexDirection, but row() also
+        // PINS the axis, so nothing merged in later can stack the month header.
         var head:Node = row({ key: base + ":head", ariaName: "",
                               style: StyleRefinement.from({
                                   alignItems: "center", height: OverlayChrome.DAY_H

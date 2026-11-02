@@ -270,6 +270,10 @@ package demo
             var pages:Array = DocsCatalog.pages();
             var badPages:int = 0;
             var badBlocks:int = 0;
+            // The per-page list was gated on badPages, so a page whose LAYOUT overflowed
+            // (badBlocks > 0, badPages == 0) reported the total and named nothing --
+            // useless for finding the block. Both counters gate it now.
+            var badNamed:int = 0;
             var totalNodes:int = 0;
             var badList:String = "";
             for (var i:int = 0; i < pages.length; i++)
@@ -295,20 +299,24 @@ package demo
                     if (bad != "")
                     {
                         badPages = badPages + 1;
-                        if (badPages <= 6) badList = badList + "  " + p.id + ": " + bad + "\n";
+                        if (badNamed <= 6) badList = badList + "  " + p.id + ": " + bad + "\n";
+                        badNamed = badNamed + 1;
                     }
 
                     var blocks:int = this.overflowingBlocks();
                     if (blocks > 0)
                     {
                         badBlocks = badBlocks + blocks;
-                        if (badPages <= 6) badList = badList + "  " + p.id + ": " + blocks + " block(s) with a child outside\n";
+                        if (badNamed <= 6)
+                            badList = badList + "  " + p.id + ": " + blocks + " block(s) with a child outside\n";
+                        badNamed = badNamed + 1;
                     }
                 }
                 catch (err:Error)
                 {
                     badPages = badPages + 1;
-                    if (badPages <= 6) badList = badList + "  " + p.id + ": threw " + err.message + "\n";
+                    if (badNamed <= 6) badList = badList + "  " + p.id + ": threw " + err.message + "\n";
+                    badNamed = badNamed + 1;
                 }
             }
             var sweep:String = "  pages=" + pages.length + " nodes=" + totalNodes
@@ -807,8 +815,9 @@ package demo
                     if (bad <= 2)
                     {
                         this.report = this.report + "    " + String(box.key) + "/" + String(c.key)
-                            + " child " + c.absX + "," + c.absY + "," + c.absW + "," + c.absH
-                            + " box " + box.absX + "," + box.absY + "," + box.absW + "," + box.absH + "\n";
+                            + " child#" + i + " " + c.absX + "," + c.absY + "," + c.absW + "," + c.absH
+                            + " box " + box.absX + "," + box.absY + "," + box.absW + "," + box.absH
+                            + " nKids " + kids.length + "\n";
                     }
                 }
             }

@@ -354,11 +354,17 @@ function afterExpand():void
     var tr:UiNode = app.findByKey("tr");
     var want:String = "tr:tsrc,tr:tlib,tr:tc,tr:treadme";
     if (rows(tr) != want) fail("after expanding lib the rows are " + rows(tr) + " not " + want);
-    // The expanded child is INDENTED one step (42 -> 60) and sits on the next line.
+    // The expanded child is INDENTED two steps (10 + 22 + 18 + 10 = 60) and sits on the
+    // THIRD row: tsrc, tlib, tc -- so its top is 20 + 2*26 = 72, and a 15pt label is
+    // centred at 72 + (26 - 15)/2 = 77.5. The old number here was 79 (the row's top
+    // plus nothing), i.e. it asserted the OLD top-aligned placement; the centring
+    // identity is asserted too, so a different font metric says "not centred" rather
+    // than quietly moving the literal.
     var lc:UiNode = app.findByKey("tr:tc:l");
     if (lc == null) { fail("the expanded child has no label"); finish(); return; }
-    if (lc.absX != 60 || lc.absY != 79)
-        fail("the child row's label is at " + lc.absX + "," + lc.absY + " not 60,79 (the label is vertically centred in the 26pt row)");
+    if (lc.absX != 60 || lc.absY != 77.5)
+        fail("the child row's label is at " + lc.absX + "," + lc.absY + " not 60,77.5 (the label is vertically centred in the 26pt row)");
+    if (2 * (lc.absY - 72) + lc.absH != 26) fail("the child row's label is not centred in its row (top " + lc.absY + ", height " + lc.absH + ")");
     say("afterExpand: rows " + rows(tr) + " child label " + lc.absX + "," + lc.absY);
 
     // (3) select the child by clicking its LABEL area (not the padding).

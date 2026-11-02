@@ -143,8 +143,17 @@ package demo
         });
         // The live demo sits on its own surface, so a widget that paints nothing
         // (a skeleton, a transparent box) still shows where the demo IS.
+        //
+        // COLUMN, and said so explicitly. It used to say "row" and still laid out as a
+        // column, because `box()` had a hard `direction: "column"` default that beat the
+        // style (see BoxNode.as): every section's `demoH` below -- and `DocSection.height()`
+        // above -- was measured against that column. Now that box() honours the style,
+        // the axis has to be written down, or 9 sections of hand-computed height overflow
+        // in a single line of text. `alignItems: "center"` is what puts a 128pt demo in
+        // the middle of the surface; on a column that is the HORIZONTAL axis, which is
+        // the way these pages have always looked.
         public static const DEMO:StyleRefinement = StyleRefinement.from({
-            flexDirection: "row", alignItems: "center", flexWrap: "wrap",
+            flexDirection: "column", alignItems: "center",
             size: [Length.pct(1), Length.px(SEC_DEMO_H)], padding: 12, gap: 10,
             background: 0xFBFDFF, borderWidths: 1, borderColor: 0xDCE6F0, cornerRadii: 8
         });

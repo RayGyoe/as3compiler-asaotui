@@ -62,13 +62,21 @@ var dragBase:int = 0;
 // app scrolls programmatically ("back to top") -- and the whole point of that phase is
 // that a request cancels a coast.
 var svModelOffset:Number = 0;
+// An UNRELATED piece of content the phase below changes: on the docs site any re-render
+// (a dialog opening, a tab switching) re-described the page and threw the reader back to
+// the top. This counter exists so that phase changes nothing but a line of text.
+var renders:int = 0;
+var mirrorOn:Boolean = true;
 var dbg:String = "";
 
 // Case (A) of ScrollViewNode's contract: the model MIRRORS the viewport, and a
 // programmatic scroll is a CHANGE in it (0 after the user scrolled to 120). The
 // mirror is what makes "re-pass the model every render" harmless -- the description
 // equals the last value the author declared, so it is not a new request.
-function svScrolled(y:Number):void { svModelOffset = y; }
+// `mirrorOn` is turned off by ONE phase, to stand in for an author who restored a
+// position once and never mirrored `onScroll`: their description names a place the view
+// is not, and that is the documented trade of declaring an offset at all.
+function svScrolled(y:Number):void { if (mirrorOn) svModelOffset = y; }
 
 class ScrollProbe extends View
 {
@@ -79,6 +87,7 @@ class ScrollProbe extends View
     private static const SV:StyleRefinement = StyleRefinement.from({ size: [200, 60], background: 0xF5F5F5 });
     private static const ROW:StyleRefinement = StyleRefinement.from({ size: [200, 40], background: 0xCCCCCC });
     private static const ROWF:StyleRefinement = StyleRefinement.from({ size: [200, 40], background: 0xDDDDDD });
+    private static const LABEL:StyleRefinement = StyleRefinement.from({ color: 0x111827 });
 
     public function ScrollProbe():void { super(); }
 
@@ -94,7 +103,9 @@ class ScrollProbe extends View
             scrollView({ key: "svf", style: SV, momentum: false, overscroll: "none" }, [
                 mkRow("f1", ROWF), mkRow("f2", ROWF), mkRow("f3", ROWF),
                 mkRow("f4", ROWF), mkRow("f5", ROWF), mkRow("f6", ROWF)
-            ])
+            ]),
+            // NOTHING TO DO WITH SVF: the phase below only re-renders this line.
+            text("renders " + renders, { style: LABEL })
         ]);
     }
 }
@@ -404,7 +415,87 @@ function phaseAxis():void
     expect(svf.offsetX == 0, "a horizontal swipe reported a horizontal offset (" + svf.offsetX + ")");
     touchAt(TouchEvent.TOUCH_END, 4, 200, 126);
     expect(clicks == before, "a consumed swipe still clicked the row (" + clicks + ")");
-    setTimeout(phaseClamp, 250);
+    setTimeout(phaseUndeclared, 250);
+}
+
+// ---- phase 6b: an unrelated re-render keeps an UNDECLARED viewport where it is ----
+// THE BUG THE DOCS SITE REPORTED: `svf` never names an offset (see render()), which is
+// the common case, and the old rule compared that silence against the LIVE position -- so
+// any re-render for any other reason read as "offsetY says 0: go to the top" and the
+// reader lost their place. Reported as "the scroll view jumps to 0 whenever anything in
+// it changes".
+function phaseUndeclared():void
+{
+    stageMark("re-render keeps an undeclared offset");
+    var svf:ScrollViewNode = ScrollViewNode(app.findByKey("svf").desc);
+    expect(svf.offsetY == 20, "the momentum:false list is at " + svf.offsetY + " before the re-render, want 20");
+    expect(svf.offsetDeclared == false, "the 'no offset' viewport thinks it declared an offset");
+    // The CONTENT does not move in layout -- the clip window does (`backing.scrollRect`,
+    // see ScrollViewWidget's header), so the on-screen fact to assert is the clip's y:
+    // 20 means the reader is looking at content 20pt down.
+    expect(clipY("svf") == 20, "the clip window is at y=" + clipY("svf") + " before the re-render, want 20");
+    renders = renders + 1;
+    view.invalidate(Dirty.ALL);
+    setTimeout(phaseUndeclaredCheck, 250);
+}
+
+function phaseUndeclaredCheck():void
+{
+    stageMark("re-render keeps an undeclared offset: still there");
+    var svf:ScrollViewNode = ScrollViewNode(app.findByKey("svf").desc);
+    expect(svf.offsetY == 20,
+        "an unrelated re-render moved the viewport to " + svf.offsetY + ", want 20 (a description that never names an offset must not scroll)");
+    expect(clipY("svf") == 20,
+        "an unrelated re-render moved the window to y=" + clipY("svf") + ", want 20 (a description that never names an offset must not scroll)");
+    // ... and the DECLARED viewport next door is untouched too, at the same moment.
+    var sv:ScrollViewNode = ScrollViewNode(app.findByKey("sv").desc);
+    expect(sv.offsetY == svModelOffset, "the mirroring viewport is at " + sv.offsetY + ", not its model " + svModelOffset);
+    setTimeout(phaseStaleDeclared, 150);
+}
+
+// ---- phase 6c: a DECLARED offset the author no longer updates IS a request ----
+// The other half of the rule: `sv` declares `offsetY: svModelOffset`, and here the model
+// is frozen (as it is for an author who restored a position once and never mirrored
+// `onScroll`) while the reader drags. The description then names a place the view is
+// NOT, and the next re-render returns there -- which is the price of declaring an
+// offset, and what makes `offsetY: 0` work as a "back to top" button.
+//
+// Pinned because it separates the two cases that must not collapse into one: naming
+// NOTHING (the phase above: never moves) and naming a STALE place (this one: moves).
+function phaseStaleDeclared():void
+{
+    stageMark("a stale DECLARED offset is a request");
+    mirrorOn = false;
+    touchAt(TouchEvent.TOUCH_BEGIN, 21, 100, 50);
+    touchAt(TouchEvent.TOUCH_MOVE, 21, 100, 40);     // slop crossed, anchor at 40
+    touchAt(TouchEvent.TOUCH_MOVE, 21, 100, 20);     // 20pt further
+    setTimeout(phaseStaleDeclaredEnd, 40);
+}
+
+function phaseStaleDeclaredEnd():void
+{
+    touchAt(TouchEvent.TOUCH_END, 21, 100, 20);
+    setTimeout(phaseStaleDeclaredCheck, 600);        // long enough for any coast to stop
+}
+
+function phaseStaleDeclaredCheck():void
+{
+    stageMark("a stale DECLARED offset: the reader moved, the model did not");
+    var at:Number = clipY("sv");
+    expect(at > 0, "the drag with a frozen model did not scroll the declared viewport (clip at " + at + ")");
+    expect(svModelOffset == 0, "the model mirrored a scroll it was not supposed to see (" + svModelOffset + ")");
+    view.invalidate(Dirty.ALL);
+    setTimeout(phaseStaleDeclaredAfter, 250);
+}
+
+function phaseStaleDeclaredAfter():void
+{
+    expect(clipY("sv") == 0,
+        "a stale DECLARED offset did not return the view (clip at " + clipY("sv") + ") -- 'offsetY: 0' is documented as a back-to-top request");
+    mirrorOn = true;
+    // phaseClamp drags from here and only asserts the CLAMPED end, so the position does
+    // not have to be reset first: it lands at 180 from anywhere.
+    setTimeout(phaseClamp, 150);
 }
 
 // ---- phase 7: a drag past the end clamps at the range ------------------
@@ -578,6 +669,16 @@ function rectOf(n:UiNode):String
 {
     if (n == null) return "MISSING";
     return n.absX + "," + n.absY + "," + n.absW + "," + n.absH;
+}
+
+// The y the viewport is CLIPPED at, i.e. the position the reader sees. The content does
+// not move in layout (ScrollViewWidget scrolls with `backing.scrollRect`), so this -- not
+// a child's absY -- is where a scroll shows up.
+function clipY(key:String):Number
+{
+    var n:UiNode = app.findByKey(key);
+    if (n == null || n.backing == null || n.backing.scrollRect == null) return -999;
+    return n.backing.scrollRect.y;
 }
 
 // The frame buffer, read back 1:1 from the compositor output (no DPI scaling, no

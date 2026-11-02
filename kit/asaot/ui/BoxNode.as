@@ -12,8 +12,10 @@ package asaot.ui
 
     public class BoxNode extends Element
     {
-        // null means "use the resolver's default direction" (column); `row()`
-        // and `column()` set it explicitly.
+        // null means "no override": the axis is whatever the resolved style says
+        // (a refinement may set `flexDirection`, and a box with no such refinement
+        // resolves to the platform default, a column). `row()` and `column()` set it
+        // explicitly, and THAT wins over the style -- see the note in BoxWidget.
         public var direction:String;
 
         private static var registered:Boolean = false;
@@ -27,7 +29,15 @@ package asaot.ui
             // dependency; the guard costs one bool test per constructed node.
             if (!registered) { registered = true; Widgets.register("box", new BoxWidget()); }
             this.role = "group";
-            this.direction = "column";
+            // NOT "column": a hard default here is what silently overwrote every
+            // `style: {flexDirection: "row"}` handed to box() -- the row laid its
+            // children out as a COLUMN while the style, the docs and the author all
+            // said row. `Theme.resolve` applies this field LAST (it is the override),
+            // so a non-null default made the style's axis unobservable. Measured on
+            // the select dropdown: `MENU_ITEM` (row, alignItems centre, height 26)
+            // put its labels at the ROW TOP, horizontally centred -- the signature of
+            // a column, not a row.
+            this.direction = null;
         }
     }
 }

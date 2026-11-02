@@ -1335,11 +1335,34 @@ kit 只挂窗口。四条硬规则（每条都有探针断言）：
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **62** 道门：
+一条命令跑全部 **66** 道门：
 
 ```sh
-node tools/gates.cjs          # 65/65 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-10-31h.txt）
+node tools/gates.cjs          # 66/66 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-11-03.txt）
 ```
+
+> 第四十八轮（2026-11-03）**用户报的两个真缺陷，两个都不在报错的那一行上**。
+> ① **弹出选项的文字不上下居中**：根因在 `BoxNode` 而不是 `select` —— `direction` 有个硬默认 `"column"`，
+> 而 `Theme.resolve` 把它当**覆盖**最后应用，于是**任何** `box({style: {flexDirection: "row"}})` 都被压成列；
+> `MENU_ITEM`（row + `alignItems: "center"` + 26 高）的下拉行因此把标签放在**行顶、水平居中**。改法是让
+> `direction` 默认 `null`（= 不覆盖），`row()`/`column()` 继续显式钉轴。`widgets/overlay` 加三条判据
+> （竖居中恒等式 / 左内边距 10 / 菜单行同样），变异 M10（默认改回 `"column"`）即红（10/10）；
+> 一直红着的 `widgets/choice`「差 1.5px」老断言原来是这个病的残影 —— 它断言的是**行顶**的 79，
+> 真值是竖居中的 **77.5**，已改正（44/44 绿）。
+> ② **滚动区里任意内容变化就滚回 0**：`ScrollViewWidget` 把描述里的 `offsetY` 与 **LIVE 位置**比，
+> 「没写 offset」被读成 0 ⇒ 任何无关重渲染都成了「回到顶部」。新增 `ScrollViewNode.offsetDeclared`
+> （工厂在 `offset`/`offsetX`/`offsetY` 出现时置真）：**声明过**的照旧「与 LIVE 不同即请求」（`offsetY: 0`
+> 的回到顶部仍然有效），**没声明**的只在数字本身变化时才动；paint 里 `REQ_*` 的镜像删掉了（读者滑出来的
+> 位置不能被当成作者的请求）。`widgets/touch-scroll` 加相 6b/6c，变异 M15/M16 各红（16/16）。
+> ③ **G11 由红转绿**：它用 `--target=x86_64-pc-windows-msvc` 编历史产物，本机没有 Windows SDK ⇒ clang 死在
+> `'stdio.h' file not found`；`fatal error:` 没有行列号、解析器一条都收不到 ⇒ 打印「clang errors 0」，
+> 也就是把「没编译成功」读成「命名没问题」。改宿主目标后三份产物照它自己的文档 decay（20 capped / 1 / 0），
+> 并加守护「clang 报了错却一条都解析不出 ⇒ 明说夹具没编译」+ 变异 M4b（11/11）。
+> ④ 文档站受①影响：`DocsStyle.DEMO` 写着 `flexDirection: "row"` 却按列排，56 页的 `demoH` 与
+> `DocSection.height()` 全按列量过 ⇒ 现在**显式**写 `flexDirection: "column"`（保持原样）；旧截图对比差异
+> 只在侧栏/演示区文字的**竖排位置**（约 1.3% 像素），正是修复本身。顺带修好 tour 的报错口径：
+> 逐页列表原先按 `badPages` 打印，而溢出只加 `badBlocks` ⇒ 「9 个区块溢出」却一个区块名都不给。
+> **全量 66/66 PASS，542 s，0 SKIP**（`reviews/gates-macos-2026-11-03.txt`）。
 
 > 第四十七轮（**SKIP 是假的**）后的全量：**64 PASS / 2 FAIL / 0 SKIP，549 s**（`reviews/gates-macos-2026-10-31j.txt`，**66 道门**）。
 > 前四轮一直把 10 道门（9 条 AIR 参考臂 + `docs app on AIR (adl)`）记成「本机没装 AIR SDK」——**这句是错的**，

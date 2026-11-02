@@ -1028,8 +1028,10 @@ runProbes(PROBES);
   const r = sh(process.execPath, ['probes/g11-nondeterminism/run.cjs'], UI);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /distinct hashes: (\d+) of (\d+)/.exec(out);
+  // "1/5 hashes" reads like a failure count and was mistaken for one twice: the PASS
+  // condition is exactly ONE distinct output, so say it that way.
   record('G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay'
-    + (m ? ' (' + m[1] + '/' + m[2] + ' hashes)' : ''), r.status, out);
+    + (m ? ' (' + m[1] + ' distinct hash for ' + m[2] + ' builds)' : ''), r.status, out);
 }
 
 // ---- 9: G14 -- does an Array in an `Object`-typed slot keep its identity? ----

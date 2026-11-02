@@ -8,20 +8,57 @@
       "(13,30) is inside the first row of sv, 3px in from its left edge and at mid-height (rows are 40 tall, 10..50): #cccccc.",
       "(13,98) is inside the first row of svf (78..118): #dddddd."
     ],
-    "not_pinned": "Offsets after a drag, the press being withdrawn, the axis lock, the coast direction/clamp and the momentum:false exactness are STATE, asserted inside Main.as and reported through <OUT>.done. The coast DISTANCE is deliberately not pinned: it is a function of the frame clock (see the probe header)."
+    "not_pinned": "Offsets after a drag, the press being withdrawn, the axis lock, the coast direction/clamp and the momentum:false exactness are STATE, asserted inside Main.as and reported through <OUT>.done. The coast DISTANCE is deliberately not pinned: it is a function of the frame clock (see the probe header). The two OFFSET-OWNERSHIP phases (6b: a description that never names an offset keeps the reader's position across an unrelated re-render; 6c: a DECLARED offset the author stopped updating is still a request) read `backing.scrollRect.y`, not a child's absY -- a viewport scrolls its CLIP, so the content's layout rects do not move at all."
   },
   "w": 320,
   "h": 240,
   "rects": {
-    "root": [0, 0, 320, 240],
-    "sv": [10, 10, 200, 60],
-    "svf": [10, 78, 200, 60],
-    "s1": [10, 10, 200, 40],
-    "f1": [10, 78, 200, 40]
+    "root": [
+      0,
+      0,
+      320,
+      240
+    ],
+    "sv": [
+      10,
+      10,
+      200,
+      60
+    ],
+    "svf": [
+      10,
+      78,
+      200,
+      60
+    ],
+    "s1": [
+      10,
+      10,
+      200,
+      40
+    ],
+    "f1": [
+      10,
+      78,
+      200,
+      40
+    ]
   },
   "points": [
-    { "x": 5, "y": 5, "rgb": "#ffffff" },
-    { "x": 13, "y": 30, "rgb": "#cccccc" },
-    { "x": 13, "y": 98, "rgb": "#dddddd" }
+    {
+      "x": 5,
+      "y": 5,
+      "rgb": "#ffffff"
+    },
+    {
+      "x": 13,
+      "y": 30,
+      "rgb": "#cccccc"
+    },
+    {
+      "x": 13,
+      "y": 98,
+      "rgb": "#dddddd"
+    }
   ]
 }

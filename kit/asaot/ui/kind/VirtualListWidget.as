@@ -75,6 +75,12 @@ package asaot.ui.kind
             var v:VirtualListNode = VirtualListNode(desc);
             n.extra[RH_KEY] = v.rowHeight;
             n.extra[COUNT_KEY] = v.count;
+            // ADOPTED ON EVERY PAYLOAD, unlike ScrollViewNode's `offsetY`, and the
+            // difference is the design: here the description IS the window (the factory
+            // mounts rows [firstIndex, lastIndex] from `offsetY`), so the widget's copy
+            // must follow it or the wheel would count rows from a window that no longer
+            // exists. There is nothing to preserve: a re-render that carries the old
+            // offset has already mounted the old rows.
             n.extra[OFF_KEY] = v.offsetY;
             // `scrollToIndex` IS DETECTED HERE, NOT IN PAINT. A re-render whose only
             // difference is a non-visual field (a fresh `scrollToIndex` on an otherwise

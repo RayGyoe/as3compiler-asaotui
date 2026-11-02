@@ -194,6 +194,10 @@ package asaot.ui.kind
             n.listen(n.backing, MouseEvent.MOUSE_OUT,
                 function (e:MouseEvent):void { self.setHover(n, 0); });
             n.extra[BARS] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            // The live position starts at 0 explicitly, so the "is this declaration a
+            // move?" test below compares two numbers and never a null.
+            n.extra[LIVE_X] = 0;
+            n.extra[LIVE_Y] = 0;
             n.extra[HOVER] = 0;
             n.extra[DRAG] = 0;
             n.extra[DRAGGED] = 0;
@@ -208,23 +212,30 @@ package asaot.ui.kind
             var sv:ScrollViewNode = ScrollViewNode(desc);
             var step:Object = n.extra[STEP_KEY];
             if (step == null || Number(step) != sv.wheelStep) n.extra[STEP_KEY] = sv.wheelStep;
-            // A CHANGE in the description is a request; an unchanged one leaves the
-            // live position alone (see ScrollViewNode's header). A REQUEST ALSO CANCELS A
-            // COAST: an author who scrolls programmatically (`offsetY = 0` from a "back to
-            // top" button) means it, and a glide that keeps writing the old position would
-            // fight the author. paint syncs REQ_X/REQ_Y with what IT wrote, so this fires
-            // only for somebody else's write.
-            if (requested(n, REQ_X, LIVE_X, sv.offsetX))
+            // A DECLARED OFFSET THAT DIFFERS FROM THE LIVE POSITION IS A REQUEST; so is a
+            // CHANGE in a description that never declared one (style B, mutated by hand).
+            // A re-sent value on an undeclared description is silent, which is what keeps
+            // an unrelated re-render from throwing the reader to the top -- see
+            // ScrollViewNode's header, the flag's whole reason for existing.
+            if (this.requested(n, REQ_X, sv.offsetX) || sv.offsetDeclared)
             {
-                this.stopGlide(n);
-                this.settleNow(n);
-                n.dirty |= Dirty.M_PAINT;
+                if (Number(n.extra[LIVE_X]) != sv.offsetX)
+                {
+                    n.extra[LIVE_X] = sv.offsetX;
+                    this.stopGlide(n);
+                    this.settleNow(n);
+                    n.dirty |= Dirty.M_PAINT;
+                }
             }
-            if (requested(n, REQ_Y, LIVE_Y, sv.offsetY))
+            if (this.requested(n, REQ_Y, sv.offsetY) || sv.offsetDeclared)
             {
-                this.stopGlide(n);
-                this.settleNow(n);
-                n.dirty |= Dirty.M_PAINT;
+                if (Number(n.extra[LIVE_Y]) != sv.offsetY)
+                {
+                    n.extra[LIVE_Y] = sv.offsetY;
+                    this.stopGlide(n);
+                    this.settleNow(n);
+                    n.dirty |= Dirty.M_PAINT;
+                }
             }
             if (optionsChanged(n, sv)) n.dirty |= Dirty.M_PAINT;
             return false;   // the viewport's own size is the style's business
@@ -249,12 +260,18 @@ package asaot.ui.kind
             return true;
         }
 
-        private function requested(n:UiNode, reqKey:String, liveKey:String, v:Number):Boolean
+        // HAS THE DESCRIPTION'S OWN OFFSET CHANGED SINCE THE LAST ONE?
+        //
+        // This is what honours a value the author wrote by hand on a description that
+        // never declared an offset (style B). It is NOT the whole request rule: a
+        // DECLARED offset is compared against the live position instead, because that is
+        // the case where "the description says 0 and the reader is at 500" really does
+        // mean "take me back to the top". See ScrollViewNode's header.
+        private function requested(n:UiNode, reqKey:String, v:Number):Boolean
         {
             var prev:Object = n.extra[reqKey];
             if (prev != null && Number(prev) == v) return false;
             n.extra[reqKey] = v;
-            n.extra[liveKey] = v;
             return true;
         }
 
@@ -435,19 +452,13 @@ package asaot.ui.kind
             // written back into the description so `offsetY` is always the effective
             // position, whether it was reached by a wheel or by an over-large request
             // (the wheel handler writes back for the same reason).
+            //
+            // THIS WRITE-BACK IS NOT A REQUEST. updatePayload compares the description
+            // against the value the author DECLARED (REQ_*), not against the live
+            // position, so a slide the user made cannot be mistaken for the author's
+            // next command -- and REQ_* is deliberately left alone here.
             sv.offsetX = ox;
             sv.offsetY = oy;
-            // Mirror the write-back into the request bookkeeping: the author's handle and
-            // the widget's own output are now the same value, so payload can tell an
-            // author's request from this frame's slide (and cancel a glide only for the
-            // former). THIS IS WHY A STALE DESCRIPTION RENAMES ITSELF A REQUEST: the
-            // comparison in payload is against the LIVE position, so an author who
-            // re-passes an old offsetY (because their model did not follow onScroll)
-            // does not "leave the view alone" -- it is read as "go back", and the view
-            // snaps. ScrollViewNode's header states the two authoring styles; only the
-            // mirroring one (A) is safe.
-            n.extra[REQ_X] = ox;
-            n.extra[REQ_Y] = oy;
             sv.contentW = cw;
             sv.contentH = ch;
             sv.maxOffsetX = maxX;

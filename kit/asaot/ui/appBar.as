@@ -123,11 +123,12 @@ package asaot.ui
         var closed:Boolean = !n.large || coll >= extra;
         var showBig:Boolean = n.large && coll < extra;
 
-        // `row(...)`, NOT `box({ flexDirection: "row" })`: a box's axis is
-        // `BoxNode.direction`, which the BoxWidget mirrors while the style's
-        // `flexDirection` is ignored for that kind -- the bar would silently stack
-        // its slots as a column (measured: lead and trailing both centred, one above
-        // the other).
+        // `row(...)` and not `box()`: box() honours the style's axis these days (its
+        // `direction` field is "no override" unless a factory sets it -- it used to
+        // default to "column" and silently stack these slots, measured: lead and
+        // trailing both centred, one above the other). row() is still right here
+        // because it PINS the axis: the three slots are the bar's own shape, not
+        // styling, so nothing merged in later may stack them.
         var bar:Node = row({ style: StyleRefinement.from({
             alignItems: "center", gap: 8,
             height: rowH, padding: [12, 0] }) });

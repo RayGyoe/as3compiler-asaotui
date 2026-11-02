@@ -120,9 +120,30 @@ const MUTATIONS = [
     file: 'kit/asaot/ui/kind/ScrollViewWidget.as',
     why: 'A PROGRAMMATIC SCROLL DOES NOT CANCEL THE COAST: "back to top" is written, then '
       + 'the glide adds its own motion on top and the view drifts back down',
-    find: '            if (requested(n, REQ_Y, LIVE_Y, sv.offsetY))\n            {\n                this.stopGlide(n);',
-    replace: '            if (requested(n, REQ_Y, LIVE_Y, sv.offsetY))\n            {',
+    find: '                    n.extra[LIVE_Y] = sv.offsetY;\n                    this.stopGlide(n);',
+    replace: '                    n.extra[LIVE_Y] = sv.offsetY;',
     expect: 'a programmatic scroll did not cancel the glide',
+  },
+  {
+    id: 'M15',
+    file: 'kit/asaot/ui/ScrollViewNode.as',
+    why: 'EVERY DESCRIPTION COUNTS AS NAMING AN OFFSET: a viewport whose description says '
+      + 'nothing about `offsetY` is read as "0", so any unrelated re-render throws the '
+      + 'reader back to the top -- the docs-site bug ("the scroll view jumps to 0 '
+      + 'whenever anything in it changes")',
+    find: '            this.offsetDeclared = false;',
+    replace: '            this.offsetDeclared = true;',
+    expect: 'a description that never names an offset must not scroll',
+  },
+  {
+    id: 'M16',
+    file: 'kit/asaot/ui/kind/ScrollViewWidget.as',
+    why: 'A DECLARED OFFSET STOPS BEING A REQUEST: only a CHANGE in the number moves the view, '
+      + 'so an author who writes `offsetY: 0` every render can no longer send the reader '
+      + 'back to the top -- the documented "back to top" button goes dead',
+    find: '            if (this.requested(n, REQ_Y, sv.offsetY) || sv.offsetDeclared)',
+    replace: '            if (this.requested(n, REQ_Y, sv.offsetY))',
+    expect: "'offsetY: 0' is documented as a back-to-top request",
   },
   {
     id: 'M10',

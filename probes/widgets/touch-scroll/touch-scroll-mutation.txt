@@ -2,16 +2,16 @@ baseline (unmutated): RESULT: PASS
 
 M1  CAUGHT  THE DRAG MOVES THE CONTENT BY HALF: the finger and the content do not stay together, which is the whole contract of a 1:1 drag
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL a 20pt drag moved the content to 10, want 20; the release offset is 10, want 20; the second fling moved 10, want 20; the third fling started at 10, want 20; the momentum:false list is at 10, want 20; the momentum:false list coasted to 10, want 20; a horizontal swipe moved the vertical list to 10;
-     restore: byte-identical (906454c883cc892b)
+     FAIL  program verdict: FAIL a 20pt drag moved the content to 10, want 20; the release offset is 10, want 20; the second fling moved 10, want 20; the third fling started at 10, want 20; the momentum:false list is at 10, want 20; the momentum:false list coasted to 10, want 20; a horizontal swipe moved the vertical list to 10; the momentum:false list is at 10 before the re-render, want 20; the clip window is at y=10 before the re-render, want 20; an unrelated re-render moved the viewport to 10, want 20 (a description that never names an offset must not scroll); an unrelated re-render moved the window to y=10, want 20 (a description that never names an offset must not scroll);
+     restore: byte-identical (8c43fdd18d3d09b5)
 M2  CAUGHT  THE DRAG MOVES THE CONTENT THE WRONG WAY: the list scrolls against the finger
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL a 20pt drag moved the content to 0, want 20; the release offset is 0, want 20; the release did not coast (still at 0); the second fling moved 0, want 20; the second release did not coast (still at 0); the third fling started at 0, want 20; the third release did not coast (still at 0); the momentum:false list is at 0, want 20; the momentum:false list coasted to 0, want 20; a horizontal swipe moved the vertical list to 0; a drag past the end landed at 0, want 180; the stretch moved the AUTHOR's offset to 0, want 180; the stretch is -47.142857142857146px, want ~40 (damped, not the raw 220); the bottom of the stretched pane is #cccccc, want the pane's #F5F5F5; the top of the stretched pane is #f5f5f5, want a row's #CCCCCC; the pane landed at 0 after the bounce, want 180; the 'none' viewport is at 0, want 180 (clamped);
-     restore: byte-identical (906454c883cc892b)
+     FAIL  program verdict: FAIL a 20pt drag moved the content to 0, want 20; the release offset is 0, want 20; the release did not coast (still at 0); the second fling moved 0, want 20; the second release did not coast (still at 0); the third fling started at 0, want 20; the third release did not coast (still at 0); the momentum:false list is at 0, want 20; the momentum:false list coasted to 0, want 20; a horizontal swipe moved the vertical list to 0; the momentum:false list is at 0 before the re-render, want 20; the clip window is at y=0 before the re-render, want 20; an unrelated re-render moved the viewport to 0, want 20 (a description that never names an offset must not scroll); an unrelated re-render moved the window to y=0, want 20 (a description that never names an offset must not scroll); the drag with a frozen model did not scroll the declared viewport (clip at 0); a drag past the end landed at 0, want 180; the stretch moved the AUTHOR's offset to 0, want 180; the stretch is -47.142857142857146px, want ~40 (damped, not the raw 220); the bottom of the stretched pane is #cccccc, want the pane's #F5F5F5; the top of the stretched pane is #f5f5f5, want a row's #CCCCCC; the pane landed at 0 after the bounce, want 180; the 'none' viewport is at 0, want 180 (clamped);
+     restore: byte-identical (8c43fdd18d3d09b5)
 M9  CAUGHT  THE DRAG IS ANCHORED AT TOUCH-DOWN: the 8pt of motion that proved "this is a drag" also scrolls, so a tap that wobbles jumps the list
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL the slop motion scrolled the list (20); a 20pt drag moved the content to 40, want 20; the release offset is 40, want 20; the third fling started at 40, want 20; the slop motion scrolled the momentum:false list (20); the momentum:false list is at 40, want 20; the momentum:false list coasted to 40, want 20; a horizontal swipe moved the vertical list to 40; a drag past the end landed at 0, want 180; the stretch moved the AUTHOR's offset to 0, want 180; the stretch is 0px, want ~40 (damped, not the raw 220); the bottom of the stretched pane is #cccccc, want the pane's #F5F5F5; the pane landed at 0 after the bounce, want 180;
-     restore: byte-identical (906454c883cc892b)
+     FAIL  program verdict: FAIL the slop motion scrolled the list (20); a 20pt drag moved the content to 40, want 20; the release offset is 40, want 20; the third fling started at 40, want 20; the slop motion scrolled the momentum:false list (20); the momentum:false list is at 40, want 20; the momentum:false list coasted to 40, want 20; a horizontal swipe moved the vertical list to 40; the momentum:false list is at 40 before the re-render, want 20; the clip window is at y=40 before the re-render, want 20; an unrelated re-render moved the viewport to 40, want 20 (a description that never names an offset must not scroll); an unrelated re-render moved the window to y=40, want 20 (a description that never names an offset must not scroll); the drag with a frozen model did not scroll the declared viewport (clip at 0); a drag past the end landed at 0, want 180; the stretch moved the AUTHOR's offset to 0, want 180; the stretch is 0px, want ~40 (damped, not the raw 220); the bottom of the stretched pane is #cccccc, want the pane's #F5F5F5; the pane landed at 0 after the bounce, want 180;
+     restore: byte-identical (8c43fdd18d3d09b5)
 M3  CAUGHT  THE PRESS IS NOT WITHDRAWN WHEN A DRAG STARTS: the row stays painted pressed while its list scrolls
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the row stayed pressed after the drag took over;
@@ -19,43 +19,51 @@ M3  CAUGHT  THE PRESS IS NOT WITHDRAWN WHEN A DRAG STARTS: the row stays painted
 M4  CAUGHT  MOMENTUM IS IGNORED FOR EVERY VIEWPORT: `momentum:false` becomes a lie and a fling never coasts
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the release did not coast (still at 20); the second release did not coast (still at 40); the third release did not coast (still at 20);
-     restore: byte-identical (906454c883cc892b)
+     restore: byte-identical (8c43fdd18d3d09b5)
 M5  CAUGHT  MOMENTUM IS FORCED ON FOR EVERY VIEWPORT: the list an author asked to stop dead coasts under the finger
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL the momentum:false list coasted to 139.023951778858, want 20; a horizontal swipe moved the vertical list to 157.4432400634555; a drag past the end landed at 0, want 180; the stretch moved the AUTHOR's offset to 0, want 180; the stretch is 0px, want ~40 (damped, not the raw 220); the bottom of the stretched pane is #cccccc, want the pane's #F5F5F5; the pane landed at 0 after the bounce, want 180;
-     restore: byte-identical (906454c883cc892b)
+     FAIL  program verdict: FAIL the momentum:false list coasted to 138.87297525079663, want 20; a horizontal swipe moved the vertical list to 157.44217186167404; the momentum:false list is at 157.44217186167404 before the re-render, want 20; the clip window is at y=157.44217186167404 before the re-render, want 20; an unrelated re-render moved the viewport to 157.44217186167404, want 20 (a description that never names an offset must not scroll); an unrelated re-render moved the window to y=157.44217186167404, want 20 (a description that never names an offset must not scroll); the drag with a frozen model did not scroll the declared viewport (clip at 0); a drag past the end landed at 0, want 180; the stretch moved the AUTHOR's offset to 0, want 180; the stretch is 0px, want ~40 (damped, not the raw 220); the bottom of the stretched pane is #cccccc, want the pane's #F5F5F5; the pane landed at 0 after the bounce, want 180; the 'none' viewport is at 0, want 180 (clamped);
+     restore: byte-identical (8c43fdd18d3d09b5)
 M6  CAUGHT  THE AXIS IS NEVER LOCKED: a horizontal swipe nudges a vertical list by its (small) vertical part instead of being consumed
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL a horizontal swipe moved the vertical list to 14;
-     restore: byte-identical (906454c883cc892b)
+     FAIL  program verdict: FAIL a horizontal swipe moved the vertical list to 14; the momentum:false list is at 14 before the re-render, want 20; the clip window is at y=14 before the re-render, want 20; an unrelated re-render moved the viewport to 14, want 20 (a description that never names an offset must not scroll); an unrelated re-render moved the window to y=14, want 20 (a description that never names an offset must not scroll);
+     restore: byte-identical (8c43fdd18d3d09b5)
 M7  CAUGHT  A DRAG PAST THE END IS NOT CLAMPED: the view leaves its content and the rest of the frame shows blank space
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL a drag past the end landed at 400, want 180; the stretch moved the AUTHOR's offset to 580, want 180; the 'none' viewport is at 430, want 180 (clamped);
-     restore: byte-identical (906454c883cc892b)
+     restore: byte-identical (8c43fdd18d3d09b5)
 M8  CAUGHT  A PROGRAMMATIC SCROLL DOES NOT CANCEL THE COAST: "back to top" is written, then the glide adds its own motion on top and the view drifts back down
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL the release did not coast (still at 20); a programmatic scroll did not cancel the glide (at 15.31876804388018); the third fling started at 35.31876804388018, want 20;
-     restore: byte-identical (906454c883cc892b)
+     FAIL  program verdict: FAIL a programmatic scroll did not cancel the glide (at 0.8902706004969108); the third fling started at 20.890270600496912, want 20;
+     restore: byte-identical (8c43fdd18d3d09b5)
+M15  CAUGHT  EVERY DESCRIPTION COUNTS AS NAMING AN OFFSET: a viewport whose description says nothing about `offsetY` is read as "0", so any unrelated re-render throws the reader back to the top -- the docs-site bug ("the scroll view jumps to 0 whenever anything in it changes")
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the 'no offset' viewport thinks it declared an offset; an unrelated re-render moved the viewport to 0, want 20 (a description that never names an offset must not scroll); an unrelated re-render moved the window to y=0, want 20 (a description that never names an offset must not scroll);
+     restore: byte-identical (4c6791dc078c23fb)
+M16  CAUGHT  A DECLARED OFFSET STOPS BEING A REQUEST: only a CHANGE in the number moves the view, so an author who writes `offsetY: 0` every render can no longer send the reader back to the top -- the documented "back to top" button goes dead
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the third fling started at 0, want 20; the mirroring viewport is at 180, not its model 0; a stale DECLARED offset did not return the view (clip at 180) -- 'offsetY: 0' is documented as a back-to-top request; a drag past the end landed at 0, want 180;
+     restore: byte-identical (8c43fdd18d3d09b5)
 M10  CAUGHT  A FINGER LANDING DOES NOT STOP A COAST: the press is recorded but the viewport is never told, so the list keeps sliding under a finger that is already down
      verdict: RESULT: FAIL
-     FAIL  program verdict: FAIL a finger on a coasting list did not stop it (106.96691620560638 vs 91.2669371344625);
+     FAIL  program verdict: FAIL a finger on a coasting list did not stop it (102.97079894275291 vs 88.08495000436095);
      restore: byte-identical (5ec732eca58952b3)
 M11  CAUGHT  THE STRETCH IS NOT DAMPED: a hard drag pulls the content 220px off its own end instead of the damped ~40px the rubber-band curve gives
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the stretch is 400px, want ~40 (damped, not the raw 220); the top of the stretched pane is #f5f5f5, want a row's #CCCCCC;
-     restore: byte-identical (906454c883cc892b)
+     restore: byte-identical (8c43fdd18d3d09b5)
 M12  CAUGHT  A RELEASE WHILE STRETCHED DOES NOT SPRING BACK: the pane stays past its end until something else moves it (S3 without the return half)
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the previous bounce had not settled (stretch 40.110497237569064); the pane did not return to the end (stretch 47.142857142857146); after the bounce the bottom of the pane is #f5f5f5, want a row's #CCCCCC;
-     restore: byte-identical (906454c883cc892b)
+     restore: byte-identical (8c43fdd18d3d09b5)
 M13  CAUGHT  THE STRETCH NEVER REACHES THE PIXELS: the offset is tracked and published, but the clip is drawn at the clamped position, so nothing moves on screen
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL the bottom of the stretched pane is #cccccc, want the pane's #F5F5F5;
-     restore: byte-identical (906454c883cc892b)
+     restore: byte-identical (8c43fdd18d3d09b5)
 M14  CAUGHT  `overscroll: "none"` IS IGNORED: a pane whose author said it must not move bounces anyway, which is the form-list bug the mode exists to prevent
      verdict: RESULT: FAIL
      FAIL  program verdict: FAIL overscroll:'none' still stretched by 41.77215189873418px; the 'none' pane's bottom is #f5f5f5, want row #DDDDDD (nothing stretched);
-     restore: byte-identical (906454c883cc892b)
+     restore: byte-identical (8c43fdd18d3d09b5)
 
-MUTATION touch-scroll: 14/14 caught, 0 problem(s)
+MUTATION touch-scroll: 16/16 caught, 0 problem(s)
 RESULT: PASS

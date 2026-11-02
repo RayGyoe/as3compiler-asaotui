@@ -19,6 +19,9 @@
 //                       and require the gate to exit non-zero naming that artifact.
 //                       This is the only mutation that touches the checker itself; it
 //                       is restored by hash.
+//   M4b unmeasurable:   make the artifact check fail to COMPILE (a missing -include) and
+//                       require the gate to name that, instead of printing "0 errors" --
+//                       the reading a broken toolchain produced on 2026-11-02.
 //   M5  skip arm:       make the run see the generator move mid-run and require exit 3
 //                       (SKIP) with the reason printed -- never a green.
 //   M6  attribution:    a generator that moves DURING a build must not be reported as
@@ -140,6 +143,23 @@ try {
     fs.writeFileSync(RUN, original);
   }
   {
+    // ---- M4b: a fixture that does not COMPILE measures nothing ------------------
+    // The regression this replaces a real false reading: the artifact check ran with
+    // `--target=x86_64-pc-windows-msvc` on a machine with no Windows SDK, clang died on
+    // `'stdio.h' file not found`, and because a `fatal error:` has no line:col the probe
+    // parsed ZERO errors and printed "clang errors 0" for all three artifacts -- i.e.
+    // "the naming is fine". ASC_G11_BREAK_FIXTURE=1 reproduces that state on purpose.
+    const r = spawnSync(process.execPath, [RUN], {
+      cwd: UI, encoding: 'utf8', maxBuffer: 1 << 26,
+      env: { ...process.env, ASC_G11_RUNS: '1', ASC_G11_EVIDENCE: 'off', ASC_G11_BREAK_FIXTURE: '1' }
+    });
+    const out = (r.stdout || '') + (r.stderr || '');
+    const named = /FAIL: artifact-\d[^:]*: clang reported \d+ error\(s\) but NONE of them could be parsed/.test(out);
+    check('M4b a fixture that cannot compile is named, not read as "0 errors"',
+      r.status !== 0 && named,
+      'exit ' + r.status + ', "could not be parsed" FAIL line: ' + (named ? 'present' : 'ABSENT'));
+  }
+  {
     // ---- M5: the SKIP branch is reachable, and it is not a green ----------------
     // "All gates PASS" is only honest if the one non-PASS verdict a gate can emit is
     // itself tested. ASC_G11_FORCE_SKIP makes run.cjs see the generator as having moved
@@ -195,7 +215,13 @@ try {
       console.log('[FAIL] NOT RESTORED: ' + path.basename(f) + ' ' + before.get(f).slice(0, 16) + ' -> ' + now.slice(0, 16));
     }
   }
-  for (const m of [...mutants, path.join(HERE, 'mutation-src.c')]) if (fs.existsSync(m)) fs.unlinkSync(m);
+  // `buildHash` compiles mutant-3 with `--run`-less AOT, which leaves BOTH the C and the
+  // executable (`mutation-src`, 8 MB, extensionless on macOS). Cleaning only the .c left a
+  // binary in the source tree on every run -- an untracked file that then shows up in
+  // every "is the tree clean?" check downstream.
+  for (const m of [...mutants, path.join(HERE, 'mutation-src.c'), path.join(HERE, 'mutation-src'),
+                   path.join(HERE, 'mutation-src.exe')])
+    if (fs.existsSync(m)) fs.unlinkSync(m);
   check('every watched file restored byte-for-byte', restored,
     WATCH.map((f) => path.basename(f) + ' ' + before.get(f).slice(0, 16)).join(', '));
   check('no mutant left on disk', mutants.every((m) => !fs.existsSync(m)));

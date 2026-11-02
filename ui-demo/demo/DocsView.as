@@ -71,8 +71,8 @@ package demo
             var meta:String = "kind \"" + p.id + "\"  -  " + group.toLowerCase()
                 + "  -  " + secs.length + " example" + (secs.length == 1 ? "" : "s");
 
-            // row(), not column(): a widget's own direction OVERRIDES the style, so the
-            // root has to be built with the row factory to lay the two panes side by side.
+            // row(), not column(): box() honours the style's flexDirection, but row()
+            // also PINS the axis, so the two panes cannot be stacked by a later patch.
             return row({ key: "root", style: DocsStyle.ROOT, ariaName: "asaot.ui documentation" }, [
                 this.sidebar(p),
                 column({ key: "main", style: DocsStyle.MAIN, ariaName: "Component page" }, [

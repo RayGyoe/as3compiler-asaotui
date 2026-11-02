@@ -21,6 +21,12 @@
 // scrollbar thumbs clamp on every platform. `offsetX`/`offsetY` stay inside the range
 // in both modes; the stretch is reported separately in `overscrollX`/`overscrollY`.
 //
+// NAMING AN OFFSET IS WHAT MAKES IT A REQUEST. Pass `offset` / `offsetX` / `offsetY`
+// and the value is honoured whenever it differs from where the view is (so a "back to
+// top" button is `offsetY: 0`); pass NONE and a re-render never moves the reader --
+// which is the common case, and the one that used to jump to the top on every
+// unrelated re-render (see ScrollViewNode's header).
+//
 // Give it an explicit size: a viewport has no meaningful intrinsic size, so an
 // auto axis falls back to 200x150 (ScrollViewWidget.DEFAULT_W/H) rather than
 // collapsing to zero.
@@ -40,10 +46,11 @@ package asaot.ui
                 {
                     n.offsetX = Number(o[0]);
                     n.offsetY = Number(o[1]);
+                    n.offsetDeclared = true;
                 }
             }
-            if (opts.offsetX != null) n.offsetX = Number(opts.offsetX);
-            if (opts.offsetY != null) n.offsetY = Number(opts.offsetY);
+            if (opts.offsetX != null) { n.offsetX = Number(opts.offsetX); n.offsetDeclared = true; }
+            if (opts.offsetY != null) { n.offsetY = Number(opts.offsetY); n.offsetDeclared = true; }
             if (opts.wheelStep != null) n.wheelStep = Number(opts.wheelStep);
             if (opts.stickToBottom != null) n.stickToBottom = Boolean(opts.stickToBottom);
             if (opts.momentum != null) n.momentum = Boolean(opts.momentum);

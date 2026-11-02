@@ -27,7 +27,7 @@
 | 1 | `Pointer` 抽象 + 合成 mouse 兼容层（P1/P2） | 不做则 41 个 kind 全部只能靠鼠标；兼容层让它们**不改就动** | M |
 | — | ↳ **✅ 已落地（2026-10-31）** | `Pointer`/`PointerRouter`/`InputConstants` + `UiApp.pickAt` + 合成 mouse 兼容层；门 `probes/widgets/pointer-touch`，变异 7/7。**真触摸输入仍是 G5**（后端不出事件） | Done |
 | 2 | 触摸拖动滚动 + 惯性（S1/S2/S3） | 手机上「滚不动」等于不可用 | M |
-| — | ↳ **✅ S1/S2/S3 已落地（2026-10-31）** | `TouchScrollable` + `ScrollViewWidget` 的 1:1 拖动/轴锁/press 撒回 + 惯性（按 dt 积分，`momentum`/`decelerationRate`）+ **越界回弹**（`overscroll: "rubber"\|"none"`，iOS 曲线阻尼、释放后按 dt 弹簧回位、**作者态 `offsetY` 全程不出界**，拉伸另报 `overscrollY`）；门 `probes/widgets/touch-scroll`，变异 **14/14**。**S4 分页、S5 嵌套仲裁仍未做** | Done |
+| — | ↳ **✅ S1/S2/S3 已落地（2026-10-31）** | `TouchScrollable` + `ScrollViewWidget` 的 1:1 拖动/轴锁/press 撒回 + 惯性（按 dt 积分，`momentum`/`decelerationRate`）+ **越界回弹**（`overscroll: "rubber"\|"none"`，iOS 曲线阻尼、释放后按 dt 弹簧回位、**作者态 `offsetY` 全程不出界**，拉伸另报 `overscrollY`；**描述不写 offset 时重渲染绝不移动读者**——`offsetDeclared` 区分「没声明」与「声明了 0」，声明了才走「与活位置不同即请求」，所以 `offsetY: 0` 仍是可用的回到顶部，而声明过又不等 `onScroll` 镜像的描述每次重渲染都会回到它声明的那个数）；门 `probes/widgets/touch-scroll`，变异 **16/16**（相 6b 无关重渲染 / 6c 陈旧声明）。**S4 分页、S5 嵌套仲裁仍未做** | Done |
 | 3 | `Env`（安全区 / 键盘 / 密度 / hasHover）（E1/E2） | 刘海与键盘一挡，界面就残；且 `hasHover` 决定 103 处 hover 是否该跑 | M |
 | — | ↳ **✅ E1/E2 已落地（2026-10-31）** | `Env`/`EnvBase`/`DesktopEnv`/`SafeArea` + `UiApp.bindEnv`（订阅、`hasHover` 一处裁决）+ 根容器的 `safeArea:` 折进 **padding**；门 `probes/widgets/env`，变异 **7/7**。**键盘矩形、`appState`、`reduceMotion`、`isDark` 只有投递、没有消费者**（S7/E5/E7/E8） | Done |
 | 4 | `navStack` + `appBar` + `tabBar`（C1/C2/C3） | 现在**没有"页面"概念**，手机上没有返回栈 | L |

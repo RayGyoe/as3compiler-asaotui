@@ -105,22 +105,32 @@ function distinctVerdict(uniqSize, runs, movedBuilds) {
 // therefore `truncated`, not `20` -- asserting a cap would make the probe red on a
 // clang upgrade and teaches nothing.
 // ---------------------------------------------------------------------------
+// WHY THE HOST TARGET AND NOT `--target=x86_64-pc-windows-msvc`: the naming hazard
+// these artifacts carry is PLATFORM-INDEPENDENT (a struct field and the body literal
+// that touches it), and the msvc target needs the Windows SDK headers, which are not on
+// a mac. Measured when this was noticed: the msvc build died at
+// `artifact-3-consistent.c:1:10: fatal error: 'stdio.h' file not found` and clang still
+// printed `1 error generated` -- a line the parser below cannot read (no line:col), so
+// the probe reported "0 errors" for all three artifacts and the fictional reading "the
+// naming is fine". On the host target the same three files reproduce the documented
+// 20-capped / 1 / 0 errors, because nothing they test is Windows-specific.
 const CC_FLAGS = [
   '-fsyntax-only',
-  '--target=x86_64-pc-windows-msvc',
-  '-fms-runtime-lib=static',
   '-O2',
   '-ffp-contract=off',
   '-D', 'ASC_USE_SKIA=1',
   '-D', 'ASC_USE_WINDOW=1',
-  '-D', 'ASC_HAVE_TEXT',
-  '-I', './vendor/skia',
-  '-I', './vendor/sdl2/include/windows-x64',
-  '-I', './vendor/curl/include'
+  '-D', 'ASC_HAVE_TEXT'
 ];
 
 function cErrors(cfile) {
-  const r = spawnSync(clang, [...CC_FLAGS, cfile], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 28 });
+  // ASC_G11_BREAK_FIXTURE is mutation.cjs's hook: it makes clang fail on a header that
+  // does not exist, i.e. the "does not compile" case the unparsed-errors guard below has
+  // to name instead of reporting "0 errors". It can only turn a PASS into a FAIL.
+  const flags = process.env.ASC_G11_BREAK_FIXTURE === '1'
+    ? [...CC_FLAGS, '-include', 'g11-does-not-exist.h']
+    : CC_FLAGS;
+  const r = spawnSync(clang, [...flags, cfile], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 28 });
   const errs = [];
   const stderr = r.stderr || '';
   for (const rec of stderr.split(/\r?\n/)) {
@@ -128,9 +138,19 @@ function cErrors(cfile) {
     if (m) errs.push({ line: Number(m[2]), col: Number(m[3]), msg: m[4] });
   }
   const gen = /(\d+) errors? generated/.exec(stderr);
+  // `fatal error:` has no line:col, so it is NOT in `errs` -- and a file that does not
+  // compile measures nothing about the naming. Report the unparsed lines instead of
+  // letting "0 errors" stand for "compiled cleanly": that silent substitution is how a
+  // broken toolchain read as "the hazard is gone".
+  // `too many errors emitted` is the CAP doing its job (artifact-1 is expected to hit
+  // it): it is a notice about the run, not an error about the fixture.
+  const unparsed = stderr.split(/\r?\n/).filter((l) => /(fatal )?error:/.test(l)
+    && !/^(.+?):(\d+):(\d+): error: /.test(l)
+    && !/too many errors emitted/.test(l));
   return {
     status: r.status,
     errors: errs,
+    unparsed: unparsed.slice(0, 3),
     truncated: /too many errors emitted/.test(stderr),
     summary: gen ? Number(gen[1]) : null,
     // The hazard kinds, e.g. "Date._time": what broke, not how many times.
@@ -377,6 +397,10 @@ function main() {
     if (!fs.existsSync(p)) { say('   ' + a.file + ': MISSING'); failures.push('fixture missing: ' + a.file); prev = Infinity; continue; }
     const c = cErrors(p);
     const got = c.errors.length;
+    if (c.unparsed.length)
+      failures.push(a.file + ': clang reported ' + (c.summary == null ? '?' : c.summary)
+        + ' error(s) but NONE of them could be parsed -- the fixture did not compile, so nothing '
+        + 'about the naming was measured: ' + c.unparsed[0].slice(-160));
     const first = c.errors.length ? c.errors[0] : null;
     const want = a.truncated ? '>=' + a.minErrors + ' (capped)' : String(a.exact);
     say('   ' + a.file + '  ' + a.mtime);

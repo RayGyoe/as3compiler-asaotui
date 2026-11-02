@@ -227,6 +227,33 @@ function settle():void
     if (rowLabel == null || rowLabel.tf == null || rowLabel.tf.y != -PaintKit.TEXT_GUTTER)
         problems = problems + "the select row label ignores the paragraph gutter; ";
 
+    // (g) A MENU ROW IS A ROW. `MENU_ITEM` is a refinement -- `flexDirection: "row"`,
+    //     `alignItems: "center"`, height 26 -- handed to `box()`, so the axis and the
+    //     centring both come from the STYLE. A BoxNode whose own `direction` field
+    //     wins over it lays these out as a COLUMN: the label lands at the row's TOP
+    //     and is centred HORIZONTALLY, which is exactly what the select dropdown did
+    //     (measured on the docs page: labels 6px above centre). The three assertions
+    //     below are the rule, not a snapshot: vertically centred, flush with the row's
+    //     10pt leading padding, and the same for a MENU row (same refinement).
+    var srow:UiNode = app.findByKey("sel:i0");
+    var mlab:UiNode = app.findByKey("mnu:i0:t");
+    var mrow:UiNode = app.findByKey("mnu:i0");
+    if (srow == null || rowLabel == null)
+        problems = problems + "the select rows are missing; ";
+    else
+    {
+        if (2 * (rowLabel.absY - srow.absY) + rowLabel.absH != srow.absH)
+            problems = problems + "the select row label is not vertically centred in its row (top "
+                + rowLabel.absY + " in " + srow.absY + "+" + srow.absH + "); ";
+        if (rowLabel.absX != srow.absX + 10)
+            problems = problems + "the select row label is at x=" + rowLabel.absX
+                + ", not 10pt in from the row (" + (srow.absX + 10)
+                + ") -- a centred COLUMN, not a row; ";
+    }
+    if (mlab == null || mrow == null) problems = problems + "the menu rows are missing; ";
+    else if (2 * (mlab.absY - mrow.absY) + mlab.absH != mrow.absH)
+        problems = problems + "the menu row label is not vertically centred in its row (top " + mlab.absY + " in " + mrow.absY + "+" + mrow.absH + "); ";
+
     carry = problems;
     setTimeout(stageB, 300);
 }

@@ -54,14 +54,17 @@ package demo
                 }),
 
                 new DocSection("Direction", [
-                    "The default axis is a column. `row` is the same node with direction \"row\", and it is",
-                    "the only way to place children side by side -- a box's direction overrides inheritance."
+                    "The default axis is a column; `flexDirection: \"row\"` in a style makes a row.",
+                    "`row(opts, children)` is that same box with the axis PINNED, so a style merged in",
+                    "later cannot stack it again -- use `row`/`column` when the axis is the control's own",
+                    "shape, and a plain `box` when it is only styling."
                 ], [
                     "column({ gap: 6 }, [ text(\"one\"), text(\"two\") ])",
                     "row({ gap: 12 }, [",
                     "    box({ style: TILE }, [ text(\"A\") ]),",
                     "    box({ style: TILE }, [ text(\"B\") ])",
-                    "])"
+                    "])",
+                    "box({ style: { flexDirection: \"row\" } }, [ ... ])   // a row too"
                 ], 104, function ():Node
                 {
                     return row({ gap: 16 }, [

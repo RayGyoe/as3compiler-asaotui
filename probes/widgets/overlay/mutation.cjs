@@ -47,9 +47,11 @@ const MUTATIONS = [
     id: 'M2',
     why: 'the scrim goes from 0.4 to 0.6 alpha -> the hand-computed composite over white (255*0.6) '
       + 'no longer matches, on BOTH sampled points',
+    // The scrim has been a PALETTE token since the theme work (SCRIM = Fill.solid(t.scrim)),
+    // so the anchor is the assignment in rebuild(), not a literal.
     file: 'kit/asaot/ui/OverlayChrome.as',
-    find: 'public static const SCRIM:Fill = Fill.fromArgb(0x66, 0x00, 0x00, 0x00);',
-    replace: 'public static const SCRIM:Fill = Fill.fromArgb(0x99, 0x00, 0x00, 0x00);',
+    find: '            SCRIM = Fill.solid(t.scrim);',
+    replace: '            SCRIM = Fill.fromArgb(0x99, 0x00, 0x00, 0x00);',
     expect: 'the scrim over white is not #999999',
   },
   {
@@ -116,6 +118,18 @@ const MUTATIONS = [
     find: '                if (OverlayList.isInside(c.backing, e.target)) return;',
     replace: '',
     expect: 'a click inside the submenu also activated parent row',
+  },
+  {
+    id: 'M10',
+    why: 'A BOX GOES BACK TO IGNORING THE STYLE AXIS: `BoxNode.direction` defaults to "column" again, '
+      + 'so the resolver (which applies that field LAST) overwrites every `flexDirection: "row"` a '
+      + 'refinement declares. The select/menu rows -- `MENU_ITEM`, a row with alignItems centre -- are '
+      + 'then laid out as COLUMNS: the label sits at the row TOP and is centred horizontally, which is '
+      + 'exactly what the docs dropdown did',
+    file: 'kit/asaot/ui/BoxNode.as',
+    find: '            this.direction = null;',
+    replace: '            this.direction = "column";',
+    expect: 'the select row label is at x=',
   },
 ];
 

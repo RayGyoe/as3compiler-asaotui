@@ -136,11 +136,12 @@ package asaot.ui
                 }));
             }
 
-            // row() AND NOT box(): a BoxNode's `direction` field OVERRIDES the style's
-            // flexDirection in Theme.resolve (it defaults to "column"), so a row built
-            // with box() stays a column however row-like its style looks -- the label
-            // then sits CENTERED by alignItems instead of at the indent. That is exactly
-            // how this probe first caught it (label at x=142, not 42).
+            // row() AND NOT box(): box() now HONOURS the style's flexDirection (its own
+            // `direction` field is "no override" unless a factory sets it), so this row
+            // would lay out correctly either way -- but row() also PINS the axis, so a
+            // style patch merged in later cannot turn the row back into a column. The
+            // tree row is the shape that first found the old override bug: built with
+            // box(), the labels sat centred inside a column (x=142, not the indent 42).
             var rowKey:String = String(spec.key);
             var rowNode:Node = row({ key: base + ":t" + rowKey, style: rowStyle,
                                      ariaName: String(spec.label) });

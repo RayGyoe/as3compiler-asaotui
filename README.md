@@ -21,7 +21,7 @@
 ```sh
 git clone https://github.com/RayGyoe/as3compiler.git ../as3compiler   # 必须同级目录
 cp ../as3compiler/vendor/skia/lib/windows-x64/icudtl.dat ui-demo/     # 文字引擎数据（已 ignore）
-node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新落盘 reviews/gates-macos-2026-10-31j.txt
+node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新落盘 reviews/gates-macos-2026-11-03.txt（**66/66 PASS**）
 ```
 
 两个第三方检出**故意不入库**（它们自带 `.git`，入库会退化成 gitlink 而丢内容），按需取回：
@@ -58,7 +58,7 @@ ASC_GATE_TIMEOUT_MS=60000 node tools/gates.cjs    # 单道门闸（默认 420 s�
 ## 交付（2026-10-25，第十七轮：图标通道 `icon()`）—— 一条命令复核
 
 ```sh
-node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新落盘 reviews/gates-macos-2026-10-31j.txt
+node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新落盘 reviews/gates-macos-2026-11-03.txt（**66/66 PASS**）
 ```
 
 **在线 demo（零构建）**：<https://raygyoe.github.io/as3compiler-asaotui/> —— 就是下面那张
@@ -70,7 +70,7 @@ node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新�
 |---|---|
 | **有环境了：`Env` + 安全区当 padding（第四十三轮 · MOBILE E1/E2）** | 移动端第三件地基，仍然**只动 `asaotui/`**：`Env`（九个只读答案 + 订阅）/ `EnvBase`（可写端：九个 `set*`，每次**先比较再通知**）/ `DesktopEnv`（桌面地板：全 0 安全区、有鼠标、`locale` 镜像 `Capabilities.language`）/ `SafeArea`（`safeArea:` 选项 → 位掩码）；`UiApp.env` 永不为 null，`bindEnv(e)` 换 env 时**退订旧的**、`bindEnv(null)` **抛**。消费端只两处，都是「一处裁决」：`env.hasHover` → `UiApp.setHasHover`（**103 处 hover 分支此前没有任何调用者**，这个开关是真的接上了电源）；`env.safeArea` → **声明了 `safeArea: true` 的那个容器的 padding**（`UiNode.foldSafePadding` 把 inset 折进 `resolved.padding`，所以引擎、画笔、动画读的是同一个数；盒子不缩 ⇒ 背景铺到刘海下，只把内容让开；加在作者 padding 上、不继承、只认声明过的边）。`pixelRatio` 是**构造参数**而不是真值 —— 这个运行时没有可读的 DPR（`Capabilities.screenDPI` 是硬编码 96/72）。门 `probes/widgets/env`（43 checks）变异 **7/7**，文档站新增 `env` 页（第 53 页）。**键盘矩形/appState/reduceMotion/isDark/locale 只投递、不消费**（S7/E7/E8/E5/E6） |
 | **把页面骨架做扎实（第四十六轮 · C1/C2/C3 补强）** | 回头审自己上一轮的三件，"读代码 + 补相位"挖出**三个真缺陷**，都不是猜的：① **`appBar` 的槽位写 `opts.x as Node` ⇒ 传数组静默丢掉** —— 而文档站 `appBar` 页**自己的示例**就是 `trailing: [icon(...)]`，那只汉堡从第一版起就没上屏（不报错、不告警，bar 只是右边空一点，看截图看不出）。修法：工厂里归一 `Node` / `Node[]`（长度 1 取出、>1 用 `row(...)` 包一层、非 Node 成员**抛**）。 ② **`navStack` 的 BACK 是 stage 监听 ⇒ 每个挂载的栈都听得见** —— 手机常态是「一个 tab 一个栈、全挂载只显一个」，于是**一次系统返回会掀掉所有 tab 的历史**。修法：`visibleChain(n)` 沿 `parent` 查自己与祖先的 `visible`（与 `pickAt` 对像素同一条规则）。③ **`safeArea` 退回 0 不会重排**（两处叠加：`applyEngineStyle` 只在 padding 非 null 时写引擎、`setSafeInsets` 的 `keepPrevious` 打不出 diff 脏位） ⇒ 退出全屏/刘海消失后 bar 永远停在 103px。修法：声明过的边**必须产出定值**（inset 0 也写 0）+ inset 变化显式 `markLayoutDirty()`。新断言：`items` 3→2 时删掉的格子**必须不在树上**、`icon:` 是 Node 时保留作者颜色、`pages: []` 挂 0 个子节点不崩、以及**先加 inset 再撤掉**的两侧几何（47→103→56 / 34→90→56）+ 指示带像素。判据 `probes/widgets/{navstack,appbar,tabbar}` 16/22/13 checks，变异 **9/9 · 11/11 · 9/9** |
-| **有页面了：navStack + appBar + tabBar（第四十五轮 · MOBILE C1/C2/C3）** | 手机骨架三件，仍然**只动 `asaotui/`**：`navStack`（`pages` 后进先出，**全部常驻挂载**、只有栈顶 `visible` —— 这才是"页面状态不丢"的实现，代价写进注释：隐藏页每帧仍参与 measure/arrange；每页的 `absolute/inset:0/pct(1)` 由**工厂强加**，因为 `inset:0` 单独不给空盒定尺寸、`pct(1)` 在绝对盒里才解析得出来；`activeIndex` = -1 取栈顶；`onBack` 接 `Keyboard.BACK`，**只表达意图、从不 mutate 作者的 `pages`**）。`appBar`（三槽用 **`row(...)`** 拼 —— `box` 的轴是 `BoxNode.direction`，style 的 `flexDirection` 对该 kind 被忽略，实测三槽被竖排；`large` 时多一行大标题，`collapse`(0..`largeExtra`) 把大标题**裁**进 compact 行而不是换行跳，标题 String 会被包成两个 text 节点、只挂一个）。`tabBar`（`flexGrow:1` 等分 cell，第 5 个 tab 让别的更窄而不是横滚；选中态是**打在 cell 上的 text-tint patch**，label 与自定义 Node 一起继承；String `icon` = SVG path 且**由 bar 染色**；点当前 tab **仍上报**，否则"回到本节顶部"没法表达）。三个 kind 的自注册 + `role`（group/banner/tablist）一并补齐；写探针时抓到一个真缺陷：**容器的背景不是引擎画的** —— `AppBarWidget`/`TabBarWidget` 一开始 `paint` 是空的，于是 bar 的背景从没上屏（像素断言当场揭穿，`#ffffff`）。门 `probes/widgets/{navstack,appbar,tabbar}`（16 / 22 / 13 checks，变异 **7/7 · 8/8 · 7/7**）；文档站新增三页（共 56 页），`kind-coverage` 回到 44/44 |
+| **有页面了：navStack + appBar + tabBar（第四十五轮 · MOBILE C1/C2/C3）** | 手机骨架三件，仍然**只动 `asaotui/`**：`navStack`（`pages` 后进先出，**全部常驻挂载**、只有栈顶 `visible` —— 这才是"页面状态不丢"的实现，代价写进注释：隐藏页每帧仍参与 measure/arrange；每页的 `absolute/inset:0/pct(1)` 由**工厂强加**，因为 `inset:0` 单独不给空盒定尺寸、`pct(1)` 在绝对盒里才解析得出来；`activeIndex` = -1 取栈顶；`onBack` 接 `Keyboard.BACK`，**只表达意图、从不 mutate 作者的 `pages`**）。`appBar`（三槽用 **`row(...)`** 拼 —— 当时 `box` 的轴被 `BoxNode.direction` 的硬默认压成列、style 的 `flexDirection` 被忽略，实测三槽被竖排（**该默认已在第四十八轮去掉**：`box()` 现在听样式，`row()` 仍然钉轴；见上文 66/66 那一段）；`large` 时多一行大标题，`collapse`(0..`largeExtra`) 把大标题**裁**进 compact 行而不是换行跳，标题 String 会被包成两个 text 节点、只挂一个）。`tabBar`（`flexGrow:1` 等分 cell，第 5 个 tab 让别的更窄而不是横滚；选中态是**打在 cell 上的 text-tint patch**，label 与自定义 Node 一起继承；String `icon` = SVG path 且**由 bar 染色**；点当前 tab **仍上报**，否则"回到本节顶部"没法表达）。三个 kind 的自注册 + `role`（group/banner/tablist）一并补齐；写探针时抓到一个真缺陷：**容器的背景不是引擎画的** —— `AppBarWidget`/`TabBarWidget` 一开始 `paint` 是空的，于是 bar 的背景从没上屏（像素断言当场揭穿，`#ffffff`）。门 `probes/widgets/{navstack,appbar,tabbar}`（16 / 22 / 13 checks，变异 **7/7 · 8/8 · 7/7**）；文档站新增三页（共 56 页），`kind-coverage` 回到 44/44 |
 | **手指能滚到底（第四十四轮 · MOBILE M1 达成 + S6 一半）** | S3 越界回弹：`ScrollViewNode.overscroll`（`"rubber"` 默认 / `"none"`，非法值**抛**）+ `overscrollX/overscrollY`（**拉伸量，不是 offset**）；阻尼 `f(x)=(x·dim·c)/(dim+c·x)`，释放后指数弹簧按实测 dt 积分、**<0.5px 写精确 0**；**滚轮与 thumb 永远硬夹**（只有手指能造成越界），`offsetY` 因此全程是作者的合法值。S6 两件：`onVisible(first,last)`（窗口变化才回调，含首次）+ `scrollToIndex`（一次性请求，change-detection 生效）。顺手抽出**库级坑**：帧内（`paint`/`payload`）调用作者回调，作者的 `invalidate` 会被 `reflow` 尾部的 `_pending=0` 清掉 ⇒ 请求改用 0ms 定时器回到事件循环，并配一个**专门守这条**的变异。门 `probes/widgets/touch-scroll` 26 checks / 变异 **14/14**、`probes/widgets/vlist` 26 checks / 变异 **10/10** |
 | **手指能滚：1:1 拖动 + 惯性（第四十二轮 · MOBILE M1 前半）** | 接在 M0 后面的第 2 件（S1/S2），同样**只动 `asaotui/`**，41 个 kind 仍一行未改：新 `TouchScrollable`（可选能力接口，`touchDragBegin/To/End/Cancel`，走 kind 注册表解析而不是 `kind == "scrollView"`）；`PointerRouter` 越过 press slop 且落在视口里 ⇒ **press 被撤回（发 `MOUSE_UP` 不发 `CLICK`）**，后续 move 全部转发给视口，`cancel` 不滑行；`ScrollViewWidget` 实现 **两套坐标**（按下点定轴、越 slop 点定锚，所以判“这是拖动”的 8pt **不滚内容**）+ 轴锁（选中轴不能滚 ⇒ 消费但不移动）+ 滑行（`getTimer` 实测 dt，`v *= rate^(dt/16.667)`，**纯重绘**自走，不抬布局位）；`ScrollViewNode` 新字段 `momentum`（默认 true）与 `decelerationRate`（默认 0.95，(0,1) 越界**抛**）；**程序化滚动取消滑行**（作者写 `offsetY=0` 必须赢过动量）。门 `probes/widgets/touch-scroll`（26 checks）变异 **10/10**；写探针抽出两个真缺陷：整个位移被吞（`startDrag` 没把“越 slop 的那一点”交给接口）、作者的程序化滚动在滑行中看不见（`payload` 只在 describe 跑）。**回弹已补（第四十四轮）；分页/嵌套仲裁仍未做** |
 | **触摸可路由（第四十一轮 · MOBILE M0）** | 移动端第一块地基落在**协调者层**，41 个 kind 一行未改：`Pointer`（可变指针状态；路由判定不额外分配，兼容层每派发一次仍要 new 一个 `MouseEvent`）+ `PointerRouter`（滚动容器内 `pressDelay` 130ms、slop 8pt、长按 500ms、取消序列）+ `InputConstants`（阈值唯一出处），`UiApp` 新增 `pickAt`/`dispatchPointerMouse`/`setHasHover`。**合成 mouse 兼容层**让 touch 序列走进既有的 `MOUSE_DOWN/UP/CLICK` 通路；**命中不是库自算矩形** —— 用引擎的 `hitTestPoint(x,y,true)`，再拿真引擎指针在同一点派生 hover **逐点对账**（4 点，含根 padding 的反向断言）。门 `probes/widgets/pointer-touch`，变异 **7/7**（其中一条**第一次是绿的**：同一个 slop 判决被 `move()` 和 `end()` 各写了一遍，删任一处仍有另一处兜着）。**真触摸仍挂 G5**（窗口后端不产生 `TouchEvent`），本轮只验路由与按压语义，不假装平台输入 |
@@ -163,6 +163,26 @@ node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新�
 | `reviews/probe-asmdef-and-name-collision-2026-10-22.md` | **同一输入两侧同编**：AIR 硬拒「一个文件里的异名 public 定义」而我们放行（**G7**）；`bind` 碰撞与 `stat` 被单宏吃掉（**G8**） | 已验 |
 | `reviews/compiler-tree-fingerprint.json` | 开工时 `as3compiler/` 工作树脏文件的**指纹**（sha256/16）——用于末次复核「我零改动」；复核器 `node tools/compiler-fingerprint.cjs` | 证据 |
 | `reviews/gates-all-9.txt` | **全量 18 道门一次跑绿**的落盘输出（2026-10-23；含新加的 **G14 身份矩阵**与 **Vector vs Array** 两道）；`gates-all-10.txt` 是**改完 G11 窗口钉之后的复跑**；`gates-all-8.txt` 是加门前的 16 道历史留档；`gates-all-11/12.txt` 是**第三轮（组件目录页 + auto 文本缺陷）之后的两次复跑**（**23 道门**）；**`gates-all-13.txt` 是上一轮（浮层六件 + 六页画廊）的定稿（**25 道门**，含 overlay 探针与 `Array(x)` 两臂门）**；**`gates-all-14.txt` 是第四轮（交互动线）的定稿（**27 道门**，新增 `widgets/interact` 与 `widgets/flip` 两道）**；
+**`gates-macos-2026-11-03.txt` 是最新一次完整跑**（**66 道门：66 PASS / 0 FAIL / 0 SKIP，542 s**，2026-11-03，第四十八轮「用户报的两个真缺陷」）。
+这一轮修的是**截图里的两件事**，两件都不在报错的那一行上：
+① **弹出选项的文字不上下居中**。根因不在 `select`，在 `BoxNode`：`direction` 有个硬默认 `"column"`，而 `Theme.resolve`
+把它当**覆盖**最后应用 ⇒ **任何** `box({ style: { flexDirection: "row" } })` 都被压成列。`MENU_ITEM`（row + `alignItems: "center"`
++ height 26）的下拉行于是把标签放在**行顶、水平居中**。修法：`direction` 默认 `null`（= 不覆盖，样式的轴生效），`row()`/`column()`
+仍显式钉轴。`widgets/overlay` 新增三条判据（竖居中恒等式 / 左内边距 10 / 菜单行同样），变异 **M10** 把默认改回 `"column"` 即红；
+一直红着的 `widgets/choice`「差 1.5px」老断言正是这个病的历史残影——它断言的是**行顶**的 79，真值是竖居中的 77.5，已改正。
+② **滚动区里任何内容变化就滚回 0**。`ScrollViewWidget` 把描述里的 `offsetY` 与 **LIVE 位置**比，而「没写 offset」被读成 0
+⇒ 任何无关重渲染都成了「回到顶部」。修法：新增 `ScrollViewNode.offsetDeclared`（工厂在出现 `offset`/`offsetX`/`offsetY` 时置真）：
+**声明过**的照旧「与 LIVE 不同即请求」（`offsetY: 0` 的回到顶部仍然有效），**没声明**的只在数字本身变化时才动；paint 里
+`REQ_*` 的镜像已删除（读者自己滑出来的位置不能被当成作者的请求）。`widgets/touch-scroll` 新增相 6b（无关重渲染后裁剪窗仍在原处）
+与 6c（陈旧的「已声明」值仍是请求），变异 **M15/M16** 各红（16/16）。
+③ 顺带把 **`G11` 由红转绿**：它用 `--target=x86_64-pc-windows-msvc` 编三份历史产物，而本机没有 Windows SDK ⇒ clang 死在
+`'stdio.h' file not found`；`fatal error:` **没有行列号**，解析器一条都收不到 ⇒ 打印「clang errors 0」，把「没编译成功」读成了
+「命名没问题」。改宿主目标后三份产物照它自己文档所述 decay（20 capped / 1 / 0），并新增守护「clang 报了错却一条都解析不出 ⇒
+明确说夹具没编译」+ 变异 M4b，G11 变异 **11/11**。
+④ 文档站受①影响：`DocsStyle.DEMO` 写着 `flexDirection: "row"` 却一直按列排，56 页的 `demoH` 与 `DocSection.height()` 都是按列
+量过的 ⇒ 现在**显式**写 `flexDirection: "column"`（保持 56 页原样）。对比改动前后的页面截图（1000×700），差异只在侧栏与演示区
+文字的**竖排位置**（每页约 1.3% 像素）——正是修复本身。
+
 **`gates-macos-2026-10-31j.txt` 是最新一次完整跑**（**66 道门**：**64 PASS / 2 FAIL / 0 SKIP**，**549 s**，2026-10-31，第四十七轮「SKIP 是假的」）。
 这一轮**只改了一处判据来源，却推翻了前四轮的 10 条 SKIP**：那 10 道门（9 条参考臂 + `docs app on AIR (adl)`）一直报
 「本机没装 AIR SDK」，而真实原因是**检测只问 `AIRSDK_HOME` 与 `PATH`** —— 本机 SDK 装在同一台机器的

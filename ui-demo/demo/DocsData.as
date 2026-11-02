@@ -518,7 +518,8 @@ package demo
                     "A finger is the only thing that overscrolls: past an end it stretches against a",
                     "damped resistance and springs back on release (`overscroll`, default \"rubber\";",
                     "\"none\" for a pane that must not move). The author-facing `offsetY` stays inside",
-                    "the range throughout -- the stretch is reported separately as `overscrollY`."
+                    "the range throughout -- the stretch is reported separately as `overscrollY`.",
+                    "Say NOTHING about the offset and no re-render will move this pane."
                 ], [
                     "// wheel -> offsetY; dragging a thumb writes the same offset back",
                     "// scrollbarX/scrollbarY: \"auto\" | \"always\" | \"never\"",
@@ -541,7 +542,13 @@ package demo
                     "rounding error); scroll back down and it re-attaches, because the rule is",
                     "re-derived from the live offset every frame rather than kept in a stuck flag.",
                     "The auto-scroll is a real move: `onScroll` fires and `offsetY` is written back,",
-                    "so your model never disagrees with the screen."
+                    "so your model never disagrees with the screen.",
+                    "Re-renders never steal the reader's place: a description that does not name an",
+                    "offset leaves the viewport where it is, however often the page re-describes",
+                    "itself. Name one -- `offsetY: 0` from a BACK-TO-TOP button -- and it IS a",
+                    "request, honoured whenever it differs from where the view is. That is also the",
+                    "trade: if you declare an offset, mirror it from `onScroll`, or every re-render",
+                    "will take the reader back to the number you declared."
                 ], [
                     "scrollView({ stickToBottom: true,",
                     "             onScroll: function (x:Number, y:Number):void {",
