@@ -1,0 +1,26 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/select-scroll/Main.as (the SETTLE frame: select closed, offsetY 0). Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "Window 320x280. Root column, padding 10, background 0x111111, one child: the viewport (280x140) at (10,10) with background 0xF5F5F5 and both bars \"never\". Viewport children in order: spacer 280x40 0xDDDDDD, select width 200 (SELECT_TRIGGER: FIXED height 34), spacer 280x200 0xCCCCCC. So contentH = 40+34+200 = 274 and maxOffsetY = 274-140 = 134. The select sits at y = 10 + 40 = 50 -> (10,50,200,34).",
+    "points": [
+      "(100,20) is 10px inside the viewport, in the first spacer 10..50 -> 0xDDDDDD.",
+      "(100,60) is 10px into the select's trigger 50..84 -> SELECT_TRIGGER background = theme surfaceMuted 0xF3F4F6. x=100 is clear of the label text (it starts at the trigger's 10px padding).",
+      "(100,100) is in the second spacer, which starts at 10+40+34 = 84 -> 0xCCCCCC.",
+      "(300,10) is in the root's right padding -> 0x111111."
+    ],
+    "not_pinned": "The scrolled/open frames cannot live here because expect.json describes ONE frame. probes/widgets/select-scroll/Main.as asserts them itself: the lifted backing's y at offset 0 and at offset 40 (absY - clipY), the selected row's pixel and the pane's own content below the popup, the tap that must pick the row under the finger, and the return of the backing to its layout parent on close."
+  },
+  "w": 320,
+  "h": 280,
+  "rects": {
+    "root": [0, 0, 320, 280],
+    "sv": [10, 10, 280, 140],
+    "sel": [10, 50, 200, 34]
+  },
+  "points": [
+    { "x": 100, "y": 20, "rgb": "#dddddd" },
+    { "x": 100, "y": 60, "rgb": "#f3f4f6" },
+    { "x": 100, "y": 100, "rgb": "#cccccc" },
+    { "x": 300, "y": 10, "rgb": "#111111" }
+  ]
+}

@@ -21,7 +21,7 @@
 ```sh
 git clone https://github.com/RayGyoe/as3compiler.git ../as3compiler   # 必须同级目录
 cp ../as3compiler/vendor/skia/lib/windows-x64/icudtl.dat ui-demo/     # 文字引擎数据（已 ignore）
-node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新落盘 reviews/gates-macos-2026-11-03.txt（**66/66 PASS**）
+node tools/gates.cjs     # 68 道门，约 9 分钟（并行 6 路）；最新落盘 reviews/gates-macos-2026-11-03b.txt（**68/68 PASS**）
 ```
 
 两个第三方检出**故意不入库**（它们自带 `.git`，入库会退化成 gitlink 而丢内容），按需取回：
@@ -49,7 +49,7 @@ AIR SDK（`mxmlc` / `adl`，探针的**参考臂**要用）**不用手工指路*
 计时类探针单列串行，全量约 **6 分钟**：
 
 ```sh
-node tools/gates.cjs                              # 全量 66 道门（约 9 分钟）
+node tools/gates.cjs                              # 全量 68 道门（约 9 分钟）
 node tools/gates.cjs --only 'navstack|appbar'     # 只跑相关的门，其余打 [OMIT]（绝不报绿）
 node tools/gates.cjs --jobs 10                    # 12 核机器可以更宽；计时类探针仍然串行
 ASC_GATE_TIMEOUT_MS=60000 node tools/gates.cjs    # 单道门闸（默认 420 s，超时按 124 报红）
@@ -58,7 +58,7 @@ ASC_GATE_TIMEOUT_MS=60000 node tools/gates.cjs    # 单道门闸（默认 420 s�
 ## 交付（2026-10-25，第十七轮：图标通道 `icon()`）—— 一条命令复核
 
 ```sh
-node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新落盘 reviews/gates-macos-2026-11-03.txt（**66/66 PASS**）
+node tools/gates.cjs     # 68 道门，约 9 分钟（并行 6 路）；最新落盘 reviews/gates-macos-2026-11-03b.txt（**68/68 PASS**）
 ```
 
 **在线 demo（零构建）**：<https://raygyoe.github.io/as3compiler-asaotui/> —— 就是下面那张
@@ -85,8 +85,8 @@ node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新�
 | **样式面 18 → 33 字段** | `justifyContent`/`alignItems`/`alignSelf`/`alignContent`/`flexWrap`/`margin:LengthEdges`/`inset:LengthEdges`/`position`/`overflow`/`display`/`aspectRatio`/`boxShadow`(数组)/`cursor`（**树内继承**，最终写进程级 `Mouse.cursor`）+ 动画两字段；非法字符串**抛错** |
 | **动画** | `anim/`（`Ease`/`Tween`/`Anim`）+ `Style.transitionMs/Ease` + 每帧 `View.tick(nowMs)`（时钟用单调 `getTimer()`） |
 | **键盘 / 焦点 / 输入（第四轮，全新）** | `UiApp` 接 stage 的 `KEY_DOWN`/`FOCUS_IN`/`FOCUS_OUT`：**Tab / Shift+Tab 焦点环**（遍历保留树，不用运行时 `as_tab_scan`；浮层内是**焦点陷阱**）、`Esc`、方向键、`Enter`/`Space` 激活（`TextField` 除外）；控件通过**可选接口** `WidgetKeys`/`WidgetFocus` 参与（`Widget` 契约不动）。`textField` 的 `Event.CHANGE` 回写 `Binding`/`onChange`，`Enter`/失焦提交 `onCommit`，`Esc` 回滚，占位符是**独立文本层**、重绘不擦字（`probes/widgets/interact` **25 项** / 变异 **8/8**） |
-| **修掉 28 个真框架缺陷** | 纯 paint 变更不上屏；子树布局变化永不解算；keyed 重排不重解；**auto 文本节点忘加自身内边距**；**浮层树永不再解**；**面板无 shapeA**；**`width` 选项撑坏 layer**；**`e.localY` 是 TARGET-relative**；**可见性翻转不上屏**；**销毁的弹层仍监听 stage（`#1009`）**；**浮层宿主留在 stage 上**；**旋转 spinner 只画一次**（被「每帧误判窗口尺寸」遮住）；**输入框一重绘就擦字且 `onCommit` 永不触发**；**翻转定位读到上一帧的 parent 尺寸**（缩窗后永久偏出 80px）；**入场动画在手泵帧的 tour 里永不落地**（整层 3% 透明，所有矩形断言却全绿）；……**滚动条被内容盖住**（`internalCount` 把条层算成内容基点 ⇒ 条只在「这一帧恰好重绘」时才回到上面；改成 `UiNode.aboveContent` 后不再依赖重绘）——**都带钉子与变异证据**，详情 [`STATUS.md`](STATUS.md) §3.3 |
-| **验收文化** | **66 道门每道都做过变异测试**（改 1 个单位必须变红）；探针协议与「会咬人的事实」见 [`CONTRIBUTING-widget.md`](CONTRIBUTING-widget.md) |
+| **修掉 30 个真框架缺陷** | 纯 paint 变更不上屏；子树布局变化永不解算；keyed 重排不重解；**auto 文本节点忘加自身内边距**；**浮层树永不再解**；**面板无 shapeA**；**`width` 选项撑坏 layer**；**`e.localY` 是 TARGET-relative**；**可见性翻转不上屏**；**销毁的弹层仍监听 stage（`#1009`）**；**浮层宿主留在 stage 上**；**旋转 spinner 只画一次**（被「每帧误判窗口尺寸」遮住）；**输入框一重绘就擦字且 `onCommit` 永不触发**；**翻转定位读到上一帧的 parent 尺寸**（缩窗后永久偏出 80px）；**入场动画在手泵帧的 tour 里永不落地**（整层 3% 透明，所有矩形断言却全绿）；……**滚动条被内容盖住**（`internalCount` 把条层算成内容基点 ⇒ 条只在「这一帧恰好重绘」时才回到上面；改成 `UiNode.aboveContent` 后不再依赖重绘）——**都带钉子与变异证据**，详情 [`STATUS.md`](STATUS.md) §3.3 |
+| **验收文化** | **68 道门每道都做过变异测试**（改 1 个单位必须变红）；探针协议与「会咬人的事实」见 [`CONTRIBUTING-widget.md`](CONTRIBUTING-widget.md) |
 | **逐个 demo 审计（第三十二轮）：能力要么演出来，要么写清楚做不到** | 拿「每个 kind 的每个 option / 每个横切能力」对照 52 页的每一个 live demo，补齐 **9 节**：容器的 `onClick`（`box` 就是按钮）、`textAlign`/`italic`/`letterSpacing`/`leading`、`spinner` 的 `spin:false` + `phase`、`icon` 的 `viewBox`（同一份数据有无 viewBox 差在哪 —— 被切掉的那个 glyph 才是证据）、`image` 的 `smooth`（必须是**渐变**源，硬边两种设置像素相同）、`table` 的 `grid` 细线、`scrollView` 的 `offset`（“出生就滚过”要看得出是被裁）+ 条宽/条色/轨色、`pagination` 的 `page` 接 `Binding`（写值在 `onSelect` **之前**，点当前页两者都不发生）、以及四个浮层各一节（`closeOnScrim` / `side:"bottom"` / `closeOnOutside` / `submenuIndex`）；**横切能力单独成组**（第十组 `System`：`style`/`theme`/`state`/`keyboard`）。审计顺手掏出两个真缺陷：① **`text` 节点根本没有 paint box**（`TextWidget` 不建 `shapeA` ⇒ `PaintKit.paintBox` 早退 ⇒ `background`/`borderColor` 被接受却什么都不画）—— 已修 + 探针第 7 面 + 变异 **M9**（9/9）；② **`overflow` 没有任何画笔消费**（布局存了、也进了 Yoga，但两侧 painter 都不裁剪）⇒ 文档页照实写成 “accepted, not yet painted”，登记 **G29**，并指出今天真能裁剪的两条路（`scrollView` 的 viewport、`image` 的 `cover`）—— 「画不出来就明说」胜过一张会骗人的图 |
 | **滚动条 + 流体外壳（第七轮）** | `scrollView` 现在自带**纵/横滚动条**：thumb 按比例算长（地板 24px）并 1:1 跟手拖拽；点轨道翻一屏；`scrollbarX/Y` 的 `auto`/`always`/`never`（非法值**抛**）；`offsetX` 现在**真的进 `scrollRect`**；无竖向可滚时滚轮**回落横向**。条是**覆盖层**（不参与布局 ⇒ 不改变任何矩形，也避免 scrollbar-gutter 反馈环）。新增门 `probes/widgets/scrollbar`（手算 thumb/track 几何与像素）与变异 4/4。文档站外壳改成**流体**（`ROOT` 百分比 + 两列 `flex:1`），tour 里加一段真实的**尺寸变化**（写 stage 宽高 + 发 `Event.RESIZE`，即窗口 glue 所做的两件事）并断言 `side/main/docScroll/nav` 四块矩形、再变回去 |
 | **文档站不再教错用（第八轮补）** | 点击 `toastHost` 页的 “Show two toasts” 会把控制台刷满 `asaot.ui.toast: unknown tone 'info'`：页面示范了 chip 的语气词，而 `toast` 只认 `default/success/danger` 且**按契约抛错**。顺着这条做了一次源码扫描（`tools/demo-options.cjs`：工厂**真的读**的键 vs 页面传入的键），又抓到两页同类：`tooltip` 把 `tone` 传成字符串（`Number("info")` = NaN ⇒ 每帧重绘、填充色 0）与 `arrow: "bottom"`（不在 up/down/left/right/none 里 ⇒ 不画箭头却白占 6px）；`progress` 传了它根本不读的 `tone`。三页已修；tour 新增 **`6d toastHost`** 阶段（真按 stage 坐标点按钮，断言两条 toast 的角栈矩形 x=764 / 下沿 684 / 间距 8，再翻回 `open` 断言全卸载）并加「切换页面那一帧条层必须是 backing 的最后一个子件」，变异 **3/3**（`tools/mutation-docs-tour.cjs`，含用户遇到的那个回植）；新门 `tools/demo-options.cjs`，变异 3/3。截图变化顺带揭出**滚动条被内容盖住**这个从第七轮就存在的老缺陷（§3.3 第 25 条，修法 `UiNode.aboveContent`） |
@@ -143,14 +143,14 @@ node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新�
 | `u1-implementation-plan.md` | U1 实施计划（阶段号与版本号、file-by-file 改动清单、回退路径）——**已搁置，仅备查**（原文是 native/Yoga 路径；当前走纯 AS3） | 计划（搁置） |
 | `MOBILE.md` | **移动端（iOS / Android）支持分析与改造清单**：拿 [`nsh.dev/elements`](https://nsh.dev/elements/) 的 48 个 element 逐项对表（✓19 / ~14 / 缺 9 / 不做 6）+ **P/S/E/N/T/A/B 七组机制缺口**（每条带 文件:行 证据）+ **17 个新增组件**（`navStack`/`appBar`/`tabBar`/`sheet`/`refresh` …）+ **可直接照抄的 API 形状**（`hitSlop`/`pointerEvents`/`Pointer`/`Env`）+ 里程碑与红线；证据一条命令 `node tools/mobile-gap-scan.cjs` | 计划 |
 | `compiler-gaps.md` | **编译器底层支持缺口登记（G1~G29）**：`System.exit` / `flash.accessibility` / Tab 上限 64 / `-w` / 触摸 / wasm+C++ / **定义规则不强制** / **符号名冲突**（**已修**） / **`Boolean(Object)` 退化**（**已修**） / `Date.now` / ~~生成不确定~~（**非缺口**）/ ~~大分配后挂起~~（**非缺口**）/ **`--air-app` 闭包**（已修）/ **`Array` 进 `Object` 槽（G14，✅ 已修）** / **`getQualifiedClassName(Dictionary)`（G15，未修）** / **`cond ? null : X`（G16，✅ 已修——库内 if/else 绕行已撤）** / **G17 Windows 生成的 C 语法错** 与 **G18 非 Cocoa 菜单钩子未定义**（✅ **两条上游已修，本地补丁已撤，编译器树 CLEAN**） / **`drawRoundRect` 圆角（G19，✅ 已修）** / **`setTextFormat` 追加 run（G20，✅ 已修）** / **`getTextFormat` 忽略 run 表（G21，✅ 已修）** / **闭包内静态读丢 `_cinit()` 守卫（G22，✅ 已修）** / **`setChildIndex` 越界夹紧而不抛错（G24，✅ 已修——库侧槽位计数器成为第二层守卫）** / **AOT 侧从不向对象派发 `mouseOver`/`mouseOut`/`rollOver`/`rollOut`（G25，✅ 已修——库侧 hover 合成保留，理由改为设计与一致）** / **`Graphics.cubicCurveTo` 与 `drawPath` 整条缺失（G26，✅ 已修——库侧自适应细分与 `A` 抛错均已撤，改用原生三次与真弧）** / **Windows 上 `--package web` 起不来 `emcc`（G27，✅ 已修——库侧 PE 转发器已删）** / **`TextFormat.underline` 与 `htmlText` 的 `<u>` 只解析不绘制（G28，✅ 已修 v0.4.303——按 `adl` 实测的 1 设备像素口径自绘，不用 Skia `TextDecoration`；库侧 `textDecoration` 保留：`line-through`/`overline` 是 AIR 没有的增强）** / **`overflow`「存了不画」（G29，✅ **不是编译器缺口**——`scrollRect`/`mask` 编译器早就有，缺的是库侧消费，2026-10-30 已落地 `UiNode.applyOverflowClip()`）**；含实测证据与判定；另把「修好后库侧怎么处置」逐条记下（哪处回退、哪处保留）；**这是唯一登记处** | 登记 |
-| `STATUS.md` | **完成度实测表**：分层结论 + 50 个工厂全清单 + 仍缺的控件 + 样式面 33 字段 + **修掉的 29 个框架缺陷（带钉子与变异证据）** + 交互/键盘管线（§3.1）+ **57 道门**的复核命令；§3.9 记着「文档站教错用」的三页修复与两道新钉子；§3.12 记着**参考运行时门**为何必须存在 | 已更新（2026-10-25 第十六轮） |
+| `STATUS.md` | **完成度实测表**：分层结论 + 50 个工厂全清单 + 仍缺的控件 + 样式面 33 字段 + **修掉的 30 个框架缺陷（带钉子与变异证据）** + 交互/键盘管线（§3.1）+ **68 道门**的复核命令；§3.9 记着「文档站教错用」的三页修复与两道新钉子；§3.12 记着**参考运行时门**为何必须存在 | 已更新（2026-10-25 第十六轮） |
 | `CONTRIBUTING-widget.md` | **控件贡献者契约**：三件套配方（`XNode.as` / `x.as` / `kind/XWidget.as` + 探针）、`Widget` 7 方法逐条 + **`WidgetTeardown` 可选销毁钩子（§2b）** + **`WidgetKeys`/`WidgetFocus` 键盘/焦点钩子（§2c）**、值类型与 unset 哨兵、**会咬人的编译器/平台事实**（§4 通用 14 条 + **§4a 浮层/工厂 14 条** + §4b `--air-app` 专用 6 条 + §4c 集合选型）、稳态零分配、验证方式、报告格式 | 契约 |
 | `probes/` | **编译器行为证据探针**（不依赖推理）：`asmdef-rule/`（G7）、`case-rule/`（G7 子规则）、`name-collision/`（G8）、`clock/`（G10）、`bind-truthy/`（G9）、`array-scope/`（G11+G12）、`g11-nondeterminism/`（**G11 结案**，变异 7/7）、**`obj-array-identity/`（G14：26 条×两臂，偏离集现为空，变异 4/4）**、**`style-fromany/`（19 格×两臂，变异 4/4）**、**`g14-minimal/`（最小复现包）**、**`vec-vs-arr/`（两 runtime 对照，变异 2/2）**、**`g16-ternary-null/`（20 格×两臂，偏离集为空，变异 4/4）**、**`g19-roundrect/`（圆角逐行 A/B，0 行分歧）**、**`g20-settextformat/`（run 表替换，12 格关系式）**、**`g21-gettextformat/`（30 格读回矩阵）**、**`g22-closure-statics/`（生成 C 审计，10 格）**、**`widgets/scrollbar`（44 条滚动条例，变异 4/4）**、**`array-coerce/`（`Array(x)` 恒 wrap：8 格 AGREE）**、`arrpush/`、`redraw/`、`widgets/{chip,form,display,nav,anim}`、`widgets/{media,feedback,data}`、**`widgets/overlay`（浮层 65 项，变异 7/7）**、**`widgets/pointer`（指针真实感 23 项，变异 5/5）**、**`widgets/imaging`（`image` 的 `src`/scaleMode 27 项，变异 5/5）**、**`widgets/table2`（排序/列宽/虚拟化 22 项，变异 6/6）**、**`widgets/stick`（贴底滚动 15 项，变异 5/5）**、**`widgets/env`（环境地板 43 项，变异 7/7）**、**`widgets/touch-scroll`（拖动/惯性/回弹 26 项，变异 14/14）**、**`widgets/vlist`（窗口化 + `onVisible` + `scrollToIndex` 26 项，变异 10/10）**、**`widgets/navstack`（页面栈 16 项，变异 7/7）**、**`widgets/appbar`（三槽 + 大标题折叠 22 项，变异 8/8）**、**`widgets/tabbar`（等分 cell + 选中态 + 每格自己的 index 13 项，变异 7/7）**、`kit-crash/`、`graphics-order/`、`silent-null/`、`kit-fill/`、`compiler-crash/`、`reach-freefn/` | 已验（一处入口：`node tools/gates.cjs`） |
 | `gpui-borrow-map.md` | **GPUI 借鉴映射表**：每条借鉴都指到 `gpui-src/` 的**具体文件**（尽量带行号）；另列**明确不借**的 6 项及原因。本工作区任何「借 GPUI」的说法必须能落到此表某一行 | 核对口径 |
 | `u1-prototype/` | **U1 接缝原型**：`yoga_glue.h`/`.cc` + 手算矩形验收测（17 项全绿） | 已验 |
 | `seam/` | **布局接缝契约**：纯 AS3 接口 `asaot.ui.LayoutEngine` + `As3LayoutEngine`（纯 AS3 子集，**已实现 P1~P8**）+ `NativeLayoutEngine` 内建类形态说明 | 契约已定；AS3 侧已实现 |
 | `layout-check/` | **纯 AS3 子集验收 harness（文本 + 视觉两半边）**：`CheckMain.as` **133 项**手算断言；`VisualDemo.as` 把布局特性画成真窗口，`visual-check.cjs` 一条命令跑完「建 → 弹窗 → 读帧缓冲 → 断言 → 关窗」 | 已验（**133 + 12 项**全绿） |
-| `tools/` | 跨臂通用小工具：`gates.cjs`（**一次跑完 66 道门、约 9 分钟**：39 个探针 6 路并发、计时类探针单列串行、`--jobs N` / `--only <regex>` / `ASC_GATE_TIMEOUT_MS`，每道门打印自己的耗时；每道都做过变异测试）、**`buildsh-web.cjs`（`build.sh web` 的门：问编译器能否起 emcc + 钉 argv，变异 7/7）**、**`publish-pages.cjs`（把 `web` 臂产物发布到 `gh-pages`：`--stage`/`--serve`/`--check`/`--push`，逐字节校验 + 树未变不建提交）**、****`air-sdk.cjs`（AIR SDK **唯一**解析器：env → PATH → 安装位置，命中验证「本机可运行」，`--print`/`--json`/`--why`；门 `AIR SDK resolution` 11 cases、变异 5/5）**、`air-sweep.cjs`（唯一真跑参考运行时的门：`mxmlc` → `adl` → 全目录每一页（当前 53 页，页数从 `DocsCatalog.as` 推导，不手写）开/关弹层 + **指针钻**（悬停每页叶子、切页后投递 roll-out）→ 读应用自写的 trace）**、**`listener-wiring.cjs`（禁止裸 `addEventListener`，且 `destroySubtree` 必须释放；扫到 0 处也算失败）** + `mutation-listener-wiring.cjs`（3/3）、`probe.cjs`（探针运行器：建→弹窗→等证据→比对→退出码）、`bmpdiff.cjs`（报**像素**差异并定位坐标）、`pngread.cjs`（**零依赖 PNG→RGBA**，含 `runs` 行/列颜色游程）、`text-metrics.cjs`（量渲染文字的**字形间距**，把「看着不对」变成测量）、`mxmlc-check.cjs`（源树交给真 AIR 参考编译器）、`demo-options.cjs`（**文档站示范的选项键 vs 工厂真的读的键**，门）+ `mutation-demo-options.cjs`（3/3）、`mutation-docs-tour.cjs`（**文档站 tour 的变异机**：用户报的那个 tone、toast 间距、条层被当成内容基点，3/3）、`as3-index.cjs`、`ls.cjs`（本机 bash 无 coreutils）、`clean-probes.cjs`、`find-bound-truthy.cjs`（`*`/`Object` 静态钉子，**已修「不可能变红」的接线缺陷**）、`mutation-bound-truthy.cjs`、`compiler-fingerprint.cjs`（**复核 `as3compiler/` 零改动**）、`repro-array-scope.cjs`（G11/G12 复现器） | 已验 |
+| `tools/` | 跨臂通用小工具：`gates.cjs`（**一次跑完 68 道门、约 9 分钟**：41 个探针 6 路并发、计时类探针单列串行、`--jobs N` / `--only <regex>` / `ASC_GATE_TIMEOUT_MS`，每道门打印自己的耗时；每道都做过变异测试）、**`buildsh-web.cjs`（`build.sh web` 的门：问编译器能否起 emcc + 钉 argv，变异 7/7）**、**`publish-pages.cjs`（把 `web` 臂产物发布到 `gh-pages`：`--stage`/`--serve`/`--check`/`--push`，逐字节校验 + 树未变不建提交）**、****`air-sdk.cjs`（AIR SDK **唯一**解析器：env → PATH → 安装位置，命中验证「本机可运行」，`--print`/`--json`/`--why`；门 `AIR SDK resolution` 11 cases、变异 5/5）**、`air-sweep.cjs`（唯一真跑参考运行时的门：`mxmlc` → `adl` → 全目录每一页（当前 53 页，页数从 `DocsCatalog.as` 推导，不手写）开/关弹层 + **指针钻**（悬停每页叶子、切页后投递 roll-out）→ 读应用自写的 trace）**、**`listener-wiring.cjs`（禁止裸 `addEventListener`，且 `destroySubtree` 必须释放；扫到 0 处也算失败）** + `mutation-listener-wiring.cjs`（3/3）、`probe.cjs`（探针运行器：建→弹窗→等证据→比对→退出码）、`bmpdiff.cjs`（报**像素**差异并定位坐标）、`pngread.cjs`（**零依赖 PNG→RGBA**，含 `runs` 行/列颜色游程）、`text-metrics.cjs`（量渲染文字的**字形间距**，把「看着不对」变成测量）、`mxmlc-check.cjs`（源树交给真 AIR 参考编译器）、`demo-options.cjs`（**文档站示范的选项键 vs 工厂真的读的键**，门）+ `mutation-demo-options.cjs`（3/3）、`mutation-docs-tour.cjs`（**文档站 tour 的变异机**：用户报的那个 tone、toast 间距、条层被当成内容基点，3/3）、`as3-index.cjs`、`ls.cjs`（本机 bash 无 coreutils）、`clean-probes.cjs`、`find-bound-truthy.cjs`（`*`/`Object` 静态钉子，**已修「不可能变红」的接线缺陷**）、`mutation-bound-truthy.cjs`、`compiler-fingerprint.cjs`（**复核 `as3compiler/` 零改动**）、`repro-array-scope.cjs`（G11/G12 复现器） | 已验 |
 | `diff-check/` | **布局差分测试**：同一份冻结规格（`spec/cases.txt`）喂 Yoga 与纯 AS3 引擎，逐行比对；含单侧变异证明 harness 有牙 | 已验（**三方 105 行逐字符相同**） |
 | `air-check/` | **「库能否在 AIR 上跑」的实测**：`mxmlc` 编整个接缝库 + `adl` 运行；`verify-air.cjs` 一键跑完并自动 diff 三臂；`AirKitProbe.as` / `KitFns.as` = 「每个公开类型/每个包级工厂能不能被真 AIR 解析」的逐符号编译探针 | 已验（**105 项**一致）；KitFns 当场抓出 4 个未解析工厂（G7 子规则） |
 | `kit/` | **L3 工具链本体**（借鉴 GPUI 的作者模型：`Style` / `Node` / `UiNode` / `Reconciler` / `View` / 控件），纯 AS3，命名空间 `asaot.ui.*`：**50 个工厂 / 44 个 kind**、**33 个样式字段**、`anim/`（paint 5 字段 + **layout 字段每帧重解**）、**浮层（第二棵保留树）**、`WidgetTeardown`/`WidgetKeys`/`WidgetFocus` 三个可选钩子、四态绘制（`PaintKit`） | 建设中（分层结论见 `STATUS.md`） |
@@ -163,7 +163,15 @@ node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新�
 | `reviews/probe-asmdef-and-name-collision-2026-10-22.md` | **同一输入两侧同编**：AIR 硬拒「一个文件里的异名 public 定义」而我们放行（**G7**）；`bind` 碰撞与 `stat` 被单宏吃掉（**G8**） | 已验 |
 | `reviews/compiler-tree-fingerprint.json` | 开工时 `as3compiler/` 工作树脏文件的**指纹**（sha256/16）——用于末次复核「我零改动」；复核器 `node tools/compiler-fingerprint.cjs` | 证据 |
 | `reviews/gates-all-9.txt` | **全量 18 道门一次跑绿**的落盘输出（2026-10-23；含新加的 **G14 身份矩阵**与 **Vector vs Array** 两道）；`gates-all-10.txt` 是**改完 G11 窗口钉之后的复跑**；`gates-all-8.txt` 是加门前的 16 道历史留档；`gates-all-11/12.txt` 是**第三轮（组件目录页 + auto 文本缺陷）之后的两次复跑**（**23 道门**）；**`gates-all-13.txt` 是上一轮（浮层六件 + 六页画廊）的定稿（**25 道门**，含 overlay 探针与 `Array(x)` 两臂门）**；**`gates-all-14.txt` 是第四轮（交互动线）的定稿（**27 道门**，新增 `widgets/interact` 与 `widgets/flip` 两道）**；
-**`gates-macos-2026-11-03.txt` 是最新一次完整跑**（**66 道门：66 PASS / 0 FAIL / 0 SKIP，542 s**，2026-11-03，第四十八轮「用户报的两个真缺陷」）。
+**`gates-macos-2026-11-03b.txt` 是最新一次完整跑**（**68 道门：68 PASS / 0 FAIL / 0 SKIP，563 s**，2026-11-03，第四十九轮「滚动区里的 select 弹错位置」）。
+这一轮修的是**用户第五次报告**：`select` 放进带滚动的视图里，滚过之后下拉弹层不在 trigger 正下方、偏掉的量正好等于滚动距离。
+根因不在 `select` 也不在 `ScrollViewWidget`，而在「`absX/absY` 是布局坐标」这个前提 —— 视口靠移动 `backing.scrollRect` 平移像素，
+子节点 rect 一个字都不动，而打开的下拉走 `lifted` 被 reparent 到 `stageContainer`，于是收不到祖先视口的滑动。
+修法是把「视口滑动」变成**被发布的量**（`UiNode.scrollShiftX/Y` + `visualX()/visualY()`），每帧 `reseatLifted()` 重新落位；
+连带三处同源缺陷一起收（`pickAt` 按树序命中、`dispatchPointerMouse` 的 `localX/Y`、销毁时漏 `unregisterLifted`）。
+新门 `probes/widgets/select-scroll`（19 checks / 27 项断言，**变异 5/5**），新增后 68 道门、563 s。
+
+**`gates-macos-2026-11-03.txt`**（**66 道门：66 PASS / 0 FAIL / 0 SKIP，542 s**，2026-11-03，第四十八轮「用户报的两个真缺陷」）。
 这一轮修的是**截图里的两件事**，两件都不在报错的那一行上：
 ① **弹出选项的文字不上下居中**。根因不在 `select`，在 `BoxNode`：`direction` 有个硬默认 `"column"`，而 `Theme.resolve`
 把它当**覆盖**最后应用 ⇒ **任何** `box({ style: { flexDirection: "row" } })` 都被压成列。`MENU_ITEM`（row + `alignItems: "center"`
@@ -183,7 +191,7 @@ node tools/gates.cjs     # 66 道门，约 9 分钟（并行 6 路）；最新�
 量过的 ⇒ 现在**显式**写 `flexDirection: "column"`（保持 56 页原样）。对比改动前后的页面截图（1000×700），差异只在侧栏与演示区
 文字的**竖排位置**（每页约 1.3% 像素）——正是修复本身。
 
-**`gates-macos-2026-10-31j.txt` 是最新一次完整跑**（**66 道门**：**64 PASS / 2 FAIL / 0 SKIP**，**549 s**，2026-10-31，第四十七轮「SKIP 是假的」）。
+**`gates-macos-2026-10-31j.txt`**（**66 道门**：**64 PASS / 2 FAIL / 0 SKIP**，**549 s**，2026-10-31，第四十七轮「SKIP 是假的」）。
 这一轮**只改了一处判据来源，却推翻了前四轮的 10 条 SKIP**：那 10 道门（9 条参考臂 + `docs app on AIR (adl)`）一直报
 「本机没装 AIR SDK」，而真实原因是**检测只问 `AIRSDK_HOME` 与 `PATH`** —— 本机 SDK 装在同一台机器的
 `~/Documents/Software/AIRSDK/AIRSDK_51.4.1`，`PATH` 里那条却是**已卸载的 51.2.1 的 `bin/`**。

@@ -212,6 +212,18 @@ package asaot.ui
         public var lastIndex:int;
         public var internalCount:int;
 
+        // ---- the slide THIS node applies to its children ------------------
+        // A viewport scrolls by moving `backing.scrollRect`, so its content keeps its
+        // LAYOUT rect while the pixels move. ScrollViewWidget writes the offset it
+        // actually painted (stretch included) here, and `visualX/visualY` subtract the
+        // ancestors' values -- that is how a lifted popup, a synthetic pointer and a
+        // nested pane's bar hit test find the screen position of a node whose rect
+        // never moved. A FIELD rather than re-reading `backing.scrollRect` because the
+        // runtime's getter allocates a fresh Rectangle (emit.ts:12900) and both
+        // readers are per-frame/per-event paths.
+        public var scrollShiftX:Number;
+        public var scrollShiftY:Number;
+
         // ---- floating layer escape (open dropdowns / popup lists) --------
         // An OPEN popup must win over everything the main tree paints after its
         // owner, and this engine deliberately has no z-index (overlay.as says so):
@@ -252,6 +264,8 @@ package asaot.ui
             this.widget = null;
             this.desc = null;
             this.extra = {};
+            this.scrollShiftX = 0;
+            this.scrollShiftY = 0;
             this.textContent = null;
             this.label = null;
             this.value = null;
@@ -1220,6 +1234,49 @@ package asaot.ui
             this.widget.arrange(this);
         }
 
+        // ---- the VISUAL origin: layout minus every ancestor viewport's slide ----
+        // `absX/absY` are LAYOUT coordinates. A scroll viewport scrolls by moving the
+        // CLIP (`backing.scrollRect`), never a child's rect, so its content keeps its
+        // layout box while the pixels move. Anything that has to agree with where the
+        // user SEES a node therefore needs the layout rect MINUS the accumulated
+        // `scrollRect.x/y` of its ancestors:
+        //
+        //   * a LIFTED popup is re-parented onto the stage container, i.e. it leaves
+        //     the viewport that was sliding it. Positioning it at absY put an open
+        //     select that had scrolled 40px 40px too low -- the dropdown hung in mid-
+        //     air instead of under its trigger (probes/widgets/select-scroll);
+        //   * a synthetic pointer (PointerRouter -> dispatchPointerMouse) reports
+        //     localX/localY, which must be the node's own coordinate system; inside a
+        //     scrolled pane that is not `stageX - absX`;
+        //   * a bar/thumb hit test in a pane that is itself inside another pane.
+        //
+        // READ the ancestors' published slide (see `scrollShiftX`). The value is
+        // whatever is actually sliding the pixels -- a bounce's stretch included -- and
+        // a node that applies no clip contributes zero.
+        public function visualX():Number
+        {
+            var x:Number = this.absX;
+            var p:UiNode = this.parent;
+            while (p != null)
+            {
+                x = x - p.scrollShiftX;
+                p = p.parent;
+            }
+            return x;
+        }
+
+        public function visualY():Number
+        {
+            var y:Number = this.absY;
+            var p:UiNode = this.parent;
+            while (p != null)
+            {
+                y = y - p.scrollShiftY;
+                p = p.parent;
+            }
+            return y;
+        }
+
         // Move the backing between the parent's backing (normal) and the stage
         // container (lifted), and give it the x/y that space needs. Idempotent;
         // runs at the end of arrange AND at the start of paint, because a lift
@@ -1235,6 +1292,7 @@ package asaot.ui
                 // steady state; a node that was lifted last frame is re-attached at
                 // the END of the parent's display list, which the reconciler's
                 // fixDisplayOrder corrects on the next describe.
+                if (this.app != null) this.app.unregisterLifted(this);
                 if (this.parent != null && this.parent.backing != null
                     && this.backing.parent != this.parent.backing)
                 {
@@ -1253,8 +1311,14 @@ package asaot.ui
                 var iOv:int = host.getChildIndex(ov);
                 if (host.getChildIndex(this.backing) > iOv) host.setChildIndex(this.backing, iOv);
             }
-            this.backing.x = this.absX;
-            this.backing.y = this.absY;
+            // NOT absX/absY: while lifted the node is no longer inside the viewport
+            // that was sliding it, so it must carry that slide itself (visualX/Y).
+            this.backing.x = this.visualX();
+            this.backing.y = this.visualY();
+            // Scrolling the pane repaints the pane, not this popup, so the position
+            // above is re-derived once per frame for the nodes on this list (see
+            // UiApp.reseatLifted).
+            this.app.registerLifted(this);
         }
 
         // ---- the `overflow` clip window ---------------------------------
@@ -1436,6 +1500,7 @@ package asaot.ui
             // (Without this a destroyed menu kept its stage CLICK listener and the
             // next click in the window threw #1009 on the nulled scratch bag.)
             if (this.widget is WidgetTeardown) WidgetTeardown(this.widget).teardown(this);
+            if (this.app != null) this.app.unregisterLifted(this);
             for (var i:int = 0; i < this.children.length; i++)
             {
                 this.children[i].destroySubtree();

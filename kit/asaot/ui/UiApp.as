@@ -361,6 +361,68 @@ package asaot.ui
             return null;
         }
 
+        // ---- lifted nodes (an OPEN popup, re-parented onto the stage container) --
+        // A lifted node's stage position is derived from its ANCESTORS' scroll offsets
+        // (UiNode.visualX/Y), and scrolling a pane repaints the pane, not the open
+        // dropdown above it. The node therefore never gets a dirty bit of its own, and
+        // nothing else would re-seat it: the popup would stay where the trigger was
+        // before the wheel turned (probes/widgets/select-scroll). The list is re-seated
+        // once per frame at the end of the reflow, and it is EMPTY unless a popup is
+        // open, so the loop costs nothing in the common case.
+        private var liftedList:Vector.<UiNode>;
+
+        public function registerLifted(n:UiNode):void
+        {
+            if (this.liftedList == null) this.liftedList = new Vector.<UiNode>();
+            for (var i:int = 0; i < this.liftedList.length; i++)
+            {
+                if (this.liftedList[i] == n) return;
+            }
+            this.liftedList.push(n);
+        }
+
+        public function unregisterLifted(n:UiNode):void
+        {
+            if (this.liftedList == null) return;
+            for (var i:int = 0; i < this.liftedList.length; i++)
+            {
+                if (this.liftedList[i] == n)
+                {
+                    this.liftedList.splice(i, 1);
+                    return;
+                }
+            }
+        }
+
+        public function liftedCount():int
+        {
+            return this.liftedList == null ? 0 : this.liftedList.length;
+        }
+
+        // This frame's scrollRect values are final by now (the paint pass has run).
+        private function reseatLifted():void
+        {
+            if (this.liftedList == null || this.liftedList.length == 0) return;
+            var i:int = this.liftedList.length - 1;
+            while (i >= 0)
+            {
+                var n:UiNode = this.liftedList[i];
+                // A node that closed (or was unmounted) in this pass: drop it here so
+                // the list cannot accumulate dead entries.
+                if (!n.lifted || n.backing == null)
+                {
+                    this.liftedList.splice(i, 1);
+                    i--;
+                    continue;
+                }
+                var x:Number = n.visualX();
+                var y:Number = n.visualY();
+                if (n.backing.x != x) n.backing.x = x;
+                if (n.backing.y != y) n.backing.y = y;
+                i--;
+            }
+        }
+
         public function setHoverTarget(n:UiNode):void
         {
             var old:UiNode = this._hover;
@@ -570,14 +632,45 @@ package asaot.ui
         {
             this.pickCalls = this.pickCalls + 1;
             var hit:UiNode = null;
-            if (this.overlayRoot != null) hit = this.pickIn(this.overlayRoot, x, y);
-            if (hit == null && this.root != null) hit = this.pickIn(this.root, x, y);
+            if (this.overlayRoot != null) hit = this.pickIn(this.overlayRoot, x, y, true);
+            if (hit == null) hit = this.pickLifted(x, y);
+            if (hit == null && this.root != null) hit = this.pickIn(this.root, x, y, true);
             return hit;
         }
 
-        private function pickIn(n:UiNode, x:Number, y:Number):UiNode
+        // A LIFTED POPUP IS PICKED BY DISPLAY ORDER, NOT TREE ORDER. `applyLift` moves
+        // the backing onto the stage container, so it paints above the main tree -- but
+        // it is still a layout CHILD of its owner, and `pickIn` walks children from the
+        // last one back. A later SIBLING than the owner therefore won the point: a tap on
+        // an open dropdown row landed on the spacer behind it whenever one was nested in
+        // a viewport (found by probes/widgets/select-scroll). Walking the stage
+        // container's own child list is the only order that matches the rasterizer, and
+        // it also resolves stacked popups correctly.
+        private function pickLifted(x:Number, y:Number):UiNode
+        {
+            var host:DisplayObjectContainer = this.stageContainer;
+            if (host == null) return null;
+            var i:int = host.numChildren - 1;
+            while (i >= 0)
+            {
+                var d:DisplayObject = host.getChildAt(i);
+                var n:UiNode = this.nodeAt(d);
+                if (n != null && n.lifted)
+                {
+                    var got:UiNode = this.pickIn(n, x, y, false);
+                    if (got != null) return got;
+                }
+                i--;
+            }
+            return null;
+        }
+
+        // `skipLifted` is false only for the subtree of a node `pickLifted` matched:
+        // the node ITSELF is lifted, and everything inside it is ordinary content.
+        private function pickIn(n:UiNode, x:Number, y:Number, skipLifted:Boolean):UiNode
         {
             if (n == null || n.backing == null) return null;
+            if (skipLifted && n.lifted) return null;
             if (!n.backing.visible) return null;
             // `inert()` walks the ancestor chain, so a disabled container has already
             // made this whole subtree unpickable -- returning here keeps the walk O(1)
@@ -589,7 +682,7 @@ package asaot.ui
                 var i:int = kidsVector.length - 1;
                 while (i >= 0)
                 {
-                    var got:UiNode = this.pickIn(kidsVector[i], x, y);
+                    var got:UiNode = this.pickIn(kidsVector[i], x, y, skipLifted);
                     if (got != null) return got;
                     i--;
                 }
@@ -606,8 +699,8 @@ package asaot.ui
         {
             if (n == null || n.backing == null) return;
             if (type == MouseEvent.MOUSE_MOVE) this.syntheticMoves = this.syntheticMoves + 1;
-            var lx:Number = sx - n.absX;
-            var ly:Number = sy - n.absY;
+            var lx:Number = sx - n.visualX();
+            var ly:Number = sy - n.visualY();
             var ev:MouseEvent = new MouseEvent(type, true, true, lx, ly, null, false, false, false, false, 0);
             this._synthetic = true;
             try
@@ -847,6 +940,10 @@ package asaot.ui
             }
 
             this._pending = 0;
+            // The lifted popups are the one thing whose stage position depends on an
+            // ANCESTOR's scroll, so they are re-seated after the paint pass, when this
+            // frame's scrollRect values are final (see liftedList).
+            this.reseatLifted();
             // The pointer shape is re-derived at the END of the pass, so a style
             // change under a stationary pointer still reaches the window (the
             // hover chain is unchanged, so no callback would otherwise fire).

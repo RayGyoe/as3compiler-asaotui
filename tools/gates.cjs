@@ -572,6 +572,19 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
                  // fold dropped; the bar painted one lane in, so the CONTENT case is
                  // clear and the bar is on top of it).
                  'widgets/gutter',
+                 // `select-scroll` is the 2026-11-03 report "a select inside a scrolling
+                 // view put its dropdown in the wrong place after the wheel turned".
+                 // Root cause: `absX/absY` are LAYOUT coordinates -- a viewport scrolls by
+                 // moving the CLIP, so a lifted popup (probes/widgets/popup) drops the
+                 // slide its ancestor was applying. It pins the position at offset 0 and
+                 // at 40, the pixels that prove the whole dropdown moved (not stretched),
+                 // the re-open-after-scroll flow, the pick order of a lifted popup and the
+                 // localX/localY a synthetic pointer reports inside a scrolled pane. Teeth:
+                 // probes/widgets/select-scroll/mutation.cjs 5/5 -- no shift subtracted at
+                 // all; a viewport that never publishes its shift; a correct lift that is
+                 // never re-seated; tree-order picking; and layout-relative pointer
+                 // coordinates.
+                 'widgets/select-scroll',
                  // `pointer-touch` is the MOBILE.md M0 pin: a SYNTHESIZED TouchEvent
                  // series (G5 means no backend produces one) goes through PointerRouter
                  // into the same press/click vocabulary the 41 kinds already speak, with

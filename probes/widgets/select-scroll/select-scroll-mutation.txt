@@ -1,0 +1,25 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE VISUAL ORIGIN IGNORES THE SLIDE: visualY stops subtracting the ancestors' shift, so the lift places the popup at the LAYOUT rect the pane was sliding -- the reported bug, at the one definition the lift and the synthetic pointer both read
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the lifted select is at y 50, want 10 (absY 50 - scroll 40); the selected row is not under the scrolled trigger (#ffffff, want #dbeafe); row 2 is not at its scrolled place (#dbeafe, want #ffffff); the pane's content under the popup is #dbeafe, want #cccccc; the tap did not select a row (picks 0); the tap picked "Beta", want Alpha (the row under the finger); the re-opened select is at y 50, want 10; the selected row (Alpha) is not under the trigger (#f3f4f6, want #dbeafe); a tap on the trigger did not close the dropdown; the pick did not close the dropdown; the closed select is still lifted; the closed select did not return to its layout parent; the lifted list kept a closed node (1);
+     restore: byte-identical (ceba1336c9a6143d)
+M2  CAUGHT  THE VIEWPORT NEVER PUBLISHES ITS SLIDE: the pixels scroll (the scrollRect is assigned) and every consumer of visualX/Y stays at zero
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the lifted select is at y 50, want 10 (absY 50 - scroll 40); the selected row is not under the scrolled trigger (#ffffff, want #dbeafe); row 2 is not at its scrolled place (#dbeafe, want #ffffff); the pane's content under the popup is #dbeafe, want #cccccc; the tap did not select a row (picks 0); the tap picked "Beta", want Alpha (the row under the finger); the re-opened select is at y 50, want 10; the selected row (Alpha) is not under the trigger (#f3f4f6, want #dbeafe); a tap on the trigger did not close the dropdown; the pick did not close the dropdown; the closed select is still lifted; the closed select did not return to its layout parent; the lifted list kept a closed node (1);
+     restore: byte-identical (51ac3d85b1570746)
+M3  CAUGHT  THE LIFT IS NEVER RE-SEATED: correct when it opens, stale after the pane scrolls (nothing marks the popup dirty)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the lifted select is at y 50, want 10 (absY 50 - scroll 40); the selected row is not under the scrolled trigger (#ffffff, want #dbeafe); row 2 is not at its scrolled place (#dbeafe, want #ffffff); the pane's content under the popup is #dbeafe, want #cccccc; the tap did not select a row (picks 0); the tap picked "Beta", want Alpha (the row under the finger); the selected row (Alpha) is not under the trigger (#ffffff, want #dbeafe); row 1 after the pick is #dbeafe, want #ffffff;
+     restore: byte-identical (ceba1336c9a6143d)
+M4  CAUGHT  THE POPUP IS PICKED IN TREE ORDER: a later sibling behind the open dropdown wins the point, so the row tap hits the spacer
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the tap did not select a row (picks 0); the tap picked "Beta", want Alpha (the row under the finger); the selected row (Alpha) is not under the trigger (#ffffff, want #dbeafe); row 1 after the pick is #dbeafe, want #ffffff; a tap on the trigger did not close the dropdown; the pick did not close the dropdown; the closed select is still lifted; the closed select did not return to its layout parent; the lifted list kept a closed node (1);
+     restore: byte-identical (df6fc26f3f5d4976)
+M5  CAUGHT  THE SYNTHETIC POINTER REPORTS LAYOUT-RELATIVE LOCAL X/Y: inside a scrolled pane the coordinates name a point 40px away from the finger
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the tap did not select a row (picks 0); the tap picked "Beta", want Alpha (the row under the finger); the selected row (Alpha) is not under the trigger (#ffffff, want #dbeafe); row 1 after the pick is #dbeafe, want #ffffff;
+     restore: byte-identical (df6fc26f3f5d4976)
+
+MUTATION select-scroll: 5/5 caught, 0 problem(s)
+RESULT: PASS

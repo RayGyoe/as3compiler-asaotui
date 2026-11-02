@@ -449,7 +449,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 61 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 68 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -476,7 +476,7 @@ cd asaotui && node tools/gates.cjs                           # 61 道门，含 l
 | 17 | **浮层退场动画被` visible` 镜像当场擦掉**（开场 120ms 里面板直接消失，只剩背景色闪一下） | 作者的模型里 `open=false` 是**立即**的：下一次 reconcile 就把 `visible:false` 写到 `n.backing` | `UiNode.visibleHold`：退场期间**按住**镜像，只有拥有退场的 `PanelShellWidget` 写它；落地帧才放开 | `probes/widgets/motion` 的「**退场中强制重渲染**」相位（描述符全程 `visible:false`，中间态必须仍有 `alpha>0` 且 `backing.y != absY`）；变异 **M4/M5** |
 | 18 | **虚拟列表的每一行被 flexbox 压成 16.67px**（1000 项里只挂 9 行，其中最后一行被压扁、窗口行数也算错） | 行高开` height` 不够：窗口取 `fit+1` 行，九行 20px 溢出 150px 视口，flexbox 把九行等分；而 `flexShrink:0` 被引擎编码成「flex:1 zero basis」反而夹成 0 | 每行同时钉 `height` **和** `minSize.height`——**min 才是真正钉住的那一个**（solve 后生效，溢出行整体落在 clip 外） | `probes/widgets/vlist` 的逐行矩形 + 溢出行像素 `(30,175)=#ffffff`；变异 **M3** 去掉 `minSize` ⇒ 「a row must not be flexed into the viewport」 |
 
-| 19 | **弹层被下面的 UI 盖住**（下拉/日期面板一开，下层的卡片、按钮压在它上面；点了行没反应——点其实打在被盖住的位置） | **引擎没有 z-index**（`Style` 里刻意没有这个字段），**绘制顺序 = 兄弟顺序**。而 `select`/`combobox`/`datePicker` 的下拉是**属主的子节点**（`n.backing.addChild(drop)`）⇒ 在 display 列表里它夹在卡片中间，同一帧里后画的兄弟把它整块盖住。改 `visible`、改样式、上抬 1px 都不解决问题：位置对、矩形对、像素不对 | `UiNode.lifted`：控件在**打开翻转**时把**自己的 backing reparent 到 `app.stageContainer`**，放到 `overlayDisplay()` **之前**（= 主树全部之上、浮层树之下，所以 dialog 仍能盖住下拉），坐标改成 `absX/absY`（`stageContainer` 的原点就是窗口原点）；关闭时重新挂回 `parent.backing` 并用 `absX - parent.absX` 换算回来。layout / reconcile / keys / focus / 点击路径**一律不动**（它们走 `parent` 链，不看 display 树） | `probes/widgets/popup`（26 项，含「盖住卡片的那一行读像素」「lifted 时 `backing.parent == stageContainer` 且 x/y == abs」「关闭后像素回卡片色」「unmount 后 stage 子件数回基线」）。**变异 4/4**（`probes/widgets/popup/mutation.cjs`）：M1 = 不 lift（就是用户看到的那个缺陷）、M2 = 沿用 parent-relative x（整体左偏 20px）、M3 = 关闭不挂回、M4 = 只按 `parent.backing` 摘除（lifted 节点漏摘 ⇒ sprite 永久留在屏上） |
+| 19 | **弹层被下面的 UI 盖住**（下拉/日期面板一开，下层的卡片、按钮压在它上面；点了行没反应——点其实打在被盖住的位置） | **引擎没有 z-index**（`Style` 里刻意没有这个字段），**绘制顺序 = 兄弟顺序**。而 `select`/`combobox`/`datePicker` 的下拉是**属主的子节点**（`n.backing.addChild(drop)`）⇒ 在 display 列表里它夹在卡片中间，同一帧里后画的兄弟把它整块盖住。改 `visible`、改样式、上抬 1px 都不解决问题：位置对、矩形对、像素不对 | `UiNode.lifted`：控件在**打开翻转**时把**自己的 backing reparent 到 `app.stageContainer`**，放到 `overlayDisplay()` **之前**（= 主树全部之上、浮层树之下，所以 dialog 仍能盖住下拉），坐标改成 `visualX/visualY`（= `absX/absY` 减去**祖先视口**的滚动量；`stageContainer` 的原点就是窗口原点。原先是 `absX/absY`，第 30 条把「视口的滑动不在 rect 里」这个漏洞补上了）；关闭时重新挂回 `parent.backing` 并用 `absX - parent.absX` 换算回来。layout / reconcile / keys / focus / 点击路径**一律不动**（它们走 `parent` 链，不看 display 树） | `probes/widgets/popup`（26 项，含「盖住卡片的那一行读像素」「lifted 时 `backing.parent == stageContainer` 且 x/y == visual」「关闭后像素回卡片色」「unmount 后 stage 子件数回基线」）。**变异 4/4**（`probes/widgets/popup/mutation.cjs`）：M1 = 不 lift（就是用户看到的那个缺陷）、M2 = 沿用 parent-relative x（整体左偏 20px）、M3 = 关闭不挂回、M4 = 只按 `parent.backing` 摘除（lifted 节点漏摘 ⇒ sprite 永久留在屏上） |
 | 20 | **提示文字（placeholder）输入时不消失**；焦点刚进入、还一个字都没输时，光标和 ghost 文字**叠在同一格** | ghost 是 `paint` 里算可见性的独立文本层，而可见性条件漏了「已聚焦」这一条；并且编辑走的是 `Event.CHANGE` 回调，回调只写模型 —— 屏幕是否重画取决于**作者**有没有 invalidate（不 invalidate 的作者就永远看不到变化） | ghost 条件收敛为 `model 为空 && state.focused == 0 && placeholder 非空`（聚焦即藏：光标就在那儿）；`onFieldChange`/`commit` 各自 `app.markPaint(n)`，**控件欠屏幕自己的重绘**，不指望作者 | `probes/widgets/typing`（18 项，含 ghost 扫描区渲染像素数、focus 后归零、失焦且空才回来）。**变异 4/4**（`probes/widgets/typing/mutation.cjs`）：M1 = 强制 ghost 常显（用户报告的原症状）、M2 = 去掉聚焦闸门、M3 = paint 把字符串写两遍（原本是「setTextFormat 回到 paint」，G20 修好后它变成绿跑 ⇒ 已重指）、M4 = 失焦不报 commit。探针的 `onChange` **刻意不 invalidate**（否则作者侧重绘会把第 20 条整个盖住） |
 | 21 | **输入过的字在失焦再聚焦后「复制一遍」**（`1111` 变 `11111111`，字形挤着往外长；`textWidth` 从 28.9 涨到 56.7） | `TextField.setTextFormat` 当时是**追加 run**（`emit.ts:20417` 只 `_runs` 追加、`_runs_gen++`），不是替换范围（**G20，阶段二百六十八已修**：setter 现在重建 run 表）；而排版器 `sk_textlayout_new_runs`（`vendor/skia_text_glue.cc:495`）对**每条 run** 都 `addText` 一遍模型里的字符串 ⇒ **重画 N 次就画 N 份**。`InputWidget.paint` 每次都调它 ⇒ 每帧多一条 run | 单格式字段**仍不调 `setTextFormat`**（现在是**设计选择**而不是禁令：`defaultTextFormat` + `textColor` 就够，G20 修好后调它只是每帧多余工作量）；`paint` 只 `defaultTextFormat`/`textColor`，值没变**不重赋 `text`**（`text` setter 会清 run，但也会把 caret 甩到末尾） | 同上 `probes/widgets/typing`：`textWidth` 与**现场新建的干净字段**逐字对比（不抄字体度量）、字形列组只允许一串、`caretIndex` 跨 3 次重绘不动。变异 M3 **已重指**（原「setTextFormat 回到 paint」依赖 G20，修好后变绿；现为「paint 把字符串写两遍」，由最终文本断言抓获）；换行累积那条 `textWidth` 对照现在是**编译器 G20 的绊线**（主门是 `probes/g20-settextformat`）。登记见 `compiler-gaps.md` G20/G21 |
 | 22 | **容器上的 `onClick` 永远不触发**（侧栏一行点了没反应，`model` 也不动；但 `button` 正常） | `UiNode.applyPayload` 老老实实从描述符镜像 `Element.onClick`，可**描述符上的那个字段从来没被写入** —— `OptionSupport.applyOpts` 只拷 key/role/ariaName/visible/disabled，`onClick` 只有 button/checkbox/radio/slider/toggle/textField 六个**控件**工厂自己拷。`box({ onClick: f })` 于是拿到一个 null | `OptionSupport.applyOpts` 加一行 `if (opts.onClick != null) n.onClick = (opts.onClick as Function);` —— 一处修好所有容器（box/row/column/card/overlay/…） | `ui-demo/run-gallery.cjs` 的 `index click` 段：真按 stage 坐标点侧栏行，断言 `model.doc=="box"` + `view.lastPick=="box"` + 标题变了 + 上一页的 demo 已卸载。**变异**：删掉那一行 ⇒ 四条断言同时红 |
@@ -487,12 +487,19 @@ cd asaotui && node tools/gates.cjs                           # 61 道门，含 l
 | 27 | **一点下拉就报错、页面冻住**（用户第三次报告，`select`/`combobox`/`datePicker` 三页：`RangeError: Error #2006: The supplied index is out of bounds.` → `DisplayObjectContainer/setChildIndex()` → `asaot.ui::Reconciler/fixDisplayOrder()` → … → `UiApp/onEnterFrame()`，每帧一行，屏幕停在上一棵树） | **两个不同的事故叠在一起**：①库侧——`fixDisplayOrder` 用 `setChildIndex(c.backing, internalCount + <描述下标>)` 修显示序，而弹出的下拉会把**属主节点** `lifted` 出去（`UiNode.lifted`，为了越过后续兄弟的 z 序，见第 19 条）：它**仍占描述树一个槽位，但已不在父 backing 里** ⇒ 下标每遇到一个被抬起的兄弟就多算一，`index == numChildren` 即越界；②编译器侧——`emit.ts:11635` 的 `DisplayObjectContainer_setChildIndex` 对越界做了 `if (index >= length) index = length - 1;`（**夹紧**）且「不是孩子」时直接 `return`，而 AIR 分别抛 `RangeError #2006` / `ArgumentError #2025` ⇒ **同一份代码，AIR 报错、我们静默放行**。夹紧到末尾恰好是最后一个孩子的正确落点，所以画面逐像素相同：42 页截图扫描、全部 AOT 探针、41 道门全部看不见 | 库侧：`fixDisplayOrder` 改成**只数「在用」孩子的槽位计数器**（`slot = internalCount`，只有 `backing.parent == n.backing` 才 `setChildIndex(…, slot++)`），末位最多落到 `numChildren-1`（有 `aboveContent` 时少一），**结构性**不可能越界；`lastIndex` 仍是**描述下标**（那是未带 key 兄弟的身份 token，不是显示位）。编译器侧：**未动**（按本工作区约定登记为缺口 **G24**，附「建议对齐 AIR」的理由） | **新门 `tools/air-sweep.cjs`——本仓第一道也是唯一一道真跑参考运行时的门**：`mxmlc` 编 → `adl` 跑 42 页 × 每页把 10 个可弹层开关打开再关掉 → 读应用自己写的 `air-trace.txt`（`adl.exe` 是 GUI 子系统，管道拿不到 trace，实测）→ 任何 AIR 报的错都算失败。变异 `tools/mutation-air-sweep.cjs` **5/5**：把槽位计数改回 `internalCount + i` ⇒ 立刻在 `select`/`combobox`/`datePicker` 上报 `#2006`；去掉「打开弹层」这一步 ⇒ `OPENED` 缺失（扫得全绿但**已经瞎了**）；少走一步 ⇒ `visited 40/41`（死了的窗口不许当绿）；去掉 `releaseListeners()` ⇒ 145 个 `#1009`（见第 28 条）；只悬停不投递 ⇒ 指针钻报 `0/41`。五条都按 sha256 逐字节还原 |
 | 28 | **多点了几下就报错**（用户第四次报告：`TypeError: Error #1009: Cannot access a property or method of a null object reference.` → `asaot.ui::UiNode/setHover()` ← `Function/UiNode.as$1::anonymous()`） | **两层时序缺一不可**：①库侧——`destroySubtree()` 把节点的 backing 从父容器摘掉、把 `app`/`extra`/`backing` 置空，但**监听器是挂在 backing 这个 EventDispatcher 上的**，`removeChild` 不会替你摘 ⇒ 那个闭包仍活着、捕获变量已全空；②AIR 侧——**`mouseOut` 晚一拍**才投递（先结束这一帧，**然后**才重算「指针下面是谁」并投给上一帧那个对象）⇒ 只要「指针停在某个控件上、而某一帧把那个控件拆了」就会落到尸体上。实测（`adl` 51.4.1，`air-trace.txt`）：只有**点了就拆树**的页中招——`accordion` 1 次、`dialog` 4 次、`drawer` 3 次、`menu` 3 次，其余 37 页 0 次 | 库侧：`UiNode` 新增 `wired:Array` + `listen(target,type,fn)`（登记三元组）+ `releaseListeners()`；`destroySubtree()` **第一句**就释放，再摘显示对象、再置空（顺序是契约：先断线再断电）；全库 **24 处 / 16 个文件**改造。**STAGE 监听器刻意不在此列**（它们属于某次手势，保留 widget 自己 teardown 的显式 add/remove 对）。编译器侧：**未动**，登记缺口 **G25**（AOT 从不派发逆对象的 roll-over/roll-out） | **三道新门 + 一道扩门**：`probes/lifecycle`（**9 项**：10 种 kind × 5 种指针事件，**销毁后**再派发不抛、`state.hover` 保持 0、无游离 `onClick`；同时证明活节点上这道闸不变行为）；`tools/listener-wiring.cjs`（静态扫描：禁裸 `x.backing.addEventListener(`、`destroySubtree` 必须有 `releaseListeners()`、**扫到 0 处也算失败**，现 **29 wired / 0 raw**）；`air-sweep` 新增**指针钻**（离开每页前悬停该页**每个叶子**，切页后**下一拍**投递 roll-out：**3107 hovered / 348 真的已销毁 / 0 errors**）。变异：`probes/lifecycle/mutation.cjs` **4/4**、`tools/mutation-listener-wiring.cjs` **3/3**、`mutation-air-sweep` **5/5** |
 | 29 | **`tabIndex` 写了没用，而且 Tab 会跳过中间那一站**（`tabIndex` 从声明第一天起就是死字段，`Control.tabIndex` 没有任何消费者） | 两件事叠在一起：①`UiApp.focusNext` 直接按**文档序**走，`tabIndex` 从来没被读过；②改成「显式序在前、按值升序、同值按文档序」时，第一版用一个**复用数组**当 visited 表（`taken[j] == true` + 每次 `taken.length = 0`），实测**第二次调用起就丢项**：同一份 3 项输入，直接调 `orderRing` 得 3 项、经 `focusNext` 得 2 项（`btn2` 消失），于是焦点在 `btn3` 与 `btn` 之间来回弹 | 让**输出向量自己当 visited 集**（`emitted(out, index)` 扫已发出的项），不再有第二块可变状态；Tab 每次复用 `ringScratch`，语义照 HTML | 探针 `probes/widgets/actions` 相位 5：文档序 `btn,btn2,btn3` + `tabIndex` 1 和 0 ⇒ 环必须是 `btn3,btn2,btn`（**不是文档序的旋转**；从 `btn` 出发的下一站两法不同，这才是判别点），三次 Tab 逐项断言；变异 M3（`orderRing` 直接返回文档序）⇒ 两条断言同时红 |
+| 30 | **`select` 放进带滚动的视图里，滚过之后下拉弹层弹错位置**（弹层不在 trigger 正下方，偏掉的量正好等于滚动距离；文档站 `select` 页把阅读栏滚一段再点开就是它） | 弹层走 `lifted`（第 19 条）reparent 到 `app.stageContainer`，坐标取 `absX/absY`。但**视口的滑动根本不在 rect 里**：`scrollView` 靠移动 `backing.scrollRect` 平移像素（`ScrollViewWidget` 头注释：「滚动只发生在 clip 里，子节点 rect 不动」），所以滚动 40 之后 trigger 的 `absY` 一字未变 ⇒ 弹层停在「未滚动」的位置，差一个 `scrollRect.y`。另外三处同源缺陷：②滚动只 repaint 视口，弹层没有自己的 dirty 位，**没人会再给它定位**；③`pickAt` 按**树序**命中，弹层后面的兄弟节点会抢走点击（点在弹层行上，选中的是背后那一行）；④`dispatchPointerMouse` 用 `sx - absX` 算 `localX/Y`，滚过的 pane 里差一个偏移 | 让「视口滑动」成为一条**被发布的量**：`UiNode.scrollShiftX/Y`（`ScrollViewWidget.paint` 每帧写真值，含回弹 stretch；不用读 `backing.scrollRect` ——runtime getter 每次都新分配一个 `Rectangle`，`emit.ts:12900`）；`visualX()/visualY()` = `absX/absY` 减**所有祖先**的 shift（嵌套视口自动累加）。lift 用 visual 定位；`app.registerLifted/unregisterLifted` + `reflow()` 末尾 `reseatLifted()`（此时本帧 scrollRect 已定稿）每帧重新落位；`pickAt` 新增 `pickLifted`（按 `stageContainer` 的**显示顺序**从后往前，`pickIn` 加 `skipLifted`，因为 lifted 节点的布局父级不是它的显示父级）；`dispatchPointerMouse` 改 visual | 探针 `probes/widgets/select-scroll`（19 checks / 27 项断言：offset 0 与 40 两个相位的 rect + 像素；滚动 40 后 lifted 的 backing y 必须是 **10**（50-40）；弹层第一行 `#dbeafe`、第二行 `#ffffff`、视口外仍是 pane 的 `#cccccc`；滚动后点 row0 必须选中 Alpha 并关闭；关闭后 backing 回 `sv.backing` 且 `liftedCount()==0`；再滚再开）。**变异 5/5**（`mutation.cjs`：M1 `visualY` 不减 shift、M2 视口不发布 shift、M3 不登记 lifted、M4 不 `pickLifted`、M5 pointer 用 abs），全部 CAUGHT 且文件 sha256 逐字节还原 |
 
 **已知边界（登记，不修）**：`card({title: ...})` 的标题画在内容盒左上角、**不占布局位**，
 因此会压住第一个子节点（`kind/CardWidget.as:81` 的 `tf.x/tf.y = inset`）。
 规避：把标题写成一个真正的子 `text(...)` 节点（画廊 demo 就是这么写的，见 `ui-demo/demo/GalleryView.as` 顶部注释）。
 同理，`progress`/`slider` 的标签画在节点**顶部**、轨道在 `height-12` ⇒ 控件高度需 ≥ ~28 才不自我重叠
 （这不是 bug，是「控件自绘 + 高度由作者给」的约定）。
+
+**第 30 条的边界（登记，不修）**：开着的弹层现在**跟着 trigger 走**，所以把视口一直滚、
+把 trigger 滚出可视区之后，弹层会**贴着 trigger 一起离开视口**（它是 lifted 的，本来就不受
+视口裁切，见第 19 条）。多数网页 UI 在这种时候选择「一滚就关」，那需要库去猜作者的意图（关掉
+会写模型，而 `open` 是作者持有的，见 `DocsPickers` 的「Open is author-owned too」）——所以这里
+不替作者关，只保证**位置永远和 trigger 对齐**。要「滚出即关」的作者自己听 `onScroll` / 改模型。
 
 ### 3.4 动画：样式 5 字段 + **layout 字段** + 浮层**入/退场**（两种机制，刻意不合并）
 
@@ -1335,12 +1342,28 @@ kit 只挂窗口。四条硬规则（每条都有探针断言）：
 
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
-一条命令跑全部 **66** 道门：
+一条命令跑全部 **68** 道门：
 
 ```sh
-node tools/gates.cjs          # 66/66 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-11-03.txt）
+node tools/gates.cjs          # 68/68 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-11-03b.txt）
 ```
 
+> 第四十九轮（2026-11-03）**滚动区里的 `select` 把弹层弹错位置**（用户第五次报告）。
+> ① **根因不在 `select` 也不在 `ScrollViewWidget`，而在「`absX/absY` 是布局坐标」这个前提**：视口靠移动
+> `backing.scrollRect` 平移像素，子节点 rect 一个字都不动；而打开的下拉走 `lifted`（第 19 条）被 reparent 到
+> `stageContainer`，再也收不到祖先视口的滑动 ⇒ 滚动 40 之后弹层仍停在未滚动处，偏差恰好等于滚动量。
+> 修法是把「视口滑动」变成**被发布的量**：`UiNode.scrollShiftX/Y`（`ScrollViewWidget.paint` 每帧写真值，
+> 含回弹 stretch）+ `visualX()/visualY()`（`absX/absY` 减所有祖先的 shift，嵌套自动累加）；lift 改用 visual
+> 定位，`app.liftedList` + `reflow()` 末尾 `reseatLifted()` 每帧重新落位（滚动只 repaint 视口，弹层没有自己的
+> dirty 位）。**连带三处同源缺陷一起收**：`pickAt` 按树序命中（弹层后面的兄弟抢走点击 → 新增 `pickLifted`，
+> 按 `stageContainer` 的显示顺序从后往前）；`dispatchPointerMouse` 用 `abs` 算 `localX/Y`（滚过的 pane 里差一个偏移）；
+> `destroySubtree`/关闭时少一处 `unregisterLifted`。
+> ② 新探针 `probes/widgets/select-scroll`（19 checks / 27 项断言，offset 0 与 40 两个相位 + 像素 + 命中 + 指针），
+> **变异 5/5**（不减 shift / 不发布 shift / 不登记 / 不 pickLifted / pointer 用 abs）。改之前先跑出一条红的，改完绿。
+> ③ 已知边界**如实登记、不修**：弹层跟着 trigger 走（这是对的），所以把 trigger 滚出可视区后弹层也会跟着出视口——
+> 「滚出即关」需要库替作者写模型，而 `open` 是作者持有的（`DocsPickers` 的「Open is author-owned too」）。
+> **全量 68/68 PASS，563 s，0 SKIP**（`reviews/gates-macos-2026-11-03b.txt`；新增的两道门是 `widgets/gutter` 与本轮的
+> `widgets/select-scroll`）。
 > 第四十八轮（2026-11-03）**用户报的两个真缺陷，两个都不在报错的那一行上**。
 > ① **弹出选项的文字不上下居中**：根因在 `BoxNode` 而不是 `select` —— `direction` 有个硬默认 `"column"`，
 > 而 `Theme.resolve` 把它当**覆盖**最后应用，于是**任何** `box({style: {flexDirection: "row"}})` 都被压成列；

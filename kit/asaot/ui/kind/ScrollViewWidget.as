@@ -486,6 +486,13 @@ package asaot.ui.kind
                 applied[2] = w;
                 applied[3] = h;
             }
+            // Publish the slide for the nodes that have to agree with the PIXELS rather
+            // than with the rects: a lifted popup (it left this viewport, so it carries
+            // the slide itself -- UiNode.visualX/Y), a synthetic pointer's localX/Y, and
+            // a pane nested in this one. Unconditional: `applied` only skips the
+            // re-assignment (the setter copies), the value is always this frame's.
+            n.scrollShiftX = vx;
+            n.scrollShiftY = vy;
 
             this.paintBars(n, w, h, maxX, maxY, ox, oy, vx, vy);
 
