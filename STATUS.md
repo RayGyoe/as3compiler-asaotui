@@ -1340,6 +1340,107 @@ kit 只挂窗口。四条硬规则（每条都有探针断言）：
   51 行 `[TIMEOUT]`、**命令正常返回**（不是挂死）。来源：adl/AOT 程序写错时**永久不退出**，
   所以「启动类」调用的上限必须短（≤10s 量级），而这是脚本层自己必须做到的，不靠人记得。
 
+### 3.21 帧耗时：每帧重解重画的固定成本 8.3ms → 1.0ms（第四十三轮）
+
+**为什么先量**：这一轮的起点是"列表滚动掉帧、礼物动画卡"。渲染层的脏矩形早就实现了，但
+真机 335 秒的 `bake-trace.log` 里 `bake_patch` 是 **0 次**、`bake_rebuild` 5263 次——
+那是编译器侧的另一条线。kit 侧则从来没有一条**端到端**的帧耗时基线：`probes/perf` 停在
+AS3 侧（describe/solve/paint），看不见帧间隔，也看不见运行时随后做的光栅。
+
+**先建尺子，再动手**
+
+| 件 | 作用 |
+|---|---|
+| `probes/frame/Main.as`（新） | 一次构建、每个 case 一个进程跑 1100 帧（60fps），按 `ASC_FRAME_STATS` 读 p50/p95/p99，同时输出 kit 计数器与**分相毫秒** |
+| `tools/frame-perf.cjs`（新） | 构建一次 + 逐 case 起进程 + 解析 `FRAME` 行：`node tools/frame-perf.cjs [--cases text:1000,all:1000] [--no-build]` |
+| `UiApp.profile`（新，默认 false） | 把一次 reflow 切成 render / reconcile / measure / solve / arrange / paint 六段，另记**单帧最大值**。一个静态布尔 + 每相一次判断，关掉时零成本 |
+
+**分相结果把三个真缺陷钉了出来**（1000 行、800×600、只改一行文本的 `text:1000`）
+
+| 相 | 修前 ms/帧 | 修后 ms/帧 |
+|---|---|---|
+| render（`View.render()` 建描述树） | 0.75 | 0.66 |
+| reconcile（diff + 落地） | **8.30** | **2.50** |
+| measure（`widget.measure`，文本整形） | **3.35** | **0.15** |
+| solve（布局引擎） | 1.28 | 1.29 |
+| arrange | 0.12 | 0.12 |
+| paint | 1.12 | 1.10 |
+
+**缺陷一：每帧重排一次子节点序（两个 O(n²)）**。`reconcileChildren` 以前**无条件**调
+`fixEngineOrder` 与 `fixDisplayOrder`：前者对每个子节点调 `insertChild`，而
+`As3LayoutEngine.insertChild` 是 `removeChild`（`indexOf`+`splice`）再加一次 `splice`；
+后者对每个子节点调 `setChildIndex`（显示列表 splice）。1000 个子节点 ⇒ 每帧百万级元素搬动。
+它们**只在描述顺序真的变了**的时候才需要，于是改成：`orderChanged()` 或"有子节点不在父
+backing 里"（被 lift 的浮层回到原位，`applyLift` 会把它挂到末尾）才修。
+
+**缺陷二：定位子节点是线性扫描**。`findChild` 对每个描述子节点扫一遍当前子节点，
+n(n+1)/2 次 token 比较——和 2026-10-27 修掉的重复 key 检查同形。改成两条路：
+**位置快路径**（数量相同 + 每个 token 相同 ⇒ 就地 `n.children[i] = reconcile(...)`，不建
+Vector、不置 matched、不做销毁扫描）与**token→节点映射**的兜底路径。
+`matched` 的写入点必须跟着搬（销毁扫描信它），这一条漏了会**销毁所有子节点**——
+CheckUi 的 keyed reorder 当场报 #1009，是它接住的。
+
+**快路径自己挖的一个坑（这次被新钉子接住）**：kind 变了但**槽位和 key 都没变**时，`reconcile` 造出
+新节点、它的 backing 被 `addChild` **追加到末尾**——于是树是对的、每个 rect 也是对的，只有
+**绘制顺序**错了（按钮压住了下一个兄弟）。所以快路径在发现有节点被重建时仍要跑一次
+槽位修复。钉子加在 CheckUi 4b（`kind 就地换`，比较 `getChildIndex(a) < getChildIndex(b)`）：
+把那条 `if (replaced)` 改成 `false` ⇒ 立刻 `indexA=2 indexB=1` 变红，还原后 37/37 全绿。
+
+**缺陷三：measure 缓存键是每帧拼出来的字符串**。`PaintKit.measureField` 的键是
+`text+wrap+字体+对齐+` 十几个字段拼成的**两个**字符串，每个文本节点每帧拼两遍。1000 行
+意味着每帧 2000 个新 String、120KB 垃圾——而 999 行**根本没变**。改成 11 个标量字段
+（`UiNode.mkText/mkWrap/mkFont/...`）直接比较，零分配。
+**这里有一个只靠实测才发现的坑**：`leading`/`letterSpacing`/`color` 未设置时是 **NaN**，
+`NaN == NaN` 为假 ⇒ 缓存**永不命中**，1000 行每帧全部重新整形：measure 3.7ms → **24.5ms**，
+比修之前还糟。字符串键当年把 NaN 拼成 `"NaN"` 才"碰巧"相等。所有数值比较现在都走
+`sameNum()`（`a != a` 判 NaN）。
+
+**端到端（60fps，p50/p95/p99 ms，1100 帧）**
+
+| case | 修前 | 修后 |
+|---|---|---|
+| idle（无变化，跳过 Present） | 17/18/19 | 17/18/18 |
+| move（纯运行时位移，无 kit 工作） | 17/17/18 | 17/18/18 |
+| text:300（一行变） | 17/18/20 | 17/21/22 |
+| text:1000 | 30/32/32 | **22/23/23** |
+| text:2000 | 64/69/— | **39/41/41** |
+| all:1000（每行都在变） | 60/76/78 | 51/61/65 |
+| all:2000 | 123/249/— | 86/107/112 |
+
+RSS 同步塌下来：`text:1000` **3096 → 1072 MB**，`all:2000` 5548 → 3326 MB，
+`all:300` 1197 → 202 MB。省掉的是**每帧的临时字符串**，不是任何"跳过绘制"的技巧。
+
+**没改的，以及为什么**
+
+- `paint` 仍是 `paintAll`（布局帧整树重画）：2026-10-29 试过 `paintDirty`，被 stick 探针
+  否决且零收益（纯引擎 solve 0.3ms、单节点 paint 0ms），不再试第二次。
+- **光栅化**不在 kit 手里：`move` case 证明纯运行时位移就已经是 17ms/帧的地板，kit 侧
+  1ms 的差别只在有大面积重画时才有意义。
+
+**一个必须说清的残余：`all:300` 的尾延迟**。那个 case 每帧 300 个标签同时变，修前后
+p50 18→17，但 **p95 21→55**、p99 24→82。分相最大值把它指出来了：`renderMax=43ms`、
+`measureMax=34ms`——同一份构建在 `text:1000` 上 `renderMax=2ms`，所以不是 kit 的固定成本，
+而是**GC 切片落进了大分配点**。三个证据：
+
+| 环境变量 | all:300 p50/p95/p99 | avg | RSS | renderMax |
+|---|---|---|---|---|
+| 默认 | 17/55/82 | 21.3 | 202MB | 43 |
+| `ASC_GC_THRESHOLD=1048576` | 17/36/39 | 19.0 | 170MB | 16 |
+| `ASC_GC_BUDGET=20000` | **15/26/26** | **16.7** | 112MB | **3** |
+
+但把同一把钥匙用在 1000 行上是**反向**的（`ASC_GC_BUDGET=20000`：text:1000 22→35、
+all:1000 51→72）——切片大小必须随堆自适应，`GC_SLICE_CAP 8000` 对大堆是对的。所以这条
+留作**运行时侧的后续**（`as3compiler/src/runtime.ts` 的 `gc_budget()/gc_trigger()`），
+kit 侧不再动；本节的数据就是那一轮的基线。
+
+**验收**
+
+| 项 | 结果 |
+|---|---|
+| `ui-demo` CheckUi（keyed reorder / kind 换 / kind **就地**换 / 重复 key 抛错） | **37 checks, 0 failures** |
+| 像素门 41 道（chip/form/display/nav/navstack/anim/keys/inputs/clip/theme/env/icon/accordion/pointer-touch + redraw/perf/lifecycle/widgets） | **41/41 PASS** |
+| 未跑的 | 画廊 tour（`run-gallery.cjs`）在本机**链不上**：它的构建清单没有 `d3d12/dxgi/d3dcompiler`（`D3D12SerializeRootSignature`/`D3DCompile` undefined），是 Windows 变体库那条已知缺口，与本次改动无关 |
+
 ## 4 已完成且**可复现**的部分（不是意图，是跑过的）
 
 一条命令跑全部 **68** 道门：

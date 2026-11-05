@@ -234,37 +234,69 @@ package asaot.ui
             // saving (a colour change re-formats but does not re-shape) and
             // restores the behaviour.
             var t:TextStyle = s.text;
-            var key:String = (content == null ? "" : content) + "\u0001" + wrapW
-                + "\u0001" + t.fontFamily + "\u0001" + t.fontSize
-                + "\u0001" + t.fontWeight + "\u0001" + t.fontStyle
-                + "\u0001" + t.leading + "\u0001" + t.letterSpacing
-                + "\u0001" + t.textAlign + "\u0001" + field.wordWrap;
-            var fkey:String = key + "\u0001" + t.color;
-            var reshape:Boolean = n.measureKey != key || n.state.measureValid != 3;
-            if (!reshape && n.formatKey == fkey) return;
+            var text:String = content == null ? "" : content;
+            var wrapFlag:Boolean = !isNaN(wrapW) && wrapW > 0;
+            // SCALAR COMPARE, NOT A BUILT KEY. See UiNode.mkText for the numbers.
+            // NaN is the "one line" sentinel and NaN != NaN, so the wrap width is
+            // compared through sameNum() instead of `==`.
+            var same:Boolean = n.mkValid
+                && n.mkText == text
+                && sameNum(n.mkWrap, wrapW)
+                && n.mkFont == t.fontFamily
+                && sameNum(n.mkSize, t.fontSize)
+                && n.mkWeight == t.fontWeight
+                && n.mkStyle == t.fontStyle
+                && sameNum(n.mkLeading, t.leading)
+                && sameNum(n.mkSpacing, t.letterSpacing)
+                && n.mkAlign == t.textAlign
+                && n.mkWrapFlag == (wrapFlag ? 1 : 0);
+            var reshape:Boolean = !same || n.state.measureValid != 3;
+            if (!reshape && n.mkFmtValid && sameNum(n.mkColor, t.color)) return;
             var f:TextFormat = formatFor(s);
             field.defaultTextFormat = f;
             if (reshape)
             {
-                var wrapped:Boolean = !isNaN(wrapW) && wrapW > 0;
+                var wrapped:Boolean = wrapFlag;
                 field.autoSize = wrapped ? "none" : "left";
                 field.wordWrap = wrapped;
                 field.multiline = wrapped;
                 if (wrapped) field.width = wrapW;
-                field.text = content == null ? "" : content;
-                n.measureKey = key;
+                field.text = text;
+                n.mkText = text;
+                n.mkWrap = wrapW;
+                n.mkFont = t.fontFamily;
+                n.mkSize = t.fontSize;
+                n.mkWeight = t.fontWeight;
+                n.mkStyle = t.fontStyle;
+                n.mkLeading = t.leading;
+                n.mkSpacing = t.letterSpacing;
+                n.mkAlign = t.textAlign;
+                n.mkWrapFlag = wrapped ? 1 : 0;
+                n.mkValid = true;
             }
             // A full-range replace, safe to repeat: G20 (compiler stage 268) made
             // setTextFormat REBUILD the run table instead of appending a run per
             // call, so re-measuring the same field cannot accumulate runs.
             field.setTextFormat(f);
-            n.formatKey = fkey;
+            n.mkColor = t.color;
+            n.mkFmtValid = true;
             if (reshape)
             {
                 n.state.measuredW = wrapped ? wrapW : field.textWidth;
                 n.state.measuredH = field.textHeight;
                 n.state.measureValid = 3;
             }
+        }
+
+        // NaN-aware numeric compare for the measure cache. EVERY numeric input has
+        // to go through this: an unset leading/letterSpacing/colour is NaN, and
+        // NaN != NaN would turn the cache into a permanent miss (it did, for one
+        // build: 1000 rows re-shaped their labels every frame, 3.7 ms -> 24.5 ms,
+        // because the old STRING key spelled NaN as "NaN" and compared equal).
+        private static function sameNum(a:Number, b:Number):Boolean
+        {
+            if (a != a) return b != b;
+            return a == b;
         }
 
         // Largest prefix of `content` whose rendered width (plus the ellipsis) fits

@@ -85,11 +85,27 @@ package asaot.ui
         private static const CLIP_LAST:String = "clipLast";
 
         // ---- control payload (mirrored from the description node) --------
-        // The input key of the last PaintKit.measureField call on this node. Lives
-        // here rather than in ElementState because that type is deliberately
-        // numbers-only (see its header); a cache key is a string.
-        public var measureKey:String;
-        public var formatKey:String;    // measureKey + colour: when setTextFormat last ran
+        // THE MEASURE CACHE INPUTS, stored as scalars. They used to be two big
+        // strings built by concatenating text+wrap+font+colour every measure pass,
+        // i.e. ~20 concatenations and a fresh String PER TEXT NODE PER FRAME --
+        // 1000 rows cost 3.3 ms/frame of PURE ALLOCATION on frames where not one
+        // label had changed. Comparing eleven scalars is a handful of primitive
+        // compares and allocates nothing. `mkValid` plus ElementState.measureValid
+        // is the "a measurement exists" bit (the old code used ==3 on the same
+        // field, which was also the only writer).
+        public var mkValid:Boolean;
+        public var mkText:String;
+        public var mkWrap:Number;
+        public var mkFont:String;
+        public var mkSize:Number;
+        public var mkWeight:String;
+        public var mkStyle:String;
+        public var mkLeading:Number;
+        public var mkSpacing:Number;
+        public var mkAlign:String;
+        public var mkWrapFlag:int;
+        public var mkColor:Number;      // only the FORMAT half depends on this
+        public var mkFmtValid:Boolean;
         public var textContent:String;
         public var label:String;
         public var value:String;

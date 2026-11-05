@@ -115,9 +115,63 @@ package asaot.ui
             var kids:Vector.<Node> = desc.children;
             var count:int = kids != null ? kids.length : 0;
 
+            // ---- FAST PATH: same count, same tokens, same slots -----------
+            // This is the overwhelmingly common describe: a value changed, so the
+            // view returned a structurally identical tree. The general path below
+            // does three O(children) things PER CHILD that the fast path can skip:
+            // a linear `findChild` scan (O(n^2) for a column of keyed rows -- the
+            // same shape as the duplicate-key scan fixed in 2026-10-27), a
+            // `insertChild` per child (As3LayoutEngine.remove uses indexOf+splice,
+            // so O(n) each => O(n^2)) and a `setChildIndex` per child (a display
+            // list splice, also O(n)). Measured on probes/frame at 1000 rows:
+            // reconcile was 8.3 ms of a 29 ms frame, and it did not depend on
+            // WHICH row changed -- it was the re-placement itself.
+            //
+            // The tokens are compared, not just the indices, so a keyed reorder
+            // can never slip through here: an unkeyed child's token is its slot,
+            // a keyed child's is its interned key id.
+            var i:int;
+            if (n.children.length == count)
+            {
+                var positional:Boolean = true;
+                for (i = 0; i < count; i++)
+                {
+                    var ftok:int = kids[i].key != null ? this.internKey(kids[i].key) : -(i + 1);
+                    if (n.children[i].token() != ftok) { positional = false; break; }
+                    var fb:DisplayObject = n.children[i].backing;
+                    // A LIFTED child (an open popup) is not in this backing; the
+                    // general path's slot counter is what re-seats it, so a
+                    // displaced child disqualifies the fast path.
+                    if (fb != null && fb.parent != n.backing) { positional = false; break; }
+                }
+                if (positional)
+                {
+                    // In place: no Vector allocation, no matched flags, no
+                    // destroy sweep (every slot was matched by construction).
+                    // A KIND CHANGE at a slot is a rebuild: `reconcile` then
+                    // returns a NEW node, whose backing/engine node were APPENDED
+                    // to the end of their lists -- so the order really did change
+                    // even though the tokens did not, and the slot repair has to
+                    // run after all.
+                    var replaced:Boolean = false;
+                    for (i = 0; i < count; i++)
+                    {
+                        var before:UiNode = n.children[i];
+                        var nn:UiNode = this.reconcile(before, kids[i], n);
+                        n.children[i] = nn;
+                        if (nn != before) replaced = true;
+                    }
+                    if (replaced)
+                    {
+                        this.fixEngineOrder(n, n.children);
+                        this.fixDisplayOrder(n, n.children);
+                    }
+                    return;
+                }
+            }
+
             // Reset the match flags on the CURRENT children (recursion-safe:
             // `matched` is a per-node field, not a shared scratch).
-            var i:int;
             for (i = 0; i < n.children.length; i++) n.children[i].matched = false;
 
             if (count == 0)
@@ -151,11 +205,27 @@ package asaot.ui
             }
 
             var next:Vector.<UiNode> = new Vector.<UiNode>();
+            // TOKEN -> NODE IN ONE PASS. `findChild` used to scan the current
+            // children per described child, i.e. n(n+1)/2 token comparisons per
+            // parent per describe -- invisible at 10 rows, 8 ms at 1000 (a keyed
+            // list that reorders, a virtual list that shifts). Tokens are unique
+            // per parent (duplicate keys throw just above, unkeyed tokens are
+            // negative slots), so a map answers each lookup in one probe.
+            var byToken:Object = {};
+            for (i = 0; i < n.children.length; i++)
+            {
+                var oc0:UiNode = n.children[i];
+                byToken[oc0.token()] = oc0;
+            }
             for (i = 0; i < count; i++)
             {
                 var child:Node = kids[i];
                 var token:int = child.key != null ? this.internKey(child.key) : -(i + 1);
-                var hit:UiNode = this.findChild(n, token);
+                var cand:Object = byToken[token];
+                var hit:UiNode = cand != null ? UiNode(cand) : null;
+                // The destroy sweep below trusts `matched`, and this is its only
+                // writer now that the linear findChild is gone.
+                if (hit != null) hit.matched = true;
                 var c:UiNode = this.reconcile(hit, child, n);
                 next.push(c);
             }
@@ -177,11 +247,35 @@ package asaot.ui
             // the destroy sweep that still needs the old array. A pure
             // style/payload re-describe reaches this point with the same nodes in
             // the same slots and costs one loop.
+            // RE-PLACEMENT IS A STRUCTURE REPAIR, NOT A PER-FRAME RITUAL.
+            // `insertChild` on As3LayoutEngine is remove(indexOf+splice)+splice and
+            // `setChildIndex` is a display-list splice, so doing either for every
+            // child every describe is O(n^2) and was the whole of the reconcile
+            // cost at 1000 rows. They are only needed when the description's order
+            // actually changed, or when a child is out of its parent's backing
+            // (a lifted popup that came back, which applyLift re-appends at the
+            // END of the display list).
             var reordered:Boolean = orderChanged(n, next);
             n.children = next;
-            if (reordered) n.markLayoutDirty();
-            this.fixEngineOrder(n, next);
-            this.fixDisplayOrder(n, next);
+            if (reordered)
+            {
+                n.markLayoutDirty();
+                this.fixEngineOrder(n, next);
+            }
+            if (reordered || this.displayDisplaced(n, next)) this.fixDisplayOrder(n, next);
+        }
+
+        // Is any child absent from the parent's backing? `applyLift` re-attaches a
+        // returning popup at the END of the display list, so the z-order has to be
+        // repaired even when the description order did not change.
+        private function displayDisplaced(n:UiNode, next:Vector.<UiNode>):Boolean
+        {
+            for (var i:int = 0; i < next.length; i++)
+            {
+                var b:DisplayObject = next[i].backing;
+                if (b != null && b.parent != n.backing) return true;
+            }
+            return false;
         }
 
         private function orderChanged(n:UiNode, next:Vector.<UiNode>):Boolean
@@ -205,21 +299,6 @@ package asaot.ui
             {
                 if (next[i].engineNode != null) eng.insertChild(n.engineNode, next[i].engineNode, i);
             }
-        }
-
-        private function findChild(n:UiNode, token:int):UiNode
-        {
-            for (var i:int = 0; i < n.children.length; i++)
-            {
-                var c:UiNode = n.children[i];
-                if (c.matched) continue;
-                if (c.token() == token)
-                {
-                    c.matched = true;
-                    return c;
-                }
-            }
-            return null;
         }
 
         // Reorder the retained backings to match the description order. We move

@@ -113,6 +113,25 @@ package asaot.ui
         // signal that a theme switch happened, and it is checked once per frame.
         private var _themeEpoch:int;
 
+        // ---- opt-in phase profiling -------------------------------------
+        // The `perf` probe times whole operations (one reflow of a describe),
+        // which cannot say WHICH phase a frame went to. These counters split a
+        // reflow into render / reconcile / measure / solve / arrange / paint and
+        // are only touched when `profile` is on, so a shipping app pays a single
+        // boolean test per phase. getTimer() is integer milliseconds: a phase
+        // under 1 ms reads 0 on a given frame, which is why the probe averages
+        // over hundreds of frames instead of trusting one.
+        public static var profile:Boolean = false;
+        public var profRenderMs:Number = 0;
+        public var profReconcileMs:Number = 0;
+        public var profMeasureMs:Number = 0;
+        public var profSolveMs:Number = 0;
+        public var profArrangeMs:Number = 0;
+        public var profPaintMs:Number = 0;
+        public var profFrames:int = 0;
+        public var profRenderMax:Number = 0;
+        public var profMeasureMax:Number = 0;
+
         public function UiApp(view:View):void
         {
             this.view = view;
@@ -807,6 +826,7 @@ package asaot.ui
             // frame asked for; anything marked during the pass belongs to the next.
             var wantsPaint:Boolean = this._needsPaint;
             this._needsPaint = false;
+            if (profile) this.profFrames = this.profFrames + 1;
 
             // A WINDOW RESIZE MUST RE-SOLVE PERCENTAGE-SIZED ROOTS. `size: [100%,100%]`
             // is resolved against `avail` at SOLVE time, but nothing in the tree
@@ -834,13 +854,16 @@ package asaot.ui
             var reconciledOverlay:Boolean = false;
             if (this._pending != 0)
             {
+                var tPhase:Number = profile ? getTimer() : 0;
                 var desc:Node = this.view.render();
                 this.describeCalls = this.describeCalls + 1;
+                if (profile) { var dR:Number = getTimer() - tPhase; this.profRenderMs = this.profRenderMs + dR; if (dR > this.profRenderMax) this.profRenderMax = dR; tPhase = getTimer(); }
                 if (desc == null)
                 {
                     throw new Error('asaot.ui: View.render() returned null (see api-design section 1.1)');
                 }
                 this.root = this.reconciler.reconcile(this.root, desc, null);
+                if (profile) { this.profReconcileMs = this.profReconcileMs + (getTimer() - tPhase); }
                 if (this.root.backing != null && this.root.backing.parent == null && this.stageContainer != null)
                 {
                     this.stageContainer.addChild(this.root.backing);
@@ -917,8 +940,10 @@ package asaot.ui
                 // where the frame time is; measurePass is. Do not "optimise"
                 // this line again without re-running both.
                 this.paintPasses = this.paintPasses + 1;
+                var tPaint:Number = profile ? getTimer() : 0;
                 if (this.root != null) paintAll(this.root);
                 if (this.overlayRoot != null) paintAll(this.overlayRoot);
+                if (profile) this.profPaintMs = this.profPaintMs + (getTimer() - tPaint);
             }
             else if (wantsPaint || reconciled)            {
                 // A reconciled frame MUST get a paint sweep even when nothing
@@ -935,8 +960,10 @@ package asaot.ui
                 // `paintDirty` paints only nodes whose M_PAINT bit is set, so the
                 // extra work is one O(n) walk plus O(changed) painting.
                 this.paintPasses = this.paintPasses + 1;
+                var tPaint2:Number = profile ? getTimer() : 0;
                 if (this.root != null) paintDirty(this.root);
                 if (this.overlayRoot != null) paintDirty(this.overlayRoot);
+                if (profile) this.profPaintMs = this.profPaintMs + (getTimer() - tPaint2);
             }
 
             this._pending = 0;
@@ -956,12 +983,16 @@ package asaot.ui
         // are driven.
         private function solveRoot(r:UiNode, availW:Number, availH:Number):void
         {
+            var tPhase:Number = profile ? getTimer() : 0;
             this.measurePasses = this.measurePasses + 1;
             measurePass(r);
+            if (profile) { var dM:Number = getTimer() - tPhase; this.profMeasureMs = this.profMeasureMs + dM; if (dM > this.profMeasureMax) this.profMeasureMax = dM; tPhase = getTimer(); }
             this.layoutSolves = this.layoutSolves + 1;
             this.engine.calculate(r.engineNode, availW, availH, LayoutConstants.DIR_LTR);
+            if (profile) { this.profSolveMs = this.profSolveMs + (getTimer() - tPhase); tPhase = getTimer(); }
             this.arrangePasses = this.arrangePasses + 1;
             arrangePass(r, 0, 0);
+            if (profile) this.profArrangeMs = this.profArrangeMs + (getTimer() - tPhase);
             this._solvedW = availW;
             this._solvedH = availH;
         }

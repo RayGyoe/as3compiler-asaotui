@@ -65,6 +65,9 @@ Thumbs.db
 #   ../as3compiler/vendor/skia/lib/windows-x64/icudtl.dat    （最省事）
 #   $AIRSDK_HOME/runtimes/air/win/icudtl.dat
 icudtl.dat
+# `probes/` 下没有 icudtl.dat 时，探针构建会拷一份叫这个名字的**运行数据副本**到探针目录；
+# 同一个 9.7 MB 的产物，按名字单独禁（`*.dat` 后缀规则会误伤别的东西）。
+aot-icudtl.dat
 
 # --- §4 编译器生成的 C（逐目录；手写 C 例外） ------------------------------
 # 生成物每个 2.6~3.8 MB：整棵树里 52 个 `.c` 合计 80 MB，2 个就抵得上整个仓库。
@@ -150,6 +153,11 @@ icudtl.dat
 /probes/**/*.log.txt
 /probes/**/*.samples.txt
 /probes/**/*.dbg.txt
+# `tools/frame-perf.cjs` 每个 case 一份 stderr（例如 `frame.stderr.text_1000.txt`），
+# 同样是每跑一次就重写的时间戳性产物。
+/probes/**/*.stderr*.txt
+# 探针的输入 case 文件（`case:<N>` 覆盖行数）由 runner 每次重写
+/probes/frame/case.txt
 /probes/vec-vs-arr/vec-aot.txt
 /probes/vec-vs-arr/vec-air.txt
 

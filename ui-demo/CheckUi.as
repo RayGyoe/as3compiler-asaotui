@@ -141,6 +141,34 @@ var b3:UiNode = app.findByKey("b");
 check("kind change rebuilt node 'a'", a3 !== a1, "pointer reused across kinds");
 check("kind change produced a button", a3.kind == "button", "kind=" + a3.kind);
 check("kind change left 'b' untouched", b3 === b1, "b was rebuilt");
+// A rebuilt node's backing and engine node are APPENDED, so a rebuild at a slot
+// that is not last has to be moved back by the reconciler's slot repair. This is
+// the only check that can see it: the tree is right either way, and only the
+// display list (paint order) is wrong. Dropping the repair from the reconcile
+// fast path leaves the button painted OVER 'b' -- measured, see the reconciler.
+var r3:UiNode = app.getRoot();
+var ia3:int = r3.backing.getChildIndex(a3.backing);
+var ib3:int = r3.backing.getChildIndex(b3.backing);
+check("kind change kept 'a' under 'b' in the display list", ia3 >= 0 && ia3 < ib3,
+    "indexA=" + ia3 + " indexB=" + ib3 + " n=" + r3.backing.numChildren);
+
+// ---- 4b. kind change IN PLACE (same key, same slot) -----------------------
+// 4 asserted the general path: "a" MOVED slot, so the tokens differed and the
+// slot repair ran anyway. This one changes only the KIND, so the reconciler takes
+// its positional fast path -- and a rebuilt node is APPENDED to the backing, which
+// leaves the paint order wrong unless the fast path repairs it too. Nothing but
+// the display list can see the difference (the tree and every rect are identical).
+view.mode = "base";
+app.invalidate(Dirty.STRUCTURE);
+app.reflow();
+var a4:UiNode = app.findByKey("a");
+var b4:UiNode = app.findByKey("b");
+check("in-place kind change rebuilt 'a'", a4 !== a3, "pointer reused across kinds");
+check("in-place kind change left 'b' untouched", b4 === b3, "b was rebuilt");
+var ia4:int = r3.backing.getChildIndex(a4.backing);
+var ib4:int = r3.backing.getChildIndex(b4.backing);
+check("in-place kind change kept 'a' under 'b'", ia4 >= 0 && ia4 < ib4,
+    "indexA=" + ia4 + " indexB=" + ib4 + " n=" + r3.backing.numChildren);
 
 // ---- 5. duplicate key under one parent is a hard error ---------------------
 view.mode = "dupKey";
