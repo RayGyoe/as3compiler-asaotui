@@ -29,6 +29,7 @@ node tools/gates.cjs     # 68 道门，约 9 分钟（并行 6 路）；最新�
 | 目录 | 取回方式 | 本机这份的版本 |
 |---|---|---|
 | `gpui-src/` | zed 的 sparse checkout，命令见 §「GPUI 源码参考」 | `5447804`（2026-10-21） |
+| `gpui-fast-src/` | longbridge `gpui-fast`（fork 主干）的 sparse checkout，命令见 §「GPUI 源码参考」 | `046a859`（2026-11-06） |
 | `measurements/yoga-src/` | `git clone --depth 1 https://github.com/facebook/yoga measurements/yoga-src` | `843dba8`（2026-10-21） |
 
 AIR SDK（`mxmlc` / `adl`，探针的**参考臂**要用）**不用手工指路**：`tools/air-sdk.cjs` 先看
@@ -361,7 +362,7 @@ override public function renderOverlay():Node
 理由见主文档 §6：`flash.*` 是与 `adl` 逐值对齐的面，AGENTS.md §1.5 要求
 「增强不得改写任何 AIR 已定义行为」，混进去会让「AIR 同构」失去可判定性。
 
-## GPUI 源码参考（`gpui-src/`）
+## GPUI 源码参考（`gpui-src/`、`gpui-fast-src/`）
 
 GPUI 已并入 Zed 单体仓库，故用 sparse checkout 只取需要的 crate：
 
@@ -371,6 +372,22 @@ git clone --depth 1 --filter=blob:none --sparse \
 cd gpui-src
 git sparse-checkout set crates/gpui crates/gpui_macros crates/util crates/refineable
 ```
+
+**`gpui-fast-src/` 是另一份，别混**：它是 longbridge 对 Zed GPUI 的 fork（**Retained Mode** 实验：保留视图/
+保留布局节点/滚动层 tile），也是 `../as3compiler/docs/zh-cn/gpui-windows-renderer.md` §9 的**证据源**
+（那一节的 `file:line` 全部相对 `gpui-fast-src/crates/`，可当场 grep）：
+
+```bash
+git clone --depth 1 --filter=blob:none --sparse \
+  https://github.com/longbridge/gpui-fast.git gpui-fast-src
+cd gpui-fast-src
+git sparse-checkout set crates/gpui crates/gpui_windows crates/gpui_platform docs
+```
+
+本机这份是主干 `046a859`（2026-11-06）。看它优先读四个地方：`README.md`（收益表）、
+`docs/architecture.md`（设计取舍与代价）、`docs/retained-mode.md`（失效判据）、`docs/scroll-layers.md`
+（滚动层怎么回退）。**它的文档会滞后于代码**（例：`docs/architecture.md` §Lists 说列表层是关的，
+`crates/gpui/src/fast/layers/lists.rs:78` 已经是 `true`）——引用开关或数字前先 `grep` 代码。
 
 体积 8.4 MB（`crates/gpui` 的 Rust 源码约 90k 行）。关键文件：
 

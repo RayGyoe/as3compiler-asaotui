@@ -121,6 +121,11 @@ aot-icudtl.dat
 
 # --- §6 第三方检出（取回命令见 README「克隆后的准备」） --------------------
 /gpui-src/
+# longbridge 的 gpui-fast（Zed GPUI 的 fork，Retained Mode 实验）。用 sparse checkout 只取
+# crates/gpui + crates/gpui_windows + crates/gpui_platform + docs；同样是完整 `.git`，入库会退化成
+# gitlink。它现在是 as3compiler/docs/zh-cn/gpui-windows-renderer.md §9 的**证据源**（行号相对
+# `gpui-fast-src/crates/`），所以取回命令与固定 commit 记在 README，不要删。
+/gpui-fast-src/
 /measurements/yoga-src/
 
 # --- §7 打包 / 运行产物 ----------------------------------------------------
