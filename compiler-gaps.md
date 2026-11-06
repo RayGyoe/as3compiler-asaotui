@@ -610,6 +610,20 @@
 
 ---
 
+### G30 —— `cacheAsBitmap` 子树内容变化走「完整重绘」而非 `bake_patch`（脏矩形增量被 `Graphics_clear` 的完整失效抹掉）—— ✅ **已完成（增强 · 后端性能优化，v0.4.343 / 阶段三百七十八）**
+
+| 项 | 内容 |
+|---|---|
+| 现象（实测，2026-11-06） | asaotui 探针 `probes/widgets/repaint-boundary`（动态相位）：给 `stable` 设 `backing.cacheAsBitmap = true`，随后改其子节点 `s1` 的 `background` 颜色（`Dirty.VALUE` → `Style.diffFlags` 只 `f&4` 纯 paint，不触发 arrange ⇒ 不重设 `backing.x/y`）。`ASC_BAKE_TRACE=1` 显示改色后 `stable` **既无 `bake_patch` 也无 `bake_rebuild`**——走了「完整重绘」分支（`_dirty_full`，该分支无 trace）；像素层 `.done=PASS` 证明 bake surface 确实更新了。即 cacheAsBitmap 的**边界隔离**收益已生效（surface 未重新分配），但**增量重烘焙**收益（只重绘脏矩形）被抹掉 |
+| 代码事实 | `bake_patch`（`emit.ts` Stage C）触发条件 = `o->_render_dirty && !o->_dirty_full && 无 filter && _cache_surface != NULL`；精确脏矩形只由 `as_mark_dirty_rect` 产生，且只有 `Graphics` 的自包含形状（`drawRect`/`drawCircle` → `as_gpath_mark_rect`，`emit.ts:22214`）走这条路。但 asaotui 的 `PaintKit.drawBox`/`drawBoxFor` 改色是 `g.clear()` + `beginFill` + `drawRect`：`Graphics_clear`（`emit.ts:22651`）第一句 `if (g->_owner != NULL) as_mark_dirty(g->_owner)` 先把 owner 标 `_dirty_full = 1`，随后 `drawRect` 的 `as_gpath_mark_rect` 走到 `as_dirty_merge`（`emit.ts:29369`）见 `_dirty_full` 已置位直接 `return`，不再窄化 ⇒ 冒泡到 cacheAsBitmap 边界的是 `_dirty_full`，走「完整重绘」分支 |
+| 判定 | **增强（后端性能优化，语义不变）**。完整失效本身语义**正确**（只是保守）；`bake_patch` 增量是「我们的 AOT 后端」独有的内部优化，AIR/adl 的 `cacheAsBitmap` 是黑盒、无可对照口径 ⇒ 归「增强/工具链」，非「遗留欠账」。因为是**内部优化**（输出像素不变、不新增对外能力），不涉及 opt-in / 静默报明 |
+| **对编译器的主张（核心改动两处）** | `Graphics_clear` 里把 `as_mark_dirty(g->_owner)` 换成**旧 bounds 的精确脏矩形**：`if (g->_owner != NULL && g->_has_b) { double half = g->_max_sw * 0.5; as_mark_dirty_rect(g->_owner, g->_bl - half, g->_bt - half, g->_br + half, g->_bb + half); }`。**为什么可行**：clear 的 dirty 标记在 `g->_has_b = 0`、`g->_max_sw = 0.0` 重置**之前**执行，所以 `_has_b`/`_bl/_bt/_br/_bb`/`_max_sw` 仍是旧内容（含 stroke spread）的累积值；旧内容被清除 = 旧 bounds 区域需重绘（擦除），后续 `drawRect` 的新 bounds 在 `as_dirty_merge` 里与它合并成「旧 ∪ 新」的有限 AABB ⇒ 走 `bake_patch`。**第二处（实测补充，2026-11-06）**：asaotui `UiNode.paintSelf` 每帧无条件写 `backing.alpha = 1.0`，而 render-input 标量字段写尾（x/y/rotation/scaleX/scaleY/alpha/visible）无条件 `as_mark_dirty` ⇒ 同样把精确脏矩形抹成 `_dirty_full`。修复：标量字段写点加「值不变就不标脏」变化检测（RHS 副作用先 hoist；指针/boxed 字段保持无条件标脏），asaotui 侧 `backing.alpha` 改「值变了才写」 |
+| 边界正确性 | ① clear 空 graphics（`_has_b = 0`）→ 不标 dirty（无内容变化，比原 `as_mark_dirty` 更精确）；② clear 后接 `moveTo`/`lineTo`（无界路径）→ `as_gpath_mark` 仍走完整失效，与精确脏矩形合并后退化为 `_dirty_full`（语义正确）；③ `as_mark_dirty_rect` 同样 `ASC_dirty_epoch++`（Present-skip 不受影响）并逐祖先 `as_bounds_xform` 变换（脏矩形正确落到 cacheAsBitmap 边界的局部空间） |
+| 验证方式 | 改完后 `ASC_BAKE_TRACE=1 ASC_NO_OPEN=1` 跑 `asaotui/probes/widgets/repaint-boundary`（动态探针），改 s1 颜色后 `stable` 应出现 `bake_patch`（含 clip 矩形），且 `bake_rebuild` 次数不增长（surface 不重新分配）。当前 A/B 证据：`asaotui/temp/rb-ab/bake-A-no-cache.log`、`bake-B-cache.log`、`bake-dyn-cache.log` |
+| 状态 | ✅ **已完成（v0.4.343 / 阶段三百七十八）**：核心改动**两处**——`Graphics_clear` 精确脏矩形 + render-input 标量写点变化检测，外加 asaotui 侧 `backing.alpha` 有条件写（**修正**了「asaotui 侧无需改 paint」的原判断，实测需改）。`ASC_BAKE_TRACE=1` 探针验证 `bake_patch` 出现；全量 `node test.ts` **636/636** |
+
+---
+
 ## 2 不是缺口：已澄清 / 已关闭
 
 | 事项 | 结论 | 证据 |

@@ -1438,8 +1438,11 @@ package asaot.ui
             // never reach the display object. Idempotent with arrangeSelf.
             if (this.backing != null)
             {
-                this.backing.alpha = isNaN(this.resolved.opacity) ? 1.0 : this.resolved.opacity;
-                if (this.state.disabled != 0) this.backing.alpha = this.backing.alpha * PaintKit.DISABLED_ALPHA;
+                // Change-detected: an unchanged alpha writes nothing, so the frame's
+                // repaint stays a paint-only diff (no full invalidate of the backing).
+                var wantAlpha:Number = isNaN(this.resolved.opacity) ? 1.0 : this.resolved.opacity;
+                if (this.state.disabled != 0) wantAlpha = wantAlpha * PaintKit.DISABLED_ALPHA;
+                if (this.backing.alpha != wantAlpha) this.backing.alpha = wantAlpha;
             }
             this.widget.paint(this);
         }

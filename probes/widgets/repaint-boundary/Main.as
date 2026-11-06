@@ -1,0 +1,219 @@
+// probes/widgets/repaint-boundary/Main.as -- 动态增量收益探针：证明 cacheAsBitmap
+// 子树在局部内容变化时走 bake_patch（脏矩形增量）而非 bake_rebuild（完整重建）。
+//
+// 时间线（配合 ASC_BAKE_TRACE=1 观察，trace 打 stderr，AS3 侧看不见）：
+//   t≈0ms    首帧 auto-bake（root + stable 各 bake_on + bake_rebuild）
+//   t≈900ms  markBoundary 设 stable.backing.cacheAsBitmap = true
+//   t≈1200ms changeColor 改 s1 颜色 + invalidate(Dirty.VALUE)  -> 观察 bake_patch
+//   t≈1500ms settle 采样像素 + 写 .done
+//
+// 断言：像素层证明「只有 s1 变了，其余不变」；bake 层（out-of-band）证明变化
+// 是 bake_patch 而非 bake_rebuild。
+import asaot.ui.*;
+import asaot.ui.style.*;
+
+import flash.display.BitmapData;
+import flash.display.Stage;
+import flash.display.StageAlign;
+import flash.display.StageScaleMode;
+
+import flash.filesystem.File;
+import flash.filesystem.FileMode;
+import flash.filesystem.FileStream;
+
+import flash.geom.Rectangle;
+import flash.utils.ByteArray;
+import flash.utils.setTimeout;
+
+var W:int = 320;
+var H:int = 200;
+var OUT:String = 'repaint-boundary';
+
+// s1 的两种颜色（只有 R 通道降一档：0xEE -> 0xCC），其余通道不动。
+var S1_REST:uint = 0xEE1111;
+var S1_HOT:uint = 0xCC1111;
+var C2:uint = 0x11EE11;
+var C3:uint = 0x1111EE;
+
+class RbModel extends Observable
+{
+    public var s1Color:uint = 0xEE1111;
+}
+
+class RbProbe extends View
+{
+    public var model:RbModel;
+
+    private static const ROOT:StyleRefinement = StyleRefinement.from({
+        flexDirection: "column", alignItems: "flex-start",
+        padding: 20, gap: 10, size: [320, 200], background: 0xFFFFFF
+    });
+    private static const STABLE:StyleRefinement = StyleRefinement.from({
+        flexDirection: "column", size: [280, 120],
+        padding: 10, gap: 8, background: 0xF3F4F6
+    });
+    private static const BAND2:StyleRefinement = StyleRefinement.from({
+        size: [260, 20], background: 0x11EE11
+    });
+    private static const BAND3:StyleRefinement = StyleRefinement.from({
+        size: [260, 20], background: 0x1111EE
+    });
+
+    public function RbProbe(m:RbModel):void
+    {
+        super();
+        this.model = m;
+    }
+
+    override public function render():Node
+    {
+        // 每次 render 都新建 s1 的 refinement（指针变化 => reconcile 标记 s1 重绘），
+        // 但 size 不变 => 不触发 reflow，只触发局部 paint。
+        var b1:StyleRefinement = StyleRefinement.from({
+            size: [260, 20], background: this.model.s1Color
+        });
+        return column({ key: "root", style: ROOT, ariaName: "rb root" }, [
+            box({ key: "stable", style: STABLE, ariaName: "stable subtree" }, [
+                box({ key: "s1", style: b1, ariaName: "band 1" }),
+                box({ key: "s2", style: BAND2, ariaName: "band 2" }),
+                box({ key: "s3", style: BAND3, ariaName: "band 3" })
+            ])
+        ]);
+    }
+}
+
+var model:RbModel = new RbModel();
+var view:RbProbe = new RbProbe(model);
+var stage:Stage = new Stage();
+stage.scaleMode = StageScaleMode.NO_SCALE;
+stage.align = StageAlign.TOP_LEFT;
+var app:UiApp = new UiApp(view);
+app.mount(stage);
+app.attachRoot();
+
+setTimeout(markBoundary, 900);
+stage.showWindow(W, H, "probe repaint-boundary");
+
+function markBoundary():void
+{
+    var n:UiNode = app.findByKey("stable");
+    if (n == null) { writeText(OUT + ".done", "FAIL stable missing"); return; }
+    n.backing.cacheAsBitmap = true;
+    writeText(OUT + ".step", "cacheAsBitmap set");
+    setTimeout(changeColor, 300);
+}
+
+function changeColor():void
+{
+    model.s1Color = S1_HOT;
+    view.invalidate(Dirty.VALUE);
+    writeText(OUT + ".step", "s1 color changed");
+    setTimeout(settle, 300);
+}
+
+function settle():void
+{
+    step("settle enter");
+    try { settleBody(); }
+    catch (err:Error) { writeText(OUT + ".done", "FAIL settle threw #" + err.errorID + ": " + err.message); }
+}
+
+function settleBody():void
+{
+    var names:Array = ["root", "stable", "s1", "s2", "s3"];
+    var lines:String = "";
+    var missing:int = 0;
+    for (var i:int = 0; i < names.length; i++)
+    {
+        var n:UiNode = app.findByKey(names[i]);
+        if (n == null) { missing = missing + 1; lines = lines + names[i] + " MISSING\n"; continue; }
+        lines = lines + names[i] + " " + n.absX + "," + n.absY + "," + n.absW + "," + n.absH + "\n";
+    }
+    writeText(OUT + ".rects.txt", lines);
+
+    var bd:BitmapData = new BitmapData(W, H, true, 0xFF000000);
+    bd.draw(stage);
+    writeBmp(OUT + ".bmp", bd);
+
+    if (missing > 0) { writeText(OUT + ".done", "FAIL " + missing + " node(s) missing"); return; }
+
+    var problems:String = "";
+    // s1 已改成 HOT，采样它验证颜色真的变了；s2/s3 不动，验证只变 s1。
+    problems = problems + expectStr(bd, 160, 40, S1_HOT, "s1 did not take its new colour");
+    problems = problems + expectStr(bd, 160, 68, C2, "s2 changed although it should not");
+    problems = problems + expectStr(bd, 160, 96, C3, "s3 changed although it should not");
+    // bake 不得把子树漏到框外。
+    problems = problems + expectStr(bd, 160, 10, 0xFFFFFF, "something leaked above the stable box");
+
+    writeText(OUT + ".done", problems == "" ? "PASS" : "FAIL " + problems);
+}
+
+function expectStr(bd:BitmapData, x:int, y:int, rgb:uint, what:String):String
+{
+    var got:uint = bd.getPixel(x, y) & 0xFFFFFF;
+    if (got == rgb) return "";
+    return what + " is " + hex(got) + " not " + hex(rgb) + "; ";
+}
+
+function hex(v:uint):String
+{
+    var s:String = (v & 0xFFFFFF).toString(16);
+    while (s.length < 6) s = "0" + s;
+    return "#" + s;
+}
+
+function step(s:String):void
+{
+    writeText(OUT + ".step", s);
+}
+
+function writeText(path:String, t:String):void
+{
+    var f:File = File.applicationDirectory.resolvePath(path);
+    var fs:FileStream = new FileStream();
+    fs.open(f, FileMode.WRITE);
+    fs.writeUTFBytes(t);
+    fs.close();
+}
+
+function writeBmp(path:String, bd:BitmapData):void
+{
+    var w:int = bd.width;
+    var h:int = bd.height;
+    var px:ByteArray = bd.getPixels(new Rectangle(0, 0, w, h));
+    var imgSize:int = w * h * 4;
+    var ba:ByteArray = new ByteArray();
+    ba.writeByte(0x42); ba.writeByte(0x4D);
+    ba.writeByte(54 + imgSize & 255); ba.writeByte((54 + imgSize) >> 8 & 255);
+    ba.writeByte((54 + imgSize) >> 16 & 255); ba.writeByte((54 + imgSize) >> 24 & 255);
+    ba.writeByte(0); ba.writeByte(0); ba.writeByte(0); ba.writeByte(0);
+    ba.writeByte(54); ba.writeByte(0); ba.writeByte(0); ba.writeByte(0);
+    ba.writeByte(40); ba.writeByte(0); ba.writeByte(0); ba.writeByte(0);
+    ba.writeByte(w & 255); ba.writeByte(w >> 8 & 255); ba.writeByte(0); ba.writeByte(0);
+    ba.writeByte(h & 255); ba.writeByte(h >> 8 & 255); ba.writeByte(0); ba.writeByte(0);
+    ba.writeByte(1); ba.writeByte(0);
+    ba.writeByte(32); ba.writeByte(0);
+    ba.writeByte(0); ba.writeByte(0); ba.writeByte(0); ba.writeByte(0);
+    ba.writeByte(imgSize & 255); ba.writeByte(imgSize >> 8 & 255);
+    ba.writeByte(imgSize >> 16 & 255); ba.writeByte(imgSize >> 24 & 255);
+    ba.writeByte(0); ba.writeByte(0); ba.writeByte(0); ba.writeByte(0);
+    ba.writeByte(0); ba.writeByte(0); ba.writeByte(0); ba.writeByte(0);
+    ba.writeByte(0); ba.writeByte(0); ba.writeByte(0); ba.writeByte(0);
+    ba.writeByte(0); ba.writeByte(0); ba.writeByte(0); ba.writeByte(0);
+    for (var y:int = h - 1; y >= 0; y--)
+    {
+        for (var x:int = 0; x < w; x++)
+        {
+            var i:int = (y * w + x) * 4;
+            ba.writeByte(px[i + 3]);
+            ba.writeByte(px[i + 2]);
+            ba.writeByte(px[i + 1]);
+            ba.writeByte(px[i]);
+        }
+    }
+    var f:File = File.applicationDirectory.resolvePath(path);
+    var fs:FileStream = new FileStream();
+    fs.open(f, FileMode.WRITE);
+    fs.writeBytes(ba, 0, 0);
+    fs.close();
+}
