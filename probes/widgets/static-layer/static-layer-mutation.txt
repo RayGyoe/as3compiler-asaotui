@@ -1,0 +1,17 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE OPTS MIRROR IS DROPPED: `box({ staticLayer: true })` never reaches the description, so stable's backing.cacheAsBitmap stays false -- the opt-in is decoration
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL stable cacheAsBitmap not true;
+     restore: byte-identical (463edf07ff92b4b8)
+M2  CAUGHT  THE RETAINED FLAG NEVER REACHES THE DISPLAY OBJECT: the description says staticLayer but nothing writes cacheAsBitmap, so the bake never happens
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL stable cacheAsBitmap not true;
+     restore: byte-identical (29fdfaad03b74a87)
+M3  CAUGHT  THE DEFAULT FLIPS TO TRUE: every node becomes a static layer, so the undeclared ROOT is cached too -- the opt-in stops being a choice
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL root cacheAsBitmap not false;
+     restore: byte-identical (5615aa96be74c814)
+
+MUTATION static-layer: 3/3 caught, 0 problem(s)
+RESULT: PASS
