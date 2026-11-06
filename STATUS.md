@@ -449,7 +449,7 @@ cd asaotui && node tools/probe.cjs probes/widgets/interact   # 25 项，含四�
 
 ```sh
 cd asaotui && node layout-check/visual-check.cjs            # 12 项（含新字段的像素断言）
-cd asaotui && node tools/gates.cjs                           # 68 道门，含 layout-check 133 项
+cd asaotui && node tools/gates.cjs                           # 69 道门，含 layout-check 133 项
 ```
 
 ### 3.3 已定位并修复的框架缺陷（每个都有钉子）
@@ -1446,8 +1446,22 @@ kit 侧不再动；本节的数据就是那一轮的基线。
 一条命令跑全部 **68** 道门：
 
 ```sh
-node tools/gates.cjs          # 68/68 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-11-03b.txt）
+node tools/gates.cjs          # 69/69 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-11-06.txt）
 ```
+
+> 第五十轮（2026-11-06）**把编译器侧的 `cacheAsBitmap` 增量重烘焙接成 asaotui 的作者视角 opt-in `staticLayer`**。
+> ① **前置（G30）**：编译器阶段三百七十八（`465dbc3`）修复 `Graphics_clear` 用旧 bounds 精确脏矩形后，`bake_patch`
+> 真正触发——此前 `clear()` 的 `as_mark_dirty` 先标 `_dirty_full`，后续 `drawRect` 的精确标记被 `as_dirty_merge`
+> 因 `_dirty_full` 已置位而丢弃，cacheAsBitmap 子树内容变化走「完整重绘」分支、零增量。缺口登记为 **G30**
+> （`compiler-gaps.md`），由编译器会话修复；本会话用 `ASC_BAKE_TRACE` 在 `repaint-boundary` 探针上验证：改 s1 颜色后
+> stable 从「无 trace」变为 `bake_patch dl=10 dt=10 dr=270 db=30`（精确等于 s1 局部 AABB）。
+> ② **封装**：`Element.staticLayer`（默认 false）+ `OptionSupport.applyOpts` 镜像 + `UiNode.applyPayload` 变化检测后写
+> `backing.cacheAsBitmap`。opt-in **只作用于声明节点**——子节点与未声明的 root 保持 false（探针断言钉住「不向下传播」）；
+> 变化检测让稳态零分配、零重复写 display object。
+> ③ 新探针 `probes/widgets/static-layer`（27 checks：staticLayer→cacheAsBitmap 只落在 stable、root/s1/s2/s3 均 false、
+> 动态改色后像素正确更新、cache 不冻结内容），**变异 3/3**（opts 镜像丢 / retained flag 不落地 / 默认翻转为 true 使
+> 未声明的 root 也被缓存）。**全量 69/69 PASS，599 s，0 SKIP**（`reviews/gates-macos-2026-11-06.txt`；新增第 69 道门
+> `widgets/static-layer`）。
 
 > 第四十九轮（2026-11-03）**滚动区里的 `select` 把弹层弹错位置**（用户第五次报告）。
 > ① **根因不在 `select` 也不在 `ScrollViewWidget`，而在「`absX/absY` 是布局坐标」这个前提**：视口靠移动

@@ -62,6 +62,15 @@ package asaot.ui
         // instead of the box being shrunk and the gap left to the window colour.
         public var safeArea:*;
 
+        // STATIC LAYER (cacheAsBitmap opt-in). A hint that this subtree changes
+        // rarely, so the runtime may rasterize it once and re-bake only the dirty
+        // rectangle on change (bake_patch) instead of repainting it live every
+        // frame. Mirrored onto the retained node's `backing.cacheAsBitmap` in
+        // UiNode.applyPayload -- the author writes the INTENT, never touches the
+        // display object. Default false keeps every node on the live path it had
+        // before the feature existed.
+        public var staticLayer:Boolean;
+
         public function Element(kind:String):void
         {
             super(kind);
@@ -74,6 +83,7 @@ package asaot.ui
             this.onRightClick = null;
             this.onDoubleClick = null;
             this.safeArea = null;
+            this.staticLayer = false;
         }
     }
 }

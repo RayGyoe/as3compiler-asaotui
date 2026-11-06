@@ -1,0 +1,18 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/static-layer/Main.as. Never regenerate these by running the probe -- the point is that the staticLayer opt-in must set backing.cacheAsBitmap on the declared subtree (stable) and NOT on the undeclared root, and the cacheAsBitmap bake must not move or recolour anything.",
+  "w": 320,
+  "h": 200,
+  "rects": {
+    "root": [0, 0, 320, 200],
+    "stable": [20, 20, 280, 120],
+    "s1": [30, 30, 260, 20],
+    "s2": [30, 58, 260, 20],
+    "s3": [30, 86, 260, 20]
+  },
+  "points": [
+    { "x": 160, "y": 40, "rgb": "#CC1111" },
+    { "x": 160, "y": 68, "rgb": "#11EE11" },
+    { "x": 160, "y": 96, "rgb": "#1111EE" },
+    { "x": 160, "y": 10, "rgb": "#FFFFFF" }
+  ]
+}

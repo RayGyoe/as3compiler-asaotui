@@ -191,6 +191,15 @@ package asaot.ui
         public var safeBottom:Number;
         public var safeLeft:Number;
 
+        // ---- static layer (cacheAsBitmap opt-in) --------------------------
+        // Mirrored from Element.staticLayer. A hint that this subtree changes
+        // rarely, so the runtime may rasterize it once and re-bake only the dirty
+        // rectangle (bake_patch) instead of repainting live every frame. Maps
+        // straight onto `backing.cacheAsBitmap`; the change-detection in
+        // applyPayload writes the flag only when it flips, so a steady state costs
+        // one comparison per frame and never re-touches the display object.
+        public var staticLayer:Boolean;
+
         // ---- chrome gutter (scrollView's `scrollbarGutter: "stable"`) -------
         // The lane a kind reserves for chrome it paints on an edge: right and
         // bottom px that the CONTENT must not be laid out in. Folded into
@@ -617,6 +626,17 @@ package asaot.ui
             {
                 this.safeAreaMask = sam;
                 this.resolveStyle(true);
+            }
+
+            // STATIC LAYER: an opt-in rasterization hint, mirrored onto the
+            // backing's cacheAsBitmap. A flip is a RENDER hint, not a layout
+            // change, so it must NOT raise any dirty bit -- the cacheAsBitmap
+            // setter invalidates (and re-bakes) the surface on its own.
+            var sl:Boolean = Element(desc).staticLayer;
+            if (sl != this.staticLayer)
+            {
+                this.staticLayer = sl;
+                if (this.backing != null) this.backing.cacheAsBitmap = sl;
             }
 
             var dirBefore:String = this.directionOverride;

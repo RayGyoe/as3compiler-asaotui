@@ -688,6 +688,17 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
                  // including one that makes every node claim every edge (the
                  // "scatter it everywhere" E2 forbids).
                  'widgets/env',
+                 // `static-layer` is the cacheAsBitmap opt-in (2026-11-06
+                 // repaint-boundary work): `box({ staticLayer: true })` maps onto
+                 // backing.cacheAsBitmap on THAT node only -- never its children or
+                 // the undeclared root -- and a live colour change still repaints
+                 // (the cache does not freeze content). The incremental half
+                 // (bake_patch on a dirty child) is pinned by probes/widgets/
+                 // repaint-boundary under ASC_BAKE_TRACE. Teeth: probes/widgets/
+                 // static-layer/mutation.cjs 3/3 (opts mirror dropped; retained flag
+                 // never reaches the display object; default flips to true so the
+                 // undeclared root is cached too).
+                 'widgets/static-layer',
                  // probes/perf is not a pixel probe but a stopwatch: 300 keyed buttons,
                  // timed idle / describe / one-node-change / solve / paint phases.
                  // Its one assertion is a 15ms ceiling on a NO-CHANGE describe
