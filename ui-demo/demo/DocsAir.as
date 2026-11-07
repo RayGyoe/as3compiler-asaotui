@@ -107,6 +107,7 @@ package demo
     import flash.filesystem.FileMode;
     import flash.filesystem.FileStream;
     import flash.utils.Timer;
+    import flash.utils.getTimer;
 
     public class DocsAir extends Sprite
     {
@@ -143,11 +144,16 @@ package demo
             // logical coordinates to match the descriptor's window size.
             this.stage.scaleMode = StageScaleMode.NO_SCALE;
             this.stage.align = StageAlign.TOP_LEFT;
+            // The cadence, asked for explicitly -- see DocsMain for why the window's
+            // own refresh rate is not good enough as a default here.
+            this.stage.frameRate = 60;
             this.app = new UiApp(this.view);
             var self:DocsAir = this;
             this.model.subscribe(function (d:int):void { self.app.invalidate(d); });
             this.app.mount(this.stage);
             this.app.attachRoot();
+            this.app.showFps("top-right");   // the library's third tree
+
             this.view.app = this.app;
             addEventListener(Event.ENTER_FRAME, onFrame);
 
@@ -173,6 +179,22 @@ package demo
                 selfLog("START");
                 this.startSweep();
             }
+        }
+
+        // The frame clock. ONE listener for the whole app: it advances the simulated
+        // market (only while the live page is on screen), samples the pass counters
+        // once a second, and restores the real Env if a page left a fake phone bound.
+        // It is deliberately not inside render(): a describe pass must not advance
+        // data, or a reflow caused by a resize would move the market too.
+        //
+        // This method is what the addEventListener(ENTER_FRAME, onFrame) above names.
+        // It went missing once: the name resolved to nothing, and ONLY the reference
+        // compiler noticed (mxmlc #1119 "access of possibly undefined property"). The
+        // AOT arm never compiles this file (its root is DocsMain), which is exactly why
+        // gate 6b5 runs mxmlc over the tree the default arm ships.
+        private function onFrame(e:Event):void
+        {
+            if (this.view != null) this.view.frameTick(getTimer());
         }
 
         // [mode, logPath, openKeys]. No file (or one that says nothing) means "no

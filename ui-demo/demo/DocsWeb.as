@@ -64,12 +64,18 @@ package demo
             // descriptor's width x height, one CSS pixel per logical pixel.
             this.stage.scaleMode = StageScaleMode.NO_SCALE;
             this.stage.align = StageAlign.TOP_LEFT;
+            // The cadence, asked for explicitly -- see DocsMain for why a browser's
+            // refresh rate is not an acceptable default for the numbers this demo
+            // prints (a 120 Hz panel would make every "fps" reading a monitor spec).
+            this.stage.frameRate = 60;
             this.app = new UiApp(this.view);
             // The data flow is not optional -- see the header.
             var self:DocsWeb = this;
             this.model.subscribe(function (d:int):void { self.app.invalidate(d); });
             this.app.mount(this.stage);
             this.app.attachRoot();
+            this.app.showFps("top-right");   // the library's third tree
+
             this.view.app = this.app;
             addEventListener(Event.ENTER_FRAME, onFrame);
 

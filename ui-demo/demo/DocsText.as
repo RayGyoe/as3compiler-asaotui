@@ -6,6 +6,8 @@ package demo
     import asaot.ui.avatar;
     import asaot.ui.badge;
     import asaot.ui.box;
+    import asaot.ui.button;
+    import asaot.ui.card;
     import asaot.ui.chip;
     import asaot.ui.column;
     import asaot.ui.divider;

@@ -8,6 +8,7 @@ package demo
     import asaot.ui.appBar;
     import asaot.ui.breadcrumb;
     import asaot.ui.button;
+    import asaot.ui.chip;
     import asaot.ui.column;
     import asaot.ui.icon;
     import asaot.ui.navStack;
@@ -16,6 +17,7 @@ package demo
     import asaot.ui.tabBar;
     import asaot.ui.tabs;
     import asaot.ui.text;
+    import asaot.ui.textField;
     import asaot.ui.style.StyleRefinement;
 
     public final class DocsNav
@@ -501,7 +503,7 @@ package demo
                     "title that follows the selection needs no setter. The fold still works -- the title",
                     "slides under the compact row rather than jumping to it."
                 ], [
-                    "appBar({ title: \"Inbox - 3 unread\" })   // just a string expression"
+                    "appBar({ title: \"Inbox - 3 unread\" })   // just a string expression",
                     "appBar({ title: sel == 0 ? \"Inbox\" : \"Sent\" })"
                 ], 132, function ():Node
                 {

@@ -13,6 +13,7 @@ package demo
     import asaot.ui.chip;
     import asaot.ui.divider;
     import asaot.ui.scrollView;
+    import asaot.ui.slider;
     import asaot.ui.column;
     import asaot.ui.row;
     import asaot.ui.text;

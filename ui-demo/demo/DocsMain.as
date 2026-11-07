@@ -69,6 +69,13 @@ package demo
             this.view = new DocsView(this.model);
             this.stage.scaleMode = StageScaleMode.NO_SCALE;
             this.stage.align = StageAlign.TOP_LEFT;
+            // The cadence is asked for EXPLICITLY, one line under the scale mode: the
+            // runtime's default follows the display's own refresh rate, which is 60 on
+            // this box but 120 on a ProMotion panel -- and every number this demo
+            // prints about frames would then be a statement about the monitor. 60 is
+            // the rate the tour's per-frame arithmetic (and the live board's 100 ms
+            // tick) was measured at.
+            this.stage.frameRate = 60;
             this.app = new UiApp(this.view);
             // THE DATA FLOW IS NOT OPTIONAL. A widget reports (onClick / onChange) to
             // the MODEL, and the model notifies -- but nothing repaints unless someone
@@ -80,6 +87,10 @@ package demo
             this.model.subscribe(function (d:int):void { self.app.invalidate(d); });
             this.app.mount(this.stage);
             this.app.attachRoot();
+            // The frame-rate HUD, in the library's own THIRD tree (see
+            // UiApp.showFps): top-right, above every page and every dialog, and not
+            // clickable, so it cannot take a click from the control under it.
+            this.app.showFps("top-right");
             // Hand the app to the view: the live page reads its pass counters and its
             // Env, and the frame clock below is the ONLY thing that steps the market.
             this.view.app = this.app;
