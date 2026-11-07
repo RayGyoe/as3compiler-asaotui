@@ -55,7 +55,7 @@ const OUT = 'gallery';
 // tour. (Same class of defect as tools/probe.cjs's `.exe`-only discovery.)
 const EXE = process.platform === 'win32' ? 'GalleryApp.exe' : 'GalleryApp';
 // The tour's screenshot count: demo/DocsMain.as renders one PNG per entry in its
-// `stops` list (start / box / button / image / select / table / tabs / dialog).
+// `stops` list (live / box / button / image / select / table / tabs / dialog).
 // Kept here as a number as well, so a page that silently stops being rendered is a
 // red gate rather than a folder with one file fewer in it.
 const PAGES = 8;
@@ -195,6 +195,14 @@ const args = [
 // <windows><gpuBackend>), so the choice travels as a flag and lands in the
 // generated manifest. `auto` is the platform default, i.e. saying nothing.
 if (gpuBackend && gpuBackend !== 'auto') args.push('--gpu-backend', gpuBackend);
+// WINDOWS LINK FIXTURE. A GPU-composited window on Windows needs Skia's D3D backend,
+// and this compiler's `--air-app` link line does not carry those two import
+// libraries yet: the link stops at `undefined symbol: D3D12SerializeRootSignature` /
+// `D3DCompile`. That is a COMPILER gap (recorded in STATUS.md as a known Windows
+// variant-library hole, not something this demo introduced), and the flags below are
+// the documented workaround -- the same two `--cflag`s a hand-run AOT build needs.
+// Guarded by platform: the libraries do not exist on macOS, where the link is fine.
+if (process.platform === 'win32') args.push('--cflag', '-ld3d12', '--cflag', '-ld3dcompiler');
 
 console.log('[gallery] building GalleryApp with `--air-app ' + appDirName + '/' + descriptorName + '`');
 // The compiler's own tree state is part of the measurement (compiler-gaps.md G11):

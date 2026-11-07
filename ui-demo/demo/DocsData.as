@@ -1,6 +1,6 @@
-// demo/DocsData.as -- list / table / tree / virtualList / scrollView: the five
-// ways the kit shows a collection, from "all rows are nodes" to "only the visible
-// ones exist".
+// demo/DocsData.as -- list / table / tree / virtualList / scrollView / sparkline:
+// the six ways the kit shows a collection, from "all rows are nodes" to "only the
+// visible ones exist", plus the one kind that draws a series rather than rows.
 package demo
 {
     import asaot.ui.Node;
@@ -10,6 +10,7 @@ package demo
     import asaot.ui.list;
     import asaot.ui.row;
     import asaot.ui.scrollView;
+    import asaot.ui.sparkline;
     import asaot.ui.table;
     import asaot.ui.text;
     import asaot.ui.tree;
@@ -32,6 +33,20 @@ package demo
             { key: "README", label: "README.md" }
         ];
         private static const ROW_H:Number = 26;
+        // A 24-sample series for the sparkline page. A LITERAL, not Math.random(): a
+        // demo that rolls new numbers on every repaint would flicker on a hover and
+        // look different in every screenshot, which teaches the wrong thing about a
+        // widget whose whole job is to show a stable shape.
+        private static const SERIES:Array = [
+            101.4, 101.9, 101.2, 100.6, 100.9, 102.1, 102.8, 102.4, 103.0, 103.6,
+            103.1, 102.7, 102.9, 103.8, 104.4, 104.0, 104.6, 105.2, 104.7, 105.1,
+            105.9, 106.4, 106.0, 106.8
+        ];
+        private static const SERIES_DOWN:Array = [
+            106.8, 106.1, 106.5, 105.9, 105.2, 105.7, 104.9, 104.4, 104.8, 104.1,
+            103.6, 103.9, 103.1, 102.7, 103.2, 102.5, 102.0, 102.4, 101.8, 101.3,
+            101.7, 101.1, 100.6, 100.9
+        ];
         public static function sections(view:DocsView, id:String):Array
         {
             var m:DocsModel = view.model;
@@ -409,6 +424,32 @@ package demo
                 {
                     return text("expanded: '" + m.val("tr.exp", "src") + "'  selected: '"
                         + m.val("tr.sel", "src/kit.as") + "'", { style: DocsDemo.MONO, ariaName: "" });
+                }),
+
+                new DocSection("Depth is padding, not a nested box", [
+                    "Four levels open at once: every visible branch child is a ROW of the same node,",
+                    "indented by its depth. So a deep tree has the same node count as a flat list of the",
+                    "same length -- and a selection is still one key, not a path to walk."
+                ], [
+                    "// depth 3 -> row style paddingLeft = 3 * 16 + base",
+                    "tree([{ key: \"a\", children: [{ key: \"b\", children: [...] }] }])   // still one node"
+                ], 164, function ():Node
+                {
+                    return tree([{
+                        key: "d0", label: "package", children: [
+                            { key: "d1", label: "demo", children: [
+                                { key: "d2", label: "DocsData.as" },
+                                { key: "d3", label: "DocsNav.as" }
+                            ] },
+                            { key: "d4", label: "kit", children: [
+                                { key: "d5", label: "UiApp.as" }
+                            ] }
+                        ]
+                    }], { key: "demoTreeDeep", width: 260, rowHeight: ROW_H,
+                        expanded: ["d0", "d1", "d4"],
+                        selectedKey: m.val("trd.sel", "d2"),
+                        style: StyleRefinement.from({ size: [260, ROW_H * 5] }),
+                        onSelect: function (k:String):void { m.put("trd.sel", k); } });
                 })
             ];
 
@@ -448,6 +489,67 @@ package demo
                 {
                     return text("offsetY " + m.num("vl.off", 0) + " of 10000 rows",
                         { style: DocsDemo.MONO, ariaName: "" });
+                }),
+
+                new DocSection("onVisible is the lazy-load hinge", [
+                    "The widget reports which rows it mounted, so a list backed by a paged request can",
+                    "fetch the page it is about to need. The pair below is written by the list itself,",
+                    "not computed by the page."
+                ], [
+                    "onVisible: function (first:int, last:int):void { fetch(first, last); }",
+                    "// first/last are inclusive; both are 0 when nothing is mounted"
+                ], 132, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        virtualList({ key: "demoVlVis", rowHeight: ROW_H, count: 5000,
+                            offsetY: m.num("vlv.off", 0), overscan: 1,
+                            style: StyleRefinement.from({ size: [280, ROW_H * 4] }),
+                            renderRow: function (i:int):Node
+                            {
+                                return text("row " + i, { key: "vv" + i,
+                                    style: DocsDemo.LABEL, ariaName: "" });
+                            },
+                            onScroll: function (y:Number):void { m.put("vlv.off", y); },
+                            onVisible: function (first:int, last:int):void {
+                                m.put("vlv.first", first);
+                                m.put("vlv.last", last);
+                            } }),
+                        text("mounted " + m.val("vlv.first", "-") + ".." + m.val("vlv.last", "-")
+                                + " of 5000",
+                            { key: "vlvRead", style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("scrollToIndex is a one-shot request", [
+                    "It is honoured when the VALUE CHANGES, so a re-render that still carries it does",
+                    "nothing -- otherwise every frame would yank the list back. To jump to the same row",
+                    "twice, pass -1 in between (or any value that is not an index)."
+                ], [
+                    "scrollToIndex: model.jumpTo,          // -1 = none",
+                    "// button -> model.jumpTo = 500; then model.jumpTo = -1"
+                ], 132, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        virtualList({ key: "demoVlJump", rowHeight: ROW_H, count: 10000,
+                            offsetY: m.num("vlj.off", 0), overscan: 1,
+                            scrollToIndex: int(m.num("vlj.jump", -1)),
+                            style: StyleRefinement.from({ size: [280, ROW_H * 4] }),
+                            renderRow: function (i:int):Node
+                            {
+                                return text("row " + i, { key: "vj" + i,
+                                    style: DocsDemo.LABEL, ariaName: "" });
+                            },
+                            onScroll: function (y:Number):void { m.put("vlj.off", y); } }),
+                        row({ gap: 8, alignItems: "center" }, [
+                            button({ key: "vlJumpBtn", label: "Jump to 500", style: DocsDemo.QUIET,
+                                onClick: function ():void {
+                                    m.put("vlj.jump", -1);
+                                    m.put("vlj.jump", 500);
+                                } }),
+                            text("offsetY " + m.num("vlj.off", 0),
+                                { style: DocsDemo.MONO, ariaName: "" })
+                        ])
+                    ]);
                 })
             ];
 
@@ -620,7 +722,97 @@ package demo
                 })
             ];
 
+            if (id == "sparkline") return [
+                new DocSection("One series in a box", [
+                    "A sparkline is 5..60 numbers and a rectangle -- the shape of a day, not a chart.",
+                    "`color` defaults to the resolved text colour; `fill` tints the area under the line,",
+                    "`dot` marks the newest sample, and the box is whatever size you give it."
+                ], [
+                    "sparkline({ values: closes, style: { size: [120, 40] } }),",
+                    "sparkline({ values: closes, color: 0x16A34A, fill: true, dot: false })"
+                ], 84, function ():Node
+                {
+                    return row({ gap: 16 }, [
+                        sparkCol("up, filled", SERIES, 0x16A34A, true, NaN, 40),
+                        sparkCol("down", SERIES_DOWN, 0xB91C1C, false, NaN, 40),
+                        sparkCol("default colour", SERIES, NaN, false, NaN, 40)
+                    ]);
+                }),
+
+                new DocSection("Mutated in place", [
+                    "`values` is kept BY REFERENCE and compared by identity, so a steady frame costs",
+                    "one pointer test and the widget never copies the data. An author who edits the array",
+                    "in place must say so with `version` -- that bump is the only thing that tells the",
+                    "node the line moved. A fresh array every render needs no version at all."
+                ], [
+                    "sparkline({ values: row.series, version: row.rev, baseline: row.prev,",
+                    "            strokeWidth: 1.5 })"
+                ], 100, function ():Node
+                {
+                    // The live page's own first symbol: the SAME array object every
+                    // render, which is exactly the form `version` exists for.
+                    var s:Object = view.market.rows[0];
+                    return column({ gap: 6 }, [
+                        sparkline({ values: s.series as Array, version: int(s.rev),
+                            color: Number(s.chg) < 0 ? 0xB91C1C : 0x15803D,
+                            baseline: Number(s.prev), fill: true, strokeWidth: 1.5,
+                            ariaName: "AURX today",
+                            style: StyleRefinement.from({ size: [Length.px(320), Length.px(48)] }) }),
+                        text("AURX, the live page's first row: one array, no copy",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("The four knobs", [
+                    "`fill` tints the area (13%), `dot` is the live cue, `baseline` draws a faint rule at",
+                    "a value -- typically the previous close -- and joins the y range so the rule and the",
+                    "line cannot disagree about where flat is. `strokeWidth` is a point size."
+                ], [
+                    "sparkline({ values: s, fill: true, baseline: prevClose, strokeWidth: 2 })"
+                ], 84, function ():Node
+                {
+                    return row({ gap: 16 }, [
+                        sparkCol("line only", SERIES, 0x2563EB, false, NaN, 36),
+                        sparkCol("fill", SERIES, 0x2563EB, true, NaN, 36),
+                        sparkCol("baseline", SERIES, 0x2563EB, false, 103.2, 36),
+                        sparkCol("2pt stroke", SERIES_DOWN, 0xB91C1C, true, 104.0, 36)
+                    ]);
+                }),
+
+                new DocSection("What it refuses, and what it just does not draw", [
+                    "Two mistakes throw loudly at factory time: passing something that is not an Array,",
+                    "and a strokeWidth that is not positive. A short series is not an error -- fewer",
+                    "than two samples is a line with nothing to connect, so the box stays empty rather",
+                    "than inventing a flat segment at zero."
+                ], [
+                    "sparkline({ values: \"12,13,14\" })        // throws: not an Array",
+                    "sparkline({ values: s, strokeWidth: 0 })  // throws: not positive"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 16 }, [
+                        sparkCol("1 sample", [104.2], 0x94A3B8, false, NaN, 36),
+                        sparkCol("0 samples", [], 0x94A3B8, false, NaN, 36),
+                        sparkCol("flat", [100, 100, 100], 0x2563EB, false, NaN, 36)
+                    ]);
+                })
+            ];
+
             return null;
+        }
+
+        // One labelled sparkline: caption above, box below. A COLUMN, because the
+        // caption must not sit beside the box (in a row it would be centred on the
+        // box's middle, and four captions of different lengths would then start at
+        // four different heights).
+        private static function sparkCol(label:String, values:Array, color:Number,
+                                        fill:Boolean, baseline:Number, h:Number):Node
+        {
+            return column({ gap: 6 }, [
+                text(label, { style: DocsDemo.MONO, ariaName: "" }),
+                sparkline({ key: "spk:" + label, values: values, color: color, fill: fill,
+                    baseline: baseline, strokeWidth: 1.5, ariaName: label,
+                    style: StyleRefinement.from({ size: [96, h] }) })
+            ]);
         }
     }
 }

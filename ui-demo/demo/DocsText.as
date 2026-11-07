@@ -210,6 +210,76 @@ package demo
                         textField({ key: "acc", placeholder: "you@example.com",
                             style: StyleRefinement.from({ size: [220, null] }) })
                     ]);
+                }),
+
+                new DocSection("Labels line up when they share a width", [
+                    "Two rows whose labels are wildly different lengths. The fields start at the same",
+                    "x because both labels declare 80pt -- the toolkit has no align-labels pass, only",
+                    "the one number the author writes in both places."
+                ], [
+                    "row({ gap: 10 }, [ label(\"Age\",           { size: [80, null] }), textField(...) ])",
+                    "row({ gap: 10 }, [ label(\"Date of birth\", { size: [80, null] }), textField(...) ])"
+                ], 108, function ():Node
+                {
+                    return column({ gap: 10 }, [
+                        row({ gap: 10, alignItems: "center" }, [
+                            label("Age", { style: StyleRefinement.from({
+                                size: [80, null], text: { fontSize: 13, color: 0x374151 } }), ariaName: "" }),
+                            textField({ key: "fldAge", placeholder: "0",
+                                style: StyleRefinement.from({ size: [200, null] }) })
+                        ]),
+                        row({ gap: 10, alignItems: "center" }, [
+                            label("Date of birth", { style: StyleRefinement.from({
+                                size: [80, null], text: { fontSize: 13, color: 0x374151 } }), ariaName: "" }),
+                            textField({ key: "fldDob", placeholder: "YYYY-MM-DD",
+                                style: StyleRefinement.from({ size: [200, null] }) })
+                        ])
+                    ]);
+                }),
+
+                new DocSection("A long value next to a short label", [
+                    "The label fixes 80pt; the value is allowed 200pt and truncates with an ellipsis",
+                    "(nowrap plus textOverflow). Hover is not needed to prove it: the value is longer",
+                    "than the box in the source, so what you see is the end of the line."
+                ], [
+                    "text(\"International Business Machines (Delaware)\", { style: {",
+                    "    size: [200, null], text: { whiteSpace: \"nowrap\", textOverflow: \"ellipsis\" } } })"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 10, alignItems: "center" }, [
+                        label("Employer", { style: StyleRefinement.from({
+                            size: [80, null], text: { fontSize: 13, color: 0x374151 } }), ariaName: "" }),
+                        text("International Business Machines (Delaware)", {
+                            style: StyleRefinement.from({ size: [200, null], text: {
+                                fontSize: 13, color: 0x0F172A,
+                                whiteSpace: "nowrap", textOverflow: "ellipsis" } }),
+                            ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Disabled is a container property", [
+                    "The two rows differ by one word: the second row's container says `disabled`, and",
+                    "the label dims along with the field. A label needs no flag of its own -- `inert`",
+                    "walks the ancestor chain and the paint pass multiplies the alpha."
+                ], [
+                    "row({ gap: 10 }, [ label(...), textField(...) ]),",
+                    "row({ gap: 10, disabled: true }, [ label(...), textField(...) ])"
+                ], 108, function ():Node
+                {
+                    return column({ gap: 10 }, [
+                        row({ gap: 10, alignItems: "center" }, [
+                            label("Email", { style: StyleRefinement.from({
+                                size: [80, null], text: { fontSize: 13, color: 0x374151 } }), ariaName: "" }),
+                            textField({ key: "fldOn", value: "ada@example.com",
+                                style: StyleRefinement.from({ size: [200, null] }) })
+                        ]),
+                        row({ gap: 10, alignItems: "center", disabled: true }, [
+                            label("Phone", { style: StyleRefinement.from({
+                                size: [80, null], text: { fontSize: 13, color: 0x374151 } }), ariaName: "" }),
+                            textField({ key: "fldOff", value: "locked by policy",
+                                style: StyleRefinement.from({ size: [200, null] }) })
+                        ])
+                    ]);
                 })
             ];
 
@@ -256,6 +326,41 @@ package demo
                         chip("alpha"), chip("beta"), chip("gamma"), chip("delta"), chip("epsilon"),
                         chip("zeta"), chip("eta"), chip("theta")
                     ]);
+                }),
+
+                new DocSection("Disabled is inherited", [
+                    "The right-hand chip sits in a container that says `disabled`, so it is drawn at the",
+                    "disabled alpha and the pick walk never reaches it. No per-chip flag, no second code",
+                    "path -- click both and only the left one counts."
+                ], [
+                    "row({ gap: 8 }, [ chip(...) ]),",
+                    "row({ gap: 8, disabled: true }, [ chip(...) ])"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 8, alignItems: "center" }, [
+                        chip("picked " + int(m.num("chip.d1", 0)), { key: "chipLive", tone: "info",
+                            onClick: function ():void { m.put("chip.d1", int(m.num("chip.d1", 0)) + 1); } }),
+                        row({ gap: 8, disabled: true }, [
+                            chip("locked", { key: "chipDead", tone: "neutral",
+                                onClick: function ():void { m.put("chip.d2", int(m.num("chip.d2", 0)) + 1); } })
+                        ])
+                    ]);
+                }),
+
+                new DocSection("Tones carry meaning, not colour", [
+                    "A log line: a neutral time, an info status, a danger failure. The three tones are",
+                    "the kit's semantic fills, so a theme change moves all of them at once and this page",
+                    "never names a hex value for any of them."
+                ], [
+                    "chip(\"09:41\"), chip(\"deploy ok\", { tone: \"info\" }),",
+                    "chip(\"1 failed\", { tone: \"danger\" })"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 8, alignItems: "center" }, [
+                        chip("09:41"),
+                        chip("deploy ok", { key: "chipOk", tone: "info" }),
+                        chip("1 failed", { key: "chipFail", tone: "danger" })
+                    ]);
                 })
             ];
 
@@ -294,6 +399,41 @@ package demo
                         badge("9", { key: "bgBadge", tone: "danger",
                             style: StyleRefinement.from({ position: "absolute", inset: [-6, -6, null, null] }) })
                     ]);
+                }),
+
+                new DocSection("Any corner, not just the top right", [
+                    "`inset` is top/right/bottom/left with null meaning unset. Two badges on one box,",
+                    "pinned to opposite corners: neither takes space in the box's layout, so the box",
+                    "keeps exactly the size the author gave it."
+                ], [
+                    "inset: [-7, -7, null, null]   // top right",
+                    "inset: [null, null, -7, -7]   // bottom left"
+                ], 96, function ():Node
+                {
+                    return box({ style: StyleRefinement.from({
+                        size: [120, 60], position: "relative", background: 0xF1F5F9,
+                        borderWidths: 1, borderColor: 0xE2E8F0, cornerRadii: 8 }) }, [
+                        badge("12", { key: "bgTR", tone: "info",
+                            style: StyleRefinement.from({ position: "absolute", inset: [-7, -7, null, null] }) }),
+                        badge("!", { key: "bgBL", tone: "danger",
+                            style: StyleRefinement.from({ position: "absolute", inset: [null, null, -7, -7] }) })
+                    ]);
+                }),
+
+                new DocSection("The label is a string, not a count", [
+                    "Nothing counts for you: the badge draws whatever string it is given, and clamping",
+                    "to 99+ is the author's expression at the call site. That is the whole API -- a",
+                    "pill, a tone, and the text."
+                ], [
+                    "badge(\"NEW\", { tone: \"info\" })",
+                    "badge(count > 99 ? \"99+\" : String(count), { tone: \"danger\" })"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 10, alignItems: "center" }, [
+                        badge("NEW", { key: "bgNew", tone: "info" }),
+                        badge("99+", { key: "bgCapped", tone: "danger" }),
+                        badge("beta", { key: "bgBeta", tone: "neutral" })
+                    ]);
                 })
             ];
 
@@ -313,6 +453,63 @@ package demo
                         avatar("Ada Lovelace", { key: "avA", tone: "info", style: AVATAR }),
                         avatar("Grace Hopper", { key: "avB", style: AVATAR }),
                         avatar("Linus Torvalds", { key: "avC", tone: "danger", style: AVATAR })
+                    ]);
+                }),
+
+                new DocSection("The initials rule, spelled out", [
+                    "The first letter of each of the first TWO whitespace-separated words, uppercased:",
+                    "grace -> G, Ada B. Lovelace -> AB (the third word is dropped). A blank name yields",
+                    "no letters at all -- the circle stays empty, which is what an unknown user should",
+                    "look like rather than a placeholder initial."
+                ], [
+                    "initialsOf(\"grace\")            // G",
+                    "initialsOf(\"Ada B. Lovelace\")  // AB"
+                ], 84, function ():Node
+                {
+                    return row({ gap: 10, alignItems: "center" }, [
+                        avatar("grace", { key: "avG", style: AVATAR }),
+                        avatar("Ada B. Lovelace", { key: "avAB", style: AVATAR }),
+                        avatar("李雷", { key: "avCjk", tone: "info", style: AVATAR }),
+                        avatar("", { key: "avBlank", tone: "danger", style: AVATAR })
+                    ]);
+                }),
+
+                new DocSection("The person row where it actually lives", [
+                    "A fixed 36pt circle beside two auto-height lines. The row's height comes from the",
+                    "text, and `alignItems: center` puts the circle in the middle of it -- the same",
+                    "arrangement a list row uses, with no magic number anywhere."
+                ], [
+                    "row({ gap: 10, alignItems: \"center\" }, [",
+                    "    avatar(\"Ada Lovelace\"),",
+                    "    column({ gap: 2 }, [ text(\"Ada Lovelace\"), text(\"Compiler\") ])",
+                    "])"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 10, alignItems: "center" }, [
+                        avatar("Ada Lovelace", { key: "avRow", tone: "info", style: AVATAR }),
+                        column({ gap: 2 }, [
+                            text("Ada Lovelace", { style: DocsDemo.LABEL_B, ariaName: "" }),
+                            text("Compiler, analytical engines", { style: DocsDemo.MONO, ariaName: "" })
+                        ])
+                    ]);
+                }),
+
+                new DocSection("A new name is a paint, not a reflow", [
+                    "`payload` recomputes the initials when the name changes and returns false: the",
+                    "diameter comes from the style, so neither the name nor the tone can move",
+                    "anything. Press the button and watch the layout solve counter, not the avatar."
+                ], [
+                    "if (nm != String(prevName)) { initials = initialsOf(nm); dirty |= M_PAINT; }",
+                    "return false;   // never a reflow"
+                ], 84, function ():Node
+                {
+                    var alt:Boolean = m.bool("av.alt", false);
+                    return row({ gap: 12, alignItems: "center" }, [
+                        avatar(alt ? "Grace Hopper" : "Ada Lovelace", { key: "avSwap", tone: "info",
+                            style: AVATAR }),
+                        button({ key: "avFlip", label: alt ? "Show Ada" : "Show Grace",
+                                 style: DocsDemo.QUIET,
+                                 onClick: function ():void { m.put("av.alt", !alt); } })
                     ]);
                 })
             ];
@@ -349,6 +546,48 @@ package demo
                         text("Left", { style: DocsDemo.LABEL_B, ariaName: "" }),
                         divider({ orientation: "vertical" }),
                         text("Right", { style: DocsDemo.LABEL_B, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("The row separator in a list", [
+                    "Three rows and two hairlines. Each divider is 1pt tall and stretches to the list's",
+                    "width because its cross axis is unset -- the list declares the width once, and no",
+                    "divider is measured by hand."
+                ], [
+                    "column({ gap: 0, size: [260, null] }, [",
+                    "    row(...), divider(), row(...), divider(), row(...)",
+                    "])"
+                ], 108, function ():Node
+                {
+                    return column({ style: StyleRefinement.from({ size: [260, null], gap: 0 }) }, [
+                        row({ style: StyleRefinement.from({ size: [null, 32], alignItems: "center" }) }, [
+                            text("Build 316", { style: DocsDemo.LABEL_B, ariaName: "" })]),
+                        divider(),
+                        row({ style: StyleRefinement.from({ size: [null, 32], alignItems: "center" }) }, [
+                            text("Build 315", { style: DocsDemo.LABEL_B, ariaName: "" })]),
+                        divider(),
+                        row({ style: StyleRefinement.from({ size: [null, 32], alignItems: "center" }) }, [
+                            text("Build 314", { style: DocsDemo.LABEL_B, ariaName: "" })])
+                    ]);
+                }),
+
+                new DocSection("A divider inside a card", [
+                    "A card is a padded column, so a divider inside it spans the card's CONTENT box",
+                    "rather than its border box. The hairline therefore stops short of the rounded",
+                    "corners with no inset written by the author."
+                ], [
+                    "card({ padding: 12, gap: 8 }, [",
+                    "    text(\"Invoice\"), divider(), text(\"Paid 2026-11-06\")",
+                    "])"
+                ], 132, function ():Node
+                {
+                    return card({ style: StyleRefinement.from({
+                        size: [260, null], padding: 12, gap: 8, background: 0xFFFFFF,
+                        borderWidths: 1, borderColor: 0xE5E7EB, cornerRadii: 10 }) }, [
+                        text("Invoice", { style: DocsDemo.LABEL_B, ariaName: "" }),
+                        text("3 lines, 1 payment", { style: DocsDemo.MONO, ariaName: "" }),
+                        divider(),
+                        text("Paid 2026-11-06", { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];

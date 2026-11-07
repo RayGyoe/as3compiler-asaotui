@@ -29,6 +29,19 @@ package demo
         private static const SP_R:StyleRefinement = StyleRefinement.from({
             size: [null, 74], padding: 10, background: 0xFFF1F2, text: { fontSize: 12, color: 0x881337 }
         });
+        // The vertical split: panes carry a null size on BOTH axes (in a column the
+        // main axis is height, and an authored height would beat the widget's basis).
+        private static const SP_BOX_V:StyleRefinement = StyleRefinement.from({
+            size: [360, 150], background: 0xFFFFFF, borderWidths: 1, borderColor: 0xE5E7EB
+        });
+        private static const SP_VP:StyleRefinement = StyleRefinement.from({
+            size: [null, null], padding: 10, background: 0xEEF2FF,
+            text: { fontSize: 12, color: 0x1E3A8A }
+        });
+        private static const SP_VP2:StyleRefinement = StyleRefinement.from({
+            size: [null, null], padding: 10, background: 0xFFF1F2,
+            text: { fontSize: 12, color: 0x881337 }
+        });
         public static function sections(view:DocsView, id:String):Array
         {
             var m:DocsModel = view.model;
@@ -225,6 +238,70 @@ package demo
                             text("between", { ariaName: "" }), text("x", { ariaName: "" })
                         ])
                     ]);
+                }),
+
+                new DocSection("An auto-height column hugs its children", [
+                    "Leave the height null and the column is exactly its padding plus the sum of its",
+                    "children plus the gaps between them. The border below is drawn on that computed",
+                    "box, which is why it sits tight against the two lines -- nothing was measured by",
+                    "hand to make it fit."
+                ], [
+                    "column({ padding: 10, gap: 6 }, [ text(\"a\"), text(\"b\") ])",
+                    "// height = 10 + 10 + a.h + 6 + b.h"
+                ], 108, function ():Node
+                {
+                    return row({ gap: 16, alignItems: "flex-start" }, [
+                        column({ style: StyleRefinement.from({
+                            padding: 10, gap: 6, borderWidths: 1, borderColor: 0x94A3B8,
+                            cornerRadii: 6, text: { fontSize: 12, color: 0x334155 } }) }, [
+                            text("one line", { ariaName: "" }), text("two lines", { ariaName: "" })
+                        ]),
+                        column({ style: StyleRefinement.from({
+                            padding: 10, gap: 6, borderWidths: 1, borderColor: 0x94A3B8,
+                            cornerRadii: 6, text: { fontSize: 12, color: 0x334155 } }) }, [
+                            text("one line", { ariaName: "" }), text("two lines", { ariaName: "" }),
+                            text("three lines", { ariaName: "" })
+                        ])
+                    ]);
+                }),
+
+                new DocSection("A percentage belongs to the parent", [
+                    "`size: [0.5, null]` means half of the PARENT's content width, so two of them plus a",
+                    "gap overflow the row -- which is why the pair below is sized with flexGrow instead:",
+                    "1 and 1 split what is left AFTER the gap, whatever the window did."
+                ], [
+                    "row({ gap: 8, size: [320, null] }, [",
+                    "    box({ style: { flexGrow: 1 } }), box({ style: { flexGrow: 1 } })",
+                    "])"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 8, style: StyleRefinement.from({ size: [320, null] }) }, [
+                        box({ style: StyleRefinement.from({
+                            flexGrow: 1, size: [null, 40], background: 0xBFDBFE, cornerRadii: 6,
+                            text: { fontSize: 11, color: 0x1E3A8A } }) }, [
+                            text("flexGrow 1", { ariaName: "" })
+                        ]),
+                        box({ style: StyleRefinement.from({
+                            flexGrow: 1, size: [null, 40], background: 0xDBEAFE, cornerRadii: 6,
+                            text: { fontSize: 11, color: 0x1E3A8A } }) }, [
+                            text("flexGrow 1", { ariaName: "" })
+                        ])
+                    ]);
+                }),
+
+                new DocSection("A column wraps into a second column", [
+                    "flexWrap on a fixed-height column: children that do not fit start a new column to",
+                    "the right. The same five nodes fit the 60pt band in three columns here, and the",
+                    "author wrote no width at all."
+                ], [
+                    "column({ size: [null, 60], gap: 6, flexWrap: \"wrap\" }, [ five children ])"
+                ], 108, function ():Node
+                {
+                    return column({ style: StyleRefinement.from({
+                        size: [300, 60], gap: 6, flexWrap: "wrap", padding: 6,
+                        background: 0xF8FAFC, borderWidths: 1, borderColor: 0xE2E8F0 }) }, [
+                        chip("a"), chip("b"), chip("c"), chip("d"), chip("e"), chip("f")
+                    ]);
                 })
             ];
 
@@ -259,6 +336,89 @@ package demo
                         box({ style: StyleRefinement.from({
                             size: [52, 52], background: 0xBFDBFE, cornerRadii: 6 }) }),
                         text("centred against a 52px box", { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("One child grows, the rest keep their size", [
+                    "The middle box carries flexGrow 1 and no width; the two ends declare 64pt each. The",
+                    "growth comes out of the space the fixed children and the gaps left over, so the",
+                    "middle one is wider in the wider row below without any arithmetic in the page."
+                ], [
+                    "row({ gap: 8 }, [",
+                    "    box({ size: [64, 36] }), box({ size: [null, 36], flexGrow: 1 }),",
+                    "    box({ size: [64, 36] })",
+                    "])"
+                ], 96, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        row({ gap: 8, style: StyleRefinement.from({ size: [300, 36] }) }, [
+                            box({ style: StyleRefinement.from({ size: [64, 36], background: 0xBFDBFE,
+                                cornerRadii: 6, text: { fontSize: 11, color: 0x1E3A8A } }) }, [
+                                text("64", { ariaName: "" })]),
+                            box({ style: StyleRefinement.from({ size: [null, 36], flexGrow: 1,
+                                background: 0x2563EB, cornerRadii: 6,
+                                text: { fontSize: 11, color: 0xFFFFFF } }) }, [
+                                text("grows", { ariaName: "" })]),
+                            box({ style: StyleRefinement.from({ size: [64, 36], background: 0xBFDBFE,
+                                cornerRadii: 6, text: { fontSize: 11, color: 0x1E3A8A } }) }, [
+                                text("64", { ariaName: "" })])
+                        ]),
+                        row({ gap: 8, style: StyleRefinement.from({ size: [420, 36] }) }, [
+                            box({ style: StyleRefinement.from({ size: [64, 36], background: 0xBFDBFE,
+                                cornerRadii: 6, text: { fontSize: 11, color: 0x1E3A8A } }) }, [
+                                text("64", { ariaName: "" })]),
+                            box({ style: StyleRefinement.from({ size: [null, 36], flexGrow: 1,
+                                background: 0x2563EB, cornerRadii: 6,
+                                text: { fontSize: 11, color: 0xFFFFFF } }) }, [
+                                text("still grows", { ariaName: "" })]),
+                            box({ style: StyleRefinement.from({ size: [64, 36], background: 0xBFDBFE,
+                                cornerRadii: 6, text: { fontSize: 11, color: 0x1E3A8A } }) }, [
+                                text("64", { ariaName: "" })])
+                        ])
+                    ]);
+                }),
+
+                new DocSection("Two ends, nothing in between", [
+                    "space-between is the whole of a toolbar: a title that hugs the left and a control",
+                    "that hugs the right, with the slack handed to the gap. No spacer node."
+                ], [
+                    "row({ justifyContent: \"space-between\", alignItems: \"center\" }, [",
+                    "    text(\"Inbox\"), button({ label: \"Compose\" })",
+                    "])"
+                ], 84, function ():Node
+                {
+                    return row({ justifyContent: "space-between", alignItems: "center",
+                        style: StyleRefinement.from({ size: [420, null], padding: 8,
+                        background: 0xF8FAFC, borderWidths: 1, borderColor: 0xE2E8F0,
+                        cornerRadii: 8 }) }, [
+                        text("Inbox", { style: DocsDemo.LABEL_B, ariaName: "" }),
+                        button({ key: "rowCompose", label: "Compose", style: DocsDemo.QUIET,
+                                 onClick: function ():void { } })
+                    ]);
+                }),
+
+                new DocSection("Nested rows make a two-column page", [
+                    "A row of two columns is a page split. Each column is an ordinary column and both",
+                    "grow, so the split survives a window resize without a single constant."
+                ], [
+                    "row({ gap: 12 }, [",
+                    "    column({ style: { flexGrow: 1 } }, [...]),",
+                    "    column({ style: { flexGrow: 1 } }, [...])",
+                    "])"
+                ], 132, function ():Node
+                {
+                    return row({ gap: 12, style: StyleRefinement.from({ size: [380, null] }) }, [
+                        column({ style: StyleRefinement.from({ flexGrow: 1, gap: 6, padding: 8,
+                            background: 0xF8FAFC, cornerRadii: 6,
+                            text: { fontSize: 11, color: 0x334155 } }) }, [
+                            text("left 1", { ariaName: "" }), text("left 2", { ariaName: "" })
+                        ]),
+                        column({ style: StyleRefinement.from({ flexGrow: 1, gap: 6, padding: 8,
+                            background: 0xF1F5F9, cornerRadii: 6,
+                            text: { fontSize: 11, color: 0x334155 } }) }, [
+                            text("right 1", { ariaName: "" }), text("right 2", { ariaName: "" }),
+                            text("right 3", { ariaName: "" })
+                        ])
                     ]);
                 })
             ];
@@ -302,6 +462,53 @@ package demo
                         ]),
                         text("outer card", { style: DocsDemo.LABEL, ariaName: "" })
                     ]);
+                }),
+
+                new DocSection("A heading is a child, not the title option", [
+                    "The `title:` option draws its text WITHOUT reserving space in the card's flow, so",
+                    "anything after it overlaps the heading. The shape that always lays out correctly is",
+                    "a text child first, then the body -- and a divider if the card needs one."
+                ], [
+                    "card({ padding: 12, gap: 8 }, [",
+                    "    text(\"Invoice\", { style: { fontSize: 13, fontWeight: \"bold\" } }),",
+                    "    text(body)",
+                    "])"
+                ], 118, function ():Node
+                {
+                    return card({ style: StyleRefinement.from({
+                        size: [260, null], padding: 12, gap: 8, background: 0xFFFFFF,
+                        borderWidths: 1, borderColor: 0xE5E7EB, cornerRadii: 10 }) }, [
+                        text("Invoice", { style: DocsDemo.LABEL_B, ariaName: "" }),
+                        text("3 lines, 1 payment", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("A card in a row keeps its own height", [
+                    "The default cross-axis alignment of a row is stretch, so two cards side by side",
+                    "become equally tall even when their contents differ. Say `alignItems: flex-start`",
+                    "when each card should hug its own text -- the difference is visible below."
+                ], [
+                    "row({ gap: 12, alignItems: \"stretch\" },    [ card(...), card(...) ])  // equal",
+                    "row({ gap: 12, alignItems: \"flex-start\" }, [ card(...), card(...) ])  // hugging"
+                ], 132, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "flex-start" }, [
+                        card({ style: StyleRefinement.from({
+                            size: [150, null], padding: 10, gap: 6, background: 0xFFFFFF,
+                            borderWidths: 1, borderColor: 0xE5E7EB, cornerRadii: 8 }) }, [
+                            text("short", { style: DocsDemo.LABEL, ariaName: "" })
+                        ]),
+                        row({ gap: 12, alignItems: "stretch",
+                            style: StyleRefinement.from({ size: [150, null] }) }, [
+                            card({ style: StyleRefinement.from({
+                                padding: 10, gap: 6, background: 0xFFFFFF, flexGrow: 1,
+                                borderWidths: 1, borderColor: 0xE5E7EB, cornerRadii: 8 }) }, [
+                                text("tall", { style: DocsDemo.LABEL, ariaName: "" }),
+                                text("two lines", { style: DocsDemo.LABEL, ariaName: "" }),
+                                text("three lines", { style: DocsDemo.LABEL, ariaName: "" })
+                            ])
+                        ])
+                    ]);
                 })
             ];
 
@@ -315,7 +522,9 @@ package demo
                     "cannot quietly eat the other one.",
                     "Drag the grip: `onResize(ratio)` reports the new share on every move and again",
                     "on release. Storing it in the model is the whole contract -- nothing is cached",
-                    "inside the widget, so resizing the window keeps the SHARE, not the pixel width."
+                    "inside the widget, so resizing the window keeps the SHARE, not the pixel width.",
+                    "A pane leaves its MAIN-axis size null (`size: [null, 74]`): the widget writes the",
+                    "flex basis, and an explicit width in the pane's own style would win over it."
                 ], [
                     "splitPane(left, right, {",
                     "    ratio: m.num(\"sp.ratio\", 0.5), minSize: 40, dividerSize: 6,",
@@ -361,6 +570,50 @@ package demo
                         ),
                         text("an authored ratio of 0.02 still yields a 40pt pane",
                             { key: "spLowCap", style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("The same two nodes, stacked", [
+                    "`direction: column` splits vertically. Nothing else changes: the grip becomes a",
+                    "horizontal bar, the panes keep null main-axis sizes, and `ratio` is still the",
+                    "FIRST pane's share of what is left after the grip."
+                ], [
+                    "splitPane(top, bottom, { direction: \"column\", ratio: 0.4, dividerSize: 6 })"
+                ], 168, function ():Node
+                {
+                    return splitPane(
+                        box({ style: SP_VP }, [ text("top pane",
+                            { style: DocsDemo.LABEL, ariaName: "" }) ]),
+                        box({ style: SP_VP2 }, [ text("bottom pane",
+                            { style: DocsDemo.LABEL, ariaName: "" }) ]),
+                        { key: "spVert", style: SP_BOX_V, direction: "column",
+                          ratio: m.num("sp.vratio", 0.4), minSize: 30, dividerSize: 6,
+                          onResize: function (r:Number):void { m.put("sp.vratio", r); } }
+                    );
+                }),
+
+                new DocSection("A floor that cannot hold twice is halved", [
+                    "minSize 200 in a 300pt area would leave nothing for the second pane, so the widget",
+                    "halves it instead of handing one side a negative size: both panes end up at 150 and",
+                    "the split is equal. A floor is a promise about the SMALLER pane, never a licence",
+                    "to overflow."
+                ], [
+                    "splitPane(a, b, { ratio: 0.5, minSize: 200 })   // 300pt area -> 150 / 150"
+                ], 116, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        box({ style: StyleRefinement.from({ size: [300, null] }) }, [
+                            splitPane(
+                                box({ style: SP_L }, [ text("150",
+                                    { style: DocsDemo.LABEL, ariaName: "" }) ]),
+                                box({ style: SP_R }, [ text("150",
+                                    { style: DocsDemo.LABEL, ariaName: "" }) ]),
+                                { key: "spFloor", style: SP_BOX, direction: "row",
+                                  ratio: 0.5, minSize: 200, dividerSize: 6 }
+                            )
+                        ]),
+                        text("minSize 200 in a 300pt area -> 150 / 150",
+                            { key: "spFloorCap", style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];
@@ -413,6 +666,44 @@ package demo
                             text: { fontSize: 11, color: 0xFFFFFF } }) }, [
                             text("dialog on top", { ariaName: "" })
                         ])
+                    ]);
+                }),
+
+                new DocSection("Returning null is the teardown", [
+                    "The layer is not hidden, it is ABSENT: `renderOverlay` returns null and the",
+                    "reconciler removes the nodes, which is what releases their handlers and their",
+                    "place in the focus walk. A closed popover left in the tree at opacity 0 would keep",
+                    "both."
+                ], [
+                    "if (!open) return null;   // removed, not hidden"
+                ], 84, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        button({ key: "ovTear", label: "Toggle layer", style: DocsDemo.QUIET,
+                                 onClick: function ():void { m.put("ov.tear", !m.bool("ov.tear", false)); } }),
+                        text(m.bool("ov.tear", false) ? "layer present" : "layer is null",
+                            { key: "ovTearState", style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("An anchor that is gone takes the surface with it", [
+                    "The anchor is found by KEY in the live tree every frame. If the node it named is",
+                    "not there -- scrolled away, filtered out, conditionally rendered -- the popover is",
+                    "not placed: there is no stale position to fall back to, and no second copy of the",
+                    "layout to keep in sync."
+                ], [
+                    "anchorKey: \"ovBtn\"    // looked up in the live tree, every frame"
+                ], 84, function ():Node
+                {
+                    var has:Boolean = m.bool("ov.anchor", true);
+                    return row({ gap: 12, alignItems: "center" }, [
+                        button({ key: "ovAnchorToggle", label: has ? "Remove anchor" : "Restore anchor",
+                                 style: DocsDemo.QUIET,
+                                 onClick: function ():void { m.put("ov.anchor", !has); } }),
+                        has ? button({ key: "ovAnchorLive", label: "I am the anchor",
+                                style: DocsDemo.PRIMARY,
+                                onClick: function ():void { } })
+                            : text("anchor absent this frame", { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];

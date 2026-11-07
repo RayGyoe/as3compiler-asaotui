@@ -89,6 +89,37 @@ package demo
                                  } }),
                         text("value " + m.num("pr.v", 0.45), { style: DocsDemo.MONO, ariaName: "" })
                     ]);
+                }),
+
+                new DocSection("The ends are real states", [
+                    "At 0 the track is still drawn -- an empty bar says \"started, nothing yet\", which is",
+                    "not the same message as no bar at all. At 1 the fill reaches the end and stops; it",
+                    "does not overshoot or switch to a second state."
+                ], [
+                    "progress(\"Waiting\", { value: 0 }),",
+                    "progress(\"Done\",    { value: 1 })"
+                ], 96, function ():Node
+                {
+                    return column({ gap: 10, style: StyleRefinement.from({ size: [320, null] }) }, [
+                        progress("Waiting 0%", { key: "prZero", value: 0 }),
+                        progress("Done 100%", { key: "prFull", value: 1 })
+                    ]);
+                }),
+
+                new DocSection("An empty label is a bare bar", [
+                    "The label is optional: pass the empty string and the widget reserves no label line at",
+                    "all, which is what an inline progress bar under a table row wants. The percentage",
+                    "in the label above is an expression the page wrote, not a format the widget owns."
+                ], [
+                    "progress(\"\", { value: 0.62 })   // bar only",
+                    "progress(int(p * 100) + \"%\", { value: p })"
+                ], 96, function ():Node
+                {
+                    return column({ gap: 10, style: StyleRefinement.from({ size: [320, null] }) }, [
+                        progress("", { key: "prBare", value: 0.62 }),
+                        progress(int(m.num("pr.p", 0.62) * 100) + "%",
+                            { key: "prPct", value: m.num("pr.p", 0.62) })
+                    ]);
                 })
             ];
 
@@ -142,6 +173,20 @@ package demo
                             text("phase 0 / 0.25 / 0.5, spin: false", { style: DocsDemo.MONO, ariaName: "" })
                         ])
                     ]);
+                }),
+
+                new DocSection("Disabled dims it, and stops the loop", [
+                    "`disabled` is generic, so a disabled spinner is drawn at the disabled alpha -- and",
+                    "because the widget only runs its ENTER_FRAME while it spins, a frozen disabled ring",
+                    "costs nothing per frame either."
+                ], [
+                    "spinner({ diameter: 20, disabled: true })"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 16, alignItems: "center" }, [
+                        spinner({ key: "spDis", diameter: 20, thickness: 2, spin: false, disabled: true }),
+                        text("a paused ring that costs nothing", { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -173,6 +218,52 @@ package demo
                 {
                     return skeleton({ key: "skC", variant: "rect",
                         style: StyleRefinement.from({ size: [240, 64] }) });
+                }),
+
+                new DocSection("The tone is the fill", [
+                    "`tone` picks the placeholder's fill from the same semantic set the chips use, so a",
+                    "skeleton on a dark card and one on a white card are two tones, not two hex values."
+                ], [
+                    "skeleton({ variant: \"rect\", tone: \"info\", style: { size: [120, 40] } })"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        skeleton({ key: "skT0", variant: "rect",
+                            style: StyleRefinement.from({ size: [100, 40] }) }),
+                        skeleton({ key: "skT1", variant: "rect", tone: "info",
+                            style: StyleRefinement.from({ size: [100, 40] }) }),
+                        skeleton({ key: "skT2", variant: "rect", tone: "danger",
+                            style: StyleRefinement.from({ size: [100, 40] }) })
+                    ]);
+                }),
+
+                new DocSection("It is a placeholder, not a shimmer", [
+                    "There is no animated shine: a shimmer would repaint the block every frame for as",
+                    "long as the data is missing, and the frame budget is the one resource this kit",
+                    "refuses to spend on decoration. The card below is five leaves and one column."
+                ], [
+                    "card({ padding: 12, gap: 8 }, [",
+                    "    skeleton({ variant: \"circle\", style: { size: [36, 36] } }),",
+                    "    skeleton({ variant: \"text\", lines: 2 })",
+                    "])"
+                ], 140, function ():Node
+                {
+                    return card({ style: StyleRefinement.from({
+                        size: [240, null], padding: 12, gap: 8, background: 0xFFFFFF,
+                        borderWidths: 1, borderColor: 0xE5E7EB, cornerRadii: 10 }) }, [
+                        row({ gap: 10, alignItems: "center" }, [
+                            skeleton({ key: "skCardC", variant: "circle",
+                                style: StyleRefinement.from({ size: [36, 36] }) }),
+                            column({ gap: 6, style: StyleRefinement.from({ size: [150, null] }) }, [
+                                skeleton({ key: "skCardL1", variant: "rect",
+                                    style: StyleRefinement.from({ size: [120, 10] }) }),
+                                skeleton({ key: "skCardL2", variant: "rect",
+                                    style: StyleRefinement.from({ size: [90, 10] }) })
+                            ])
+                        ]),
+                        skeleton({ key: "skCardBody", variant: "text", lines: 3, barHeight: 8, gap: 6,
+                            style: StyleRefinement.from({ size: [210, null] }) })
+                    ]);
                 })
             ];
 
@@ -202,6 +293,40 @@ package demo
                     return row({ gap: 8, alignItems: "center" }, [
                         button({ label: "Save", style: DocsDemo.QUIET, onClick: function ():void { } }),
                         tooltip("Ctrl+S", { arrow: "left" })
+                    ]);
+                }),
+
+                new DocSection("Four arrows, one bubble", [
+                    "The arrow names the side the anchor is on: `down` means the bubble sits above its",
+                    "anchor, `up` below it, and left/right sit beside. Placement is still the author's --",
+                    "the widget draws the notch, not the float."
+                ], [
+                    "tooltip(\"above\", { arrow: \"down\" }), tooltip(\"below\", { arrow: \"up\" }),",
+                    "tooltip(\"left\",  { arrow: \"right\" }), tooltip(\"right\", { arrow: \"left\" })"
+                ], 140, function ():Node
+                {
+                    return column({ gap: 10 }, [
+                        row({ gap: 14, alignItems: "center" }, [
+                            tooltip("above", { key: "tipUp", arrow: "down" }),
+                            tooltip("below", { key: "tipDown", arrow: "up" })
+                        ]),
+                        row({ gap: 14, alignItems: "center" }, [
+                            tooltip("left", { key: "tipL", arrow: "right" }),
+                            tooltip("right", { key: "tipR", arrow: "left" })
+                        ])
+                    ]);
+                }),
+
+                new DocSection("No arrow, no gap to fill", [
+                    "`arrow: none` is the plain bubble -- what a keyboard-shortcut hint beside a menu item",
+                    "wants, where an arrow pointing at nothing would be noise."
+                ], [
+                    "tooltip(\"Shift+? for help\", { arrow: \"none\" })"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 10, alignItems: "center" }, [
+                        tooltip("Shift+? for help", { key: "tipNone", arrow: "none" }),
+                        text("(no notch)", { style: DocsDemo.LABEL, ariaName: "" })
                     ]);
                 })
             ];

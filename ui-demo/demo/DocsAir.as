@@ -112,6 +112,9 @@ package demo
     {
         private var model:DocsModel;
         private var app:UiApp;
+        // The view is a FIELD (not a local) because the frame clock below needs it:
+        // it owns the simulated market and the once-a-second counter sample.
+        private var view:DocsView;
         private var sweepTimer:Timer;
         private var pages:Array;
         private var sweepIndex:int;
@@ -134,17 +137,19 @@ package demo
             removeEventListener(Event.ADDED_TO_STAGE, onAdded);
 
             this.model = new DocsModel();
-            var view:DocsView = new DocsView(this.model);
+            this.view = new DocsView(this.model);
             // The shell lays itself out from the stage it is given (UiApp reflows on
             // RESIZE), so pinning the scale mode is all that is needed for the
             // logical coordinates to match the descriptor's window size.
             this.stage.scaleMode = StageScaleMode.NO_SCALE;
             this.stage.align = StageAlign.TOP_LEFT;
-            this.app = new UiApp(view);
+            this.app = new UiApp(this.view);
             var self:DocsAir = this;
             this.model.subscribe(function (d:int):void { self.app.invalidate(d); });
             this.app.mount(this.stage);
             this.app.attachRoot();
+            this.view.app = this.app;
+            addEventListener(Event.ENTER_FRAME, onFrame);
 
             var req:Array = requestedMode();          // [mode, logPath, openKeys]
             var mode:String = req[0];
@@ -160,7 +165,7 @@ package demo
 
             // Land on the requested page (or the first one); the window's first frame
             // is painted after this returns to AIR's event loop.
-            this.model.doc = isPage(mode) ? mode : "start";
+            this.model.doc = isPage(mode) ? mode : DocsCatalog.LANDING;
             this.app.invalidate(Dirty.ALL);
             this.app.reflow();
             if (mode == "sweep")

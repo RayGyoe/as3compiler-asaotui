@@ -23,7 +23,7 @@
 //   4. a real sidebar click, asserting it is the WIDGET that switches the page;
 //   5. the floating layer: a documented dialog opens in the overlay tree, and
 //      closing it tears the tree down;
-//   6. seven screenshots, one per group.
+//   6. eight screenshots, one per kind of page (the landing board included).
 package demo
 {
     import asaot.ui.Dirty;
@@ -39,6 +39,7 @@ package demo
     import flash.filesystem.File;
     import flash.filesystem.FileMode;
     import flash.filesystem.FileStream;
+    import flash.utils.getTimer;
 
     public class DocsMain extends Sprite
     {
@@ -79,17 +80,31 @@ package demo
             this.model.subscribe(function (d:int):void { self.app.invalidate(d); });
             this.app.mount(this.stage);
             this.app.attachRoot();
+            // Hand the app to the view: the live page reads its pass counters and its
+            // Env, and the frame clock below is the ONLY thing that steps the market.
+            this.view.app = this.app;
+            addEventListener(Event.ENTER_FRAME, onFrame);
 
             this.tour();
 
-            // Land on the first page: the window's first frame is painted after
-            // showWindow returns to the event loop.
-            this.model.doc = "start";
+            // Land on the app's landing page (the live board): the window's first
+            // frame is painted after showWindow returns to the event loop.
+            this.model.doc = DocsCatalog.LANDING;
             this.app.invalidate(Dirty.ALL);
             this.app.reflow();
 
             this.out(OUT + ".done", this.problems == "" ? "PASS" : "FAIL " + this.problems);
             trace("DocsMain: tour finished, " + (this.problems == "" ? "all checks passed" : this.problems));
+        }
+
+        // The frame clock. ONE listener for the whole app: it advances the simulated
+        // market (only while the live page is on screen), samples the pass counters
+        // once a second, and restores the real Env if a page left a fake phone bound.
+        // It is deliberately not inside DocsView.render(): a describe pass must not
+        // advance data, or a reflow caused by a resize would move the market too.
+        private function onFrame(e:Event):void
+        {
+            if (this.view != null) this.view.frameTick(getTimer());
         }
 
         // ---- the tour ----------------------------------------------------------
@@ -714,13 +729,20 @@ package demo
             this.mark("7 screenshots");
 
             // ---- 7. screenshots ----------------------------------------------
-            // One per group, chosen to show a different kind of page: the intro, a
-            // container, a control, a leaf, a picker, a data view, a nav strip and a
-            // floating surface. Eight, because that is what run-gallery.cjs measures.
-            var stops:Array = ["start", "box", "button", "image", "select", "table", "tabs", "dialog"];
+            // One per KIND of page: the landing app, a container, a control, a leaf, a
+            // picker, a data view, a nav strip and a floating surface. Eight, because
+            // that is what run-gallery.cjs measures -- page0 IS the landing board now,
+            // since that is what a reader of the published demo sees first.
+            var stops:Array = ["live", "box", "button", "image", "select", "table", "tabs", "dialog"];
             for (var k:int = 0; k < stops.length; k++)
             {
                 this.mark("7 shot " + String(stops[k]));
+                // ONE frame tick BEFORE the page is described: the tour drives renders by
+                // hand and never lets the real ENTER_FRAME loop run, so without this the
+                // landing board's footer reads "0 nodes" -- a number the app never
+                // measured. The tick publishes the tree walk; the RATES still read "—",
+                // because a rate needs an interval and a static capture has none.
+                this.view.frameTick(getTimer());
                 this.model.pick(String(stops[k]));
                 this.app.invalidate(Dirty.ALL);
                 this.app.reflow();

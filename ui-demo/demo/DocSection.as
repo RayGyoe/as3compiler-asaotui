@@ -16,14 +16,24 @@ package demo
         public var code:Array;      // source lines, monospace
         public var demoH:Number;    // height of the live-demo surface
         public var build:Function;  // ():Node
+        // EDGE TO EDGE. The demo surface normally carries the docs' own frame
+        // (12pt padding, a tint and a border) so a widget that paints nothing
+        // still shows where the demo IS. A page that shows an APP -- the live
+        // board -- wants that frame out of the way, so `wide` swaps in
+        // DocsStyle.DEMO_BLEED: same height, same slot, no padding and no tint.
+        // It is a layout-neutral switch on purpose: demoH is still the block's
+        // height, so DocSection.height() and the tour's arithmetic are unchanged.
+        public var wide:Boolean;
 
-        public function DocSection(h:String, p:Array, c:Array, dh:Number, b:Function):void
+        public function DocSection(h:String, p:Array, c:Array, dh:Number, b:Function,
+                                   w:Boolean = false):void
         {
             this.heading = h;
             this.prose = p == null ? [] : p;
             this.code = c == null ? [] : c;
             this.demoH = dh;
             this.build = b;
+            this.wide = w;
         }
 
         // The block's height, from the SAME numbers DocsStyle gives the engine.

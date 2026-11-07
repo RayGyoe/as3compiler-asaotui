@@ -39,11 +39,14 @@ package demo
     import flash.display.StageAlign;
     import flash.display.StageScaleMode;
     import flash.events.Event;
+    import flash.utils.getTimer;
 
     public class DocsWeb extends Sprite
     {
         private var model:DocsModel;
         private var app:UiApp;
+        // A field, not a local: the frame clock below advances the simulated market.
+        private var view:DocsView;
 
         public function DocsWeb():void
         {
@@ -55,24 +58,31 @@ package demo
             removeEventListener(Event.ADDED_TO_STAGE, onAdded);
 
             this.model = new DocsModel();
-            var view:DocsView = new DocsView(this.model);
+            this.view = new DocsView(this.model);
             // The shell lays itself out from the stage it is given, so pinning the
             // scale mode is all the logical coordinates need: the canvas is the
             // descriptor's width x height, one CSS pixel per logical pixel.
             this.stage.scaleMode = StageScaleMode.NO_SCALE;
             this.stage.align = StageAlign.TOP_LEFT;
-            this.app = new UiApp(view);
+            this.app = new UiApp(this.view);
             // The data flow is not optional -- see the header.
             var self:DocsWeb = this;
             this.model.subscribe(function (d:int):void { self.app.invalidate(d); });
             this.app.mount(this.stage);
             this.app.attachRoot();
+            this.view.app = this.app;
+            addEventListener(Event.ENTER_FRAME, onFrame);
 
-            // Land on the first page. From here on the sidebar, the widgets and the
-            // content pane's wheel are the browser's real mouse events.
-            this.model.doc = "start";
+            // Land on the app's landing page. From here on the sidebar, the widgets
+            // and the content pane's wheel are the browser's real mouse events.
+            this.model.doc = DocsCatalog.LANDING;
             this.app.invalidate(Dirty.ALL);
             this.app.reflow();
+        }
+
+        private function onFrame(e:Event):void
+        {
+            if (this.view != null) this.view.frameTick(getTimer());
         }
     }
 }

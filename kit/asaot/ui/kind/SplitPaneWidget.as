@@ -37,6 +37,9 @@ package asaot.ui.kind
     import asaot.ui.UiNode;
     import asaot.ui.Widget;
     import asaot.ui.WidgetTeardown;
+    import asaot.ui.style.Length;
+    import asaot.ui.style.Size;
+    import asaot.ui.style.Style;
 
     import flash.display.Shape;
     import flash.display.Stage;
@@ -100,9 +103,24 @@ package asaot.ui.kind
 
             var row:Boolean = Number(n.extra[ROW_KEY]) != 0;
             var total:Number = row ? n.absW : n.absH;
-            // Nothing solved yet (the first frame of a new subtree), so the styles the
-            // factory wrote are the best available answer -- writing bases from a 0
-            // total would collapse both panes to `minSize`.
+            // NOTHING SOLVED YET -- and this frame is the only chance to write the
+            // panes' basis. `absW` is written by ARRANGE, so on the first frame of a
+            // new subtree it is still 0; returning here left both panes hugging their
+            // content for the life of the page, because nothing dirties layout again
+            // once the first frame settles (that is the measured defect this fallback
+            // fixes: a 520pt splitter whose panes came out 67pt and 75pt wide).
+            // The author's own size is the answer, and it is definite exactly when the
+            // splitter can be split at all -- give a percentage-sized splitter a parent
+            // that is already solved, or its first frame has no width to divide.
+            if (!(total > 0))
+            {
+                var st:Style = n.resolved;
+                if (st != null && st.size != null)
+                {
+                    var len:Length = row ? st.size.width : st.size.height;
+                    if (len != null && len.unit == Length.UNIT_POINT) total = len.value;
+                }
+            }
             if (!(total > 0)) return;
 
             var dv:Number = Number(n.extra[DIV_KEY]);

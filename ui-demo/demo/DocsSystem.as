@@ -140,6 +140,57 @@ package demo
                         text("counted " + int(m.num("ev.dbl", 0)),
                             { key: "evDblCount", style: MONO, ariaName: "" })
                     ]);
+                }),
+
+                new DocSection("A container hears its children", [
+                    "Pointer events BUBBLE, so a handler on a container is also a handler for every",
+                    "node inside it. Right-click the small square: the OUTER box counts it, because the",
+                    "inner one has no handler and the press keeps going up the tree."
+                ], [
+                    "box({ onRightClick: count }, [ box({ ... }) ])   // the child has no handler",
+                    "// the press bubbles: an ancestor does not need a listener on each child"
+                ], 120, function ():Node
+                {
+                    return row({ gap: 14, alignItems: "center" }, [
+                        box({ key: "evOuter", onRightClick: function (x:Number, y:Number):void
+                                {
+                                    m.put("ev.bub", int(m.num("ev.bub", 0)) + 1);
+                                },
+                                style: StyleRefinement.from({
+                                    size: [200, 84], padding: 10, background: 0xE0E7FF,
+                                    cornerRadii: 8, text: { fontSize: 12, color: 0x3730A3 } }),
+                                ariaName: "bubbling container" }, [
+                                text("the container hears it", { ariaName: "" }),
+                                box({ key: "evInner", style: StyleRefinement.from({
+                                    size: [120, 34], background: 0xFFFFFF, borderWidths: 1,
+                                    borderColor: 0xC7D2FE, cornerRadii: 6,
+                                    text: { fontSize: 11, color: 0x4338CA } }), ariaName: "inner" }, [
+                                    text("no handler here", { ariaName: "" })
+                                ])
+                            ]),
+                        text("outer counted " + int(m.num("ev.bub", 0)),
+                            { key: "evBubCount", style: MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Three handlers, and that is the list", [
+                    "Element carries exactly three pointer callbacks: onClick, onRightClick(x, y) and",
+                    "onDoubleClick. There is no onPointerDown / onPointerMove / onPointerUp on an",
+                    "element -- continuous motion belongs to the pointer layer (see the gesture page),",
+                    "which is the only place a drag can be expressed without fighting the click."
+                ], [
+                    "onClick: function ():void { ... }",
+                    "onRightClick: function (x:Number, y:Number):void { ... }",
+                    "onDoubleClick: function ():void { ... }   // needs doubleClickEnabled"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 10, alignItems: "center" }, [
+                        chip("onClick", { key: "evList0" }),
+                        chip("onRightClick", { key: "evList1" }),
+                        chip("onDoubleClick", { key: "evList2" }),
+                        text("no onPointerMove on an element",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -1074,6 +1125,46 @@ package demo
                                      background: 0xFEF3C7, cornerRadii: 6 }) }, [
                             text("safeArea: [\"top\"]", { style: MONO, ariaName: "" })
                         ])
+                    ]);
+                }),
+
+                new DocSection("keyboardRect is the other inset", [
+                    "A phone keyboard is a rect, not a boolean: a form needs to know how much of the",
+                    "window is covered, and whether it is covering the BOTTOM or floating. Zero height",
+                    "on a desktop is the truthful answer, not a missing value."
+                ], [
+                    "e.keyboardRect;   // x, y, width, height in logical points; 0 high = no keyboard",
+                    "e.safeArea.bottom;  // the home indicator, when there is one"
+                ], 96, function ():Node
+                {
+                    var e:Env = app.env;
+                    return column({ gap: 8 }, [
+                        row({ gap: 8, alignItems: "center" }, [
+                            chip("keyboardRect " + e.keyboardRect.height, { key: "envKbH" }),
+                            chip("safeArea.bottom " + e.safeArea.bottom, { key: "envSafeB" }),
+                            chip("envChanges " + app.envChanges, { key: "envChanges" })
+                        ]),
+                        text("envChanges counts the deliveries: a re-bind is one change, not nine",
+                            { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("reduceMotion is carried, not obeyed yet", [
+                    "The interface answers `reduceMotion` and the kit replays it faithfully -- but no",
+                    "widget reads it yet: a transition still runs at full duration when the system asks",
+                    "for less motion. That is a stated gap rather than a silent fallback, and it is on",
+                    "the list before any mobile shell ships. The value itself is live below."
+                ], [
+                    "e.reduceMotion;   // plumbed through EnvBase, read by nothing yet",
+                    "// planned: transitionMs == 0 (and spin == false) when it is true"
+                ], 96, function ():Node
+                {
+                    var e:Env = app.env;
+                    return row({ gap: 10, alignItems: "center" }, [
+                        chip("reduceMotion " + e.reduceMotion,
+                            { key: "envReduce", tone: e.reduceMotion ? "danger" : "neutral" }),
+                        text("the kit will honour it; today it only reports it",
+                            { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];

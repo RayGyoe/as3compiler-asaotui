@@ -17,6 +17,7 @@
 package asaot.ui
 {
     import asaot.ui.style.StyleRefinement;
+    import asaot.ui.style.Fill;
     import asaot.ui.style.auto;
     import asaot.ui.style.pct;
 
@@ -79,7 +80,14 @@ package asaot.ui
             var on:Boolean = (i == sel);
 
             var cellStyle:StyleRefinement = StyleRefinement.from({
-                flexGrow: 1, alignItems: "center", justifyContent: "center", gap: 2
+                flexGrow: 1, alignItems: "center", justifyContent: "center", gap: 2,
+                // AN ALPHA-0 FILL ON EVERY CELL, and it is not decoration: the hit test
+                // asks what was DRAWN (as_pick_hit in the runtime), so a cell that paints
+                // only a glyph and a label is tappable exactly where those two happen to
+                // be. A phone tab is tapped anywhere in its cell -- the empty band above
+                // the icon and the space beside a short label included -- and probes/
+                // widgets/tabbar taps at the cell's centre, which is empty on a 3-tab bar.
+                background: Fill.fromArgb(0, 0, 0, 0)
             }).withPatch(on ? selTint : offTint);
 
             var kids:Array = [];

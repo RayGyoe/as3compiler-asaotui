@@ -21,7 +21,12 @@
 // its block.
 package demo
 {
+    import asaot.ui.Dirty;
+    import asaot.ui.Env;
+    import asaot.ui.EnvBase;
     import asaot.ui.Node;
+    import asaot.ui.UiApp;
+    import asaot.ui.UiNode;
     import asaot.ui.View;
     import asaot.ui.dialog;
     import asaot.ui.drawer;
@@ -51,10 +56,185 @@ package demo
         public var picks:int = 0;
         public var lastPick:String = "";
 
+        // ---- the live page's two inputs ---------------------------------
+        // THE MARKET. One per view (not a static), so the docs app and a second
+        // instance in the same process -- the tour's and a probe's -- cannot share
+        // tick state.
+        public var market:LiveMarket;
+        // THE APP, for its pass counters. Set by the entry point after `mount()`;
+        // null until then, and every read below tolerates that (the first frame is
+        // described before an entry point can hand it over).
+        public var app:UiApp;
+
+        // What the live page prints, sampled once a second by frameTick(). Deliberately
+        // plain public numbers: the page reads them like any other model value, and a
+        // probe can read them without a setter.
+        public var fps:int = 0;
+        public var nodeCount:int = 0;
+        public var describesPerSec:int = 0;
+        public var paintsPerSec:int = 0;
+        // Per-pass averages in MILLISECONDS, over the passes that actually ran in the
+        // last second. `getTimer()` is integer ms, so one frame's solve reads 0 or 1;
+        // dividing a SUM by a COUNT is the only way to see a sub-millisecond phase
+        // from an integer clock -- the same arithmetic the `perf` probe uses.
+        public var solveMs:Number = 0;
+        public var paintMs:Number = 0;
+        // Has the once-a-second sample run at all? A rate needs an INTERVAL, and the
+        // first frame has none -- so the page prints a dash rather than a zero. "0 fps"
+        // would be a number the app never measured, and it reads as a dead demo; a
+        // static capture (the tour's screenshots) is exactly the case that shows it.
+        public var sampled:Boolean = false;
+
+        private var _lastStep:int = 0;
+        private var _frames:int = 0;
+        private var _nodeSeeded:Boolean = false;
+        private var _secStart:int = 0;
+        private var _d0:int = 0;
+        private var _p0:int = 0;
+        private var _s0:Number = 0;
+        private var _l0:int = 0;
+        private var _q0:Number = 0;
+        private var _pa0:int = 0;
+        // The env the app was using before this page put a simulated phone in front
+        // of it. Null = no simulation installed.
+        private var _realEnv:Env;
+
         public function DocsView(m:DocsModel):void
         {
             super();
             this.model = m;
+            this.market = new LiveMarket();
+        }
+
+        // ---- the frame clock the live page rides ----------------------------
+        // Called from ONE ENTER_FRAME listener in the entry point (all three arms),
+        // never from render(): a describe pass must not advance data, or a reflow
+        // caused by a resize would move the market too.
+        //
+        // TWO DUTIES, one function: (a) once a second, publish what the app actually
+        // did -- frames drawn, nodes retained, describe/paint passes -- and (b) while
+        // the live page is on screen and the market is running, step it every
+        // LiveMarket.TICK_MS and notify. Nothing else in the app ticks.
+        public function frameTick(now:int):void
+        {
+            if (this._secStart == 0)
+            {
+                this._secStart = now;
+                if (this.app != null) this.sample();
+            }
+            // The node count is a fact about the tree, not a rate, so it is available
+            // before any interval has elapsed -- and it is walked ONCE here, not every
+            // tick: the real loop reaches the once-a-second sample a moment later.
+            // (A capture that says "0 nodes" is worse than no capture at all.)
+            if (!this._nodeSeeded && this.app != null)
+            {
+                var first:UiNode = this.app.getRoot();
+                this.nodeCount = first == null ? 0 : countNodes(first);
+                this._nodeSeeded = true;
+            }
+            this._frames = this._frames + 1;
+
+            // The simulated phone belongs to ONE page. Leaving it must restore the
+            // platform, or every page after it would lay out under a notch that is
+            // not there -- and the tour's fixed rects would (correctly) go red.
+            if (this._realEnv != null && this.model.doc != "gesture") this.restoreEnv();
+
+            if (now - this._secStart >= 1000)
+            {
+                var span:int = now - this._secStart;
+                if (span < 1) span = 1;
+                this.fps = int(Math.round(this._frames * 1000 / span));
+                if (this.app != null)
+                {
+                    this.describesPerSec = this.app.describeCalls - this._d0;
+                    this.paintsPerSec = this.app.paintPasses - this._p0;
+                    var solves:int = this.app.layoutSolves - this._l0;
+                    var paints:int = this.app.paintPasses - this._pa0;
+                    this.solveMs = solves > 0 ? round2((this.app.profSolveMs - this._s0) / solves) : 0;
+                    this.paintMs = paints > 0 ? round2((this.app.profPaintMs - this._q0) / paints) : 0;
+                    this.sample();
+                }
+                this._frames = 0;
+                this._secStart = now;
+                // The node count walks the retained tree, which is why it is a
+                // once-a-second job and not a per-frame one.
+                var root:UiNode = this.app == null ? null : this.app.getRoot();
+                this.nodeCount = root == null ? 0 : countNodes(root);
+                // From here on the rates are measured, not assumed.
+                this.sampled = true;
+                // The counters themselves are model values: repaint so the page
+                // shows THIS second's numbers rather than last second's.
+                if (this.model.doc == "live") this.model.notify(Dirty.VALUE);
+            }
+
+            // The two phase timers are off by default (one boolean test per phase in a
+            // shipping app). This page is the one that reads them, so it is the one that
+            // turns them on -- and turns them back off on the way out.
+            if (this.app != null) UiApp.profile = (this.model.doc == "live");
+
+            if (this.model.doc != "live") return;
+            if (!this.model.bool("live.run", true)) return;
+            if (now - this._lastStep < LiveMarket.TICK_MS) return;
+            this._lastStep = now;
+            this.market.step();
+            this.model.notify(Dirty.VALUE);
+        }
+
+        // Take the baseline for the next second's deltas.
+        private function sample():void
+        {
+            if (this.app == null) return;
+            this._d0 = this.app.describeCalls;
+            this._p0 = this.app.paintPasses;
+            this._l0 = this.app.layoutSolves;
+            this._pa0 = this.app.paintPasses;
+            this._s0 = this.app.profSolveMs;
+            this._q0 = this.app.profPaintMs;
+        }
+
+        private static function round2(v:Number):Number
+        {
+            return Math.round(v * 100) / 100;
+        }
+
+        // ---- the simulated phone (the gesture page's last section) -----------
+        // This is not a mock of the Env interface: it IS an EnvBase, the same
+        // writable record a real iOS shell fills in, handed to the same one entry
+        // point (`UiApp.bindEnv`). What the reader sees change -- the root padding,
+        // the hover branches -- is the production path.
+        public function simulatePhone():void
+        {
+            if (this.app == null || this._realEnv != null) return;
+            var e:EnvBase = new EnvBase();
+            e.setSafeArea(44, 0, 34, 0);   // a notch above, a home indicator below
+            e.setPixelRatio(3);
+            e.setHasTouch(true);
+            e.setHasHover(false);
+            this._realEnv = this.app.env;
+            this.app.bindEnv(e);
+            this.model.notify(Dirty.THEME);
+        }
+
+        public function restoreEnv():void
+        {
+            if (this.app == null || this._realEnv == null) return;
+            this.app.bindEnv(this._realEnv);
+            this._realEnv = null;
+            this.model.notify(Dirty.THEME);
+        }
+
+        public function isSimulated():Boolean
+        {
+            return this._realEnv != null;
+        }
+
+        private function countNodes(n:UiNode):int
+        {
+            var total:int = 1;
+            var kids:Vector.<UiNode> = n.children;
+            if (kids == null) return total;
+            for (var i:int = 0; i < kids.length; i++) total = total + countNodes(kids[i]);
+            return total;
         }
 
         // ---- the whole window -------------------------------------------------
@@ -198,7 +378,7 @@ package demo
                 kids.push(column({ key: pre + ":prose", style: proseStyle, ariaName: "" }, lines));
             }
 
-            var demoStyle:StyleRefinement = DocsStyle.DEMO.withPatch(
+            var demoStyle:StyleRefinement = (sec.wide ? DocsStyle.DEMO_BLEED : DocsStyle.DEMO).withPatch(
                 StyleRefinement.from({ size: [Length.pct(1), Length.px(sec.demoH)] }));
             var demoNode:Node = sec.build();
             kids.push(box({ key: pre + ":demo", style: demoStyle, ariaName: "Example" },

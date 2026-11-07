@@ -622,6 +622,18 @@
 | 验证方式 | 改完后 `ASC_BAKE_TRACE=1 ASC_NO_OPEN=1` 跑 `asaotui/probes/widgets/repaint-boundary`（动态探针），改 s1 颜色后 `stable` 应出现 `bake_patch`（含 clip 矩形），且 `bake_rebuild` 次数不增长（surface 不重新分配）。当前 A/B 证据：`asaotui/temp/rb-ab/bake-A-no-cache.log`、`bake-B-cache.log`、`bake-dyn-cache.log` |
 | 状态 | ✅ **已完成（v0.4.343 / 阶段三百七十八）**：核心改动**两处**——`Graphics_clear` 精确脏矩形 + render-input 标量写点变化检测，外加 asaotui 侧 `backing.alpha` 有条件写（**修正**了「asaotui 侧无需改 paint」的原判断，实测需改）。`ASC_BAKE_TRACE=1` 探针验证 `bake_patch` 出现；全量 `node test.ts` **636/636** |
 
+### G31 —— 大写 `A` 后紧跟**空格**时，渲染把那个空格吃掉（`"A box"` 画成 `Abox`）—— ⚠️ **待定位（2026-11-07 实测，未修、未改编译器）**
+
+| 项 | 内容 |
+|---|---|
+| 现象（实测） | 同一个 `TextField`（asaotui 文档页的正文样式，字号 13pt/1.5 倍设备刻度）里：`"A box"` → `Abox`；`"A  box"`（两个空格）→ `A box`（只剩一个）；`"A box and A box"` → `Abox and Abox`（**两处都塌**）；而 `"X box"`、`"a box"`、`"AAA box"` **全部正常**。即塌陷的**恰好是字形对 (`A`, 空格)**，与位置无关、与大小写成对的小写无关 |
+| 证据 | ① 生成的 C 里字符串**逐字节完好**：`GalleryApp.c:5884625` = `as_v_str("A card is a box with a surface: background, a 1px border and rounded corners. It is a")` ⇒ **不是** 词法/字符串字面量/拼接的问题；② 探针：在 `ui-demo/demo/DocsLayout.as` 的 column 页正文临时插入 `"A box"` / `"X box"` / `"A  box"` / `"a box"` / `"A box and A box"` / `"AAA box"` 六行（每行一个 TextField），`ASC_NO_OPEN=1 node ui-demo/run-gallery.cjs` 出图后肉眼逐行比对（A/B 后六行已删除，`git diff` 无残留）；③ 同样的塌陷在 `ui-demo/air-gallery-standard/`（1× 设备刻度、更早的一次构建）的 box 页也出现 ⇒ 不是本轮文档改动引入的 |
+| 影响面 | 所有走 `flash.text.TextField` 的文本（asaotui 的 `text()`/`label()`/文档正文/代码块标题都算）。文档站里以 `"A …"` 起句的段落都能看到 `Abox` / `Acard` / `Abutton` 这样的连字 |
+| 判定（暂定） | **后端缺口 · 待定位**：最可能是 **Skia 字距/字距表对 (`A`, 空格) 的处理**（负 kern 约为一个空格的 advance，把空格抵掉），其次是 **空格 advance 的取整**。在 `adl 51.4.1` 上跑同一段字符串之前**不入「遗留欠账」**（AGENTS.md §1.5：不得凭直觉定性） |
+| 库侧是否绕路 | **不绕**。文档正文照原样写 `"A …"`，不在源码里换词或插 NBSP —— 一旦库侧做规避，这个后端缺陷就再也不会被发现 |
+| 复现 | 任意 `text("A box")`，或 `ASAOTUI` 文档站任一带 `"A "` 的段落；`ui-demo/air-gallery/gallery-page1.png`（box 页第一段）即为例图 |
+| 状态 | ⚠️ **待定位**（2026-11-07 登记；未修，未改 `as3compiler/`） |
+
 ---
 
 ## 2 不是缺口：已澄清 / 已关闭

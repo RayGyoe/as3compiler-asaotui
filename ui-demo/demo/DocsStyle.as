@@ -162,6 +162,19 @@ package demo
             size: [Length.pct(1), Length.px(SEC_DEMO_H)], padding: 12, gap: 10,
             background: 0xFBFDFF, borderWidths: 1, borderColor: 0xDCE6F0, cornerRadii: 8
         });
+        // The same slot with the docs' frame removed: no padding, no tint, no
+        // border and no radius, so an app-shaped demo (the live board) reaches the
+        // block's edges. `alignItems: "flex-start"` is what DEMO's `center` is NOT:
+        // a full-width block has to start at the left edge and take its width from
+        // its own `pct(1)`. (It is written explicitly because nothing may rely on
+        // this engine's cross-axis default -- TableWidget's header records that
+        // `stretch` is not resolved, so `flex-start` is stated, not inherited.)
+        // Height is still demoH: the block arithmetic does not move.
+        public static const DEMO_BLEED:StyleRefinement = StyleRefinement.from({
+            flexDirection: "column", alignItems: "flex-start",
+            size: [Length.pct(1), Length.px(SEC_DEMO_H)], padding: 0, gap: 0,
+            background: 0xFFFFFF, borderWidths: 0, cornerRadii: 0
+        });
         public static const CODE:StyleRefinement = StyleRefinement.from({
             flexDirection: "column", size: [Length.pct(1), null], padding: [CODE_PAD_H, 12],
             background: 0x0F172A, cornerRadii: 8

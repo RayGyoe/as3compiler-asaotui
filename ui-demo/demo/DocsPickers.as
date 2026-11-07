@@ -65,6 +65,42 @@ package demo
                         text("try the picker above -- the boolean is the model's",
                              { style: DocsDemo.LABEL, ariaName: "" })
                     ]);
+                }),
+
+                new DocSection("The placeholder is the empty string", [
+                    "Two pickers, one model field each: the left one has no value yet and shows the",
+                    "placeholder, the right one has `Team` and shows the option's label. The trigger",
+                    "does not fall back to the first option -- an empty value must look empty."
+                ], [
+                    "select({ value: \"\",     placeholder: \"Choose a plan\", options: [...] })",
+                    "select({ value: \"Team\", placeholder: \"Choose a plan\", options: [...] })"
+                ], 96, function ():Node
+                {
+                    return row({ gap: 16, alignItems: "center" }, [
+                        select({ key: "selEmpty", width: 170, value: "", open: false,
+                                 placeholder: "Choose a plan", options: PLANS,
+                                 onSelect: function (i:int):void { m.put("sel.left", String(PLANS[i])); },
+                                 onOpenChange: function (o:Boolean):void { m.put("sel.leftOpen", o); } }),
+                        select({ key: "selChosen", width: 170, value: "Team", open: false,
+                                 placeholder: "Choose a plan", options: PLANS,
+                                 onSelect: function (i:int):void { m.put("sel.right", String(PLANS[i])); },
+                                 onOpenChange: function (o:Boolean):void { m.put("sel.rightOpen", o); } })
+                    ]);
+                }),
+
+                new DocSection("Disabled keeps the choice", [
+                    "A locked picker shows the value it was given and refuses to open -- the panel",
+                    "never appears, because the press does not reach the trigger."
+                ], [
+                    "select({ value: \"Business\", disabled: true, options: [\"Free\", \"Team\"] })"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        select({ key: "selLock", width: 170, value: "Business", open: false,
+                                 options: PLANS, disabled: true,
+                                 onOpenChange: function (o:Boolean):void { m.put("sel.lockOpen", o); } }),
+                        text("locked on Business", { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -101,6 +137,56 @@ package demo
                 {
                     return text("A combobox costs one textField plus one box per option.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                new DocSection("An empty result is a row you draw", [
+                    "The panel renders exactly the options it is given, so \"nothing matched\" is not a",
+                    "widget state to configure -- it is one option row with a label of your choosing,",
+                    "and one index the handler ignores."
+                ], [
+                    "var shown:Array = match(CITIES, q);",
+                    "if (shown.length == 0) shown = [\"no city matches \" + q];"
+                ], 96, function ():Node
+                {
+                    var q:String = m.val("cb2.q", "z");
+                    var shown:Array = match(CITIES, q);
+                    var empty:Boolean = shown.length == 0;
+                    if (empty) shown = ["no city matches " + q];
+                    return row({ gap: 12, alignItems: "center" }, [
+                        combobox({ key: "cbEmpty", width: 220, value: q, open: m.bool("cb2.open", false),
+                                   placeholder: "Type a city", options: shown,
+                                   onQuery: function (t:String):void { m.put("cb2.q", t); m.put("cb2.open", true); },
+                                   onSelect: function (i:int):void {
+                                       if (!empty) m.put("cb2.city", String(shown[i]));
+                                       m.put("cb2.open", false);
+                                   },
+                                   onOpenChange: function (o:Boolean):void { m.put("cb2.open", o); } }),
+                        text(empty ? "the panel holds the author's row" : "city: '" + m.val("cb2.city", "-") + "'",
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("The query is just a model string", [
+                    "`onQuery` is onChange under a second name, so anything that writes the model can",
+                    "drive it: a Clear button that puts the empty string back shows every option again,",
+                    "with no widget API involved."
+                ], [
+                    "onQuery: function (t:String):void { model.q = t; }",
+                    "button({ label: \"Clear\", onClick: function ():void { model.q = \"\"; } })"
+                ], 96, function ():Node
+                {
+                    var q:String = m.val("cb3.q", "");
+                    return row({ gap: 12, alignItems: "center" }, [
+                        combobox({ key: "cbClear", width: 200, value: q, open: false,
+                                   placeholder: "Type a city", options: match(CITIES, q),
+                                   onQuery: function (t:String):void { m.put("cb3.q", t); },
+                                   onSelect: function (i:int):void {
+                                       m.put("cb3.city", String(match(CITIES, q)[i]));
+                                   },
+                                   onOpenChange: function (o:Boolean):void { m.put("cb3.open", o); } }),
+                        button({ key: "cbClearBtn", label: "Clear", style: DocsDemo.QUIET,
+                                 onClick: function ():void { m.put("cb3.q", ""); } })
+                    ]);
                 })
             ];
 
@@ -147,6 +233,53 @@ package demo
                 {
                     return text("Click the trigger above, then pick two: the menu stays open.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                new DocSection("The summary follows option order", [
+                    "The trigger line is built by walking the OPTIONS and keeping the selected ones, so",
+                    "it reads in menu order and never in the order the user clicked. The readout below",
+                    "is built the same way -- option order, not click order."
+                ], [
+                    "var words:Array = [];",
+                    "for (var i:int = 0; i < options.length; i++) { if (pick[i]) words.push(options[i]); }"
+                ], 96, function ():Node
+                {
+                    var picked:Array = [];
+                    for (var i:int = 0; i < TAGS.length; i++)
+                    {
+                        if (m.bool("ms2." + TAGS[i], false)) picked.push(TAGS[i]);
+                    }
+                    return row({ gap: 12, alignItems: "center" }, [
+                        multiSelect({ key: "msOrder", width: 200, open: m.bool("ms2.open", false),
+                            options: TAGS, values: picked, placeholder: "Pick some",
+                            onToggle: function (j:int):void {
+                                var name:String = String(TAGS[j]);
+                                m.put("ms2." + name, !m.bool("ms2." + name, false));
+                            },
+                            onOpenChange: function (o:Boolean):void { m.put("ms2.open", o); } }),
+                        text(picked.length == 0 ? "summary: the placeholder"
+                                : "summary: " + picked.join(", "),
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("An empty selection is the placeholder", [
+                    "values: [] is a legal state, not a missing one -- the trigger shows the placeholder",
+                    "and the panel shows nothing ticked. A multi-select that forced a first pick would",
+                    "not be able to represent \"none yet\"."
+                ], [
+                    "multiSelect({ values: [], placeholder: \"Pick some\", options: [...] })"
+                ], 84, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        multiSelect({ key: "msNone", width: 200, open: false,
+                            options: TAGS, values: [], placeholder: "Nothing picked",
+                            onToggle: function (j:int):void {
+                                m.put("ms.none." + TAGS[j], true);
+                            },
+                            onOpenChange: function (o:Boolean):void { m.put("ms.none.open", o); } }),
+                        text("values.length == 0", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -187,6 +320,48 @@ package demo
                 {
                     return text("Fixed height, constant anchoring, no layout jump when paging.",
                         { style: DocsDemo.LABEL, ariaName: "" });
+                }),
+
+                new DocSection("Paging months is two model numbers", [
+                    "`year` and `month` are the panel's view, not the widget's memory: the arrows report",
+                    "through onMonthChange and the next render draws whatever the model says. December",
+                    "rolling into January is the model's arithmetic, not a special case here."
+                ], [
+                    "datePicker({ year: model.y, month: model.m,",
+                    "             onMonthChange: function (y:int, mo:int):void { model.y = y; model.m = mo; } })"
+                ], 84, function ():Node
+                {
+                    var y:int = int(m.num("dp2.y", 2026));
+                    var mo:int = int(m.num("dp2.m", 11));
+                    return row({ gap: 12, alignItems: "center" }, [
+                        datePicker({ key: "dpPaging", width: 190, value: "",
+                                     open: false, year: y, month: mo,
+                                     placeholder: "Pick a date",
+                                     onSelect: function (iso:String):void { m.put("dp2.value", iso); },
+                                     onMonthChange: function (yy:int, mm:int):void
+                                     {
+                                         m.put("dp2.y", yy); m.put("dp2.m", mm);
+                                     },
+                                     onOpenChange: function (o:Boolean):void { m.put("dp2.open", o); } }),
+                        text("panel shows " + y + "-" + (mo < 10 ? "0" : "") + mo,
+                            { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Disabled keeps the date", [
+                    "A locked picker still shows the chosen day; it just refuses to open. This is the",
+                    "shape a booking form uses once the date has been confirmed elsewhere."
+                ], [
+                    "datePicker({ value: \"2026-11-07\", disabled: true })"
+                ], 76, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        datePicker({ key: "dpLock", width: 190, value: "2026-11-07",
+                                     open: false, disabled: true,
+                                     year: 2026, month: 11,
+                                     onOpenChange: function (o:Boolean):void { m.put("dp.lockOpen", o); } }),
+                        text("confirmed elsewhere", { style: DocsDemo.LABEL, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -244,6 +419,23 @@ package demo
                         text("model.pgIdx = " + m.pgIdx + " of 12, onSelect fired "
                                 + int(m.num("pg.calls", 0)) + "x",
                             { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("windowSize bounds the chips, not the page", [
+                    "Forty pages and a window of three: the widget renders first, last, the current",
+                    "neighbourhood and an ellipsis for each gap. The number of chips does not grow with",
+                    "the page count, so a 400-page list and a 12-page list are the same width."
+                ], [
+                    "pagination(20, 40, { windowSize: 3, onSelect: pick })",
+                    "// 1 ... 19 [20] 21 ... 40"
+                ], 84, function ():Node
+                {
+                    return row({ gap: 12, alignItems: "center" }, [
+                        pagination(int(m.num("pg.win", 20)), 40, { key: "pgWin",
+                            windowSize: 3,
+                            onSelect: function (p:int):void { m.put("pg.win", p); } }),
+                        text("40 pages, 3-wide window", { style: DocsDemo.MONO, ariaName: "" })
                     ]);
                 })
             ];
