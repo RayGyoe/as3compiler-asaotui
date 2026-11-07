@@ -671,6 +671,20 @@
 | 库侧是否绕路 | **不绕**。居中一律 `(row - h) / 2`，不写死偏移量 |
 | 状态 | ⚠️ **已定位（2026-11-07 三档实测 + 反例），未修**；回滚后 `as3compiler` 无残留改动 |
 
+### G34 —— `TextField` 的**渲染边界不套用 autoSize**：文字一变长，第一次重画就被按**旧宽度**建的烘焙面裁掉（末字/末段"晚一点才出现"）—— ✅ **已修（阶段三百八十七，v0.4.354）**
+
+| 项 | 内容 |
+|---|---|
+| 现象（2026-11-08 报） | 左侧换页后，标题/正文的**新**文字第一次画出来时**右端被切**（只剩前一段），下一次重画才完整。与用户两帧截图一致：同一行、同一位置，只是短了一截 |
+| 先排除的方向 | **不是**库侧 `measureField` 的测量缓存：缓存命中只表示"文本没变、可跳过重写"，而每次渲染都发生在写入之后；也**不是**"跳过无变化的呈现"（`ASC_NO_PRESENT_SKIP=1` 仍复现） |
+| 最小确定性复现 | `node temp/repro-bake/build.cjs`（`temp/repro-bake/Main.as`）：`autoSize=left` 的 TextField 放在**会被 auto-bake** 的 Sprite 里，心跳图形让窗口每帧 present（22 帧后烘焙面已就位）；**同一个 timer 回调里**改文字后连做两次整舞台 `bd.draw`，中间不插帧。读数 `DRAW1 ink.right=49 / DRAW2 ink.right=358`（旧文本 `"ab"` 的盒宽 30，落在 x=20 ⇒ 只能画到 50；新文本宽 338）⇒ 第一次重画**只画出前 30px**，第二次完整；连跑多次逐项同值 |
+| A/B（同一 exe，只改环境） | `ASC_NO_AUTO_BAKE=1` ⇒ `DRAW1=358`（不再裁）；`ASC_NO_PRESENT_SKIP=1` ⇒ 仍 `DRAW1=49` ⇒ 元凶是**自动烘焙** |
+| 代码事实 | `tf.text = …`（`TextField_set_text`，`emit.ts:25934`）只作废段落，**不动** `_fieldWidth`；`_fieldWidth` 由 `as_tf_apply_autosize` 更新，而它只在**绘制**（`emit.ts:30532`）与 `width/height`（`as_do_extents`，`emit.ts:29095`）里被调用。两个**算盒**的入口都只读裸 `_fieldWidth`：`as_bounds_walk` 的 TextField 分支（`emit.ts:29006-29013`）和 `as_render_bounds` 的 TextField 分支（`emit.ts:29189-29203`，其注释自己写明"这块盒专用于烘焙/滤镜面尺寸与父级并集"）⇒ 自身与父级的烘焙面都按**上一段文字**的宽度建，画进去的却是新文字 ⇒ 右端被裁 |
+| 为什么库是触发者、不是责任方 | 库写 `.text` 之后依赖 autoSize（AIR 允许：`width`/`getBounds` 立刻反映新盒，`adl 51.4.1` 实测见 `emit.ts:29088-29094` 的注释与 `temp/tfswc` 6/7）⇒ 每次改文字都踩中。同一份库代码在 AIR 上无此现象 |
+| 修法（已落地） | 两个 TextField 分支在读 `_fieldWidth` 之前各加一行 `as_tf_apply_autosize(tf);`（与 `as_do_extents` 里既有的那一行同因）。修后同一复现程序 `DRAW1=358 / DRAW2=358`。落地提交 `99e1523`（阶段三百八十七，v0.4.354），随行钉子 `examples/tf-grow-bake.as` + `unit: render/TextFieldBoundsAutosize` |
+| 回归证据（补丁临时在树上时） | `asaotui` 全量门 **70/70 PASS（515.6s）**：`layout-check text half`（133 检查）、`layout-check visual half`、`gallery tour` 60 页手算矩形、`widgets/textfx`、`widgets/static-layer`、`descriptor DPI A/B`、G19/G20/G21 的 AIR 逐项对照均绿；`examples/tf-autosize-empty|tf-scale-metrics|textwidth-trailing` PASS，`textfield-dyn-set` 全检通过，`textfield-align` 无光栅后端跳过（后两条本机需要 `--cc clang`，测试框架默认 `cc` 不在 PATH） |
+| 与 G31/G32/G33 的区别 | 那三条是**度量口径**（宽度数字本身不对）；这条的**数字全对**，错的是"用哪个宽度去建烘焙面" |
+| 状态 | ✅ **已修（阶段三百八十七，v0.4.354，提交 `99e1523`）**：`node test.ts` 651 tests / 629 pass / 19 fail / 3 skipped（19 个失败 = 上一阶段同一批，8 个失败示例在未打补丁的树上复跑同样全红）；`asaotui` 门 70/70 |
 ---
 
 ## 2 不是缺口：已澄清 / 已关闭
