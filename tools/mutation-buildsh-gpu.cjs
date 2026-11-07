@@ -1,7 +1,7 @@
 // tools/mutation-buildsh-gpu.cjs -- proves tools/buildsh-gpu.cjs goes red on each way
 // `build.sh --gpu` can be wrong, and that it names the failure it is supposed to name.
 //
-// The five mutations are the five mistakes this option actually invites:
+// The six mutations are the six mistakes this option actually invites:
 //   M1  a backend is named in the usage text but never passed (the "looks honoured"
 //       failure -- the window opens, on the platform's default backend)
 //   M2  a mode maps to the wrong <renderMode> (cpu silently meaning gpu)
@@ -9,6 +9,10 @@
 //   M4  the derived descriptor is printed but not handed to the AOT arm
 //   M5  the derived descriptor drifts a SECOND line (requestedDisplayResolution),
 //       which is exactly what would break the HiDPI A/B in ui-demo/check-dpi.cjs
+//   M6  the HOST is decided from the node filename instead of from the runtime, so a
+//       Windows node the shell spells without `.exe` is treated as POSIX and `--gpu gl`
+//       refuses itself on Windows (reported from the desktop, 2026-11-08)
+//
 //
 // build.sh is restored in `finally` and its sha256 compared byte-for-byte. app.xml is
 // never a mutation target: `check-dpi.cjs` and this gate both treat it as tracked
@@ -78,6 +82,17 @@ const MUTATIONS = [
       + '.replace("<requestedDisplayResolution>high</requestedDisplayResolution>",'
       + ' "<requestedDisplayResolution>standard</requestedDisplayResolution>"));',
     expect: 'changes nothing but the <renderMode> line'
+  },
+  {
+    id: 'M6',
+    why: 'the host goes back to being read from the node FILENAME (Git-Bash spells the same Windows node `node`, so --gpu gl refused itself on Windows with the macOS message)',
+    file: SH,
+    // Not a typo: this is HEAD's decision, restored. `PLATFORM` emptied means the
+    // only input left is `${NODE##*/}`, which the gate stages as an extensionless
+    // wrapper -- the extensionless spelling a Windows shell really hands you.
+    find: 'PLATFORM=$("$NODE" -e \'process.stdout.write(process.platform)\' 2>/dev/null || true)',
+    replace: "PLATFORM=''",
+    expect: 'the host is read from the runtime'
   }
 ];
 

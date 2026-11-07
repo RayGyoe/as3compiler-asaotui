@@ -19,6 +19,9 @@
 //   3) The default arm stays byte-for-byte the old behaviour: no `--gpu` passes
 //      neither `--app-xml` nor `--gpu-backend`.
 //   4) A typo is refused, not silently treated as the default (AGENTS.md section 2.5).
+//   5) The HOST is read from the runtime. A node the shell spells without `.exe` is
+//      still a Windows node; HEAD called it POSIX and `--gpu gl` refused itself on
+//      Windows (see the block below, which stages exactly that wrapper).
 //
 // HOW IT RUNS IN TWO SECONDS: the `desc` arm derives the descriptor and prints the
 // argv the `aot` arm would exec -- both come from the same variables (`$DESC`,
@@ -41,6 +44,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
 const { spawnSync } = require('child_process');
 
 const HERE = __dirname;                       // .../asaotui/tools
@@ -137,6 +141,49 @@ for (const m of MODES) {
     check(!r.out.includes('--gpu-backend'),
       '--gpu ' + m.flag + ' names no backend (the platform default)', r.args);
   }
+}
+
+// THE HOST IS READ FROM THE RUNTIME, NOT FROM HOW THE SHELL SPELLS NODE.
+// Measured bug (reported from the desktop, reproduced here): HEAD decided WIN with
+//   case "$(basename -- "$NODE")" in *.exe) WIN=1 ;; *) WIN=0 ;; esac
+// Git-Bash resolves this box's Windows node to `/c/nvm4w/nodejs/node` -- no `.exe` --
+// so WIN was 0 and `--gpu gl` refused ITSELF on Windows with "Windows-only (macOS
+// composites on Metal)". A `#!` wrapper called `node` does the same thing, which is
+// what is staged here: the executable is named without an extension, and the only way
+// to get the host right is to ask it (`$NODE -e 'process.platform'`).
+//
+// The wrapper has to name a REAL node in the spelling of whichever bash answers here:
+// `spawnSync('bash')` resolves to WSL's /bin/bash on this box (which wants
+// /mnt/<drive>/...) and to Git-Bash on others (which wants C:/...). Ask, do not guess.
+function shellSpelling(p) {
+  const probe = spawnSync('bash', ['-c', 'uname -s'], { encoding: 'utf8' });
+  const sys = ((probe.stdout || '') + (probe.stderr || '')).trim();
+  if (/^(MINGW|MSYS|CYGWIN)/i.test(sys)) return p.replace(/\\/g, '/');
+  if (/^[A-Za-z]:/.test(p)) return '/mnt/' + p[0].toLowerCase() + p.slice(2).replace(/\\/g, '/');
+  return p;
+}
+
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'as3-host-'));
+  const wrap = path.join(dir, 'node');
+  fs.writeFileSync(wrap, '#!/bin/sh\nexec "' + shellSpelling(process.execPath) + '" "$@"\n');
+  try { fs.chmodSync(wrap, 0o755); } catch (e) { /* drvfs: exec bits are implicit */ }
+  const quoted = "'" + shellSpelling(wrap).replace(/'/g, "'\\''") + "'";
+  const r = spawnSync('bash',
+    ['-c', 'export NODE=' + quoted + '; exec bash build.sh desc --gpu gl'],
+    { cwd: APP, encoding: 'utf8' });
+  const out = (r.stdout || '') + (r.stderr || '');
+  if (process.platform === 'win32') {
+    check(r.status === 0, 'the host is read from the runtime: a node spelled without .exe is still Windows',
+      'exit ' + r.status + '\n' + out.slice(-400));
+    check(/host: win32 \(WIN=1\)/.test(out), 'desc reports host: win32 for that same node', out.slice(-300));
+  } else {
+    check(true, 'the host is read from the runtime: a node spelled without .exe is still Windows (not applicable off Windows)');
+  }
+  // Both platforms: the decision is printed, so "which side of the Windows-only fence
+  // do you think you are on" is answerable without a build.
+  check(/host: /.test(buildsh(['desc']).out), 'desc prints the host it decided on');
+  fs.rmSync(dir, { recursive: true, force: true });
 }
 
 // The default arm: no --gpu at all.

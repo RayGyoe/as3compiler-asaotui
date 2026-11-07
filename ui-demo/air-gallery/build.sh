@@ -99,23 +99,43 @@ fi
 
 HERE=$(cd -- "$(dirname -- "$0")" && pwd)   # .../ui-demo/air-gallery
 DEMO=$(cd -- "$HERE/.." && pwd)             # .../ui-demo
-APP=$(basename -- "$HERE")                  # air-gallery (or its `standard` twin)
+APP=${HERE##*/}                            # air-gallery (or its `standard` twin)
 SWF=$APP/GalleryApp.swf
 
 # Which executable spelling this platform wants. The AIR SDK ships BOTH `adl` and
 # `adl.exe` in bin/, and on Windows the extension-less one is the Unix shell wrapper
 # -- choosing it fails with "cannot execute binary file: Exec format error"
-# (measured). node's own filename is the reliable tell: a Windows node is `node.exe`.
-case "$(basename -- "$NODE")" in
-  *.exe) WIN=1 ;;
-  *)     WIN=0 ;;
+# (measured).
+#
+# ASK THE RUNTIME, DO NOT READ THE FILENAME. This used to be
+# `case "$(basename -- "$NODE")" in *.exe) WIN=1`, which is right only when the shell
+# happens to spell the program `node.exe`: Git-Bash resolves the SAME Windows node to
+# `/c/nvm4w/nodejs/node` (measured), so `--gpu gl` was refused with "Windows-only ...
+# macOS composites on Metal" ON WINDOWS -- and a wrapper script called `node` does the
+# same thing. `process.platform` is the host the compiler will actually run on, and
+# node is the one tool this script cannot start without. The filename is only the
+# fallback, for a node that refuses `-e` (none does, but a broken NODE= should name
+# itself instead of silently picking a backend).
+#
+# `${NODE##*/}` rather than `basename`: this workspace's shells do not all ship
+# coreutils (measured: `basename: command not found`).
+PLATFORM=$("$NODE" -e 'process.stdout.write(process.platform)' 2>/dev/null || true)
+case "$PLATFORM" in
+  win32)  WIN=1 ;;
+  darwin) WIN=0 ;;
+  '')
+    case "${NODE##*/}" in
+      *.exe) WIN=1 ;;
+      *)     WIN=0 ;;
+    esac ;;
+  *)      WIN=0 ;;
 esac
 
 say() { printf '[build] %s\n' "$*"; }
 die() { printf 'build.sh: %s\n' "$*" >&2; exit 2; }
 
 usage() {
-  printf 'usage: %s [air [page]|aot|web|swf|desc|clean] [--gpu <mode>] [web flags]\n\n' "$(basename -- "$0")"
+  printf 'usage: %s [air [page]|aot|web|swf|desc|clean] [--gpu <mode>] [web flags]\n\n' "${0##*/}"
   printf '  air    (default) mxmlc the app, then run it under adl\n'
   printf '  air <page>     same, opened on that catalog page (select, combobox, ...)\n'
   printf '  aot    stage + compile with as-aot, then run the executable\n'
@@ -163,6 +183,7 @@ gpu_mode() {  # $1 = --gpu value -> DESC / RENDER / BACKEND, or a plain refusal
 # "which descriptor, which backend" is the whole of `--gpu`, and checking it should
 # not cost a 90-second compile -- `tools/buildsh-gpu.cjs` (a gate) runs exactly this.
 desc() {
+  say "host: ${PLATFORM:-unknown} (WIN=$WIN)  node: $NODE"
   if [ "$DESC" = app.xml ]; then
     say 'no --gpu: both arms use the tracked app.xml as-is, no extra arguments'
     return 0

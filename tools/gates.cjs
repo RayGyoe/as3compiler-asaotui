@@ -276,12 +276,12 @@
 //                defect itself (the display slot computed from the description index),
 //                a sweep that stops OPENING the popups (42 pages, 0 errors, blind), and
 //                a sweep that stops one page early (a dead window must not look green).
-//   gpu mode  -- tools/mutation-buildsh-gpu.cjs: 5/5. `--gpu cpu|gpu|d3d12|gl|direct`
+//   gpu mode  -- tools/mutation-buildsh-gpu.cjs: 6/6. `--gpu cpu|gpu|d3d12|gl|direct`
 //                is unverifiable by eye -- all five modes draw the same 42 pages, and a
 //                mode that is parsed and then dropped looks exactly as correct as one
 //                that works. So the gate pins the two things that DO differ: the derived
 //                descriptor (one line off app.xml) and the argv the AOT arm gets. The
-//                five mutations are the five ways to get those wrong, including a
+//                six mutations are the six ways to get those wrong, including a
 //                descriptor that drifts a second line -- which is precisely the HiDPI
 //                A/B that `check-dpi.cjs` demands.
 'use strict';
@@ -905,10 +905,12 @@ runProbes(PROBES);
 // ASC_RENDER_GL=1 and 41/42 pages; aot --gpu gpu: ASC_RENDER_D3D=1; air --gpu gl: a
 // window under adl). `run-gallery.cjs` keeps asserting that a gpu mode reached the
 // manifest, so the runtime half cannot rot silently.
-//   mutation: tools/mutation-buildsh-gpu.cjs (5/5: a named-but-unpassed backend, a mode
+//   mutation: tools/mutation-buildsh-gpu.cjs (6/6: a named-but-unpassed backend, a mode
 //             wired to the wrong <renderMode>, an unknown mode swallowed, a derived
-//             descriptor described but not passed, and a descriptor that drifts a
-//             SECOND line -- the last one is what would break 6d's one-line A/B).
+//             descriptor described but not passed, a descriptor that drifts a
+//             SECOND line -- the last one is what would break 6d's one-line A/B -- and
+//             the HOST decided from node's FILENAME, which is how `--gpu gl` came to
+//             refuse itself on Windows: Git-Bash spells that same node `node`).
 {
   const r = sh(process.execPath, ['tools/buildsh-gpu.cjs'], UI);
   const out = (r.stdout || '') + (r.stderr || '');
