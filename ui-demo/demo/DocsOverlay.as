@@ -27,8 +27,7 @@ package demo
 
             if (id == "dialog") return [
                 new DocSection("A scrim plus a centred panel", [
-                    "The dialog is described in renderOverlay(), so it is laid out against the WINDOW:",
-                    "a page that scrolls cannot drag its dialog along with it."
+                    "The dialog is described in renderOverlay(), so it is laid out against the WINDOW: a page that scrolls cannot drag its dialog along with it."
                 ], [
                     "// render()",
                     "button({ key: \"demoDlgBtn\", label: \"Delete files\",",
@@ -48,8 +47,7 @@ package demo
                 }),
 
                 new DocSection("Closing is a model write", [
-                    "Escape, a scrim click and the footer's Cancel all funnel into onClose -- the author",
-                    "writes `false` once, and the next render stops describing the dialog."
+                    "Escape, a scrim click and the footer's Cancel all funnel into onClose -- the author writes `false` once, and the next render stops describing the dialog."
                 ], [
                     "onClose: function ():void { model.dlgOpen = false; }"
                 ], 76, function ():Node
@@ -61,11 +59,8 @@ package demo
                 // closeOnScrim is a POLICY, not a detail: the default (close on a scrim
                 // press) is right for a confirmation and wrong for a form.
                 new DocSection("closeOnScrim: false, for a dialog with unsaved input", [
-                    "By default a scrim press closes the dialog. That is what a confirmation wants and",
-                    "exactly what a FORM does not: one stray click outside and the typed text is gone.",
-                    "`closeOnScrim: false` makes Escape and the panel's own buttons the only exits --",
-                    "the scrim still swallows the press, because a modal blocks the page, it is not a",
-                    "giant close button. `onClose` remains the single writer either way."
+                    "By default a scrim press closes the dialog. That is what a confirmation wants and exactly what a FORM does not: one stray click outside and the typed text is gone.",
+                    "`closeOnScrim: false` makes Escape and the panel's own buttons the only exits -- the scrim still swallows the press, because a modal blocks the page, it is not a giant close button. `onClose` remains the single writer either way."
                 ], [
                     "dialog({ key: \"demoDlg2\", open: model.formOpen, width: 300,",
                     "         closeOnScrim: false,",
@@ -82,10 +77,7 @@ package demo
                 }),
 
                 new DocSection("Centred in the window, not in the page", [
-                    "Scroll the list below to the bottom and press the button: the panel still lands in",
-                    "the middle of the WINDOW. That is the whole difference between the second tree and",
-                    "a positioned box -- position:absolute is relative to a PARENT, and the parent here",
-                    "is the window."
+                    "Scroll the list below to the bottom and press the button: the panel still lands in the middle of the WINDOW. That is the whole difference between the second tree and a positioned box -- position:absolute is relative to a PARENT, and the parent here is the window."
                 ], [
                     "// the trigger may be 900pt down a scroll view;",
                     "// the dialog is solved against the stage rect either way"
@@ -116,8 +108,7 @@ package demo
 
             if (id == "drawer") return [
                 new DocSection("An edge sheet", [
-                    "Same second tree, anchored to an EDGE instead of the centre. `side` picks which,",
-                    "and `size` is its width (or height for a bottom sheet)."
+                    "Same second tree, anchored to an EDGE instead of the centre. `side` picks which, and `size` is its width (or height for a bottom sheet)."
                 ], [
                     "drawer({ key: \"demoDrw\", open: model.drwOpen, side: \"right\", size: 280,",
                     "         title: \"Filters\", onClose: function ():void { model.drwOpen = false; } },",
@@ -132,8 +123,7 @@ package demo
                 }),
 
                 new DocSection("The page behind is untouched", [
-                    "A drawer is not a modal layout: the main tree keeps its rects and its scroll",
-                    "position, which is what makes it usable next to a long list."
+                    "A drawer is not a modal layout: the main tree keeps its rects and its scroll position, which is what makes it usable next to a long list."
                 ], [
                     "// the main tree is not re-laid out -- only the overlay tree is solved"
                 ], 76, function ():Node
@@ -145,10 +135,7 @@ package demo
                 // The other AXIS: for a top/bottom sheet `size` is a HEIGHT. Same widget,
                 // same scrim, same close contract -- only the anchor edge changes.
                 new DocSection("The other axis: a bottom sheet", [
-                    "`side: \"left\" | \"right\" | \"top\" | \"bottom\"`. On a left/right sheet `size`",
-                    "is a WIDTH; on a top/bottom one it is a HEIGHT, and the layer spans the window",
-                    "on the other axis. An unknown side throws at describe time rather than landing on",
-                    "a default edge -- there is no such thing as a drawer with no edge."
+                    "`side: \"left\" | \"right\" | \"top\" | \"bottom\"`. On a left/right sheet `size` is a WIDTH; on a top/bottom one it is a HEIGHT, and the layer spans the window on the other axis. An unknown side throws at describe time rather than landing on a default edge -- there is no such thing as a drawer with no edge."
                 ], [
                     "drawer({ key: \"demoDrw2\", open: model.shareOpen, side: \"bottom\",",
                     "         size: 160, title: \"Share\",",
@@ -164,10 +151,7 @@ package demo
                 }),
 
                 new DocSection("What size means on each side", [
-                    "Drawn here as a diagram, because the real sheet opens in the overlay tree: on",
-                    "left/right the number is a WIDTH and the sheet spans the full height; on",
-                    "top/bottom it is a HEIGHT and the sheet spans the full width. Same widget, same",
-                    "scrim, same close contract -- only the anchoring edge changes."
+                    "Drawn here as a diagram, because the real sheet opens in the overlay tree: on left/right the number is a WIDTH and the sheet spans the full height; on top/bottom it is a HEIGHT and the sheet spans the full width. Same widget, same scrim, same close contract -- only the anchoring edge changes."
                 ], [
                     "side: \"right\",  size: 280   // width,  full height",
                     "side: \"bottom\", size: 160   // height, full width"
@@ -202,8 +186,7 @@ package demo
 
             if (id == "popover") return [
                 new DocSection("Anchored by key", [
-                    "The popover finds its anchor through a STABLE key, not a node reference: the anchor",
-                    "survives a reconcile, so a popover stays put when the page re-renders."
+                    "The popover finds its anchor through a STABLE key, not a node reference: the anchor survives a reconcile, so a popover stays put when the page re-renders."
                 ], [
                     "// render()",
                     "button({ key: \"popBtn\", label: \"Show details\", onClick: open })",
@@ -221,8 +204,7 @@ package demo
                 }),
 
                 new DocSection("Sized by its content", [
-                    "`width` is a maximum-ish hint: the panel wraps its children and the placement flips",
-                    "when the bottom would leave the window."
+                    "`width` is a maximum-ish hint: the panel wraps its children and the placement flips when the bottom would leave the window."
                 ], [
                     "placement: \"bottom\" | \"top\" | \"left\" | \"right\",  offset: 8"
                 ], 76, function ():Node
@@ -234,11 +216,8 @@ package demo
                 // The inverse policy of closeOnScrim: a popover can refuse the outside
                 // press too, and then it MUST carry its own way out.
                 new DocSection("closeOnOutside: false", [
-                    "A popover closes on any press outside it by default. `closeOnOutside: false` makes",
-                    "it a panel you dismiss yourself, which is what a colour picker or a mini form",
-                    "wants: a stray click on the page must not throw the work away.",
-                    "It still never closes ITSELF -- `onClose` is the only writer, so the panel needs a",
-                    "button of its own (the one inside this popover is that button)."
+                    "A popover closes on any press outside it by default. `closeOnOutside: false` makes it a panel you dismiss yourself, which is what a colour picker or a mini form wants: a stray click on the page must not throw the work away.",
+                    "It still never closes ITSELF -- `onClose` is the only writer, so the panel needs a button of its own (the one inside this popover is that button)."
                 ], [
                     "popover({ key: \"demoPop2\", open: model.pinOpen, anchorKey: \"pop2Btn\",",
                     "          closeOnOutside: false,",
@@ -255,9 +234,7 @@ package demo
                 }),
 
                 new DocSection("Placement is a request", [
-                    "The four placements are what the author asks for; the layer flips one when the",
-                    "panel would leave the window. A page therefore does not have to know where in the",
-                    "window its trigger ended up -- which is the case the diagram shows."
+                    "The four placements are what the author asks for; the layer flips one when the panel would leave the window. A page therefore does not have to know where in the window its trigger ended up -- which is the case the diagram shows."
                 ], [
                     "placement: \"bottom\"   // near the window's bottom edge it opens upward",
                     "offset: 8               // the gap to the anchor, in points"
@@ -292,8 +269,7 @@ package demo
 
             if (id == "menu") return [
                 new DocSection("A list of actions", [
-                    "The menu is the popover's sibling: same anchoring, same overlay, but a list of",
-                    "items and one selected index."
+                    "The menu is the popover's sibling: same anchoring, same overlay, but a list of items and one selected index."
                 ], [
                     "menu({ key: \"demoMnu\", open: model.mnuOpen, anchorKey: \"mnuBtn\", width: 170,",
                     "       items: [\"Rename\", \"Duplicate\", \"Delete\"], selectedIndex: -1,",
@@ -309,8 +285,7 @@ package demo
                 }),
 
                 new DocSection("Items are strings or {label, value}", [
-                    "labelOf()/valueOf() are the same helpers the overlays use, so a menu, a select and",
-                    "a combobox accept exactly the same option shapes."
+                    "labelOf()/valueOf() are the same helpers the overlays use, so a menu, a select and a combobox accept exactly the same option shapes."
                 ], [
                     "items: [\"Rename\", { label: \"Delete\", value: \"rm\" }]"
                 ], 76, function ():Node
@@ -322,10 +297,7 @@ package demo
                 // A submenu is a MENU, not a special widget: it is the item's child, so it
                 // inherits the same keys, the same placement maths and the same close rule.
                 new DocSection("A submenu is an item with a list", [
-                    "`items: [{ label: \"Move to\", submenu: [...] }]` -- the submenu is described as a",
-                    "child MENU of the item, so it reuses the same keyboard map, the same placement",
-                    "code and the same close-on-outside rule. `submenuIndex` says which item's list is",
-                    "open; the widget reports the ITEM index, not a flat index into a merged list."
+                    "`items: [{ label: \"Move to\", submenu: [...] }]` -- the submenu is described as a child MENU of the item, so it reuses the same keyboard map, the same placement code and the same close-on-outside rule. `submenuIndex` says which item's list is open; the widget reports the ITEM index, not a flat index into a merged list."
                 ], [
                     "menu({ key: \"demoMnu2\", open: model.m2Open, anchorKey: \"mnu2Btn\",",
                     "       items: [ \"Rename\", { label: \"Move to\", submenu: [ \"Inbox\", \"Archive\" ] },",
@@ -342,10 +314,7 @@ package demo
                 }),
 
                 new DocSection("The keyboard map is the listbox's", [
-                    "A menu is a list of rows, so it answers the keys a listbox answers: Up/Down move,",
-                    "Home/End jump to the ends, Enter activates and Escape closes. The submenu takes",
-                    "Right to enter and Left to come back, which is the one pair the main list does not",
-                    "use -- and the reason a submenu is a child MENU rather than a nested array."
+                    "A menu is a list of rows, so it answers the keys a listbox answers: Up/Down move, Home/End jump to the ends, Enter activates and Escape closes. The submenu takes Right to enter and Left to come back, which is the one pair the main list does not use -- and the reason a submenu is a child MENU rather than a nested array."
                 ], [
                     "// Up/Down move, Home/End jump, Enter selects, Escape closes",
                     "// Right opens the item's submenu, Left returns to the parent list"
@@ -368,9 +337,7 @@ package demo
 
             if (id == "toast") return [
                 new DocSection("A transient corner message", [
-                    "Toasts are self-expiring: `duration` decides when onClose fires, and the author's",
-                    "model removes it. The host stacks them bottom-right. `tone` is one of default |",
-                    "success | danger -- a NAME, not a colour (toast.as throws on anything else)."
+                    "Toasts are self-expiring: `duration` decides when onClose fires, and the author's model removes it. The host stacks them bottom-right. `tone` is one of default | success | danger -- a NAME, not a colour (toast.as throws on anything else)."
                 ], [
                     "toastHost({ key: \"demoToasts\" }, [",
                     "    toast({ key: \"demoToast\", open: model.tstOpen, message: \"Draft saved\",",
@@ -387,8 +354,7 @@ package demo
                 }),
 
                 new DocSection("It closes itself", [
-                    "`open:false` is what removes it; the widget never removes its own node. A second",
-                    "toast with the same key replaces the first one's content."
+                    "`open:false` is what removes it; the widget never removes its own node. A second toast with the same key replaces the first one's content."
                 ], [
                     "// the timer calls onClose -> the model flips `open` -> the next render drops it"
                 ], 76, function ():Node
@@ -398,9 +364,7 @@ package demo
                 }),
 
                 new DocSection("tone is a name, not a colour", [
-                    "The factory accepts default, success and danger and throws on anything else, so a",
-                    "theme swap moves every toast with the rest of the kit. Pick a tone, then press the",
-                    "button: the toast that opens uses the one you picked."
+                    "The factory accepts default, success and danger and throws on anything else, so a theme swap moves every toast with the rest of the kit. Pick a tone, then press the button: the toast that opens uses the one you picked."
                 ], [
                     "toast({ message: \"Saved\", tone: \"success\" })   // default | success | danger",
                     "toast({ message: \"Nope\",  tone: \"danger\" })"
@@ -423,9 +387,7 @@ package demo
                 }),
 
                 new DocSection("duration is the author's number", [
-                    "There is no default that suits every message: a 2.5s toast is right for \"saved\"",
-                    "and wrong for \"3 items failed to sync\". The slider sets what the next toast is",
-                    "given; the widget only counts it down and calls onClose."
+                    "There is no default that suits every message: a 2.5s toast is right for \"saved\" and wrong for \"3 items failed to sync\". The slider sets what the next toast is given; the widget only counts it down and calls onClose."
                 ], [
                     "toast({ duration: 2500, onClose: function ():void { open = false; } })",
                     "// duration <= 0 never fires: the toast then waits for a click"
@@ -448,8 +410,7 @@ package demo
 
             if (id == "toastHost") return [
                 new DocSection("The stack", [
-                    "A host is a positioned container in the overlay tree: toasts drop into its bottom-",
-                    "right corner in the order they were described. Without a host, a toast has no corner.",
+                    "A host is a positioned container in the overlay tree: toasts drop into its bottom- right corner in the order they were described. Without a host, a toast has no corner.",
                     "`tone` is a NAME, not a colour: default | success | danger, and anything else throws."
                 ], [
                     "toastHost({ key: \"demoToasts\" }, [",
@@ -466,8 +427,7 @@ package demo
                 }),
 
                 new DocSection("Order is stacking order", [
-                    "The overlay has no z-index: the last child is painted last. Toasts stack in the",
-                    "order they are described, and the host is the last thing in the overlay."
+                    "The overlay has no z-index: the last child is painted last. Toasts stack in the order they are described, and the host is the last thing in the overlay."
                 ], [
                     "// overlay([ dialog, drawer, popover, menu, toastHost ])  <- host last"
                 ], 76, function ():Node
@@ -477,9 +437,7 @@ package demo
                 }),
 
                 new DocSection("The host owns the corner", [
-                    "A toast does NOT position itself: the host is the positioned container, and the",
-                    "toasts stack inside its bottom-right corner in describe order. Two hosts in one",
-                    "overlay is legal -- one per screen edge -- and each stacks its own children."
+                    "A toast does NOT position itself: the host is the positioned container, and the toasts stack inside its bottom-right corner in describe order. Two hosts in one overlay is legal -- one per screen edge -- and each stacks its own children."
                 ], [
                     "toastHost({ key: \"a\" }, [ toast({ ... }), toast({ ... }) ]),",
                     "// the corner is the host's; the toast only supplies its size"
@@ -506,9 +464,7 @@ package demo
                 }),
 
                 new DocSection("Without a host there is no corner", [
-                    "A toast that is not inside a toastHost is laid out like any other node -- in the",
-                    "overlay's flow. Nothing breaks; it simply is not in a corner, which is how a",
-                    "component gallery ends up with a toast in the middle of the screen."
+                    "A toast that is not inside a toastHost is laid out like any other node -- in the overlay's flow. Nothing breaks; it simply is not in a corner, which is how a component gallery ends up with a toast in the middle of the screen."
                 ], [
                     "overlay([ toastHost({}, [ toast({ open: true }) ]) ])   // corner",
                     "overlay([ toast({ open: true }) ])                     // not a corner"

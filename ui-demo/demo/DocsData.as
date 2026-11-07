@@ -74,8 +74,7 @@ package demo
                 }),
 
                 new DocSection("Selection is a decoration", [
-                    "A selected-row change raises only a paint dirty bit: the rows keep their rects, so",
-                    "selecting never re-solves layout. The widget paints the band behind the rows."
+                    "A selected-row change raises only a paint dirty bit: the rows keep their rects, so selecting never re-solves layout. The widget paints the band behind the rows."
                 ], [
                     "// style the row, not the selection -- the band is the widget's"
                 ], 76, function ():Node
@@ -85,14 +84,8 @@ package demo
                 }),
 
                 new DocSection("virtual: true -- only the window exists", [
-                    "virtual turns the list into a WINDOW: the factory mounts ceil(height / itemHeight)",
-                    "rows plus one (the partial row at the bottom is real), and it must be told which",
-                    "row the window starts on. offsetY is that start, row-aligned; onScroll hands you",
-                    "the next one -- the author stores it and re-renders, the same contract as",
-                    "virtualList and table. selectedIndex stays an ABSOLUTE index, not a window one.",
-                    "It refuses separator: true (a hairline changes the row pitch, so the window would",
-                    "drift one row per screen) and an auto height (the window has to know the size",
-                    "BEFORE layout runs)."
+                    "virtual turns the list into a WINDOW: the factory mounts ceil(height / itemHeight) rows plus one (the partial row at the bottom is real), and it must be told which row the window starts on. offsetY is that start, row-aligned; onScroll hands you the next one -- the author stores it and re-renders, the same contract as virtualList and table. selectedIndex stays an ABSOLUTE index, not a window one.",
+                    "It refuses separator: true (a hairline changes the row pitch, so the window would drift one row per screen) and an auto height (the window has to know the size BEFORE layout runs)."
                 ], [
                     "list(items, build, { virtual: true, itemHeight: 26, offsetY: model.first,",
                     "                     style: { size: [260, 260] },",
@@ -118,12 +111,8 @@ package demo
                 }),
 
                 new DocSection("Keyboard: the arrows move the selection", [
-                    "Press \"Focus it\", then Up / Down / Home / End. A key goes to whatever holds FOCUS, and AIR",
-                    "does not focus a plain Sprite on mouseDown -- only a TextField is focused by a click -- so a",
-                    "widget is reached with Tab (list sets tabEnabled) or, as here, programmatically.",
-                    "A list is a SEQUENCE, the ARIA listbox shape, so the ends CLAMP: Down on the last row stays",
-                    "there and still CONSUMES the key, which is what stops the press from falling through to",
-                    "whatever scrolls the page.",
+                    "Press \"Focus it\", then Up / Down / Home / End. A key goes to whatever holds FOCUS, and AIR does not focus a plain Sprite on mouseDown -- only a TextField is focused by a click -- so a widget is reached with Tab (list sets tabEnabled) or, as here, programmatically.",
+                    "A list is a SEQUENCE, the ARIA listbox shape, so the ends CLAMP: Down on the last row stays there and still CONSUMES the key, which is what stops the press from falling through to whatever scrolls the page.",
                     "There is no second copy of the selection: a key calls the same select() a click calls."
                 ], [
                     "app.focusNode(app.findByKey(\"myList\"));   // or Tab, once it is a tab stop",
@@ -155,8 +144,7 @@ package demo
 
             if (id == "table") return [
                 new DocSection("Columns and rows", [
-                    "A column without a width shares whatever is left, and every cell in a column",
-                    "carries the SAME style pointer, so alignment is the engine's job, not arithmetic."
+                    "A column without a width shares whatever is left, and every cell in a column carries the SAME style pointer, so alignment is the engine's job, not arithmetic."
                 ], [
                     "table([{ key: \"name\", title: \"Name\", width: 150 }, { key: \"qty\", title: \"Qty\" }],",
                     "      rows, { key: \"t\", size: [340, 116], rowHeight: 26,",
@@ -176,8 +164,7 @@ package demo
                 }),
 
                 new DocSection("Cells come from cellText", [
-                    "One formatter maps a row object to the string for a column -- so a number, a status",
-                    "or a date is formatted in one place, and the table stays a layout object."
+                    "One formatter maps a row object to the string for a column -- so a number, a status or a date is formatted in one place, and the table stays a layout object."
                 ], [
                     "cellText: function (col:Object, row:Object, r:int, c:int):String { ... }"
                 ], 76, function ():Node
@@ -187,9 +174,7 @@ package demo
                 }),
 
                 new DocSection("Keyboard: arrows, Home/End, PageUp/PageDown", [
-                    "Same contract as the list, plus a PAGE step, which moves by the rows the BODY can show",
-                    "rather than by one. The selection is always a data row: the header is not a row and can",
-                    "never be selected, so Home goes to the first row under the header, not to the header."
+                    "Same contract as the list, plus a PAGE step, which moves by the rows the BODY can show rather than by one. The selection is always a data row: the header is not a row and can never be selected, so Home goes to the first row under the header, not to the header."
                 ], [
                     "table(cols, rows, { selectedIndex: model.row, onSelect: onRow })",
                     "// the keys call the same select() the click does -- one write path"
@@ -221,12 +206,8 @@ package demo
                 // this demo works at all: the widget reports the intent and the page stores
                 // it, so the order survives every re-render.
                 new DocSection("Sorting: the model owns the order", [
-                    "`onSort(column, descending)` reports an INTENT and nothing else -- the widget never",
-                    "reorders your rows. `sortColumn` is the order you hand back, and the arrow is drawn",
-                    "from it, so the header can never claim an order the rows do not have.",
-                    "The cycle is the browser's: another column sorts ascending, the same column",
-                    "descending, and a third click reports -1 (unsorted). Numbers compare as numbers",
-                    "while text compares as text, which is what makes a Qty column sort 1, 2, 10."
+                    "`onSort(column, descending)` reports an INTENT and nothing else -- the widget never reorders your rows. `sortColumn` is the order you hand back, and the arrow is drawn from it, so the header can never claim an order the rows do not have.",
+                    "The cycle is the browser's: another column sorts ascending, the same column descending, and a third click reports -1 (unsorted). Numbers compare as numbers while text compares as text, which is what makes a Qty column sort 1, 2, 10."
                 ], [
                     "table(cols, rows, { rowHeight: 26, onSort: function (c:int, d:Boolean):void {",
                     "    model.col = c; model.desc = d;          // then re-render with",
@@ -255,12 +236,8 @@ package demo
                 // only has to REPORT -- which is also the only way this demo can keep the
                 // width across the re-render the drag itself triggers.
                 new DocSection("Column widths are yours", [
-                    "Drag the divider in the header: a 1px preview line follows the pointer and, on",
-                    "release, `onColumnResize(index, width)` fires ONCE. The widget never writes into",
-                    "your `columns` array -- it is usually an inline literal rebuilt every render, so a",
-                    "width written there would vanish on the next pass.",
-                    "The click that the window sends after a release is swallowed, so resizing a",
-                    "column never also sorts it."
+                    "Drag the divider in the header: a 1px preview line follows the pointer and, on release, `onColumnResize(index, width)` fires ONCE. The widget never writes into your `columns` array -- it is usually an inline literal rebuilt every render, so a width written there would vanish on the next pass.",
+                    "The click that the window sends after a release is swallowed, so resizing a column never also sorts it."
                 ], [
                     "table(cols, rows, { resizable: true,",
                     "    onColumnResize: function (i:int, w:Number):void {",
@@ -285,12 +262,8 @@ package demo
 
                 // VIRTUAL. Two hundred rows, eleven nodes.
                 new DocSection("Virtual: mount only what shows", [
-                    "`virtual` mounts the visible window plus one partial row that the clip hides --",
-                    "the rest of the model never becomes a node. It needs a POINT height (the body is",
-                    "`height - rowHeight`) and `onScroll(offsetY)`, which reports the new offset for you",
-                    "to re-render with; the header does not scroll.",
-                    "Row keys are ABSOLUTE (r0, r1, ...), so a window that shifts mounts genuinely new",
-                    "nodes instead of handing a scrolled-in row the node of the row that just left."
+                    "`virtual` mounts the visible window plus one partial row that the clip hides -- the rest of the model never becomes a node. It needs a POINT height (the body is `height - rowHeight`) and `onScroll(offsetY)`, which reports the new offset for you to re-render with; the header does not scroll.",
+                    "Row keys are ABSOLUTE (r0, r1, ...), so a window that shifts mounts genuinely new nodes instead of handing a scrolled-in row the node of the row that just left."
                 ], [
                     "table([{ key: \"i\", title: \"#\" }], twoHundredRows, {",
                     "    virtual: true, rowHeight: 22, offsetY: model.off,",
@@ -307,12 +280,8 @@ package demo
                 }),
 
                 new DocSection("A virtual table reveals the row it selects", [
-                    "With virtual: true only the mounted window exists, so a key can select a row that is not on",
-                    "screen: the index is valid, the model moved, and NOTHING changed -- a state no property",
-                    "assertion can see. So the widget REVEALS it: it reports the offset that brings the row into",
-                    "the window through onScroll, and the next render mounts it there.",
-                    "Press Down and watch the offset start stepping once the window edge is reached; End jumps to",
-                    "the last of the two hundred rows, and the offset to the very bottom."
+                    "With virtual: true only the mounted window exists, so a key can select a row that is not on screen: the index is valid, the model moved, and NOTHING changed -- a state no property assertion can see. So the widget REVEALS it: it reports the offset that brings the row into the window through onScroll, and the next render mounts it there.",
+                    "Press Down and watch the offset start stepping once the window edge is reached; End jumps to the last of the two hundred rows, and the offset to the very bottom."
                 ], [
                     "table(cols, rows, { virtual: true, rowHeight: 22, offsetY: model.off,",
                     "                    onScroll: function (y:Number):void { model.off = y; } })",
@@ -345,10 +314,7 @@ package demo
                 // `grid` is the other answer to "which row am I on": rules instead of
                 // alternating fills. They are PAINT, so they cost nothing at layout time.
                 new DocSection("Grid lines instead of stripes", [
-                    "`grid: true` draws the row rules and the column rules in the table's border",
-                    "colour; `stripes` paints every other row instead. They compose (both on is a",
-                    "spreadsheet look) but on a tight row height the rules are usually enough --",
-                    "and a rule is drawn INSIDE the row, so it never changes a row's height."
+                    "`grid: true` draws the row rules and the column rules in the table's border colour; `stripes` paints every other row instead. They compose (both on is a spreadsheet look) but on a tight row height the rules are usually enough -- and a rule is drawn INSIDE the row, so it never changes a row's height."
                 ], [
                     "table(cols, rows, { grid: true, stripes: false, rowHeight: 24,",
                     "                    header: true, style: { size: [340, 120] } })",
@@ -368,8 +334,7 @@ package demo
 
             if (id == "tree") return [
                 new DocSection("A flattened hierarchy", [
-                    "A branch's children become rows of the SAME node while it is open, so there is no",
-                    "nested container and no recursive reconciliation -- depth is a padding, not a parent."
+                    "A branch's children become rows of the SAME node while it is open, so there is no nested container and no recursive reconciliation -- depth is a padding, not a parent."
                 ], [
                     "tree(FILES, { key: \"files\", width: 240, rowHeight: 26,",
                     "              expanded: model.expanded,",
@@ -387,10 +352,7 @@ package demo
                 }),
 
                 new DocSection("virtual: true -- the same window, over rows", [
-                    "A tree flattens to a row array first (one row per visible item, branches only while",
-                    "open) and then mounts the window like a list, so rows.length is still the FULL",
-                    "flattened count: an absolute index keeps working after a scroll, and a key that",
-                    "moves the highlight off the window scrolls it back into view by itself.",
+                    "A tree flattens to a row array first (one row per visible item, branches only while open) and then mounts the window like a list, so rows.length is still the FULL flattened count: an absolute index keeps working after a scroll, and a key that moves the highlight off the window scrolls it back into view by itself.",
                     "Expanding or collapsing changes rows.length, so the factory re-snaps offsetY."
                 ], [
                     "tree(FILES, { virtual: true, rowHeight: 26, offsetY: model.first,",
@@ -416,8 +378,7 @@ package demo
                 }),
 
                 new DocSection("Expansion is the author's", [
-                    "onToggle reports the key; nothing expands by itself. The kit keeps the rule that a",
-                    "widget never owns state the reconciler cannot re-describe."
+                    "onToggle reports the key; nothing expands by itself. The kit keeps the rule that a widget never owns state the reconciler cannot re-describe."
                 ], [
                     "// expanded: [] or [\"src\"] -- both are just data"
                 ], 76, function ():Node
@@ -427,9 +388,7 @@ package demo
                 }),
 
                 new DocSection("Depth is padding, not a nested box", [
-                    "Four levels open at once: every visible branch child is a ROW of the same node,",
-                    "indented by its depth. So a deep tree has the same node count as a flat list of the",
-                    "same length -- and a selection is still one key, not a path to walk."
+                    "Four levels open at once: every visible branch child is a ROW of the same node, indented by its depth. So a deep tree has the same node count as a flat list of the same length -- and a selection is still one key, not a path to walk."
                 ], [
                     "// depth 3 -> row style paddingLeft = 3 * 16 + base",
                     "tree([{ key: \"a\", children: [{ key: \"b\", children: [...] }] }])   // still one node"
@@ -455,12 +414,8 @@ package demo
 
             if (id == "virtualList") return [
                 new DocSection("Only the visible rows exist", [
-                    "count 10000 and nine mounted rows: the window is row-granular and the factory",
-                    "recomputes it, so scrolling mounts and unmounts rows like any other reconcile.",
-                    "`onVisible(first, last)` says which rows are mounted (the lazy-loading hook);",
-                    "`scrollToIndex` is a ONE-SHOT request: it is honoured when the value CHANGES,",
-                    "so a re-render that still carries it does nothing -- and asking for the same",
-                    "row twice means passing -1 in between (the row was already the target)."
+                    "count 10000 and nine mounted rows: the window is row-granular and the factory recomputes it, so scrolling mounts and unmounts rows like any other reconcile.",
+                    "`onVisible(first, last)` says which rows are mounted (the lazy-loading hook); `scrollToIndex` is a ONE-SHOT request: it is honoured when the value CHANGES, so a re-render that still carries it does nothing -- and asking for the same row twice means passing -1 in between (the row was already the target)."
                 ], [
                     "virtualList({ key: \"log\", size: [280, 104], rowHeight: 26, count: 10000,",
                     "              offsetY: model.off, overscan: 1,",
@@ -481,8 +436,7 @@ package demo
                 }),
 
                 new DocSection("Wheel it", [
-                    "Scrolling reports a row-aligned offset; writing it back re-renders, and the",
-                    "reconciler mounts exactly the rows that entered the window."
+                    "Scrolling reports a row-aligned offset; writing it back re-renders, and the reconciler mounts exactly the rows that entered the window."
                 ], [
                     "// onScroll(y) -> model.offsetY = y -> the next render windows again"
                 ], 76, function ():Node
@@ -492,9 +446,7 @@ package demo
                 }),
 
                 new DocSection("onVisible is the lazy-load hinge", [
-                    "The widget reports which rows it mounted, so a list backed by a paged request can",
-                    "fetch the page it is about to need. The pair below is written by the list itself,",
-                    "not computed by the page."
+                    "The widget reports which rows it mounted, so a list backed by a paged request can fetch the page it is about to need. The pair below is written by the list itself, not computed by the page."
                 ], [
                     "onVisible: function (first:int, last:int):void { fetch(first, last); }",
                     "// first/last are inclusive; both are 0 when nothing is mounted"
@@ -521,9 +473,7 @@ package demo
                 }),
 
                 new DocSection("scrollToIndex is a one-shot request", [
-                    "It is honoured when the VALUE CHANGES, so a re-render that still carries it does",
-                    "nothing -- otherwise every frame would yank the list back. To jump to the same row",
-                    "twice, pass -1 in between (or any value that is not an index)."
+                    "It is honoured when the VALUE CHANGES, so a re-render that still carries it does nothing -- otherwise every frame would yank the list back. To jump to the same row twice, pass -1 in between (or any value that is not an index)."
                 ], [
                     "scrollToIndex: model.jumpTo,          // -1 = none",
                     "// button -> model.jumpTo = 500; then model.jumpTo = -1"
@@ -555,8 +505,7 @@ package demo
 
             if (id == "scrollView") return [
                 new DocSection("A clipped viewport", [
-                    "A scrollView clips and slides its child, which therefore needs an explicit height:",
-                    "a container that measured itself would leave nothing to scroll."
+                    "A scrollView clips and slides its child, which therefore needs an explicit height: a container that measured itself would leave nothing to scroll."
                 ], [
                     "scrollView({ key: \"sv\", wheelStep: 26,",
                     "             style: { size: [280, 96] } }, [",
@@ -580,11 +529,7 @@ package demo
                 // first frame -- and this page is also where the MODE itself is
                 // documented, so the source under it has to be what produced it.
                 new DocSection("Scrollbars on both axes", [
-                    "A bar appears where the content overflows: drag the thumb, or click the track",
-                    "to page by one viewport. `scrollbarGutter` decides where it sits: `\"overlay\"`",
-                    "(the default) paints the bar over the content and changes no rect, `\"stable\"`",
-                    "reserves its lane so the content stops short of it -- which is what this",
-                    "page does: its cards end where the bar begins."
+                    "A bar appears where the content overflows: drag the thumb, or click the track to page by one viewport. `scrollbarGutter` decides where it sits: `\"overlay\"` (the default) paints the bar over the content and changes no rect, `\"stable\"` reserves its lane so the content stops short of it -- which is what this page does: its cards end where the bar begins."
                 ], [
                     "scrollView({ key: \"sv2\", scrollbarX: \"always\",",
                     "             scrollbarY: \"always\", barThickness: 10,",
@@ -612,18 +557,9 @@ package demo
                 }),
 
                 new DocSection("Wheel, thumb, track", [
-                    "One wheel notch is `wheelStep` px; with nothing to scroll vertically, the wheel",
-                    "falls back to the horizontal axis.",
-                    "A FINGER on a touch screen scrolls this pane 1:1 and keeps going after it lifts",
-                    "(`momentum`, default true; `decelerationRate`, default 0.95 per 60Hz frame); a finger",
-                    "landing on a gliding pane stops it. It is",
-                    "not demonstrable here: this window's backend produces no touch events at all",
-                    "(compiler-gaps.md G5), so on a desktop this pane is wheel and thumb only -- and",
-                    "the WHEEL and the THUMB stop dead at the end on every platform, on purpose.",
-                    "A finger is the only thing that overscrolls: past an end it stretches against a",
-                    "damped resistance and springs back on release (`overscroll`, default \"rubber\";",
-                    "\"none\" for a pane that must not move). The author-facing `offsetY` stays inside",
-                    "the range throughout -- the stretch is reported separately as `overscrollY`.",
+                    "One wheel notch is `wheelStep` px; with nothing to scroll vertically, the wheel falls back to the horizontal axis.",
+                    "A FINGER on a touch screen scrolls this pane 1:1 and keeps going after it lifts (`momentum`, default true; `decelerationRate`, default 0.95 per 60Hz frame); a finger landing on a gliding pane stops it. It is not demonstrable here: this window's backend produces no touch events at all (compiler-gaps.md G5), so on a desktop this pane is wheel and thumb only -- and the WHEEL and the THUMB stop dead at the end on every platform, on purpose.",
+                    "A finger is the only thing that overscrolls: past an end it stretches against a damped resistance and springs back on release (`overscroll`, default \"rubber\"; \"none\" for a pane that must not move). The author-facing `offsetY` stays inside the range throughout -- the stretch is reported separately as `overscrollY`.",
                     "Say NOTHING about the offset and no re-render will move this pane."
                 ], [
                     "// wheel -> offsetY; dragging a thumb writes the same offset back",
@@ -641,20 +577,10 @@ package demo
                 // QUESTION ABOUT THE PAST ("was I at the end before this grew?"), so the
                 // demo is live: scroll up and the next two lines no longer follow you.
                 new DocSection("Logs that follow their end", [
-                    "`stickToBottom` makes the view follow the END of its content as it grows -- a chat",
-                    "or a console. A fresh view counts as being at the end, so a log opens on its",
-                    "newest line rather than its oldest.",
-                    "Scroll up and it lets go immediately (one pixel off the end is a reader, not a",
-                    "rounding error); scroll back down and it re-attaches, because the rule is",
-                    "re-derived from the live offset every frame rather than kept in a stuck flag.",
-                    "The auto-scroll is a real move: `onScroll` fires and `offsetY` is written back,",
-                    "so your model never disagrees with the screen.",
-                    "Re-renders never steal the reader's place: a description that does not name an",
-                    "offset leaves the viewport where it is, however often the page re-describes",
-                    "itself. Name one -- `offsetY: 0` from a BACK-TO-TOP button -- and it IS a",
-                    "request, honoured whenever it differs from where the view is. That is also the",
-                    "trade: if you declare an offset, mirror it from `onScroll`, or every re-render",
-                    "will take the reader back to the number you declared."
+                    "`stickToBottom` makes the view follow the END of its content as it grows -- a chat or a console. A fresh view counts as being at the end, so a log opens on its newest line rather than its oldest.",
+                    "Scroll up and it lets go immediately (one pixel off the end is a reader, not a rounding error); scroll back down and it re-attaches, because the rule is re-derived from the live offset every frame rather than kept in a stuck flag.",
+                    "The auto-scroll is a real move: `onScroll` fires and `offsetY` is written back, so your model never disagrees with the screen.",
+                    "Re-renders never steal the reader's place: a description that does not name an offset leaves the viewport where it is, however often the page re-describes itself. Name one -- `offsetY: 0` from a BACK-TO-TOP button -- and it IS a request, honoured whenever it differs from where the view is. That is also the trade: if you declare an offset, mirror it from `onScroll`, or every re-render will take the reader back to the number you declared."
                 ], [
                     "scrollView({ stickToBottom: true,",
                     "             onScroll: function (x:Number, y:Number):void {",
@@ -683,11 +609,8 @@ package demo
                 // than theme-styled -- they are the one piece of chrome that sits on top
                 // of the content and is therefore per-instance, not per-kind.
                 new DocSection("Where it starts, and what the bars look like", [
-                    "`offset` (or `offsetX` / `offsetY`) is the view's top-left in CONTENT",
-                    "coordinates, so a restored scroll position needs no scrolling and no frame",
-                    "with the wrong offset on screen. It is clamped to the real range.",
-                    "The bars are the author's: `barThickness`, `barColor`, `barHoverColor` and",
-                    "`trackColor`. `never` hides one axis entirely without changing the layout."
+                    "`offset` (or `offsetX` / `offsetY`) is the view's top-left in CONTENT coordinates, so a restored scroll position needs no scrolling and no frame with the wrong offset on screen. It is clamped to the real range.",
+                    "The bars are the author's: `barThickness`, `barColor`, `barHoverColor` and `trackColor`. `never` hides one axis entirely without changing the layout."
                 ], [
                     "scrollView({ offset: [120, 0], scrollbarX: \"always\",",
                     "             scrollbarY: \"never\", barThickness: 8,",
@@ -725,8 +648,7 @@ package demo
             if (id == "sparkline") return [
                 new DocSection("One series in a box", [
                     "A sparkline is 5..60 numbers and a rectangle -- the shape of a day, not a chart.",
-                    "`color` defaults to the resolved text colour; `fill` tints the area under the line,",
-                    "`dot` marks the newest sample, and the box is whatever size you give it."
+                    "`color` defaults to the resolved text colour; `fill` tints the area under the line, `dot` marks the newest sample, and the box is whatever size you give it."
                 ], [
                     "sparkline({ values: closes, style: { size: [120, 40] } }),",
                     "sparkline({ values: closes, color: 0x16A34A, fill: true, dot: false })"
@@ -740,10 +662,7 @@ package demo
                 }),
 
                 new DocSection("Mutated in place", [
-                    "`values` is kept BY REFERENCE and compared by identity, so a steady frame costs",
-                    "one pointer test and the widget never copies the data. An author who edits the array",
-                    "in place must say so with `version` -- that bump is the only thing that tells the",
-                    "node the line moved. A fresh array every render needs no version at all."
+                    "`values` is kept BY REFERENCE and compared by identity, so a steady frame costs one pointer test and the widget never copies the data. An author who edits the array in place must say so with `version` -- that bump is the only thing that tells the node the line moved. A fresh array every render needs no version at all."
                 ], [
                     "sparkline({ values: row.series, version: row.rev, baseline: row.prev,",
                     "            strokeWidth: 1.5 })"
@@ -764,9 +683,7 @@ package demo
                 }),
 
                 new DocSection("The four knobs", [
-                    "`fill` tints the area (13%), `dot` is the live cue, `baseline` draws a faint rule at",
-                    "a value -- typically the previous close -- and joins the y range so the rule and the",
-                    "line cannot disagree about where flat is. `strokeWidth` is a point size."
+                    "`fill` tints the area (13%), `dot` is the live cue, `baseline` draws a faint rule at a value -- typically the previous close -- and joins the y range so the rule and the line cannot disagree about where flat is. `strokeWidth` is a point size."
                 ], [
                     "sparkline({ values: s, fill: true, baseline: prevClose, strokeWidth: 2 })"
                 ], 84, function ():Node
@@ -780,10 +697,7 @@ package demo
                 }),
 
                 new DocSection("What it refuses, and what it just does not draw", [
-                    "Two mistakes throw loudly at factory time: passing something that is not an Array,",
-                    "and a strokeWidth that is not positive. A short series is not an error -- fewer",
-                    "than two samples is a line with nothing to connect, so the box stays empty rather",
-                    "than inventing a flat segment at zero."
+                    "Two mistakes throw loudly at factory time: passing something that is not an Array, and a strokeWidth that is not positive. A short series is not an error -- fewer than two samples is a line with nothing to connect, so the box stays empty rather than inventing a flat segment at zero."
                 ], [
                     "sparkline({ values: \"12,13,14\" })        // throws: not an Array",
                     "sparkline({ values: s, strokeWidth: 0 })  // throws: not positive"

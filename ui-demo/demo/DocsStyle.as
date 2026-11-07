@@ -7,7 +7,9 @@
 // "no text overflows its block" sweep catches.
 package demo
 {
+    import asaot.ui.style.Edges;
     import asaot.ui.style.Length;
+    import asaot.ui.style.Style;
     import asaot.ui.style.StyleRefinement;
 
     public final class DocsStyle
@@ -92,12 +94,17 @@ package demo
             flexDirection: "row", alignItems: "center", size: [Length.pct(1), Length.px(NAV_H_ITEM)],
             padding: [0, 10], cornerRadii: 6, background: 0xEFF6FF
         });
+        // AUTO HEIGHT, NOT THE ROW HEIGHT. A text node paints its run from the TOP of
+        // its box (TextWidget writes tf.y = insetY - TEXT_GUTTER; only Avatar/Badge/
+        // Chip call PaintKit.centerText), so a label pinned to 26pt sits on the row's
+        // top edge and align-items: center on NAV_ITEM has nothing to centre. Give
+        // the label its measured height and the row does the centring.
         public static const NAV_TEXT:StyleRefinement = StyleRefinement.from({
-            size: [Length.pct(1), Length.px(NAV_H_ITEM)],
+            size: [Length.pct(1), null],
             text: { fontSize: 13, color: 0x334155 }
         });
         public static const NAV_TEXT_ON:StyleRefinement = StyleRefinement.from({
-            size: [Length.pct(1), Length.px(NAV_H_ITEM)],
+            size: [Length.pct(1), null],
             text: { fontSize: 13, fontWeight: "bold", color: 0x1D4ED8 }
         });
         public static const FOOT:StyleRefinement = StyleRefinement.from({
@@ -133,6 +140,31 @@ package demo
         // number is shared with it instead of each side writing 10; it is also passed
         // to the factory as `barThickness`, which is what makes the lane this wide.
         public static const DOC_GUTTER:Number = 10;
+
+        // THE READING WIDTH, in points, for a window `winW` wide: the sidebar and
+        // the main column's padding come off first, then the lane the reading pane
+        // reserves for its bar. DOC_GUTTER is subtracted even though the bar can be
+        // hidden, because `scrollbarGutter: "stable"` keeps the lane whether or not a
+        // bar is drawn -- a paragraph wrapped into that lane would sit under the bar.
+        // A PANEL'S CONTENT WIDTH for a declared outer width: both paddings and
+        // both borders come off. The panel style is the kit's own (OverlayChrome),
+        // so the numbers move with it instead of being copied here as constants.
+        // Needed because `whiteSpace: "normal"` only accepts a POINT width -- it
+        // refuses a percent, since the wrapped height has to exist at measure time.
+        public static function panelInnerWidth(panelW:Number, panel:Style):Number
+        {
+            var p:Edges = panel.padding;
+            var b:Edges = panel.borderWidths;
+            var l:Number = (p == null ? 0 : p.left) + (b == null ? 0 : b.left);
+            var r:Number = (p == null ? 0 : p.right) + (b == null ? 0 : b.right);
+            return panelW - l - r;
+        }
+
+        public static function docWrapW(winW:Number):Number
+        {
+            var w:Number = winW > 0 ? winW : W;
+            return w - NAV_W - PAD_X * 2 - DOC_GUTTER;
+        }
 
         // ---- section styles -------------------------------------------------
         public static const SEC:StyleRefinement = StyleRefinement.from({

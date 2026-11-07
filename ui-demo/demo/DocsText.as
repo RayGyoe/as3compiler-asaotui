@@ -27,8 +27,7 @@ package demo
 
             if (id == "text") return [
                 new DocSection("A run of text", [
-                    "text() is the only node that owns a string. It measures itself through a real",
-                    "TextField, so it needs no size: the engine gets the measured width as a point size."
+                    "text() is the only node that owns a string. It measures itself through a real TextField, so it needs no size: the engine gets the measured width as a point size."
                 ], [
                     "text(\"Layout, not drawing. The engine solves every rect.\", {",
                     "    style: { text: { fontSize: 14, color: 0x0F172A } }",
@@ -40,8 +39,7 @@ package demo
                 }),
 
                 new DocSection("Type scale", [
-                    "Every size the toolkit ships is a plain number: 11 for metadata, 12 for prose,",
-                    "13/14 for body, 20/22 for titles. Nothing is scaled by a theme at run time."
+                    "Every size the toolkit ships is a plain number: 11 for metadata, 12 for prose, 13/14 for body, 20/22 for titles. Nothing is scaled by a theme at run time."
                 ], [
                     "text(\"22  Title\",   { style: { text: { fontSize: 22, fontWeight: \"bold\" } } })",
                     "text(\"14  Body\"),",
@@ -59,8 +57,7 @@ package demo
                 }),
 
                 new DocSection("Inheritance", [
-                    "Text style INHERITS: a child that sets no colour picks up its ancestor's. That is",
-                    "why a tile needs no per-child style -- set it on the box and every label follows."
+                    "Text style INHERITS: a child that sets no colour picks up its ancestor's. That is why a tile needs no per-child style -- set it on the box and every label follows."
                 ], [
                     "box({ style: { background: 0xEEF2FF, text: { color: 0x3730A3 } } }, [",
                     "    text(\"inherited\"),",
@@ -77,9 +74,7 @@ package demo
                 }),
 
                 new DocSection("Wrapping", [
-                    "whiteSpace: \"normal\" wraps at the node's POINT width and publishes the WRAPPED",
-                    "height, which is what an auto-height node needs. The height depends on the width,",
-                    "so a percent width is refused (throws) rather than guessed at measure time."
+                    "whiteSpace: \"normal\" wraps at the node's POINT width and publishes the WRAPPED height, which is what an auto-height node needs. The height depends on the width, so a percent width is refused (throws) rather than guessed at measure time."
                 ], [
                     "text(LONG, { style: { size: [260, null],",
                     "    text: { whiteSpace: \"normal\" } } })"
@@ -94,9 +89,7 @@ package demo
                 }),
 
                 new DocSection("Ellipsis", [
-                    "textOverflow: \"ellipsis\" truncates one line to the FINAL box width, so it can only",
-                    "happen at paint time. A wrapped node ignores it -- truncating a wrapped run would",
-                    "collapse the lines the measure pass just laid out."
+                    "textOverflow: \"ellipsis\" truncates one line to the FINAL box width, so it can only happen at paint time. A wrapped node ignores it -- truncating a wrapped run would collapse the lines the measure pass just laid out."
                 ], [
                     "text(LONG, { style: { width: 180, text: { textOverflow: \"ellipsis\" } } })"
                 ], 84, function ():Node
@@ -112,15 +105,8 @@ package demo
                 }),
 
                 new DocSection("Underline, strikethrough, overline", [
-                    "textDecoration draws a rule under, through or over EVERY line, from the line metrics the",
-                    "layout pass already produced -- so the rule and the glyphs cannot disagree about where a line",
-                    "is, and a wrapped run carries a rule per line rather than one long line across the wrap.",
-                    "It does not go through TextFormat.underline: that property's gap (compiler-gaps.md G28) was",
-                    "closed in v0.4.303, so the runtime paints its own underline now, but this style must also",
-                    "cover strikethrough and overline -- AIR's TextFormat has no property for either -- and drawing",
-                    "all three from one set of line metrics is what keeps them on the same row.",
-                    "strikethrough and overline are therefore ADDITIONS: AIR has no equivalent. An unknown value",
-                    "THROWS rather than silently drawing nothing."
+                    "textDecoration draws a rule under, through or over EVERY line, from the line metrics the layout pass already produced -- so the rule and the glyphs cannot disagree about where a line is, and a wrapped run carries a rule per line rather than one long line across the wrap.",
+                    "It does not go through TextFormat.underline: that property's gap (compiler-gaps.md G28) was closed in v0.4.303, so the runtime paints its own underline now, but this style must also cover strikethrough and overline -- AIR's TextFormat has no property for either -- and drawing all three from one set of line metrics is what keeps them on the same row. strikethrough and overline are therefore ADDITIONS: AIR has no equivalent. An unknown value THROWS rather than silently drawing nothing."
                 ], [
                     "text(\"underlined\", { style: { text: { textDecoration: \"underline\" } } })",
                     "text(\"struck out\", { style: { text: { textDecoration: \"line-through\" } } })",
@@ -151,14 +137,9 @@ package demo
                 // is given one), leading is the line box, letterSpacing is per character
                 // and fontStyle picks the face's italic cut.
                 new DocSection("Alignment, italic, tracking, leading", [
-                    "`textAlign` aligns the line inside the FIELD. A text node that does not wrap",
-                    "auto-sizes its field to the line itself (`autoSize: \"left\"`), so there is no",
-                    "slack and the alignment is silently a no-op -- which is why `whiteSpace: \"normal\"`",
-                    "is part of this recipe rather than an extra: that is what gives the field a width.",
+                    "`textAlign` aligns the line inside the FIELD. A text node that does not wrap auto-sizes its field to the line itself (`autoSize: \"left\"`), so there is no slack and the alignment is silently a no-op -- which is why `whiteSpace: \"normal\"` is part of this recipe rather than an extra: that is what gives the field a width.",
                     "The three tinted 300px boxes below share one size and differ only in alignment.",
-                    "`leading` is the line box (line height), not the gap: 12px text with `leading: 24`",
-                    "occupies 24 per line. `letterSpacing` adds per character, and `fontStyle: \"italic\"`",
-                    "selects the face's italic cut rather than skewing the roman one."
+                    "`leading` is the line box (line height), not the gap: 12px text with `leading: 24` occupies 24 per line. `letterSpacing` adds per character, and `fontStyle: \"italic\"` selects the face's italic cut rather than skewing the roman one."
                 ], [
                     "text(\"right\", { style: { size: [300, 16], background: 0xE2E8F0,",
                     "                        text: { whiteSpace: \"normal\", textAlign: \"right\" } } })",
@@ -197,8 +178,7 @@ package demo
 
             if (id == "label") return [
                 new DocSection("An alias for text()", [
-                    "label(content, opts) is text() -- it registers no kind of its own, so it costs",
-                    "nothing at run time. It exists to say \"this is a form row's name\" at the call site."
+                    "label(content, opts) is text() -- it registers no kind of its own, so it costs nothing at run time. It exists to say \"this is a form row's name\" at the call site."
                 ], [
                     "row({ gap: 10, alignItems: \"center\" }, [",
                     "    label(\"Account\", { style: { size: [80, null] } }),",
@@ -215,9 +195,7 @@ package demo
                 }),
 
                 new DocSection("Labels line up when they share a width", [
-                    "Two rows whose labels are wildly different lengths. The fields start at the same",
-                    "x because both labels declare 80pt -- the toolkit has no align-labels pass, only",
-                    "the one number the author writes in both places."
+                    "Two rows whose labels are wildly different lengths. The fields start at the same x because both labels declare 80pt -- the toolkit has no align-labels pass, only the one number the author writes in both places."
                 ], [
                     "row({ gap: 10 }, [ label(\"Age\",           { size: [80, null] }), textField(...) ])",
                     "row({ gap: 10 }, [ label(\"Date of birth\", { size: [80, null] }), textField(...) ])"
@@ -240,9 +218,7 @@ package demo
                 }),
 
                 new DocSection("A long value next to a short label", [
-                    "The label fixes 80pt; the value is allowed 200pt and truncates with an ellipsis",
-                    "(nowrap plus textOverflow). Hover is not needed to prove it: the value is longer",
-                    "than the box in the source, so what you see is the end of the line."
+                    "The label fixes 80pt; the value is allowed 200pt and truncates with an ellipsis (nowrap plus textOverflow). Hover is not needed to prove it: the value is longer than the box in the source, so what you see is the end of the line."
                 ], [
                     "text(\"International Business Machines (Delaware)\", { style: {",
                     "    size: [200, null], text: { whiteSpace: \"nowrap\", textOverflow: \"ellipsis\" } } })"
@@ -260,9 +236,7 @@ package demo
                 }),
 
                 new DocSection("Disabled is a container property", [
-                    "The two rows differ by one word: the second row's container says `disabled`, and",
-                    "the label dims along with the field. A label needs no flag of its own -- `inert`",
-                    "walks the ancestor chain and the paint pass multiplies the alpha."
+                    "The two rows differ by one word: the second row's container says `disabled`, and the label dims along with the field. A label needs no flag of its own -- `inert` walks the ancestor chain and the paint pass multiplies the alpha."
                 ], [
                     "row({ gap: 10 }, [ label(...), textField(...) ]),",
                     "row({ gap: 10, disabled: true }, [ label(...), textField(...) ])"
@@ -287,8 +261,7 @@ package demo
 
             if (id == "chip") return [
                 new DocSection("Tones", [
-                    "A chip is a small tonal tag. `tone` picks one of the kit's three semantic fills:",
-                    "neutral, info or danger -- there is no per-chip colour to keep in sync."
+                    "A chip is a small tonal tag. `tone` picks one of the kit's three semantic fills: neutral, info or danger -- there is no per-chip colour to keep in sync."
                 ], [
                     "chip(\"neutral\"), chip(\"info\", { tone: \"info\" }),",
                     "chip(\"danger\", { tone: \"danger\" })"
@@ -302,8 +275,7 @@ package demo
                 }),
 
                 new DocSection("Clickable", [
-                    "A chip takes onClick like any control, so a filter bar is a row of chips and one",
-                    "model field. The selected chip is the one whose tone the render chose."
+                    "A chip takes onClick like any control, so a filter bar is a row of chips and one model field. The selected chip is the one whose tone the render chose."
                 ], [
                     "chip(label, {",
                     "    tone: on ? \"info\" : \"neutral\",",
@@ -318,8 +290,7 @@ package demo
                 }),
 
                 new DocSection("In a list", [
-                    "Chips wrap: the row is a `row` with flexWrap, and the chip's own intrinsic width",
-                    "means nothing has to be measured by hand."
+                    "Chips wrap: the row is a `row` with flexWrap, and the chip's own intrinsic width means nothing has to be measured by hand."
                 ], [
                     "row({ gap: 6, flexWrap: \"wrap\", size: [300, null] }, [ chip(\"a\"), chip(\"b\"), ... ])"
                 ], 76, function ():Node
@@ -331,9 +302,7 @@ package demo
                 }),
 
                 new DocSection("Disabled is inherited", [
-                    "The right-hand chip sits in a container that says `disabled`, so it is drawn at the",
-                    "disabled alpha and the pick walk never reaches it. No per-chip flag, no second code",
-                    "path -- click both and only the left one counts."
+                    "The right-hand chip sits in a container that says `disabled`, so it is drawn at the disabled alpha and the pick walk never reaches it. No per-chip flag, no second code path -- click both and only the left one counts."
                 ], [
                     "row({ gap: 8 }, [ chip(...) ]),",
                     "row({ gap: 8, disabled: true }, [ chip(...) ])"
@@ -350,9 +319,7 @@ package demo
                 }),
 
                 new DocSection("Tones carry meaning, not colour", [
-                    "A log line: a neutral time, an info status, a danger failure. The three tones are",
-                    "the kit's semantic fills, so a theme change moves all of them at once and this page",
-                    "never names a hex value for any of them."
+                    "A log line: a neutral time, an info status, a danger failure. The three tones are the kit's semantic fills, so a theme change moves all of them at once and this page never names a hex value for any of them."
                 ], [
                     "chip(\"09:41\"), chip(\"deploy ok\", { tone: \"info\" }),",
                     "chip(\"1 failed\", { tone: \"danger\" })"
@@ -368,8 +335,7 @@ package demo
 
             if (id == "badge") return [
                 new DocSection("A count pill", [
-                    "A badge is a number or short string in a pill. It has no layout of its own either:",
-                    "you place it in a row, or absolutely on a corner."
+                    "A badge is a number or short string in a pill. It has no layout of its own either: you place it in a row, or absolutely on a corner."
                 ], [
                     "row({ gap: 10, alignItems: \"center\" }, [",
                     "    text(\"Inbox\"),",
@@ -387,8 +353,7 @@ package demo
                 }),
 
                 new DocSection("On a corner", [
-                    "Pinned to a corner with position:absolute -- the container is `relative`, the badge",
-                    "is offset from its top-right, and neither node moves the other."
+                    "Pinned to a corner with position:absolute -- the container is `relative`, the badge is offset from its top-right, and neither node moves the other."
                 ], [
                     "box({ size: [40, 40], position: \"relative\" }, [",
                     "    icon,",
@@ -404,9 +369,7 @@ package demo
                 }),
 
                 new DocSection("Any corner, not just the top right", [
-                    "`inset` is top/right/bottom/left with null meaning unset. Two badges on one box,",
-                    "pinned to opposite corners: neither takes space in the box's layout, so the box",
-                    "keeps exactly the size the author gave it."
+                    "`inset` is top/right/bottom/left with null meaning unset. Two badges on one box, pinned to opposite corners: neither takes space in the box's layout, so the box keeps exactly the size the author gave it."
                 ], [
                     "inset: [-7, -7, null, null]   // top right",
                     "inset: [null, null, -7, -7]   // bottom left"
@@ -423,9 +386,7 @@ package demo
                 }),
 
                 new DocSection("The label is a string, not a count", [
-                    "Nothing counts for you: the badge draws whatever string it is given, and clamping",
-                    "to 99+ is the author's expression at the call site. That is the whole API -- a",
-                    "pill, a tone, and the text."
+                    "Nothing counts for you: the badge draws whatever string it is given, and clamping to 99+ is the author's expression at the call site. That is the whole API -- a pill, a tone, and the text."
                 ], [
                     "badge(\"NEW\", { tone: \"info\" })",
                     "badge(count > 99 ? \"99+\" : String(count), { tone: \"danger\" })"
@@ -441,8 +402,7 @@ package demo
 
             if (id == "avatar") return [
                 new DocSection("Initials from a name", [
-                    "The avatar takes a NAME, not a character: it derives the initial itself, so it can",
-                    "be fed straight from data without a helper at the call site."
+                    "The avatar takes a NAME, not a character: it derives the initial itself, so it can be fed straight from data without a helper at the call site."
                 ], [
                     "avatar(\"Ada Lovelace\", { tone: \"info\" }),",
                     "avatar(\"Grace Hopper\"),",
@@ -459,10 +419,7 @@ package demo
                 }),
 
                 new DocSection("The initials rule, spelled out", [
-                    "The first letter of each of the first TWO whitespace-separated words, uppercased:",
-                    "grace -> G, Ada B. Lovelace -> AB (the third word is dropped). A blank name yields",
-                    "no letters at all -- the circle stays empty, which is what an unknown user should",
-                    "look like rather than a placeholder initial."
+                    "The first letter of each of the first TWO whitespace-separated words, uppercased: grace -> G, Ada B. Lovelace -> AB (the third word is dropped). A blank name yields no letters at all -- the circle stays empty, which is what an unknown user should look like rather than a placeholder initial."
                 ], [
                     "initialsOf(\"grace\")            // G",
                     "initialsOf(\"Ada B. Lovelace\")  // AB"
@@ -477,9 +434,7 @@ package demo
                 }),
 
                 new DocSection("The person row where it actually lives", [
-                    "A fixed 36pt circle beside two auto-height lines. The row's height comes from the",
-                    "text, and `alignItems: center` puts the circle in the middle of it -- the same",
-                    "arrangement a list row uses, with no magic number anywhere."
+                    "A fixed 36pt circle beside two auto-height lines. The row's height comes from the text, and `alignItems: center` puts the circle in the middle of it -- the same arrangement a list row uses, with no magic number anywhere."
                 ], [
                     "row({ gap: 10, alignItems: \"center\" }, [",
                     "    avatar(\"Ada Lovelace\"),",
@@ -497,9 +452,7 @@ package demo
                 }),
 
                 new DocSection("A new name is a paint, not a reflow", [
-                    "`payload` recomputes the initials when the name changes and returns false: the",
-                    "diameter comes from the style, so neither the name nor the tone can move",
-                    "anything. Press the button and watch the layout solve counter, not the avatar."
+                    "`payload` recomputes the initials when the name changes and returns false: the diameter comes from the style, so neither the name nor the tone can move anything. Press the button and watch the layout solve counter, not the avatar."
                 ], [
                     "if (nm != String(prevName)) { initials = initialsOf(nm); dirty |= M_PAINT; }",
                     "return false;   // never a reflow"
@@ -518,8 +471,7 @@ package demo
 
             if (id == "divider") return [
                 new DocSection("Horizontal", [
-                    "A hairline that measures itself: 1px tall in a column (width stretches), 1px wide in",
-                    "a row (height stretches). Nothing to size."
+                    "A hairline that measures itself: 1px tall in a column (width stretches), 1px wide in a row (height stretches). Nothing to size."
                 ], [
                     "column({ gap: 10 }, [",
                     "    text(\"Above\"),",
@@ -536,8 +488,7 @@ package demo
                 }),
 
                 new DocSection("Vertical", [
-                    "orientation:\"vertical\" in a row. This is the usual way to separate two toolbars",
-                    "without a border on either of them."
+                    "orientation:\"vertical\" in a row. This is the usual way to separate two toolbars without a border on either of them."
                 ], [
                     "row({ gap: 10, alignItems: \"center\" }, [",
                     "    text(\"Left\"), divider({ orientation: \"vertical\" }), text(\"Right\")",
@@ -552,9 +503,7 @@ package demo
                 }),
 
                 new DocSection("The row separator in a list", [
-                    "Three rows and two hairlines. Each divider is 1pt tall and stretches to the list's",
-                    "width because its cross axis is unset -- the list declares the width once, and no",
-                    "divider is measured by hand."
+                    "Three rows and two hairlines. Each divider is 1pt tall and stretches to the list's width because its cross axis is unset -- the list declares the width once, and no divider is measured by hand."
                 ], [
                     "column({ gap: 0, size: [260, null] }, [",
                     "    row(...), divider(), row(...), divider(), row(...)",
@@ -574,9 +523,7 @@ package demo
                 }),
 
                 new DocSection("A divider inside a card", [
-                    "A card is a padded column, so a divider inside it spans the card's CONTENT box",
-                    "rather than its border box. The hairline therefore stops short of the rounded",
-                    "corners with no inset written by the author."
+                    "A card is a padded column, so a divider inside it spans the card's CONTENT box rather than its border box. The hairline therefore stops short of the rounded corners with no inset written by the author."
                 ], [
                     "card({ padding: 12, gap: 8 }, [",
                     "    text(\"Invoice\"), divider(), text(\"Paid 2026-11-06\")",

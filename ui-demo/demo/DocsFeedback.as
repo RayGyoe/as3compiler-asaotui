@@ -57,8 +57,7 @@ package demo
 
             if (id == "progress") return [
                 new DocSection("A determinate bar", [
-                    "`value` is 0..1 and the label is the widget's own first argument -- not a text",
-                    "node you have to place and keep in sync."
+                    "`value` is 0..1 and the label is the widget's own first argument -- not a text node you have to place and keep in sync."
                 ], [
                     "progress(\"Uploading\", { value: 0.45 }),",
                     "progress(\"Indexing\",  { value: 0.9 })"
@@ -93,9 +92,7 @@ package demo
                 }),
 
                 new DocSection("The ends are real states", [
-                    "At 0 the track is still drawn -- an empty bar says \"started, nothing yet\", which is",
-                    "not the same message as no bar at all. At 1 the fill reaches the end and stops; it",
-                    "does not overshoot or switch to a second state."
+                    "At 0 the track is still drawn -- an empty bar says \"started, nothing yet\", which is not the same message as no bar at all. At 1 the fill reaches the end and stops; it does not overshoot or switch to a second state."
                 ], [
                     "progress(\"Waiting\", { value: 0 }),",
                     "progress(\"Done\",    { value: 1 })"
@@ -108,9 +105,7 @@ package demo
                 }),
 
                 new DocSection("An empty label is a bare bar", [
-                    "The label is optional: pass the empty string and the widget reserves no label line at",
-                    "all, which is what an inline progress bar under a table row wants. The percentage",
-                    "in the label above is an expression the page wrote, not a format the widget owns."
+                    "The label is optional: pass the empty string and the widget reserves no label line at all, which is what an inline progress bar under a table row wants. The percentage in the label above is an expression the page wrote, not a format the widget owns."
                 ], [
                     "progress(\"\", { value: 0.62 })   // bar only",
                     "progress(int(p * 100) + \"%\", { value: p })"
@@ -126,8 +121,7 @@ package demo
 
             if (id == "spinner") return [
                 new DocSection("An indeterminate ring", [
-                    "A spinner is sized by `diameter` and stroke `thickness`; `phase` turns it, and the",
-                    "app's frame loop is what keeps the phase moving."
+                    "A spinner is sized by `diameter` and stroke `thickness`; `phase` turns it, and the app's frame loop is what keeps the phase moving."
                 ], [
                     "spinner({ diameter: 18, thickness: 2 }),",
                     "spinner({ diameter: 28, thickness: 3, tone: \"info\" })"
@@ -156,10 +150,8 @@ package demo
                 // a frozen ring is what a "paused" or "stalled" row should show, and
                 // `phase` places the gap without restarting anything.
                 new DocSection("Frozen, and where the gap sits", [
-                    "`spin: false` stops the rotation -- the widget owns an ENTER_FRAME while it spins",
-                    "and none while it does not, so freezing it also stops the per-frame work.",
-                    "`phase` (0..1) is the gap's position around the ring, which is why three frozen",
-                    "spinners can look like three different instants of one animation."
+                    "`spin: false` stops the rotation -- the widget owns an ENTER_FRAME while it spins and none while it does not, so freezing it also stops the per-frame work.",
+                    "`phase` (0..1) is the gap's position around the ring, which is why three frozen spinners can look like three different instants of one animation."
                 ], [
                     "spinner({ spin: false, phase: 0.0 }),",
                     "spinner({ spin: false, phase: 0.25 }),   // a quarter turn",
@@ -177,9 +169,7 @@ package demo
                 }),
 
                 new DocSection("Disabled dims it, and stops the loop", [
-                    "`disabled` is generic, so a disabled spinner is drawn at the disabled alpha -- and",
-                    "because the widget only runs its ENTER_FRAME while it spins, a frozen disabled ring",
-                    "costs nothing per frame either."
+                    "`disabled` is generic, so a disabled spinner is drawn at the disabled alpha -- and because the widget only runs its ENTER_FRAME while it spins, a frozen disabled ring costs nothing per frame either."
                 ], [
                     "spinner({ diameter: 20, disabled: true })"
                 ], 76, function ():Node
@@ -193,8 +183,7 @@ package demo
 
             if (id == "skeleton") return [
                 new DocSection("Placeholders that match the layout", [
-                    "A skeleton reserves the space the real content will take, so the page does not jump",
-                    "when the data arrives. `variant` picks text / circle / rect."
+                    "A skeleton reserves the space the real content will take, so the page does not jump when the data arrives. `variant` picks text / circle / rect."
                 ], [
                     "skeleton({ variant: \"circle\", style: { size: [32, 32] } }),",
                     "skeleton({ variant: \"text\", lines: 3, barHeight: 8, gap: 6 })"
@@ -211,8 +200,7 @@ package demo
                 }),
 
                 new DocSection("Rect", [
-                    "The rect variant is what a media card's thumbnail uses -- a fixed block that keeps",
-                    "the column's height stable while the image loads."
+                    "The rect variant is what a media card's thumbnail uses -- a fixed block that keeps the column's height stable while the image loads."
                 ], [
                     "skeleton({ variant: \"rect\", style: { size: [200, 64] } })"
                 ], 96, function ():Node
@@ -222,8 +210,7 @@ package demo
                 }),
 
                 new DocSection("The tone is the fill", [
-                    "`tone` picks the placeholder's fill from the same semantic set the chips use, so a",
-                    "skeleton on a dark card and one on a white card are two tones, not two hex values."
+                    "`tone` picks the placeholder's fill from the same semantic set the chips use, so a skeleton on a dark card and one on a white card are two tones, not two hex values."
                 ], [
                     "skeleton({ variant: \"rect\", tone: \"info\", style: { size: [120, 40] } })"
                 ], 96, function ():Node
@@ -239,9 +226,7 @@ package demo
                 }),
 
                 new DocSection("It is a placeholder, not a shimmer", [
-                    "There is no animated shine: a shimmer would repaint the block every frame for as",
-                    "long as the data is missing, and the frame budget is the one resource this kit",
-                    "refuses to spend on decoration. The card below is five leaves and one column."
+                    "There is no animated shine: a shimmer would repaint the block every frame for as long as the data is missing, and the frame budget is the one resource this kit refuses to spend on decoration. The card below is five leaves and one column."
                 ], [
                     "card({ padding: 12, gap: 8 }, [",
                     "    skeleton({ variant: \"circle\", style: { size: [36, 36] } }),",
@@ -270,8 +255,7 @@ package demo
 
             if (id == "tooltip") return [
                 new DocSection("A bubble with an arrow", [
-                    "A tooltip is a static leaf: place it, do not hover it. Hover behaviour is the",
-                    "author's (show it from a model flag), because the timing policy is not universal.",
+                    "A tooltip is a static leaf: place it, do not hover it. Hover behaviour is the author's (show it from a model flag), because the timing policy is not universal.",
                     "`arrow` is up | down | left | right | none, and `tone` is the bubble's FILL colour."
                 ], [
                     "tooltip(\"Saves the document\", { arrow: \"down\" }),",
@@ -285,8 +269,7 @@ package demo
                 }),
 
                 new DocSection("In a row with its anchor", [
-                    "The arrow points at the anchor; the bubble's own size comes from its text, so it",
-                    "never needs a width."
+                    "The arrow points at the anchor; the bubble's own size comes from its text, so it never needs a width."
                 ], [
                     "row({ gap: 6, alignItems: \"center\" }, [ button({ label: \"Save\" }), tooltip(\"Ctrl+S\") ])"
                 ], 76, function ():Node
@@ -298,9 +281,7 @@ package demo
                 }),
 
                 new DocSection("Four arrows, one bubble", [
-                    "The arrow names the side the anchor is on: `down` means the bubble sits above its",
-                    "anchor, `up` below it, and left/right sit beside. Placement is still the author's --",
-                    "the widget draws the notch, not the float."
+                    "The arrow names the side the anchor is on: `down` means the bubble sits above its anchor, `up` below it, and left/right sit beside. Placement is still the author's -- the widget draws the notch, not the float."
                 ], [
                     "tooltip(\"above\", { arrow: \"down\" }), tooltip(\"below\", { arrow: \"up\" }),",
                     "tooltip(\"left\",  { arrow: \"right\" }), tooltip(\"right\", { arrow: \"left\" })"
@@ -319,8 +300,7 @@ package demo
                 }),
 
                 new DocSection("No arrow, no gap to fill", [
-                    "`arrow: none` is the plain bubble -- what a keyboard-shortcut hint beside a menu item",
-                    "wants, where an arrow pointing at nothing would be noise."
+                    "`arrow: none` is the plain bubble -- what a keyboard-shortcut hint beside a menu item wants, where an arrow pointing at nothing would be noise."
                 ], [
                     "tooltip(\"Shift+? for help\", { arrow: \"none\" })"
                 ], 76, function ():Node
@@ -334,10 +314,7 @@ package demo
 
             if (id == "icon") return [
                 new DocSection("A glyph from path data", [
-                    "An icon is SVG path data (`d` syntax) drawn into its box, so it has no file, no",
-                    "texture and no second copy per colour -- it takes the colour and the size it is",
-                    "given and stays sharp at any scale. With no `size`, the box IS the `viewBox` (24",
-                    "by default), which is the convention every public icon set is authored in."
+                    "An icon is SVG path data (`d` syntax) drawn into its box, so it has no file, no texture and no second copy per colour -- it takes the colour and the size it is given and stays sharp at any scale. With no `size`, the box IS the `viewBox` (24 by default), which is the convention every public icon set is authored in."
                 ], [
                     "icon(\"M12 5 V19 M5 12 H19\", { size: [24, 24] }),",
                     "icon(\"M4 13 L9 18 L20 5\",   { size: [32, 32], color: 0x16A34A })"
@@ -352,9 +329,7 @@ package demo
                 }),
 
                 new DocSection("Stroke width is a viewBox width", [
-                    "`strokeWidth` is in the data's own units, so it scales with the glyph: the same",
-                    "glyph at 24 and at 48 has a 2px and a 4px outline. That is what the source SVG",
-                    "means by `stroke-width`, and it is why an icon stays legible when it is scaled up."
+                    "`strokeWidth` is in the data's own units, so it scales with the glyph: the same glyph at 24 and at 48 has a 2px and a 4px outline. That is what the source SVG means by `stroke-width`, and it is why an icon stays legible when it is scaled up."
                 ], [
                     "icon(d, { size: [24, 24], strokeWidth: 2 }),",
                     "icon(d, { size: [48, 48], strokeWidth: 2 })   // 4px, not 2px"
@@ -368,13 +343,8 @@ package demo
                 }),
 
                 new DocSection("What it will not draw", [
-                    "`M L H V Z` are exact, `Q T` are exact, and `C S` are converted: this engine has a",
-                    "quadratic `curveTo` and no cubic, so each cubic is split until the quadratics are",
-                    "within a quarter of a rendered pixel of it. An elliptical arc (`A`) THROWS -- an arc",
-                    "is not a curve this engine can draw without going through a cubic, and quietly",
-                    "drawing a chord instead would be an icon that looks fine and is the wrong shape.",
-                    "Unknown commands throw too, at the call site: `icon()` parses its data when you",
-                    "describe it, so the stack frame is the line you wrote."
+                    "`M L H V Z` are exact, `Q T` are exact, and `C S` are converted: this engine has a quadratic `curveTo` and no cubic, so each cubic is split until the quadratics are within a quarter of a rendered pixel of it. An elliptical arc (`A`) THROWS -- an arc is not a curve this engine can draw without going through a cubic, and quietly drawing a chord instead would be an icon that looks fine and is the wrong shape.",
+                    "Unknown commands throw too, at the call site: `icon()` parses its data when you describe it, so the stack frame is the line you wrote."
                 ], [
                     "icon(\"M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3\")   // THROWS: use fill: true,",
                     "                                                       // or an arc-free path"
@@ -389,10 +359,7 @@ package demo
                 // `viewBox` is what makes third-party icon data usable: the glyph's own
                 // coordinate space instead of "one unit is one pixel".
                 new DocSection("viewBox: the data's own units", [
-                    "`strokeWidth` is measured in the DATA's units, so the same picture can be told in",
-                    "a 24-unit space or a 48-unit one. Without `viewBox` the data is taken as 24 and",
-                    "drawn 1:1 -- which is why the third glyph below is cut: its cross lives between 10",
-                    "and 38, but the box is 24 wide."
+                    "`strokeWidth` is measured in the DATA's units, so the same picture can be told in a 24-unit space or a 48-unit one. Without `viewBox` the data is taken as 24 and drawn 1:1 -- which is why the third glyph below is cut: its cross lives between 10 and 38, but the box is 24 wide."
                 ], [
                     "icon(\"M12 5 V19 M5 12 H19\", { size: [24, 24], strokeWidth: 2 }),",
                     "icon(\"M24 10 V38 M10 24 H38\", { viewBox: 48, size: [24, 24], strokeWidth: 4 }),",
@@ -414,8 +381,7 @@ package demo
 
             if (id == "image") return [
                 new DocSection("A BitmapData in a box", [
-                    "The image scales a bitmap into the box it was given; `scaleMode` picks how. Keep the",
-                    "BitmapData STABLE across renders -- a new one every frame would re-upload the texture."
+                    "The image scales a bitmap into the box it was given; `scaleMode` picks how. Keep the BitmapData STABLE across renders -- a new one every frame would re-upload the texture."
                 ], [
                     "image({ bitmapData: SRC, scaleMode: \"fit\",",
                     "        style: { size: [120, 80] } })"
@@ -431,12 +397,7 @@ package demo
                 }),
 
                 new DocSection("Scale modes", [
-                    "There are four: `fit` contains the picture and pads (the default), `stretch` fills the",
-                    "box and ignores the aspect, `none` draws it 1:1, centred, and `cover` fills the box and",
-                    "CROPS. An unknown mode THROWS at describe time -- a silent fallback to `fit` would",
-                    "leave a picture the wrong size with nothing on screen saying why. `letterbox` and",
-                    "`zoom` throw too: both used to fall into the contain branch, so `zoom` (which reads",
-                    "as cover) did not zoom at all."
+                    "There are four: `fit` contains the picture and pads (the default), `stretch` fills the box and ignores the aspect, `none` draws it 1:1, centred, and `cover` fills the box and CROPS. An unknown mode THROWS at describe time -- a silent fallback to `fit` would leave a picture the wrong size with nothing on screen saying why. `letterbox` and `zoom` throw too: both used to fall into the contain branch, so `zoom` (which reads as cover) did not zoom at all."
                 ], [
                     "image({ bitmapData: SRC, scaleMode: \"none\" })   // 1:1, centred"
                 ], 76, function ():Node
@@ -450,14 +411,8 @@ package demo
                 }),
 
                 new DocSection("cover: fill the box, then crop", [
-                    "`cover` scales until the picture COVERS the box and clips the overflow -- the opposite of",
-                    "`fit`, which contains the whole picture and pads. Both keep the aspect ratio; only one of",
-                    "them may throw pixels away.",
-                    "The clip is a `scrollRect` on the bitmap, and the window is in the BITMAP's own units: the",
-                    "renderer clips through the object's own matrix, so a window measured in box pixels is a",
-                    "window divided by the scale factor too -- the first version asked for a box-sized window on",
-                    "a 3x picture and cropped to nothing. Leaving cover CLEARS the window, because a stale crop",
-                    "is invisible right up until the next mode inherits it.",
+                    "`cover` scales until the picture COVERS the box and clips the overflow -- the opposite of `fit`, which contains the whole picture and pads. Both keep the aspect ratio; only one of them may throw pixels away.",
+                    "The clip is a `scrollRect` on the bitmap, and the window is in the BITMAP's own units: the renderer clips through the object's own matrix, so a window measured in box pixels is a window divided by the scale factor too -- the first version asked for a box-sized window on a 3x picture and cropped to nothing. Leaving cover CLEARS the window, because a stale crop is invisible right up until the next mode inherits it.",
                     "One source (a 16x8 two-tone band), one 96x96 box, both modes below."
                 ], [
                     "image({ bitmapData: BAND, scaleMode: \"cover\", style: { size: [96, 96] } })",
@@ -481,12 +436,7 @@ package demo
                 }),
 
                 new DocSection("From a file or a URL", [
-                    "`src` hands the loading to the widget: it owns a Loader, so the author writes no COMPLETE",
-                    "wiring and no torn-down-node guard. The path is resolved by the RUNTIME (relative to the",
-                    "process's working directory), and a load is ASYNC: until it lands the box is the 64x64",
-                    "placeholder, so give an auto-sized image a `size` if it must not jump. A failure is not",
-                    "silent -- `onLoad()` takes nothing, `onError(message)` takes the IOError text, and",
-                    "`UiNode.loadError` keeps it on the node."
+                    "`src` hands the loading to the widget: it owns a Loader, so the author writes no COMPLETE wiring and no torn-down-node guard. The path is resolved by the RUNTIME (relative to the process's working directory), and a load is ASYNC: until it lands the box is the 64x64 placeholder, so give an auto-sized image a `size` if it must not jump. A failure is not silent -- `onLoad()` takes nothing, `onError(message)` takes the IOError text, and `UiNode.loadError` keeps it on the node."
                 ], [
                     "image({ src: \"avatar.png\", scaleMode: \"fit\", style: { size: [64, 64] },",
                     "        onError: function (msg:String):void { trace(msg); } })"
@@ -503,9 +453,7 @@ package demo
                 // gradient source is the only way to see it: on a hard two-colour edge the
                 // seam is one pixel wide and both settings look the same.
                 new DocSection("smooth: a blend or the raw pixels", [
-                    "`smooth: true` (the default) lets the renderer interpolate; `smooth: false` asks for",
-                    "nearest neighbour, which is what pixel art, sprite sheets and 1-bit masks need --",
-                    "blurring a mask turns a crisp edge into a grey halo.",
+                    "`smooth: true` (the default) lets the renderer interpolate; `smooth: false` asks for nearest neighbour, which is what pixel art, sprite sheets and 1-bit masks need -- blurring a mask turns a crisp edge into a grey halo.",
                     "Both images below are the same 8x8 gradient drawn at 12x."
                 ], [
                     "image({ bitmapData: ramp, smooth: false, style: { size: [96, 96] } }),",

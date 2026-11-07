@@ -28,8 +28,7 @@ package demo
 
             if (id == "tabs") return [
                 new DocSection("An index you can click", [
-                    "tabs() takes plain labels and reports the index. `selectedIndex` also accepts a",
-                    "Binding, which is the shortest way to keep it in a model field."
+                    "tabs() takes plain labels and reports the index. `selectedIndex` also accepts a Binding, which is the shortest way to keep it in a model field."
                 ], [
                     "tabs([\"Overview\", \"Members\", \"Billing\"], {",
                     "    key: \"t\", size: [320, 32], gap: 6,",
@@ -48,8 +47,7 @@ package demo
                 }),
 
                 new DocSection("The strip is painted, not built", [
-                    "There are no per-tab child nodes: the widget measures the labels and paints the",
-                    "selected band itself, so a switch is one repaint and no reconcile."
+                    "There are no per-tab child nodes: the widget measures the labels and paints the selected band itself, so a switch is one repaint and no reconcile."
                 ], [
                     "// onChange -> model write -> one reflow, zero child churn"
                 ], 76, function ():Node
@@ -59,12 +57,8 @@ package demo
                 }),
 
                 new DocSection("Keyboard: Left / Right WRAP", [
-                    "Press \"Focus it\", then Left / Right. A tab strip is a RING, not a sequence: Right on the",
-                    "last tab goes to the FIRST and Left on the first goes to the last, where a list would stop",
-                    "at the end. Home and End jump to the ends, and the ends are the first and last tab, not a",
-                    "dead stop before them.",
-                    "This is the one place the keyboard deliberately differs between kinds, because the shapes",
-                    "differ -- a strip has no end, a listbox does (ARIA tabs wrap; a listbox selection clamps)."
+                    "Press \"Focus it\", then Left / Right. A tab strip is a RING, not a sequence: Right on the last tab goes to the FIRST and Left on the first goes to the last, where a list would stop at the end. Home and End jump to the ends, and the ends are the first and last tab, not a dead stop before them.",
+                    "This is the one place the keyboard deliberately differs between kinds, because the shapes differ -- a strip has no end, a listbox does (ARIA tabs wrap; a listbox selection clamps)."
                 ], [
                     "app.focusNode(app.findByKey(\"myTabs\"));   // tabs sets tabEnabled",
                     "// Left/Right: (i + 1) % n and (i + n - 1) % n -- nothing to configure"
@@ -87,9 +81,7 @@ package demo
                 }),
 
                 new DocSection("The index picks the panel", [
-                    "A tab strip is not a router, so the page below it is an ordinary conditional: the",
-                    "same selectedIndex decides which column is mounted. Switching tabs therefore",
-                    "replaces three nodes, not twenty -- the strip itself never changes."
+                    "A tab strip is not a router, so the page below it is an ordinary conditional: the same selectedIndex decides which column is mounted. Switching tabs therefore replaces three nodes, not twenty -- the strip itself never changes."
                 ], [
                     "tabs([...], { selectedIndex: i, onChange: set }),",
                     "i == 0 ? overview : (i == 1 ? members : billing)"
@@ -121,8 +113,7 @@ package demo
 
             if (id == "breadcrumb") return [
                 new DocSection("A trail of crumbs", [
-                    "Items are plain labels and the callback reports an INDEX, so a crumb that needs a",
-                    "route or a key carries it in the author's own closure."
+                    "Items are plain labels and the callback reports an INDEX, so a crumb that needs a route or a key carries it in the author's own closure."
                 ], [
                     "breadcrumb([\"Library\", \"Data\", \"Raw\"], {",
                     "    key: \"bc\", separator: \"/\",",
@@ -139,8 +130,7 @@ package demo
                 }),
 
                 new DocSection("The last crumb is the current one", [
-                    "currentIndex decides which crumb is drawn as current (grey, not a link). Leaving it",
-                    "unset means \"the last item\", which is what a trail almost always means."
+                    "currentIndex decides which crumb is drawn as current (grey, not a link). Leaving it unset means \"the last item\", which is what a trail almost always means."
                 ], [
                     "breadcrumb(labels, { separator: \"\\u203A\" })   // currentIndex defaults to the last"
                 ], 76, function ():Node
@@ -150,9 +140,7 @@ package demo
                 }),
 
                 new DocSection("A click reports an index, not a route", [
-                    "onNavigate gets the CRUMB'S index -- 0 for the first label, and never for the",
-                    "current one. The author's closure is what turns that index into a page change,",
-                    "which is why a breadcrumb needs no router to be useful."
+                    "onNavigate gets the CRUMB'S index -- 0 for the first label, and never for the current one. The author's closure is what turns that index into a page change, which is why a breadcrumb needs no router to be useful."
                 ], [
                     "onNavigate: function (i:int):void { model.crumb = i; }   // 0-based",
                     "// the current crumb is drawn as text, so it never reports"
@@ -171,9 +159,7 @@ package demo
                 }),
 
                 new DocSection("The separator is a string", [
-                    "It is drawn BETWEEN the crumbs only -- not before the first and not after the last --",
-                    "so a slash, an angle bracket or a dot all read correctly with no spacing written by",
-                    "the author."
+                    "It is drawn BETWEEN the crumbs only -- not before the first and not after the last -- so a slash, an angle bracket or a dot all read correctly with no spacing written by the author."
                 ], [
                     "breadcrumb([...], { separator: \">\" })"
                 ], 108, function ():Node
@@ -188,8 +174,7 @@ package demo
 
             if (id == "accordion") return [
                 new DocSection("One panel at a time", [
-                    "Headers are row children with role 'button' -- the ARIA shape, and also how the",
-                    "widget tells a header from a panel, so no key parsing or index arithmetic."
+                    "Headers are row children with role 'button' -- the ARIA shape, and also how the widget tells a header from a panel, so no key parsing or index arithmetic."
                 ], [
                     "accordion([",
                     "    { title: 'General',  content: column({}, [ ... ]) },",
@@ -215,8 +200,7 @@ package demo
                 }),
 
                 new DocSection("Open index is data", [
-                    "onToggle reports the header's index; nothing opens by itself, and -1 (or any",
-                    "out-of-range index) closes every panel."
+                    "onToggle reports the header's index; nothing opens by itself, and -1 (or any out-of-range index) closes every panel."
                 ], [
                     "// activeIndex: -1  -> all closed; model-owned, like every other open state"
                 ], 76, function ():Node
@@ -226,9 +210,7 @@ package demo
                 }),
 
                 new DocSection("Several open at once", [
-                    "mode 'multi' takes openIndices -- an ARRAY of open sections -- where single mode",
-                    "takes one activeIndex. The two are mutually exclusive and passing the wrong one",
-                    "THROWS, so a page cannot believe it is remembering a set that nothing reads."
+                    "mode 'multi' takes openIndices -- an ARRAY of open sections -- where single mode takes one activeIndex. The two are mutually exclusive and passing the wrong one THROWS, so a page cannot believe it is remembering a set that nothing reads."
                 ], [
                     "accordion(secs, { mode: 'multi', openIndices: model.openSet, gap: 1,",
                     "     onToggle: function (i:int):void { model.openSet = toggled(model.openSet, i); } })",
@@ -268,11 +250,8 @@ package demo
                 }),
 
                 new DocSection("Every header has its own key", [
-                    "A header is a row child with role button and a key of its own, prefixed with the key of",
-                    "the accordion that owns it: demoAccM:h0, demoAccM:h1, demoAccM:h2 above.",
-                    "The prefix is not decoration. findByKey documents a key as unique across the whole tree,",
-                    "and two accordions on one page used to hand out h0 twice -- the lookup could only ever",
-                    "find the first one, so the second accordion was unreachable from any test or any a11y pass."
+                    "A header is a row child with role button and a key of its own, prefixed with the key of the accordion that owns it: demoAccM:h0, demoAccM:h1, demoAccM:h2 above.",
+                    "The prefix is not decoration. findByKey documents a key as unique across the whole tree, and two accordions on one page used to hand out h0 twice -- the lookup could only ever find the first one, so the second accordion was unreachable from any test or any a11y pass."
                 ], [
                     "// the key of header i of the accordion keyed \"side\": side:h0, side:h1, ...",
                     "app.findByKey(\"side:h1\")"
@@ -291,11 +270,8 @@ package demo
             if (id == "navStack") return [
                 new DocSection("Pages that stay mounted", [
                     "Only the top page is VISIBLE; every page is measured and laid out regardless.",
-                    "That is the whole point of a stack: a page keeps its scroll offset and its",
-                    "typed text across a push and a pop, because its nodes were never rebuilt.",
-                    "`activeIndex` picks the top (-1, the default, means the last page). `onBack`",
-                    "is the system BACK key; a desktop window has none, so the buttons here",
-                    "drive the same state the key would."
+                    "That is the whole point of a stack: a page keeps its scroll offset and its typed text across a push and a pop, because its nodes were never rebuilt.",
+                    "`activeIndex` picks the top (-1, the default, means the last page). `onBack` is the system BACK key; a desktop window has none, so the buttons here drive the same state the key would."
                 ], [
                     "navStack([home, detail], { key: \"nav\", activeIndex: model.depth,",
                     "                           onBack: function ():void { model.depth = 0; } })",
@@ -327,10 +303,7 @@ package demo
                 }),
 
                 new DocSection("A three-deep stack", [
-                    "The same two nodes again with three pages: Push writes 0 -> 1 -> 2 and Pop writes",
-                    "back. Nothing is unmounted on the way, so page one is still behind page three after",
-                    "two pushes -- and activeIndex -1 (the default) means the last page, which is the",
-                    "one a freshly built stack should show."
+                    "The same two nodes again with three pages: Push writes 0 -> 1 -> 2 and Pop writes back. Nothing is unmounted on the way, so page one is still behind page three after two pushes -- and activeIndex -1 (the default) means the last page, which is the one a freshly built stack should show."
                 ], [
                     "navStack([home, detail, edit], { activeIndex: depth,",
                     "                                   onBack: function ():void { depth = depth - 1; } })"
@@ -370,10 +343,7 @@ package demo
                 }),
 
                 new DocSection("A typed field survives a push", [
-                    "Every page is laid out every frame, visible or not -- so the text field on page one",
-                    "is never rebuilt by a push. Type something, press Next, press Back: the caret and",
-                    "the text are where you left them, and no page wrote a restore path to make that",
-                    "true. (The model still owns the string; the point is that nothing had to rebuild.)"
+                    "Every page is laid out every frame, visible or not -- so the text field on page one is never rebuilt by a push. Type something, press Next, press Back: the caret and the text are where you left them, and no page wrote a restore path to make that true. (The model still owns the string; the point is that nothing had to rebuild.)"
                 ], [
                     "navStack([pageWithField, other], { activeIndex: depth })",
                     "// both pages measurable every frame: no rebuild, no restore"
@@ -405,9 +375,7 @@ package demo
                 }),
 
                 new DocSection("The box is the author's", [
-                    "The page wrappers are absolute and inset 0, so they contribute no height: the stack",
-                    "is exactly the box you declare. That is deliberate -- a stack whose height came from",
-                    "the tallest page would jump the moment a shorter page was pushed onto it."
+                    "The page wrappers are absolute and inset 0, so they contribute no height: the stack is exactly the box you declare. That is deliberate -- a stack whose height came from the tallest page would jump the moment a shorter page was pushed onto it."
                 ], [
                     "navStack([a, b], { style: { size: [340, 112] } })",
                     "// the pages fill it; neither one sizes it"
@@ -433,9 +401,7 @@ package demo
 
             if (id == "appBar") return [
                 new DocSection("Large title, collapsed by one number", [
-                    "The bar folds a large title into the compact row as the page scrolls: `collapse`",
-                    "goes 0 (open, `largeExtra` taller) to `largeExtra` (shut), and the fold is a",
-                    "CLIP -- the title slides under the compact row instead of jumping rows.",
+                    "The bar folds a large title into the compact row as the page scrolls: `collapse` goes 0 (open, `largeExtra` taller) to `largeExtra` (shut), and the fold is a CLIP -- the title slides under the compact row instead of jumping rows.",
                     "Its height is the bar's to own, so a `style.height` would only fight it."
                 ], [
                     "appBar({ key: \"bar\", title: \"Inbox\", large: true,",
@@ -462,9 +428,7 @@ package demo
                 }),
 
                 new DocSection("leading and trailing are nodes", [
-                    "Neither end is an icon name: leading takes one node and trailing takes an array,",
-                    "so a back chevron, a busy spinner or a chip all fit without a second API. The title",
-                    "between them is the bar's own, which is why it can fold."
+                    "Neither end is an icon name: leading takes one node and trailing takes an array, so a back chevron, a busy spinner or a chip all fit without a second API. The title between them is the bar's own, which is why it can fold."
                 ], [
                     "appBar({ title: \"Inbox\",",
                     "         leading: chip(\"back\"),",
@@ -481,9 +445,7 @@ package demo
                 }),
 
                 new DocSection("Two bars, two numbers", [
-                    "barHeight is the compact row and largeExtra is what a large title adds on top of",
-                    "it. A compact bar ignores largeExtra entirely, so the same app can use one shape on",
-                    "a phone and the other on a desktop without branching in the page."
+                    "barHeight is the compact row and largeExtra is what a large title adds on top of it. A compact bar ignores largeExtra entirely, so the same app can use one shape on a phone and the other on a desktop without branching in the page."
                 ], [
                     "appBar({ title: \"Compact\", large: false })                 // barHeight only",
                     "appBar({ title: \"Large\",   large: true, collapse: 0 })      // + largeExtra"
@@ -499,9 +461,7 @@ package demo
                 }),
 
                 new DocSection("The title is re-pointed every frame", [
-                    "Nothing is cached: the string the bar shows is the one this render returned, so a",
-                    "title that follows the selection needs no setter. The fold still works -- the title",
-                    "slides under the compact row rather than jumping to it."
+                    "Nothing is cached: the string the bar shows is the one this render returned, so a title that follows the selection needs no setter. The fold still works -- the title slides under the compact row rather than jumping to it."
                 ], [
                     "appBar({ title: \"Inbox - 3 unread\" })   // just a string expression",
                     "appBar({ title: sel == 0 ? \"Inbox\" : \"Sent\" })"
@@ -524,12 +484,8 @@ package demo
 
             if (id == "tabBar") return [
                 new DocSection("Equal cells, one selected", [
-                    "`items` is fixed-length on purpose: the cells share the bar equally, so a fifth",
-                    "tab makes the others narrower instead of scrolling. The selected state is a",
-                    "TINT (accent for the current tab, muted otherwise) applied to the cell, so a",
-                    "badge or a custom node inside the cell inherits it too.",
-                    "A tap on the CURRENT tab is still reported -- that is how \"scroll this section",
-                    "to the top\" stays expressible."
+                    "`items` is fixed-length on purpose: the cells share the bar equally, so a fifth tab makes the others narrower instead of scrolling. The selected state is a TINT (accent for the current tab, muted otherwise) applied to the cell, so a badge or a custom node inside the cell inherits it too.",
+                    "A tap on the CURRENT tab is still reported -- that is how \"scroll this section to the top\" stays expressible."
                 ], [
                     "tabBar({ key: \"tabs\", selectedIndex: model.tab, barHeight: 56,",
                     "         items: [ { key: \"home\", label: \"Home\", icon: \"M4 20 V10 L12 4 L20 10 V20 Z\" },",
@@ -557,9 +513,7 @@ package demo
                 }),
 
                 new DocSection("Five cells are narrower, not scrolled", [
-                    "The bar divides its width by the number of items, so a fifth tab makes every cell",
-                    "sixteen percent narrower. Nothing scrolls and no tab is ever off screen -- which is",
-                    "the property a phone tab bar needs and a desktop tab strip does not."
+                    "The bar divides its width by the number of items, so a fifth tab makes every cell sixteen percent narrower. Nothing scrolls and no tab is ever off screen -- which is the property a phone tab bar needs and a desktop tab strip does not."
                 ], [
                     "tabBar({ items: [home, find, add, inbox, me], barHeight: 56 })"
                 ], 168, function ():Node
@@ -582,8 +536,7 @@ package demo
                 }),
 
                 new DocSection("Tapping the current tab still reports", [
-                    "onSelect fires for every tap, the selected one included: \"tap the tab you are on to",
-                    "scroll back to the top\" is the usual behaviour and it needs the event, not a guard.",
+                    "onSelect fires for every tap, the selected one included: \"tap the tab you are on to scroll back to the top\" is the usual behaviour and it needs the event, not a guard.",
                     "The counter below only moves because the widget kept talking."
                 ], [
                     "onSelect: function (i:int):void { taps = taps + 1; }   // i may equal selectedIndex"
@@ -609,8 +562,7 @@ package demo
                 }),
 
                 new DocSection("barHeight is the whole cell", [
-                    "The selected tint fills the cell from the bar's top to its bottom, so a taller bar is",
-                    "a bigger target and not a bigger gap. Below: 56 against 72, same three items."
+                    "The selected tint fills the cell from the bar's top to its bottom, so a taller bar is a bigger target and not a bigger gap. Below: 56 against 72, same three items."
                 ], [
                     "tabBar({ barHeight: 56, items: [...] }),",
                     "tabBar({ barHeight: 72, items: [...] })"

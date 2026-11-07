@@ -25,6 +25,7 @@ package demo
     import asaot.ui.Env;
     import asaot.ui.EnvBase;
     import asaot.ui.Node;
+    import asaot.ui.OverlayChrome;
     import asaot.ui.UiApp;
     import asaot.ui.UiNode;
     import asaot.ui.View;
@@ -42,6 +43,7 @@ package demo
     import asaot.ui.row;
     import asaot.ui.scrollView;
     import asaot.ui.style.Length;
+    import asaot.ui.style.Style;
     import asaot.ui.style.StyleRefinement;
 
     import flash.filesystem.File;
@@ -330,6 +332,34 @@ package demo
             ]);
         }
 
+        // A body line inside a fixed-width SURFACE. The kit's `whiteSpace: "normal"`
+        // needs a POINT width (it refuses a percent: the wrapped height has to exist at
+        // measure time), and a panel gives its children none -- so a body text used to
+        // be laid out at its natural width and print straight out of the panel on both
+        // sides. The width here is the panel's own content box.
+        //
+        // Height stays AUTO: the node publishes its WRAPPED height, so the panel grows
+        // with the number of lines instead of clipping the last one.
+        private function barBody(s:String, key:String, panelW:Number, panel:Style,
+                                  size:Number, color:uint):Node
+        {
+            var inner:Number = DocsStyle.panelInnerWidth(panelW, panel);
+            return text(s, { key: key, ariaName: "", style: StyleRefinement.from({
+                size: [inner, null],
+                text: { fontSize: size, color: color, whiteSpace: "normal" } }) });
+        }
+
+        // The stage width THIS describe is for. render() also runs on the first
+        // frame, before the window exists, where the stage still reports 0 -- the
+        // descriptor size is then the only answer, and the frame after picks up the
+        // real one.
+        private function stageW():Number
+        {
+            if (this.app != null && this.app.stage != null && this.app.stage.stageWidth > 0)
+                return this.app.stage.stageWidth;
+            return DocsStyle.W;
+        }
+
         private function clicked(id:String):void
         {
             this.picks = this.picks + 1;
@@ -342,11 +372,16 @@ package demo
         {
             var blocks:Array = [];
             var h:Number = 0;
+            // ONE reading width for the whole column, read from the stage this frame
+            // is being described for: the prose breaks where the pane ends, and a
+            // window resize re-describes (UiApp invalidates STRUCTURE on a size
+            // change), so the breaks follow the window.
+            var wrapW:Number = DocsStyle.docWrapW(this.stageW());
             for (var i:int = 0; i < secs.length; i++)
             {
                 var sec:DocSection = DocSection(secs[i]);
-                blocks.push(this.block(sec, i));
-                h = h + sec.height();
+                blocks.push(this.block(sec, i, wrapW));
+                h = h + sec.height(wrapW);
                 if (i > 0) h = h + DocsStyle.SEC_GAP;
             }
             // A short page still fills the viewport, so the column's height is never 0
@@ -357,23 +392,24 @@ package demo
             return column({ key: "docCol", style: style, ariaName: "" }, blocks);
         }
 
-        private function block(sec:DocSection, i:int):Node
+        private function block(sec:DocSection, i:int, wrapW:Number):Node
         {
             var pre:String = "b" + i;
             var kids:Array = [];
             kids.push(text(sec.heading, { key: pre + ":h", style: DocsStyle.SEC_HEAD, ariaName: "" }));
 
-            if (sec.prose.length > 0)
+            var para:Array = sec.proseLines(wrapW);
+            if (para.length > 0)
             {
                 var lines:Array = [];
-                for (var j:int = 0; j < sec.prose.length; j++)
+                for (var j:int = 0; j < para.length; j++)
                 {
-                    lines.push(text(String(sec.prose[j]),
+                    lines.push(text(String(para[j]),
                         { key: pre + ":p" + j, style: DocsStyle.PROSE, ariaName: "" }));
                 }
                 var proseStyle:StyleRefinement = StyleRefinement.from({
                     flexDirection: "column", gap: 0,
-                    size: [Length.pct(1), Length.px(sec.prose.length * DocsStyle.SEC_PROSE_H)]
+                    size: [Length.pct(1), Length.px(para.length * DocsStyle.SEC_PROSE_H)]
                 });
                 kids.push(column({ key: pre + ":prose", style: proseStyle, ariaName: "" }, lines));
             }
@@ -395,7 +431,7 @@ package demo
             kids.push(box({ key: pre + ":code", style: codeStyle, ariaName: "Source" }, code));
 
             var blockStyle:StyleRefinement = DocsStyle.SEC.withPatch(
-                StyleRefinement.from({ size: [Length.pct(1), Length.px(sec.height())] }));
+                StyleRefinement.from({ size: [Length.pct(1), Length.px(sec.height(wrapW))] }));
             return column({ key: pre, style: blockStyle, ariaName: sec.heading }, kids);
         }
 
@@ -415,9 +451,8 @@ package demo
                     offset: 8, width: 230,
                     onClose: function ():void { m.put("ov.open", false); }
                 }, [
-                    text("The overlay tree is reconciled on top of render()'s tree.",
-                        { key: "ovPopBody", style: StyleRefinement.from({
-                            text: { fontSize: 12, color: 0x334155 } }) })
+                    barBody("The overlay tree is reconciled on top of render()'s tree.",
+                        "ovPopBody", 230, OverlayChrome.POPOVER_PANEL, 12, 0x334155)
                 ]));
             }
             if (m.doc == "dialog" && m.bool("dlg.open", false))
@@ -435,8 +470,8 @@ package demo
                     ],
                     onClose: function ():void { m.put("dlg.open", false); }
                 }, [
-                    text("This cannot be undone.", { key: "demoDlgBody",
-                         style: StyleRefinement.from({ text: { fontSize: 13, color: 0x4B5563 } }) })
+                    barBody("This cannot be undone.", "demoDlgBody", 320,
+                        OverlayChrome.DIALOG_PANEL, 13, 0x4B5563)
                 ]));
             }
             if (m.doc == "drawer" && m.bool("drw.open", false))
@@ -445,9 +480,8 @@ package demo
                     key: "demoDrw", open: true, side: "right", size: 280, title: "Filters",
                     onClose: function ():void { m.put("drw.open", false); }
                 }, [
-                    text("A right-edge sheet over a scrim: the page behind it is not re-laid out.",
-                        { key: "demoDrwBody", style: StyleRefinement.from({
-                            text: { fontSize: 13, color: 0x374151 } }) })
+                    barBody("A right-edge sheet over a scrim: the page behind it is not re-laid out.",
+                        "demoDrwBody", 280, OverlayChrome.DRAWER_PANEL, 13, 0x374151)
                 ]));
             }
             if (m.doc == "popover" && m.bool("pop.open", false))
@@ -457,9 +491,8 @@ package demo
                     offset: 8, width: 220,
                     onClose: function ():void { m.put("pop.open", false); }
                 }, [
-                    text("Anchored to popBtn by KEY, so it survives a reconcile.",
-                        { key: "demoPopBody", style: StyleRefinement.from({
-                            text: { fontSize: 12, color: 0x374151 } }) })
+                    barBody("Anchored to popBtn by KEY, so it survives a reconcile.",
+                        "demoPopBody", 220, OverlayChrome.POPOVER_PANEL, 12, 0x374151)
                 ]));
             }
             if (m.doc == "menu" && m.bool("mnu.open", false))
@@ -490,9 +523,8 @@ package demo
                     ],
                     onClose: function ():void { m.put("dlg2.open", false); }
                 }, [
-                    text("A press on the scrim is ignored here; the two buttons and Escape are the exits.",
-                        { key: "demoDlg2Body", style: StyleRefinement.from({
-                            text: { fontSize: 13, color: 0x4B5563 } }) })
+                    barBody("A press on the scrim is ignored here; the two buttons and Escape are the exits.",
+                        "demoDlg2Body", 300, OverlayChrome.DIALOG_PANEL, 13, 0x4B5563)
                 ]));
             }
             if (m.doc == "drawer" && m.bool("drw2.open", false))
@@ -502,9 +534,10 @@ package demo
                     key: "demoDrw2", open: true, side: "bottom", size: 160, title: "Share",
                     onClose: function ():void { m.put("drw2.open", false); }
                 }, [
-                    text("A bottom sheet spans the window's width; its `size` is a height.",
-                        { key: "demoDrw2Body", style: StyleRefinement.from({
-                            text: { fontSize: 13, color: 0x374151 } }) })
+                    // The bottom sheet spans the window, so its inner width is not a
+                    // constant -- it is read off the stage this frame is described for.
+                    barBody("A bottom sheet spans the window's width; its `size` is a height.",
+                        "demoDrw2Body", this.stageW(), OverlayChrome.DRAWER_PANEL, 13, 0x374151)
                 ]));
             }
             if (m.doc == "popover" && m.bool("pop2.open", false))
@@ -515,9 +548,8 @@ package demo
                     onClose: function ():void { m.put("pop2.open", false); }
                 }, [
                     column({ gap: 6 }, [
-                        text("No outside press closes this one.", { key: "demoPop2Body",
-                            style: StyleRefinement.from({
-                                text: { fontSize: 12, color: 0x374151 } }) }),
+                        barBody("No outside press closes this one.", "demoPop2Body", 230,
+                            OverlayChrome.POPOVER_PANEL, 12, 0x374151),
                         button({ key: "demoPop2Done", label: "Done",
                                  onClick: function ():void { m.put("pop2.open", false); } })
                     ])

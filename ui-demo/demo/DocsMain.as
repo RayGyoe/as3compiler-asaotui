@@ -283,6 +283,31 @@ package demo
                 {
                     this.problems = this.problems + "the previous page's demo widget is still mounted; ";
                 }
+                // THE LABEL IS CENTRED IN ITS ROW. A text node paints from the top of
+                // its box, so a label that carries the ROW's height leaves the row's
+                // align-items with nothing to centre (that was the reported "the menu
+                // labels sit high"). Auto height hands the centring back to the row, and
+                // this is the arithmetic version of the screenshot.
+                var nrow:UiNode = this.app.findByKey("nav:box");
+                var nlab:UiNode = this.app.findByKey("nav:box:t");
+                if (nrow != null && nlab != null)
+                {
+                    var want:Number = (nrow.absH - nlab.absH) / 2;
+                    var got:Number = nlab.absY - nrow.absY;
+                    this.report = this.report + "  nav row " + nrow.absH + " label "
+                        + nlab.absH + " y offset " + got + " (centre " + want + ")\n";
+                    if (got < 0.5 || got > want + 0.5 || got < want - 0.5)
+                    {
+                        this.problems = this.problems + "the index label sits at y+" + got
+                            + " in a " + nrow.absH + "pt row, expected the centre (+"
+                            + want + "); ";
+                    }
+                }
+                else
+                {
+                    this.problems = this.problems + "the index row or its label is missing; ";
+                }
+
                 this.report = this.report + "== index click ==\n  doc=" + this.model.doc
                     + " title='" + title + "' startBtnGone=" + (this.app.findByKey("startBtn") == null) + "\n";
             }
@@ -359,7 +384,8 @@ package demo
             }
             if (badBlocks > 0)
             {
-                this.problems = this.problems + badBlocks + " block(s) have a child outside their box (DocSection.height() disagrees with the layout); ";
+                this.problems = this.problems + badBlocks + " block(s) have a child outside their box, or a prose line painting wider than its"
+                    + " box (DocSection.height() / DocsWrap disagree with the layout); ";
             }
 
             // ---- 6. the floating layer ---------------------------------------
@@ -399,6 +425,32 @@ package demo
                         this.problems = this.problems + "the popover is at " + pop.absX + "," + pop.absY
                             + ", expected the anchor's left edge and 8px below its bottom; ";
                     }
+                    // THE BODY INSIDE THE PANEL. This surface is 230 wide with a 12pt
+                    // padding and a 1pt border, so the body must publish 204 and paint
+                    // no wider -- the reported popover printed its sentence across the
+                    // panel and over the code block behind it.
+                    var pbody:UiNode = this.app.findByKey("ovPopBody");
+                    if (pbody == null)
+                    {
+                        this.problems = this.problems + "the popover mounted without its body; ";
+                    }
+                    else
+                    {
+                        var pin:Number = DocsStyle.panelInnerWidth(230, OverlayChrome.POPOVER_PANEL);
+                        this.report = this.report + "  popover body " + pbody.absX + ","
+                            + pbody.absY + "," + pbody.absW + "," + pbody.absH + "\n";
+                        if (pbody.absW != pin || pbody.absX != pop.absX + 13)
+                        {
+                            this.problems = this.problems + "the popover body is at " + pbody.absX
+                                + " w=" + pbody.absW + ", expected the panel's content box ("
+                                + (pop.absX + 13) + " w=" + pin + "); ";
+                        }
+                        if (pbody.tf != null && pbody.tf.textWidth > pbody.absW + 0.5)
+                        {
+                            this.problems = this.problems + "the popover body paints "
+                                + pbody.tf.textWidth + "pt of ink in a " + pbody.absW + "pt box; ";
+                        }
+                    }
                 }
                 this.click(ovb);
                 this.app.reflow();
@@ -420,6 +472,68 @@ package demo
             this.model.pick("dialog");
             this.app.invalidate(Dirty.ALL);
             this.app.reflow();
+            // THE BODY WRAPS AT THE PANEL'S CONTENT WIDTH. The second dialog on
+            // this page (300 wide, closeOnScrim false) carries a 470pt sentence; it
+            // used to paint out of both sides of the panel. `whiteSpace: "normal"`
+            // at the panel's content box is the fix, and all three consequences are
+            // numbers: the node publishes that point width, it wraps (so its height
+            // is more than one line box), and it stays inside the panel.
+            // The button is the third section's demo, below the reading pane's
+            // viewport at scroll 0, so a stage click on it lands nowhere -- the
+            // model is the honest driver here (the click path is exercised for the
+            // FIRST dialog immediately below).
+            this.model.put("dlg2.open", true);
+            this.app.invalidate(Dirty.ALL);
+            this.app.reflow();
+            {
+                var p2:UiNode = this.app.findByKey("demoDlg2:panel");
+                var b2:UiNode = this.app.findByKey("demoDlg2Body");
+                if (p2 == null || b2 == null)
+                {
+                    this.problems = this.problems + "the second dialog's "
+                        + (p2 == null ? "panel " : "") + (b2 == null ? "body " : "")
+                        + "did not mount; ";
+                }
+                else
+                {
+                    // 300 wide, DIALOG_PANEL padding 18 and a 1pt border per side.
+                    var inner:Number = DocsStyle.panelInnerWidth(300, OverlayChrome.DIALOG_PANEL);
+                    this.report = this.report + "  dialog body " + b2.absX + "," + b2.absY
+                        + "," + b2.absW + "," + b2.absH + " in panel " + p2.absX + ","
+                        + p2.absY + "," + p2.absW + "," + p2.absH + "\n";
+                    if (b2.absW != inner)
+                    {
+                        this.problems = this.problems + "the dialog body is " + b2.absW
+                            + " wide, expected " + inner + " (the panel content box); ";
+                    }
+                    // TWO LINE BOXES OR MORE. 13 is the SIZE; a line box here is 12, so a
+                    // single line publishes 12 and the wrapped sentence publishes 24 --
+                    // which is also what makes the panel 133 tall instead of 121.
+                    if (b2.absH <= 12)
+                    {
+                        this.problems = this.problems + "the dialog body is " + b2.absH
+                            + " tall: the sentence does not fit on one line at "
+                            + inner + ", so it must have wrapped; ";
+                    }
+                    // THE INK, ONE PROPERTY APART FROM THE RECT: drop `whiteSpace:
+                    // \"normal\" and the box keeps its point width while the run paints
+                    // straight through the panel.
+                    if (b2.tf != null && b2.tf.textWidth > b2.absW + 0.5)
+                    {
+                        this.problems = this.problems + "the dialog body paints "
+                            + b2.tf.textWidth + "pt of ink in a " + b2.absW + "pt box; ";
+                    }
+                    if (b2.absX < p2.absX + 19 || b2.absX + b2.absW > p2.absX + p2.absW - 19)
+                    {
+                        this.problems = this.problems + "the dialog body spans " + b2.absX
+                            + ".." + (b2.absX + b2.absW) + ", outside the panel's content box "
+                            + (p2.absX + 19) + ".." + (p2.absX + p2.absW - 19) + "; ";
+                    }
+                }
+                this.model.put("dlg2.open", false);
+                this.app.invalidate(Dirty.ALL);
+                this.app.reflow();
+            }
             var openBtn:UiNode = this.app.findByKey("demoDlgBtn");
             if (openBtn == null)
             {
@@ -799,16 +913,22 @@ package demo
         private function contentHeight(id:String):Number
         {
             var secs:Array = DocsCatalog.sections(this.view, id);
+            // The SAME width the view wraps at (DocsStyle.docWrapW), so the sum below
+            // is the height the pane actually has. The window is a fixed 1000x700 here
+            // (asserted just above), which is why this can be derived rather than
+            // measured from a solved rect.
+            var wrapW:Number = DocsStyle.docWrapW(this.stage.stageWidth);
             var h:Number = 0;
             for (var i:int = 0; i < secs.length; i++)
             {
                 if (i > 0) h = h + DocsStyle.SEC_GAP;
-                h = h + DocSection(secs[i]).height();
+                h = h + DocSection(secs[i]).height(wrapW);
             }
             return h;
         }
 
-        // How many children escape the box their author drew them in. Two levels:
+        // How many children escape the box their author drew them in, plus how many
+        // prose lines paint wider than their box. Two rect levels:
         // the block's own children (heading / prose / demo / source), and the demo
         // surface's children (what the example built). Deeper is not checked -- a
         // demo may legitimately paint outside its own parent (a badge at a negative
@@ -835,7 +955,55 @@ package demo
                     bad = bad + this.escapes(d, d.children);
                 }
             }
+            return bad + this.inkWide(col);
+        }
+
+        // A PROSE LINE THAT PAINTS WIDER THAN ITS OWN BOX.
+        //
+        // DocSection wraps prose at the reading width through DocsWrap, which measures
+        // candidate lines in a scratch TextField. When that measurement disagrees with
+        // the renderer every RECT is still right (the node carries the point width) and
+        // only the INK runs past it -- the line slides under the scroll bar and off the
+        // pane, which is the reported defect and something escapes() cannot see.
+        //
+        // A wrapped node cannot fail this by construction (the renderer broke it), so
+        // the check is scoped to prose LINES: keys of the form `<block>:p<n>`.
+        private function inkWide(root:UiNode):int
+        {
+            var bad:int = 0;
+            var stack:Array = [root];
+            while (stack.length > 0)
+            {
+                var n:UiNode = stack.pop();
+                var k:String = String(n.key);
+                if (n.tf != null && this.isProseLine(k) && n.tf.textWidth > n.absW + 0.5)
+                {
+                    bad = bad + 1;
+                    if (bad <= 3)
+                    {
+                        this.report = this.report + "    prose line " + k + " paints "
+                            + n.tf.textWidth + "pt of ink in a " + n.absW + "pt box\n";
+                    }
+                }
+                for (var i:int = 0; i < n.children.length; i++) stack.push(n.children[i]);
+            }
             return bad;
+        }
+
+        // `b3:p12` is a prose line. `b3:prose` (the column that holds them) is not,
+        // which is why the tail has to be all digits and not just start with a p.
+        private function isProseLine(k:String):Boolean
+        {
+            var ix:int = k.lastIndexOf(":p");
+            if (ix < 0) return false;
+            var tail:String = k.substring(ix + 2);
+            if (tail.length == 0) return false;
+            for (var i:int = 0; i < tail.length; i++)
+            {
+                var c:String = tail.charAt(i);
+                if (c < "0" || c > "9") return false;
+            }
+            return true;
         }
 
         // Counts children of `box` whose solved rect is not inside it.

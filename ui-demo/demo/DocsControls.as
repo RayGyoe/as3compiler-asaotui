@@ -29,8 +29,7 @@ package demo
 
             if (id == "button") return [
                 new DocSection("Variants are styles", [
-                    "There is one button kind. Primary / quiet / danger are three style refinements, not",
-                    "three widgets, so a variant never drifts from the base behaviour."
+                    "There is one button kind. Primary / quiet / danger are three style refinements, not three widgets, so a variant never drifts from the base behaviour."
                 ], [
                     "button({ label: \"Save\",   style: PRIMARY, onClick: save }),",
                     "button({ label: \"Cancel\", style: QUIET,   onClick: cancel }),",
@@ -48,8 +47,7 @@ package demo
                 }),
 
                 new DocSection("Disabled", [
-                    "`disabled` is an Element field, so every factory accepts it and the kit drops the",
-                    "hover/press modulation and the handler in one place (see UiNode.inert)."
+                    "`disabled` is an Element field, so every factory accepts it and the kit drops the hover/press modulation and the handler in one place (see UiNode.inert)."
                 ], [
                     "button({ label: \"Publish\", disabled: true }),",
                     "button({ label: \"Draft\", disabled: true, style: PRIMARY })"
@@ -62,8 +60,7 @@ package demo
                 }),
 
                 new DocSection("Label from state", [
-                    "A button's label is just a string the render computes -- it is re-pointed every",
-                    "frame, so a counter needs no special API."
+                    "A button's label is just a string the render computes -- it is re-pointed every frame, so a counter needs no special API."
                 ], [
                     "button({ label: \"Clicked \" + model.n + \"x\", onClick: bump })"
                 ], 76, function ():Node
@@ -77,9 +74,7 @@ package demo
                 }),
 
                 new DocSection("A dialog footer is two buttons and one alignment", [
-                    "The three buttons below are the same kind; the row supplies the position. That is",
-                    "the whole reason a footer needs no widget: `justifyContent: flex-end` on a row of",
-                    "declared widths lines up right edges without measuring anything."
+                    "The three buttons below are the same kind; the row supplies the position. That is the whole reason a footer needs no widget: `justifyContent: flex-end` on a row of declared widths lines up right edges without measuring anything."
                 ], [
                     "row({ gap: 8, justifyContent: \"flex-end\", size: [420, null] }, [",
                     "    button({ label: \"Cancel\", style: QUIET }),",
@@ -97,10 +92,7 @@ package demo
                 }),
 
                 new DocSection("Enter and Space press the focused control", [
-                    "Tab to a button and press Enter or Space: UiApp runs the default activation path,",
-                    "which calls the click handler unless the control names an `action` (then the",
-                    "app's action registry gets it). One exception is deliberate -- when the focused",
-                    "thing is an editable field, Enter is its commit and Space is a character.",
+                    "Tab to a button and press Enter or Space: UiApp runs the default activation path, which calls the click handler unless the control names an `action` (then the app's action registry gets it). One exception is deliberate -- when the focused thing is an editable field, Enter is its commit and Space is a character.",
                     "`tabEnabled: false` keeps a button out of the tab walk."
                 ], [
                     "button({ label: \"Save\", action: \"doc.save\" })      // registry",
@@ -121,8 +113,7 @@ package demo
 
             if (id == "textField") return [
                 new DocSection("Placeholder and value", [
-                    "The ghost text is its own non-interactive TextField, shown only while the field is",
-                    "empty and NOT focused (a focused empty field shows the caret instead)."
+                    "The ghost text is its own non-interactive TextField, shown only while the field is empty and NOT focused (a focused empty field shows the caret instead)."
                 ], [
                     "textField({ key: \"email\", placeholder: \"you@example.com\",",
                     "            style: { size: [220, null] } })"
@@ -136,8 +127,7 @@ package demo
                 }),
 
                 new DocSection("Masked", [
-                    "password:true masks the display and leaves the MODEL string alone, so the value you",
-                    "commit is the real one."
+                    "password:true masks the display and leaves the MODEL string alone, so the value you commit is the real one."
                 ], [
                     "textField({ password: true, placeholder: \"Password\",",
                     "            value: model.pw, onChange: function (t:String):void { model.pw = t; } })"
@@ -153,8 +143,7 @@ package demo
                 }),
 
                 new DocSection("Commit, not every keystroke", [
-                    "onChange fires per keystroke and onCommit on Enter/blur. A page that writes the",
-                    "model on every keystroke re-renders the whole page -- fine here, wasteful in a form."
+                    "onChange fires per keystroke and onCommit on Enter/blur. A page that writes the model on every keystroke re-renders the whole page -- fine here, wasteful in a form."
                 ], [
                     "textField({ value: \"search\", onCommit: function (t:String):void {",
                     "    model.query = t; model.notify(Dirty.VALUE);",
@@ -170,9 +159,7 @@ package demo
                 }),
 
                 new DocSection("The box is yours; the text is centred in it", [
-                    "A field measures nothing but its own text: give it a height and the run is",
-                    "vertically centred in it, give it a width and the caret walks inside it. Three",
-                    "sizes of the same placeholder, which is how a dense toolbar and a form differ."
+                    "A field measures nothing but its own text: give it a height and the run is vertically centred in it, give it a width and the caret walks inside it. Three sizes of the same placeholder, which is how a dense toolbar and a form differ."
                 ], [
                     "textField({ style: { size: [160, 28] } }),",
                     "textField({ style: { size: [160, 32] } }),",
@@ -190,9 +177,7 @@ package demo
                 }),
 
                 new DocSection("Disabled is the container's word", [
-                    "A locked field still shows its value and still keeps the text -- what it loses is",
-                    "the press, the caret and the focus. The second field below is the same call inside",
-                    "a disabled column, which is how a read-only form section is usually built."
+                    "A locked field still shows its value and still keeps the text -- what it loses is the press, the caret and the focus. The second field below is the same call inside a disabled column, which is how a read-only form section is usually built."
                 ], [
                     "column({ gap: 8, disabled: true }, [",
                     "    textField({ value: \"ada@example.com\" }),",
@@ -211,9 +196,7 @@ package demo
 
             if (id == "textArea") return [
                 new DocSection("Enter inserts a newline", [
-                    "A text area is its own KIND, not a flag on the single-line field: the difference is",
-                    "Enter -- a single-line field COMMITS on it, here it inserts. So this widget never",
-                    "consumes 13; the runtime inserts the line break itself, and only for a key nobody took."
+                    "A text area is its own KIND, not a flag on the single-line field: the difference is Enter -- a single-line field COMMITS on it, here it inserts. So this widget never consumes 13; the runtime inserts the line break itself, and only for a key nobody took."
                 ], [
                     "textArea({ key: \"notes\", rows: 4, placeholder: \"Notes...\",",
                     "           style: { size: [320, null] },",
@@ -231,9 +214,7 @@ package demo
                 }),
 
                 new DocSection("rows sets the height; commit is on blur", [
-                    "With no height in the style the box is `rows` REAL line heights of the resolved font",
-                    "(measured with the field itself, not a constant), plus padding and border. There is",
-                    "no Enter-to-commit here, so onCommit fires when focus leaves the field."
+                    "With no height in the style the box is `rows` REAL line heights of the resolved font (measured with the field itself, not a constant), plus padding and border. There is no Enter-to-commit here, so onCommit fires when focus leaves the field."
                 ], [
                     "textArea({ rows: 2, value: model.bio,",
                     "           onCommit: function (t:String):void { model.bio = t; } })"
@@ -249,9 +230,7 @@ package demo
                 }),
 
                 new DocSection("Longer than the box, so it scrolls", [
-                    "rows:3 is the HEIGHT of the box, not a limit on the text. The value below is",
-                    "eight lines; the field is three line-heights tall and scrolls, and the caret",
-                    "walking past the bottom scrolls the view with it."
+                    "rows:3 is the HEIGHT of the box, not a limit on the text. The value below is eight lines; the field is three line-heights tall and scrolls, and the caret walking past the bottom scrolls the view with it."
                 ], [
                     "textArea({ rows: 3, value: longText })   // longText is 8 lines"
                 ], 132, function ():Node
@@ -266,10 +245,7 @@ package demo
                 }),
 
                 new DocSection("Only the Enter key tells them apart", [
-                    "Same box, same border, same text: the two below are a textArea(rows:1) and a",
-                    "textField. Press Enter in each -- the left one grows a line, the right one",
-                    "commits and stays one line. That difference is the entire reason they are two",
-                    "kinds instead of one with a flag."
+                    "Same box, same border, same text: the two below are a textArea(rows:1) and a textField. Press Enter in each -- the left one grows a line, the right one commits and stays one line. That difference is the entire reason they are two kinds instead of one with a flag."
                 ], [
                     "textArea({ rows: 1 })   // Enter inserts",
                     "textField()             // Enter commits"
@@ -292,8 +268,7 @@ package demo
 
             if (id == "checkbox") return [
                 new DocSection("Checked state", [
-                    "The checkbox reports the NEW boolean through onChange; the model owns it. A checkbox",
-                    "that kept its own state would be the one thing the reconciler cannot re-describe."
+                    "The checkbox reports the NEW boolean through onChange; the model owns it. A checkbox that kept its own state would be the one thing the reconciler cannot re-describe."
                 ], [
                     "checkbox({ label: \"Email me\", checked: model.optIn,",
                     "           onChange: function (v:Boolean):void { model.optIn = v; } })"
@@ -308,8 +283,7 @@ package demo
                 }),
 
                 new DocSection("Disabled", [
-                    "A disabled checkbox keeps its checked state and drops the handler -- the state is",
-                    "displayed, not destroyed."
+                    "A disabled checkbox keeps its checked state and drops the handler -- the state is displayed, not destroyed."
                 ], [
                     "checkbox({ label: \"Locked\", checked: true, disabled: true })"
                 ], 76, function ():Node
@@ -321,9 +295,7 @@ package demo
                 }),
 
                 new DocSection("Three independent booleans", [
-                    "No group, no parent: each checkbox owns exactly one boolean in the model, and the",
-                    "summary line is an expression over the three. This is the shape a settings block",
-                    "uses -- and the shape a radio group deliberately does not."
+                    "No group, no parent: each checkbox owns exactly one boolean in the model, and the summary line is an expression over the three. This is the shape a settings block uses -- and the shape a radio group deliberately does not."
                 ], [
                     "checkbox({ label: \"Email\", checked: model.email, onChange: set }),",
                     "checkbox({ label: \"Push\",  checked: model.push,  onChange: set })"
@@ -345,9 +317,7 @@ package demo
                 }),
 
                 new DocSection("The label is part of the hit target", [
-                    "A checkbox is one node: the 16pt box AND the text beside it. Click the word, not",
-                    "just the square. The label also wraps nowhere -- a checkbox is a single-line",
-                    "control, so a long label needs a column and a separate text() if it must break."
+                    "A checkbox is one node: the 16pt box AND the text beside it. Click the word, not just the square. The label also wraps nowhere -- a checkbox is a single-line control, so a long label needs a column and a separate text() if it must break."
                 ], [
                     "checkbox({ label: \"Send me every release, including the ones nobody reads\" })"
                 ], 96, function ():Node
@@ -364,8 +334,7 @@ package demo
 
             if (id == "radio") return [
                 new DocSection("One of N", [
-                    "A radio names its GROUP: two radios with the same `group` are mutually exclusive",
-                    "without any shared parent widget, so a group can span columns."
+                    "A radio names its GROUP: two radios with the same `group` are mutually exclusive without any shared parent widget, so a group can span columns."
                 ], [
                     "radio(\"Daily\",  { group: \"freq\", value: \"d\", selected: model.freq == \"d\",",
                     "                  onChange: pick }),",
@@ -381,9 +350,7 @@ package demo
                 }),
 
                 new DocSection("A group is a string, so it can span containers", [
-                    "The two columns below are different subtrees; the radios still exclude each other",
-                    "because the group is the string \"side\", not the parent. A widget-tree group would",
-                    "have forced both columns into one node just to share a selection."
+                    "The two columns below are different subtrees; the radios still exclude each other because the group is the string \"side\", not the parent. A widget-tree group would have forced both columns into one node just to share a selection."
                 ], [
                     "radio(\"Left\",  { group: \"side\", value: \"l\" }),",
                     "radio(\"Right\", { group: \"side\", value: \"r\" })   // same group, other column"
@@ -409,9 +376,7 @@ package demo
                 }),
 
                 new DocSection("A radio with no group excludes nothing", [
-                    "Leave `group` out and the radio is just a circle that reports its own boolean --",
-                    "both below can be selected at once. That is not a bug to work around: it is how",
-                    "the widget stays honest when the author has not said what the set is."
+                    "Leave `group` out and the radio is just a circle that reports its own boolean -- both below can be selected at once. That is not a bug to work around: it is how the widget stays honest when the author has not said what the set is."
                 ], [
                     "radio(\"A\"), radio(\"B\")   // no group: two independent checkboxes"
                 ], 96, function ():Node
@@ -425,8 +390,7 @@ package demo
                 }),
 
                 new DocSection("Disabled keeps the choice visible", [
-                    "A locked option still shows WHICH one is chosen; it only refuses the click. That is",
-                    "the difference between a disabled radio and an omitted one."
+                    "A locked option still shows WHICH one is chosen; it only refuses the click. That is the difference between a disabled radio and an omitted one."
                 ], [
                     "radio(\"Monthly\", { group: \"plan\", selected: true, disabled: true })"
                 ], 96, function ():Node
@@ -458,10 +422,7 @@ package demo
                 }),
 
                 new DocSection("The same contract as the checkbox", [
-                    "A switch and a checkbox take the same `checked` and report the same boolean -- so",
-                    "one model field can drive both. The kit keeps two kinds because the two are read",
-                    "differently (\"takes effect now\" vs \"part of what I am submitting\"), not because",
-                    "the data differs."
+                    "A switch and a checkbox take the same `checked` and report the same boolean -- so one model field can drive both. The kit keeps two kinds because the two are read differently (\"takes effect now\" vs \"part of what I am submitting\"), not because the data differs."
                 ], [
                     "toggle(\"Power\", { checked: model.on, onChange: set }),",
                     "checkbox({ label: \"Power\", checked: model.on, onChange: set })"
@@ -477,9 +438,7 @@ package demo
                 }),
 
                 new DocSection("A settings block", [
-                    "Three switches, two hairlines, one card. The rows are not a widget: a card whose",
-                    "children alternate toggle and divider. Everything left/right in it is the card's",
-                    "padding, so the block moves as one if the padding changes."
+                    "Three switches, two hairlines, one card. The rows are not a widget: a card whose children alternate toggle and divider. Everything left/right in it is the card's padding, so the block moves as one if the padding changes."
                 ], [
                     "card({ title: \"Sync\" }, [ toggle(...), divider(), toggle(...) ])"
                 ], 168, function ():Node
@@ -497,8 +456,7 @@ package demo
                 }),
 
                 new DocSection("Disabled keeps the position", [
-                    "A locked switch still shows whether it is on. The knob does not slide and the row",
-                    "does not click -- but the state the user needs to read is still there."
+                    "A locked switch still shows whether it is on. The knob does not slide and the row does not click -- but the state the user needs to read is still there."
                 ], [
                     "toggle(\"On but locked\",  { checked: true,  disabled: true }),",
                     "toggle(\"Off but locked\", { checked: false, disabled: true })"
@@ -513,8 +471,7 @@ package demo
 
             if (id == "slider") return [
                 new DocSection("A value along a track", [
-                    "The value is a Number in the model; the widget reports a new one on drag. The label",
-                    "is the slider's own first argument, not a separate text node."
+                    "The value is a Number in the model; the widget reports a new one on drag. The label is the slider's own first argument, not a separate text node."
                 ], [
                     "slider(\"Volume\", { value: model.vol, onChange: function (v:Number):void {",
                     "    model.vol = v; model.notify(Dirty.VALUE);",
@@ -532,9 +489,7 @@ package demo
                 }),
 
                 new DocSection("The ends are values too", [
-                    "0 and 1 are positions, not absences: a slider at its left end still draws a knob",
-                    "and still reports 0. The two below are pinned to the ends so the track, the fill",
-                    "and the knob can be read without dragging anything."
+                    "0 and 1 are positions, not absences: a slider at its left end still draws a knob and still reports 0. The two below are pinned to the ends so the track, the fill and the knob can be read without dragging anything."
                 ], [
                     "slider(\"Muted\", { value: 0 }),",
                     "slider(\"Full\",  { value: 1 })"
@@ -547,10 +502,7 @@ package demo
                 }),
 
                 new DocSection("A labelled form row", [
-                    "The widget's first argument is a LABEL it draws itself, in the same run as the",
-                    "track -- there is no separate text node to align. When the design wants the name",
-                    "above the track instead, pass an empty label and put the text in a column: the",
-                    "widget then reserves no label line at all."
+                    "The widget's first argument is a LABEL it draws itself, in the same run as the track -- there is no separate text node to align. When the design wants the name above the track instead, pass an empty label and put the text in a column: the widget then reserves no label line at all."
                 ], [
                     "column({ gap: 4 }, [",
                     "    text(\"Volume\"),",
@@ -567,9 +519,7 @@ package demo
                 }),
 
                 new DocSection("Disabled keeps its position", [
-                    "A disabled slider is drawn at the disabled alpha and its track refuses the press;",
-                    "the value it was given is what you see. This is how a slider shows a setting that",
-                    "is controlled elsewhere."
+                    "A disabled slider is drawn at the disabled alpha and its track refuses the press; the value it was given is what you see. This is how a slider shows a setting that is controlled elsewhere."
                 ], [
                     "slider(\"Volume 40%\", { value: 0.4, disabled: true })"
                 ], 84, function ():Node
@@ -580,11 +530,7 @@ package demo
 
             if (id == "numberInput") return [
                 new DocSection("A number, with steppers", [
-                    "The right 32pt of the box is the STEPPER strip (upper half adds, lower half",
-                    "subtracts); everything to its left is a real textField, so typing, selection and",
-                    "the caret behave exactly like the single-line field on the previous page.",
-                    "step is what the steppers AND the arrow keys move by, and every write is CLAMPED",
-                    "into [min, max] before any callback sees it."
+                    "The right 32pt of the box is the STEPPER strip (upper half adds, lower half subtracts); everything to its left is a real textField, so typing, selection and the caret behave exactly like the single-line field on the previous page. step is what the steppers AND the arrow keys move by, and every write is CLAMPED into [min, max] before any callback sees it."
                 ], [
                     "numberInput(\"Qty\", { key: \"qty\", value: 4, min: 0, max: 99, step: 2,",
                     "                     onChange: function (v:Number):void { model.qty = v; },",
@@ -604,10 +550,7 @@ package demo
                 }),
 
                 new DocSection("Typing commits; junk reverts", [
-                    "onChange fires on every accepted change, onCommit on Enter or on blur. Text that",
-                    "does not parse is REVERTED to the model -- never NaN, never 0 -- because a number",
-                    "field that invented a value would silently overwrite what the author stored.",
-                    "decimals rounds every write, including the value the author passed in."
+                    "onChange fires on every accepted change, onCommit on Enter or on blur. Text that does not parse is REVERTED to the model -- never NaN, never 0 -- because a number field that invented a value would silently overwrite what the author stored. decimals rounds every write, including the value the author passed in."
                 ], [
                     "numberInput(\"Price\", { value: 12.5, min: 0, max: 1000, step: 0.5, decimals: 2,",
                     "                     onChange: function (v:Number):void { model.price = v; } })"
@@ -624,9 +567,7 @@ package demo
                 }),
 
                 new DocSection("The bounds are the widget's, not the handler's", [
-                    "The two fields below sit ON min and max. The steppers, the arrow keys and a typed",
-                    "commit all stop there before any callback runs, so a handler never has to clamp:",
-                    "what arrives is already in range."
+                    "The two fields below sit ON min and max. The steppers, the arrow keys and a typed commit all stop there before any callback runs, so a handler never has to clamp: what arrives is already in range."
                 ], [
                     "numberInput(\"At min\", { value: 0,  min: 0, max: 10 }),",
                     "numberInput(\"At max\", { value: 10, min: 0, max: 10 })"
@@ -641,9 +582,7 @@ package demo
                 }),
 
                 new DocSection("decimals decides how many digits you see", [
-                    "The same 12.5 in three fields: decimals 0 rounds to 13, decimals 1 keeps 12.5 and",
-                    "decimals 2 pads to 12.50. The rounding happens on every write, including the value",
-                    "the author passed in, so the model and the box never disagree."
+                    "The same 12.5 in three fields: decimals 0 rounds to 13, decimals 1 keeps 12.5 and decimals 2 pads to 12.50. The rounding happens on every write, including the value the author passed in, so the model and the box never disagree."
                 ], [
                     "numberInput(\"Value\",   { value: 12.5, decimals: 0 }),   // 13",
                     "numberInput(\"Value\",   { value: 12.5, decimals: 1 }),   // 12.5",
@@ -663,10 +602,7 @@ package demo
 
             if (id == "rangeSlider") return [
                 new DocSection("Two thumbs, one track", [
-                    "A range is TWO numbers, so there is no Binding: the contract is onRange(lo, hi) and",
-                    "each one is a 0..1 position on the track. A thumb cannot be dragged past its",
-                    "partner -- the pair is clamped against itself, so lo never exceeds hi -- and the",
-                    "widget reports both values on every move, not a delta."
+                    "A range is TWO numbers, so there is no Binding: the contract is onRange(lo, hi) and each one is a 0..1 position on the track. A thumb cannot be dragged past its partner -- the pair is clamped against itself, so lo never exceeds hi -- and the widget reports both values on every move, not a delta."
                 ], [
                     "rangeSlider(\"Price\", { value: model.lo, value2: model.hi, step: 0.05,",
                     "                         onRange: function (lo:Number, hi:Number):void {",
@@ -689,9 +625,7 @@ package demo
                 }),
 
                 new DocSection("Normalised once, in the factory", [
-                    "value and value2 are clamped into 0..1 and SWAPPED when they arrive backwards, at",
-                    "construction time. Doing that in the widget instead would leave the first painted",
-                    "frame -- the one before any interaction -- showing an inverted band.",
+                    "value and value2 are clamped into 0..1 and SWAPPED when they arrive backwards, at construction time. Doing that in the widget instead would leave the first painted frame -- the one before any interaction -- showing an inverted band.",
                     "The arrow keys move the thumb nearest the focus, step at a time."
                 ], [
                     "// value: 0.9, value2: 0.1  renders as 0.1 .. 0.9, not as a broken track",
@@ -706,9 +640,7 @@ package demo
                 }),
 
                 new DocSection("The band can be everything or a point", [
-                    "Two legal extremes: 0..1 fills the whole track, and 0.4..0.4 collapses to a",
-                    "single position with the two thumbs on top of each other. Neither is a special",
-                    "case in the code -- the band is drawn between the two positions it was given."
+                    "Two legal extremes: 0..1 fills the whole track, and 0.4..0.4 collapses to a single position with the two thumbs on top of each other. Neither is a special case in the code -- the band is drawn between the two positions it was given."
                 ], [
                     "rangeSlider(\"All\",   { value: 0,   value2: 1 })",
                     "rangeSlider(\"Point\", { value: 0.4, value2: 0.4 })"
@@ -723,9 +655,7 @@ package demo
                 }),
 
                 new DocSection("step is the keyboard increment", [
-                    "`step` does not quantise the drag (the thumb follows the pointer 1:1); it is how",
-                    "far an arrow key moves the focused thumb. It must be positive -- the factory",
-                    "throws otherwise, because a zero step would make every arrow key a silent no-op.",
+                    "`step` does not quantise the drag (the thumb follows the pointer 1:1); it is how far an arrow key moves the focused thumb. It must be positive -- the factory throws otherwise, because a zero step would make every arrow key a silent no-op.",
                     "Left right arrow keys, then compare the numbers below with the labels."
                 ], [
                     "rangeSlider(\"Coarse\", { step: 0.25, onRange: pair }),   // quarters",

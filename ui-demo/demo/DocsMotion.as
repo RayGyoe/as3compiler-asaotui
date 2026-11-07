@@ -63,8 +63,7 @@ package demo
             return [
                 new DocSection("One field, one transition", [
                     "Write `transitionMs` and `transitionEase` and the field eases instead of snapping.",
-                    "No widget knows: UiNode.resolveStyle compares what it just resolved against what the",
-                    "node had, and hands the difference to the tween core. Every kind animates, unchanged."
+                    "No widget knows: UiNode.resolveStyle compares what it just resolved against what the node had, and hands the difference to the tween core. Every kind animates, unchanged."
                 ], [
                     "box({ style: { background: on ? 0x2563EB : 0xE2E8F0, transitionMs: 260,",
                     "              transitionEase: \"outCubic\" } })"
@@ -80,9 +79,7 @@ package demo
                 }),
 
                 new DocSection("Four names, four paths to the same width", [
-                    "The curve is a NAME, not a function pointer: a style is a data record built once at",
-                    "class load, so it cannot capture a closure. An unknown name throws -- a typo must not",
-                    "silently become a linear animation."
+                    "The curve is a NAME, not a function pointer: a style is a data record built once at class load, so it cannot capture a closure. An unknown name throws -- a typo must not silently become a linear animation."
                 ], [
                     "width = 40 + 260 * Ease.apply(\"outCubic\", t);  // linear | outQuad | outCubic | ...",
                     "Ease.has(\"outCubic\");                           // non-throwing membership test"
@@ -121,10 +118,7 @@ package demo
                 }),
 
                 new DocSection("Paint fields do not reflow", [
-                    "opacity, background, borderColor, textColor and cornerRadius change pixels only, so a",
-                    "tween on them costs a repaint and nothing else. Width, height, padding and gap change",
-                    "what flexbox must compute -- that is not a leak in the redraw rule, it is the author",
-                    "asking the layout to move, and it is why those fields are opt-in per node."
+                    "opacity, background, borderColor, textColor and cornerRadius change pixels only, so a tween on them costs a repaint and nothing else. Width, height, padding and gap change what flexbox must compute -- that is not a leak in the redraw rule, it is the author asking the layout to move, and it is why those fields are opt-in per node."
                 ], [
                     "Anim.isLayoutField(Anim.FIELD_WIDTH);     // true",
                     "Anim.isLayoutField(Anim.FIELD_OPACITY);   // false"
@@ -148,8 +142,7 @@ package demo
 
                 new DocSection("The curve, drawn", [
                     "Not a screenshot: 44 boxes, each one's height written as `2 + 14 * Ease.apply(...)`.",
-                    "That is the easing table itself, and the reason a tween lands exactly on its target is",
-                    "visible in the last column -- every curve reaches 1, so every bar is the same height."
+                    "That is the easing table itself, and the reason a tween lands exactly on its target is visible in the last column -- every curve reaches 1, so every bar is the same height."
                 ], [
                     "for (i = 0; i <= 10; i++)",
                     "    box({ style: { size: [11, 2 + 14 * Ease.apply(name, i / 10)] } })"
@@ -212,10 +205,8 @@ package demo
 
             return [
                 new DocSection("The target is a rectangle, and it can be bigger", [
-                    "Left: a 26pt tab. Right: the same tab inside a 44x44 container that carries the",
-                    "handler -- the container is what the pick walk finds, so the whole box answers.",
-                    "This is the technique, not a workaround: the runtime hits what a node PAINTED, so the",
-                    "hit area is whatever the node drew. (An alpha-0 background is the invisible form.)"
+                    "Left: a 26pt tab. Right: the same tab inside a 44x44 container that carries the handler -- the container is what the pick walk finds, so the whole box answers.",
+                    "This is the technique, not a workaround: the runtime hits what a node PAINTED, so the hit area is whatever the node drew. (An alpha-0 background is the invisible form.)"
                 ], [
                     "box({ onClick: tap, style: { size: [44, 44], background: 0xF1F5F9 } },",
                     "    [ tabNode ])   // 44pt of target, 26pt of ink"
@@ -243,10 +234,7 @@ package demo
                 }),
 
                 new DocSection("Dragging is a divider that answers the pick", [
-                    "The grip below is a splitPane: its divider is an ordinary child node painted as a bar,",
-                    "which is what makes it hit-testable at all. A pointer series is normalized by",
-                    "PointerRouter (Pointer in, press / move / release out), and a viewport a finger can",
-                    "drag implements TouchScrollable. Both speak ROOT coordinates, so no transform maths."
+                    "The grip below is a splitPane: its divider is an ordinary child node painted as a bar, which is what makes it hit-testable at all. A pointer series is normalized by PointerRouter (Pointer in, press / move / release out), and a viewport a finger can drag implements TouchScrollable. Both speak ROOT coordinates, so no transform maths."
                 ], [
                     "splitPane(left, right, { direction: \"row\", ratio: 0.35, minSize: 110,",
                     "    dividerSize: 8, onResize: function (r:Number):void { m.put(\"gs.ratio\", r); } })"
@@ -280,9 +268,7 @@ package demo
                 }),
 
                 new DocSection("Disabled is inherited and it stops the pick", [
-                    "One rule in the pick walk (UiNode.inert, walking the ancestor chain) means a disabled",
-                    "container disables its whole subtree -- and the runtime's own hit test already",
-                    "honours `mouseEnabled` / `mouseChildren`, so `disabled` is the only knob a page needs.",
+                    "One rule in the pick walk (UiNode.inert, walking the ancestor chain) means a disabled container disables its whole subtree -- and the runtime's own hit test already honours `mouseEnabled` / `mouseChildren`, so `disabled` is the only knob a page needs.",
                     "Click both: the right one is drawn, and it never answers."
                 ], [
                     "box({ onClick: tap }, [...]),                 // answers",
@@ -310,10 +296,7 @@ package demo
                 }),
 
                 new DocSection("The platform's answers arrive through Env", [
-                    "A phone shell binds an Env before mount; every value is a plain getter, and a change is",
-                    "announced through the same Observable the data flow uses. A node that opts in with",
-                    "`safeArea: true` gets the insets folded into its padding. Bind a fake phone here and",
-                    "watch the box below grow a notch margin: that is the production path, not a mock."
+                    "A phone shell binds an Env before mount; every value is a plain getter, and a change is announced through the same Observable the data flow uses. A node that opts in with `safeArea: true` gets the insets folded into its padding. Bind a fake phone here and watch the box below grow a notch margin: that is the production path, not a mock."
                 ], [
                     "app.bindEnv(phoneEnv);   // an EnvBase: setSafeArea(44,0,34,0), setHasHover(false)",
                     "box({ safeArea: true, style: { ... } })   // padding += the insets"

@@ -107,8 +107,7 @@ package demo
             return [
                 new DocSection("A live board", [
                     "Twenty-two quotes, twenty-two sparklines and a composite index, redrawn ten times a second.",
-                    "The rows are rebuilt from the model on every tick -- no widget caches a quote, nothing is patched",
-                    "behind the reconciler's back. The list beneath scrolls like any other: it is a scrollView."
+                    "The rows are rebuilt from the model on every tick -- no widget caches a quote, nothing is patched behind the reconciler's back. The list beneath scrolls like any other: it is a scrollView."
                 ], [
                     "row({ style: ROW }, [",
                     "    column({ style: NAME_COL }, [text(s.code), text(s.name)]),",
@@ -120,9 +119,7 @@ package demo
                 ], BOARD_H, function ():Node { return board(view); }, true),
 
                 new DocSection("What a frame costs", [
-                    "These are the app's own numbers, sampled once a second: the frames it actually drew, the nodes it",
-                    "holds, how many describe / paint passes it ran, and the per-pass average of the two phases that cost",
-                    "anything. A tick that changes a VALUE runs describe -> measure -> solve -> arrange -> paint; a tick"
+                    "These are the app's own numbers, sampled once a second: the frames it actually drew, the nodes it holds, how many describe / paint passes it ran, and the per-pass average of the two phases that cost anything. A tick that changes a VALUE runs describe -> measure -> solve -> arrange -> paint; a tick"
                 ], [
                     "// UiApp publishes the counters; the page only reads them",
                     "var fps:int = view.fps;                      // frames drawn / second",
@@ -132,9 +129,7 @@ package demo
                 ], 76, function ():Node { return stats(view); }),
 
                 new DocSection("Pause, resume, reset", [
-                    "The market is driven by the app's frame clock, not by a timer of its own: `frameTick()` steps it",
-                    "and calls `model.notify(Dirty.VALUE)`. Pausing is therefore one boolean in the model -- and a paused",
-                    "board proves the loop really is idle, because the paint counter stops moving."
+                    "The market is driven by the app's frame clock, not by a timer of its own: `frameTick()` steps it and calls `model.notify(Dirty.VALUE)`. Pausing is therefore one boolean in the model -- and a paused board proves the loop really is idle, because the paint counter stops moving."
                 ], [
                     "if (now - _lastStep < LiveMarket.TICK_MS) return;",
                     "_lastStep = now;",

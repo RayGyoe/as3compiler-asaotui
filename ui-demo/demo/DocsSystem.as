@@ -74,12 +74,8 @@ package demo
 
             if (id == "events") return [
                 new DocSection("A right click brings its own point", [
-                    "`onRightClick(x, y)` hands you the STAGE coordinates of the press, because a",
-                    "right click exists to say \"open something HERE\" -- a handler without the point",
-                    "would have to guess it from the pointer, which no event field exposes.",
-                    "That pair is exactly what `menu({ atX, atY })` wants, so opening a menu at the",
-                    "click is one assignment. The press BUBBLES like any other event, so a handler",
-                    "on a container also hears its children."
+                    "`onRightClick(x, y)` hands you the STAGE coordinates of the press, because a right click exists to say \"open something HERE\" -- a handler without the point would have to guess it from the pointer, which no event field exposes.",
+                    "That pair is exactly what `menu({ atX, atY })` wants, so opening a menu at the click is one assignment. The press BUBBLES like any other event, so a handler on a container also hears its children."
                 ], [
                     "box({ onRightClick: function (x:Number, y:Number):void {",
                     "    this.atX = x; this.atY = y; this.open = true;",
@@ -106,13 +102,9 @@ package demo
                 }),
 
                 new DocSection("A double click has to be switched on", [
-                    "The runtime only emits `doubleClick` when the HIT TARGET's own",
-                    "`doubleClickEnabled` is true, and it defaults to FALSE (measured on adl 51.4.1).",
-                    "Switching it on globally would change what a fast second click means for every",
-                    "control in the app, so `UiNode` sets it on exactly the nodes that carry an",
-                    "`onDoubleClick` handler -- the flag follows the handler, not the author.",
-                    "Double-click the left box: it counts. The right box has no handler, so the flag",
-                    "stays off and the same gesture reaches nothing."
+                    "The runtime only emits `doubleClick` when the HIT TARGET's own `doubleClickEnabled` is true, and it defaults to FALSE (measured on adl 51.4.1).",
+                    "Switching it on globally would change what a fast second click means for every control in the app, so `UiNode` sets it on exactly the nodes that carry an `onDoubleClick` handler -- the flag follows the handler, not the author.",
+                    "Double-click the left box: it counts. The right box has no handler, so the flag stays off and the same gesture reaches nothing."
                 ], [
                     "box({ onDoubleClick: pick })          // doubleClickEnabled = true",
                     "box({ onClick: pick })                // stays false",
@@ -143,9 +135,7 @@ package demo
                 }),
 
                 new DocSection("A container hears its children", [
-                    "Pointer events BUBBLE, so a handler on a container is also a handler for every",
-                    "node inside it. Right-click the small square: the OUTER box counts it, because the",
-                    "inner one has no handler and the press keeps going up the tree."
+                    "Pointer events BUBBLE, so a handler on a container is also a handler for every node inside it. Right-click the small square: the OUTER box counts it, because the inner one has no handler and the press keeps going up the tree."
                 ], [
                     "box({ onRightClick: count }, [ box({ ... }) ])   // the child has no handler",
                     "// the press bubbles: an ancestor does not need a listener on each child"
@@ -174,10 +164,7 @@ package demo
                 }),
 
                 new DocSection("Three handlers, and that is the list", [
-                    "Element carries exactly three pointer callbacks: onClick, onRightClick(x, y) and",
-                    "onDoubleClick. There is no onPointerDown / onPointerMove / onPointerUp on an",
-                    "element -- continuous motion belongs to the pointer layer (see the gesture page),",
-                    "which is the only place a drag can be expressed without fighting the click."
+                    "Element carries exactly three pointer callbacks: onClick, onRightClick(x, y) and onDoubleClick. There is no onPointerDown / onPointerMove / onPointerUp on an element -- continuous motion belongs to the pointer layer (see the gesture page), which is the only place a drag can be expressed without fighting the click."
                 ], [
                     "onClick: function ():void { ... }",
                     "onRightClick: function (x:Number, y:Number):void { ... }",
@@ -196,10 +183,7 @@ package demo
 
             if (id == "style") return [
                 new DocSection("size, minSize, maxSize", [
-                    "`size` is the box you ask for; `minSize` and `maxSize` clamp what you get. The",
-                    "clamp wins over the request in both directions, and it is applied by the layout",
-                    "engine AFTER the flex solve -- which is why a scroll view stops its own content",
-                    "from shrinking with a min and never with a flex."
+                    "`size` is the box you ask for; `minSize` and `maxSize` clamp what you get. The clamp wins over the request in both directions, and it is applied by the layout engine AFTER the flex solve -- which is why a scroll view stops its own content from shrinking with a min and never with a flex."
                 ], [
                     "box({ size: [180, 36] }),                      // 180 wide",
                     "box({ size: [180, 36], maxSize: [96, 36] }),   // 96: the max wins",
@@ -224,13 +208,8 @@ package demo
 
                 new DocSection("flexShrink: who gives way", [
                     "Three 120-wide children in a 300-wide row is 360 of demand, so 60 has to go.",
-                    "`flexShrink` (default 1) shares that deficit by SIZE: the two shrinkers give 30",
-                    "each. A child with `flexShrink: 0` is a floor -- it keeps its 120 and the others",
-                    "pay the whole deficit. This is also the switch that makes `overflow` visible: a",
-                    "shrinkable child never sticks out.",
-                    "THE ONE TRAP: writing ANY flex field (grow, shrink or basis) REPLACES the item's",
-                    "base size, so `flexShrink: 0` alone means `flex: 0 0 0` and the node collapses to",
-                    "nothing -- measured here, 120 -> 0. Write the basis you start from."
+                    "`flexShrink` (default 1) shares that deficit by SIZE: the two shrinkers give 30 each. A child with `flexShrink: 0` is a floor -- it keeps its 120 and the others pay the whole deficit. This is also the switch that makes `overflow` visible: a shrinkable child never sticks out.",
+                    "THE ONE TRAP: writing ANY flex field (grow, shrink or basis) REPLACES the item's base size, so `flexShrink: 0` alone means `flex: 0 0 0` and the node collapses to nothing -- measured here, 120 -> 0. Write the basis you start from."
                 ], [
                     "row({ size: [300, 36], gap: 0 }, [",
                     "    box({ width: 120, flexBasis: 120, flexShrink: 1 }),",
@@ -257,10 +236,7 @@ package demo
                 }),
 
                 new DocSection("boxSizing: where the border and the padding live", [
-                    "`borderBox` (the kit's default, and CSS's own default once you opt in) means",
-                    "`size` INCLUDES padding and border. `contentBox` means `size` is the CONTENT, so",
-                    "the padding and the border grow the box outward -- the same 120-wide request",
-                    "becomes a 144-wide node. Pick one per component and never mix them in a row."
+                    "`borderBox` (the kit's default, and CSS's own default once you opt in) means `size` INCLUDES padding and border. `contentBox` means `size` is the CONTENT, so the padding and the border grow the box outward -- the same 120-wide request becomes a 144-wide node. Pick one per component and never mix them in a row."
                 ], [
                     "// borderBox: 120 total",
                     "box({ size: [120, 40], padding: 10, border: 2 }),",
@@ -284,9 +260,7 @@ package demo
                 }),
 
                 new DocSection("margin is outside, padding is inside", [
-                    "`padding` pushes the CONTENT in from the node's own edge. `margin` moves the node",
-                    "itself away from its siblings and from its parent's content edge -- the row below",
-                    "has `gap: 0`, so every pixel between the tiles is the middle tile's margin."
+                    "`padding` pushes the CONTENT in from the node's own edge. `margin` moves the node itself away from its siblings and from its parent's content edge -- the row below has `gap: 0`, so every pixel between the tiles is the middle tile's margin."
                 ], [
                     "row({ gap: 0 }, [",
                     "    box({ width: 60 }),",
@@ -311,9 +285,7 @@ package demo
                 }),
 
                 new DocSection("alignSelf: one child disagrees with the row", [
-                    "`alignItems` is the row's default for the cross axis; `alignSelf` lets ONE child",
-                    "opt out of it. Both take flex-start / flex-end / center / stretch / baseline, and",
-                    "an unknown value THROWS rather than quietly centring."
+                    "`alignItems` is the row's default for the cross axis; `alignSelf` lets ONE child opt out of it. Both take flex-start / flex-end / center / stretch / baseline, and an unknown value THROWS rather than quietly centring."
                 ], [
                     "row({ size: [null, 80], alignItems: \"flex-start\" }, [",
                     "    box({ width: 60, height: 32 }),",
@@ -340,9 +312,7 @@ package demo
                 }),
 
                 new DocSection("alignContent: where the wrapped lines go", [
-                    "Only meaningful once the row WRAPS. `alignContent` places the LINE BOXES in the",
-                    "cross-axis space the lines did not use: `space-between` pushes the first line to",
-                    "the top, the last to the bottom and spreads the rest."
+                    "Only meaningful once the row WRAPS. `alignContent` places the LINE BOXES in the cross-axis space the lines did not use: `space-between` pushes the first line to the top, the last to the bottom and spreads the rest."
                 ], [
                     "row({ size: [240, 120], flexWrap: \"wrap\", gap: 6,",
                     "      alignContent: \"space-between\" }, [ six 110x24 tiles ])"
@@ -363,20 +333,9 @@ package demo
 
                 new DocSection("overflow: where painting stops", [
                     "`overflow` is where a box stops painting: `visible` (default), `hidden`, `scroll`.",
-                    "The layout engine has always taken it; the NODE now consumes it too -- as a clip",
-                    "window on the box, so a child that does not fit stops at the edge instead of",
-                    "painting over its neighbours. That was library work, not a compiler fix: the gap",
-                    "registered as compiler-gaps G29 turned out to be a field nobody read, because",
-                    "`scrollRect` and `mask` already clip identically on both runtimes.",
-                    "Both strips below are 200 wide inside 120-wide boxes: the upper one shows all of",
-                    "its width, the lower one is cut at the box's border box.",
-                    "The window is the BORDER box, not the padding box: the node's own background and",
-                    "border ride in the same sprite, so a padding-box window would shave them. Two",
-                    "consequences: hit testing follows the clip (a spilling child stops being",
-                    "interactive, which is what `overflow: hidden` means everywhere else), and the",
-                    "node's own box shadow is clipped too -- put a shadow on a WRAPPER when both are",
-                    "wanted. `overflow: \"scroll\"` clips like `hidden`; the scrolling itself is",
-                    "`scrollView`'s job, and it keeps its own viewport crop."
+                    "The layout engine has always taken it; the NODE now consumes it too -- as a clip window on the box, so a child that does not fit stops at the edge instead of painting over its neighbours. That was library work, not a compiler fix: the gap registered as compiler-gaps G29 turned out to be a field nobody read, because `scrollRect` and `mask` already clip identically on both runtimes.",
+                    "Both strips below are 200 wide inside 120-wide boxes: the upper one shows all of its width, the lower one is cut at the box's border box.",
+                    "The window is the BORDER box, not the padding box: the node's own background and border ride in the same sprite, so a padding-box window would shave them. Two consequences: hit testing follows the clip (a spilling child stops being interactive, which is what `overflow: hidden` means everywhere else), and the node's own box shadow is clipped too -- put a shadow on a WRAPPER when both are wanted. `overflow: \"scroll\"` clips like `hidden`; the scrolling itself is `scrollView`'s job, and it keeps its own viewport crop."
                 ], [
                     "box({ width: 120, overflow: \"visible\" }, [ stripOf(200) ])   // 200 wide, spills",
                     "box({ width: 120, overflow: \"hidden\"  }, [ stripOf(200) ])   // cut at 120",
@@ -392,15 +351,8 @@ package demo
                 }),
 
                 new DocSection("visible: false keeps the box, and the space", [
-                    "The Element flag `visible: false` is CSS `visibility: hidden`: nothing paints,",
-                    "but the node still measures, still arranges, and still holds its slot -- so a",
-                    "page does not jump when it comes back. The style spelling of the same thing is",
-                    "`visibility: \"hidden\"`, and it INHERITS to the subtree (a hidden card hides its",
-                    "buttons), which is what `display: none` would otherwise be reached for.",
-                    "Removing a node from LAYOUT is the author's decision in this kit, not a style's:",
-                    "`render()` returns what exists this pass, and a node that should take no space is",
-                    "a node you do not build. (The style field `display: \"none\"` exists and the",
-                    "native engine implements it -- the AS3 engine does not; see the last section.)"
+                    "The Element flag `visible: false` is CSS `visibility: hidden`: nothing paints, but the node still measures, still arranges, and still holds its slot -- so a page does not jump when it comes back. The style spelling of the same thing is `visibility: \"hidden\"`, and it INHERITS to the subtree (a hidden card hides its buttons), which is what `display: none` would otherwise be reached for.",
+                    "Removing a node from LAYOUT is the author's decision in this kit, not a style's: `render()` returns what exists this pass, and a node that should take no space is a node you do not build. (The style field `display: \"none\"` exists and the native engine implements it -- the AS3 engine does not; see the last section.)"
                 ], [
                     "row([ tile, tile({ visible: false }), tile ])   // three tiles, middle invisible",
                     "// or, as a style: tile({ visibility: \"hidden\" })"
@@ -416,10 +368,7 @@ package demo
                 }),
 
                 new DocSection("opacity", [
-                    "`opacity` multiplies what the node PAINTS (it is the backing object's alpha), and",
-                    "it INHERITS: a 0.4 parent makes its children 0.4 too, which is what makes a dimmed",
-                    "modal a single number instead of a colour per child. Hover and press modulation",
-                    "composes on top of it, so a disabled area at 0.4 is still visibly disabled."
+                    "`opacity` multiplies what the node PAINTS (it is the backing object's alpha), and it INHERITS: a 0.4 parent makes its children 0.4 too, which is what makes a dimmed modal a single number instead of a colour per child. Hover and press modulation composes on top of it, so a disabled area at 0.4 is still visibly disabled."
                 ], [
                     "box({ opacity: 1.0 }),   box({ opacity: 0.6 }),   box({ opacity: 0.25 })"
                 ], 98, function ():Node
@@ -434,17 +383,9 @@ package demo
                 }),
 
                 new DocSection("Transitions: transitionMs + transitionEase", [
-                    "`transitionMs` + `transitionEase` retarget the ANIMATABLE fields after every",
-                    "resolve, so the tween intercepts the single place every widget paints from and no",
-                    "widget file knows about it: opacity, background, borderColor, text colour, a",
-                    "uniform corner radius, width/height, padding and gap.",
-                    "A node with no `transitionMs` snaps. Unknown ease names THROW (linear | outQuad |",
-                    "outCubic | inOutCubic). Gradients, percent sizes and non-uniform radii do NOT",
-                    "tween -- there is nothing exact to interpolate, so the tween is dropped rather",
-                    "than approximated. The frame loop drives the clock (`getTimer`, wall time, so a",
-                    "120Hz display does not run the same tween twice as fast).",
-                    "Press Toggle: the left tile eases 120->220 and blue->red in 320ms; the right one",
-                    "has the same two styles and no transition, so it jumps."
+                    "`transitionMs` + `transitionEase` retarget the ANIMATABLE fields after every resolve, so the tween intercepts the single place every widget paints from and no widget file knows about it: opacity, background, borderColor, text colour, a uniform corner radius, width/height, padding and gap.",
+                    "A node with no `transitionMs` snaps. Unknown ease names THROW (linear | outQuad | outCubic | inOutCubic). Gradients, percent sizes and non-uniform radii do NOT tween -- there is nothing exact to interpolate, so the tween is dropped rather than approximated. The frame loop drives the clock (`getTimer`, wall time, so a 120Hz display does not run the same tween twice as fast).",
+                    "Press Toggle: the left tile eases 120->220 and blue->red in 320ms; the right one has the same two styles and no transition, so it jumps."
                 ], [
                     "box({ width: on ? 220 : 120, transitionMs: 320,",
                     "      transitionEase: \"outCubic\",",
@@ -468,18 +409,9 @@ package demo
                 }),
 
                 new DocSection("Three engine calls the AS3 layout engine refuses", [
-                    "This page documents the WHOLE style vocabulary, so it has to say which parts",
-                    "of it the shipped layout engine actually implements. `seam/asaot/ui/as3/`",
-                    "throws on three calls by design (seam/README.md's table): a wrong rectangle",
-                    "would be worse than a refused one, and the refusal names the gap.",
-                    "The native arm (NativeLayoutEngine, Yoga) implements all three. So `display`",
-                    "and `aspectRatio` are real fields -- they typecheck, they merge, they reach",
-                    "UiNode -- and on the pure-AS3 arm they are a ONE-WAY DOOR INTO AN ERROR, which",
-                    "is why this page cannot show them live: a page that throws takes the whole tour",
-                    "with it, and the correct thing to show is the refusal itself.",
-                    "What to write instead: `visible: false` (previous section) hides without",
-                    "reclaiming space; a node that should take NO space is a node `render()` does",
-                    "not return this pass; and an aspect ratio is `size: [w, w / 2]`."
+                    "This page documents the WHOLE style vocabulary, so it has to say which parts of it the shipped layout engine actually implements. `seam/asaot/ui/as3/` throws on three calls by design (seam/README.md's table): a wrong rectangle would be worse than a refused one, and the refusal names the gap.",
+                    "The native arm (NativeLayoutEngine, Yoga) implements all three. So `display` and `aspectRatio` are real fields -- they typecheck, they merge, they reach UiNode -- and on the pure-AS3 arm they are a ONE-WAY DOOR INTO AN ERROR, which is why this page cannot show them live: a page that throws takes the whole tour with it, and the correct thing to show is the refusal itself.",
+                    "What to write instead: `visible: false` (previous section) hides without reclaiming space; a node that should take NO space is a node `render()` does not return this pass; and an aspect ratio is `size: [w, w / 2]`."
                 ], [
                     "// kit/asaot/ui/UiNode.as -> eng.setDisplay / setAspectRatio",
                     "display \"none\"   -> As3LayoutEngine.setDisplay:      未实现",
@@ -500,20 +432,10 @@ package demo
 
             if (id == "theme") return [
                 new DocSection("A palette you can swap at run time", [
-                    "Theme.tokens() is the live palette: 47 slots, ONE instance, read by every",
-                    "widget at paint time. Theme.setTheme(ThemeTokens.dark()) copies a palette in,",
-                    "rebuilds the per-kind baselines and the overlay chrome, and bumps",
-                    "themeEpoch(). UiApp compares that epoch at the frame boundary, marks every",
-                    "node style-stale and asks for one re-describe -- so the whole tree follows in",
-                    "ONE frame, with no relayout (a palette never changes a number).",
-                    "The buttons below swap the DOCS APP itself, not a card inside it. That is the",
-                    "feature: a theme is application-wide, and a preview that themed one panel",
-                    "only would be a lie about what the call does. Press Light to come back.",
-                    "An author colour does not move. A swap replaces the BASELINE, so the blue chip",
-                    "below stays blue in both themes; only the unspecific things (surfaces,",
-                    "borders, text, tracks) follow.",
-                    "Theme.tokens() is read-only by contract. To customise one slot: clone it,",
-                    "assign, then setTheme -- copying in is what keeps the epoch honest."
+                    "Theme.tokens() is the live palette: 47 slots, ONE instance, read by every widget at paint time. Theme.setTheme(ThemeTokens.dark()) copies a palette in, rebuilds the per-kind baselines and the overlay chrome, and bumps themeEpoch(). UiApp compares that epoch at the frame boundary, marks every node style-stale and asks for one re-describe -- so the whole tree follows in ONE frame, with no relayout (a palette never changes a number).",
+                    "The buttons below swap the DOCS APP itself, not a card inside it. That is the feature: a theme is application-wide, and a preview that themed one panel only would be a lie about what the call does. Press Light to come back.",
+                    "An author colour does not move. A swap replaces the BASELINE, so the blue chip below stays blue in both themes; only the unspecific things (surfaces, borders, text, tracks) follow.",
+                    "Theme.tokens() is read-only by contract. To customise one slot: clone it, assign, then setTheme -- copying in is what keeps the epoch honest."
                 ], [
                     "Theme.setTheme(ThemeTokens.dark());    // a whole palette, one call",
                     "Theme.setTheme(ThemeTokens.light());",
@@ -543,10 +465,7 @@ package demo
                 }),
 
                 new DocSection("Layer 1: the control default", [
-                    "With no style at all, a control is painted by the kit's baseline FOR ITS KIND -- a",
-                    "button gets 9/14 padding, a 1px #D0D0D0 border, a 6px radius and #FFF1F3F5; a",
-                    "text input gets 7/10 and a white fill; a checkbox gets neither. Nothing here is a",
-                    "constant of the layout engine: it is a table (`Theme.controlDefault`)."
+                    "With no style at all, a control is painted by the kit's baseline FOR ITS KIND -- a button gets 9/14 padding, a 1px #D0D0D0 border, a 6px radius and #FFF1F3F5; a text input gets 7/10 and a white fill; a checkbox gets neither. Nothing here is a constant of the layout engine: it is a table (`Theme.controlDefault`)."
                 ], [
                     "button({ label: \"Default\" })          // no style key at all",
                     "textField({ placeholder: \"Default\" }) // only the width is set below",
@@ -567,14 +486,8 @@ package demo
                 }),
 
                 new DocSection("Layer 3: text inherits, layout does not", [
-                    "Only the typography subset cascades (fontFamily, fontSize, fontWeight, fontStyle,",
-                    "colour, leading, letterSpacing, textAlign, whiteSpace, textOverflow,",
-                    "textDecoration) plus `visibility`. So the box below sets 16px bold indigo once and",
-                    "BOTH children pick it up -- including the button, whose own 14px baseline is",
-                    "lower priority than the inherited value.",
-                    "Layout never cascades: the button keeps its own 9/14 padding and its own height,",
-                    "because inheriting padding or size is the classic flexbox trap that looks right",
-                    "on a shallow tree and diverges from every browser."
+                    "Only the typography subset cascades (fontFamily, fontSize, fontWeight, fontStyle, colour, leading, letterSpacing, textAlign, whiteSpace, textOverflow, textDecoration) plus `visibility`. So the box below sets 16px bold indigo once and BOTH children pick it up -- including the button, whose own 14px baseline is lower priority than the inherited value.",
+                    "Layout never cascades: the button keeps its own 9/14 padding and its own height, because inheriting padding or size is the classic flexbox trap that looks right on a shallow tree and diverges from every browser."
                 ], [
                     "box({ text: { fontSize: 16, fontWeight: \"bold\", color: 0x3730A3 } }, [",
                     "    text(\"inherits 16/bold/indigo\"),",
@@ -594,9 +507,7 @@ package demo
                 }),
 
                 new DocSection("Layer 4: the author wins", [
-                    "The node's own refinement is merged LAST, so it beats the control default and the",
-                    "inherited value. Two buttons, one style key apart -- and this is why variants are",
-                    "styles and not kinds: there is exactly one button behaviour."
+                    "The node's own refinement is merged LAST, so it beats the control default and the inherited value. Two buttons, one style key apart -- and this is why variants are styles and not kinds: there is exactly one button behaviour."
                 ], [
                     "button({ label: \"Theme\" }),",
                     "button({ label: \"Author\", style: StyleRefinement.from({",
@@ -620,13 +531,8 @@ package demo
                 }),
 
                 new DocSection("The cursor is a policy, not a default", [
-                    "Kinds whose whole region IS the interactive thing (button, checkbox, radio, switch,",
-                    "slider, select, combobox, tabs, menu, accordion, pagination, breadcrumb, chip,",
-                    "datePicker) get `hand` from the theme. A SELECTABLE REGION -- list, table, tree,",
-                    "scroll view -- does not: a hand over every pixel of a 400px list claims every",
-                    "pixel is clickable, and a pointer that lies feels broken.",
-                    "An author opts in per node with `cursor`, and an unknown name THROWS rather than",
-                    "falling back to the arrow: auto | arrow | button | hand | ibeam."
+                    "Kinds whose whole region IS the interactive thing (button, checkbox, radio, switch, slider, select, combobox, tabs, menu, accordion, pagination, breadcrumb, chip, datePicker) get `hand` from the theme. A SELECTABLE REGION -- list, table, tree, scroll view -- does not: a hand over every pixel of a 400px list claims every pixel is clickable, and a pointer that lies feels broken.",
+                    "An author opts in per node with `cursor`, and an unknown name THROWS rather than falling back to the arrow: auto | arrow | button | hand | ibeam."
                 ], [
                     "chip(\"theme: hand\"),                      // kind default",
                     "box({ onClick: pick, cursor: \"hand\" }),   // author opt-in",
@@ -656,17 +562,9 @@ package demo
                 }),
 
                 new DocSection("setControlDefault: an override layer, and it survives a swap", [
-                    "A control's baseline is replaceable one kind at a time. Build the Style FROM the",
-                    "current default and change only what you mean -- a partial Style would write its",
-                    "own unset (null) fields over the baseline and erase the rest.",
-                    "It is an OVERRIDE LAYER, not a write into the default table: the resolver reads",
-                    "it before the kind baseline, and Theme.setTheme does not touch it. So flipping",
-                    "light/dark keeps the author's custom button -- call clearControlDefault to get",
-                    "the shipped baseline back.",
-                    "The call still takes effect on the NEXT resolve, and a mounted node only",
-                    "re-resolves when something stales it. To see it now, bump the epoch yourself:",
-                    "Theme.setTheme(Theme.tokens().clone()) -- the same path a theme swap takes, one",
-                    "call, no re-mount."
+                    "A control's baseline is replaceable one kind at a time. Build the Style FROM the current default and change only what you mean -- a partial Style would write its own unset (null) fields over the baseline and erase the rest.",
+                    "It is an OVERRIDE LAYER, not a write into the default table: the resolver reads it before the kind baseline, and Theme.setTheme does not touch it. So flipping light/dark keeps the author's custom button -- call clearControlDefault to get the shipped baseline back.",
+                    "The call still takes effect on the NEXT resolve, and a mounted node only re-resolves when something stales it. To see it now, bump the epoch yourself: Theme.setTheme(Theme.tokens().clone()) -- the same path a theme swap takes, one call, no re-mount."
                 ], [
                     "var s:Style = new Style();",
                     "Theme.controlDefault(\"button\").copyInto(s);   // keep what you do not change",
@@ -688,14 +586,8 @@ package demo
 
             if (id == "state") return [
                 new DocSection("A Binding is a field pointer", [
-                    "`bindTo(model, \"field\")` reads one public field and writes it back, notifying",
-                    "Dirty.VALUE on every write. Eleven factories accept one where a value is an index,",
-                    "a flag or a string: checkbox.checked, toggle.checked, radio.selected,",
-                    "slider.value, textField.value, textArea.value, list.selectedIndex,",
-                    "table.selectedIndex, tabs.selectedIndex, pagination.page, and",
-                    "accordion.activeIndex/openIndices.",
-                    "The point is not brevity: a bound control has NO local copy of the value, so the",
-                    "field and the pixels cannot disagree."
+                    "`bindTo(model, \"field\")` reads one public field and writes it back, notifying Dirty.VALUE on every write. Eleven factories accept one where a value is an index, a flag or a string: checkbox.checked, toggle.checked, radio.selected, slider.value, textField.value, textArea.value, list.selectedIndex, table.selectedIndex, tabs.selectedIndex, pagination.page, and accordion.activeIndex/openIndices.",
+                    "The point is not brevity: a bound control has NO local copy of the value, so the field and the pixels cannot disagree."
                 ], [
                     "tabs([\"Overview\", \"Billing\", \"Keys\"], {",
                     "    selectedIndex: bindTo(model, \"tabIdx\")",
@@ -720,10 +612,7 @@ package demo
                 }),
 
                 new DocSection("The field is the only owner", [
-                    "Nothing below reaches into a widget: the button writes the field and notifies, and",
-                    "the strip re-describes from the same number. That is the whole interaction",
-                    "contract of the kit -- a widget reports, the author writes, the next render",
-                    "re-describes -- and a Binding is just the shortest way to hold up your end."
+                    "Nothing below reaches into a widget: the button writes the field and notifies, and the strip re-describes from the same number. That is the whole interaction contract of the kit -- a widget reports, the author writes, the next render re-describes -- and a Binding is just the shortest way to hold up your end."
                 ], [
                     "button({ label: \"Next tab\", onClick: function ():void {",
                     "    model.tabIdx = (model.tabIdx + 1) % 3;",
@@ -750,13 +639,9 @@ package demo
                 }),
 
                 new DocSection("notify: what a bit actually costs", [
-                    "The mask is recorded (`invalidate(dirty)` ORs it) and the frame boundary asks one",
-                    "question: is anything pending? If yes, the view is described and reconciled ONCE.",
-                    "The bits themselves are the vocabulary a view uses to say what changed -- all",
-                    "four behave alike at the boundary today.",
-                    "What really saves work is the PER-NODE bit: a repaint never re-solves layout,",
-                    "which is why a hover and a spinner cost no measure/arrange at all. The counters",
-                    "below are the app's own fields, read on every render."
+                    "The mask is recorded (`invalidate(dirty)` ORs it) and the frame boundary asks one question: is anything pending? If yes, the view is described and reconciled ONCE.",
+                    "The bits themselves are the vocabulary a view uses to say what changed -- all four behave alike at the boundary today.",
+                    "What really saves work is the PER-NODE bit: a repaint never re-solves layout, which is why a hover and a spinner cost no measure/arrange at all. The counters below are the app's own fields, read on every render."
                 ], [
                     "model.notify(Dirty.VALUE);      // 1: a data value changed",
                     "model.notify(Dirty.STRUCTURE);  // 4: children/keys changed",
@@ -780,13 +665,8 @@ package demo
                 }),
 
                 new DocSection("subscribe returns a Subscription", [
-                    "`Observable.subscribe(listener)` returns a `Subscription`; `unsubscribe(s)` detaches",
-                    "it. Listeners run synchronously in registration order and are never called after",
-                    "they are removed -- which is what makes a controller free to subscribe in its",
-                    "constructor and unsubscribe in its teardown.",
-                    "The docs app does exactly this once: `DocsMain` subscribes and turns every notify",
-                    "into `app.invalidate(dirty)`. The counter below is a SECOND listener, so",
-                    "subscribing and unsubscribing changes the count without changing the page."
+                    "`Observable.subscribe(listener)` returns a `Subscription`; `unsubscribe(s)` detaches it. Listeners run synchronously in registration order and are never called after they are removed -- which is what makes a controller free to subscribe in its constructor and unsubscribe in its teardown.",
+                    "The docs app does exactly this once: `DocsMain` subscribes and turns every notify into `app.invalidate(dirty)`. The counter below is a SECOND listener, so subscribing and unsubscribing changes the count without changing the page."
                 ], [
                     "var sub:Subscription = model.subscribe(function (d:int):void {",
                     "    calls = calls + 1;",
@@ -811,12 +691,8 @@ package demo
 
             if (id == "keyboard") return [
                 new DocSection("Tab moves the ring; Shift+Tab walks it back", [
-                    "`UiApp` walks the RETAINED tree in reading order and moves the library's focus",
-                    "pointer, then CANCELS the runtime's own Tab walk -- otherwise one press would",
-                    "move two rings. A stop is a node with `tabEnabled` that is visible and not inside",
-                    "a disabled subtree.",
-                    "Wake the field with Focus it and press Tab: the ring goes field -> Second ->",
-                    "back to the field."
+                    "`UiApp` walks the RETAINED tree in reading order and moves the library's focus pointer, then CANCELS the runtime's own Tab walk -- otherwise one press would move two rings. A stop is a node with `tabEnabled` that is visible and not inside a disabled subtree.",
+                    "Wake the field with Focus it and press Tab: the ring goes field -> Second -> back to the field."
                 ], [
                     "// UiApp.onKeyDown",
                     "if (kc == 9) {",
@@ -842,14 +718,9 @@ package demo
                 }),
 
                 new DocSection("Only some kinds are stops", [
-                    "A Control is a stop by default. The kinds that are a readout or a GROUP opt out --",
-                    "badge, avatar, chip, progress, breadcrumb, pagination, accordion -- because a stop",
-                    "that does nothing when you press Enter is worse than no stop at all.",
-                    "A list, table, tree, tab strip or menu is ONE stop for the whole widget: the",
-                    "arrows move INSIDE it, which is the ARIA listbox/grid/tablist model and the only",
-                    "way a 200-row table is reachable without 200 Tab presses.",
-                    "The four nodes below sit in one row on purpose: press Tab and the ring only",
-                    "ever lights the last one, because a chip is a tag and a progress bar is a readout."
+                    "A Control is a stop by default. The kinds that are a readout or a GROUP opt out -- badge, avatar, chip, progress, breadcrumb, pagination, accordion -- because a stop that does nothing when you press Enter is worse than no stop at all.",
+                    "A list, table, tree, tab strip or menu is ONE stop for the whole widget: the arrows move INSIDE it, which is the ARIA listbox/grid/tablist model and the only way a 200-row table is reachable without 200 Tab presses.",
+                    "The four nodes below sit in one row on purpose: press Tab and the ring only ever lights the last one, because a chip is a tag and a progress bar is a readout."
                 ], [
                     "// Control() sets tabEnabled = true; these kinds set it back to false:",
                     "badge, avatar, chip, progress, breadcrumb, pagination, accordion",
@@ -872,10 +743,7 @@ package demo
                 }),
 
                 new DocSection("Enter and Space press the focused control", [
-                    "UiApp turns Enter or Space into the focused node's click, so a keyboard user never",
-                    "needs a per-kind key handler for the simple case. The one exception is deliberate:",
-                    "when the focus target is an editable TextField, Enter is that field's COMMIT and",
-                    "Space is a character -- swallowing either would break typing."
+                    "UiApp turns Enter or Space into the focused node's click, so a keyboard user never needs a per-kind key handler for the simple case. The one exception is deliberate: when the focus target is an editable TextField, Enter is that field's COMMIT and Space is a character -- swallowing either would break typing."
                 ], [
                     "if (kc == 13 || kc == 32) {",
                     "    if (f.focusTarget() is TextField) return;",
@@ -904,14 +772,8 @@ package demo
                 }),
 
                 new DocSection("Which keys each kind answers", [
-                    "`WidgetKeys` is an OPTIONAL interface -- one `is` test at the one call site, so the",
-                    "26 kinds that do not care pay nothing. It is called only for the FOCUSED node,",
-                    "after Tab, and a return of true means \"consumed\" (the caller then cancels the",
-                    "runtime's default action for that key).",
-                    "The map below is kept in `WidgetKeys`'s own header, because \"which control answers",
-                    "to which arrow\" is the one part of this contract nobody can guess: WRAP vs CLAMP",
-                    "is semantics, not taste -- a tab strip or a tree is a ring, a list or a grid is a",
-                    "sequence whose ends are walls (ARIA listbox/grid)."
+                    "`WidgetKeys` is an OPTIONAL interface -- one `is` test at the one call site, so the 26 kinds that do not care pay nothing. It is called only for the FOCUSED node, after Tab, and a return of true means \"consumed\" (the caller then cancels the runtime's default action for that key).",
+                    "The map below is kept in `WidgetKeys`'s own header, because \"which control answers to which arrow\" is the one part of this contract nobody can guess: WRAP vs CLAMP is semantics, not taste -- a tab strip or a tree is a ring, a list or a grid is a sequence whose ends are walls (ARIA listbox/grid)."
                 ], [
                     "menu          Up/Down (wrap), Enter/Space, Esc",
                     "select        Up/Down (wrap), Enter/Space, Esc; Down/Enter opens",
@@ -938,12 +800,8 @@ package demo
                 }),
 
                 new DocSection("Disabled and hidden leave the ring", [
-                    "A stop must be visible and not `inert()`. `disabled` INHERITS down the tree: a",
-                    "disabled card takes its whole subtree out of the mouse AND out of the ring, which",
-                    "is why it is one flag per element rather than a copy-down into every child.",
-                    "The button below really tries to focus the inner control and reports the refusal:",
-                    "`focusNode` returns without focusing an inert or invisible node instead of",
-                    "half-focusing it."
+                    "A stop must be visible and not `inert()`. `disabled` INHERITS down the tree: a disabled card takes its whole subtree out of the mouse AND out of the ring, which is why it is one flag per element rather than a copy-down into every child.",
+                    "The button below really tries to focus the inner control and reports the refusal: `focusNode` returns without focusing an inert or invisible node instead of half-focusing it."
                 ], [
                     "card({ disabled: true }, [ button({ key: \"inner\", label: \"inner\" }) ])",
                     "app.focusNode(app.findByKey(\"inner\"));",
@@ -976,18 +834,9 @@ package demo
                 }),
 
                 new DocSection("A keymap binds keys to ACTIONS, not to widgets", [
-                    "Three pieces, one job each. `KeyStroke` parses \"ctrl-shift-s\" into a key code",
-                    "plus four modifier flags; `ContextExpr` parses \"editor > modal\" into a predicate",
-                    "over the tags on the FOCUS CHAIN; `ActionRegistry` holds the actions and the map",
-                    "from a keystroke to an action id.",
-                    "`setKeymap` takes an ARRAY of { context, bindings } objects -- there is no JSON",
-                    "class in this compiler, so a JSON string would need its own parser -- and it",
-                    "validates every string ONCE, at install time: a typo in a modifier fails when",
-                    "you install the map, not at 3am on the one key the user pressed.",
-                    "Matching is FIRST-ENTRY-WINS in declaration order, modifiers are matched",
-                    "EXACTLY (a binding for `ctrl-s` does not fire while Shift is also held), and a",
-                    "keystroke that matches nothing falls through to the built-ins, so typing is",
-                    "untouched. The map is consulted BEFORE Tab as well: bind Tab and Tab is yours.",
+                    "Three pieces, one job each. `KeyStroke` parses \"ctrl-shift-s\" into a key code plus four modifier flags; `ContextExpr` parses \"editor > modal\" into a predicate over the tags on the FOCUS CHAIN; `ActionRegistry` holds the actions and the map from a keystroke to an action id.",
+                    "`setKeymap` takes an ARRAY of { context, bindings } objects -- there is no JSON class in this compiler, so a JSON string would need its own parser -- and it validates every string ONCE, at install time: a typo in a modifier fails when you install the map, not at 3am on the one key the user pressed.",
+                    "Matching is FIRST-ENTRY-WINS in declaration order, modifiers are matched EXACTLY (a binding for `ctrl-s` does not fire while Shift is also held), and a keystroke that matches nothing falls through to the built-ins, so typing is untouched. The map is consulted BEFORE Tab as well: bind Tab and Tab is yours.",
                     "Install the map, focus the field, press ctrl-k."
                 ], [
                     "ActionRegistry.register(\"palette.open\", openThePalette);",
@@ -1016,15 +865,9 @@ package demo
                 }),
 
                 new DocSection("`action` takes over Enter; `tabIndex` orders the ring", [
-                    "`Control.action` is an action ID. With one set, Enter or Space runs the ACTION",
-                    "and does NOT also run `onClick` -- one press, one effect. A control without an",
-                    "action keeps the plain click, so nothing changes for code that never names one.",
-                    "`tabIndex` orders the ring the way HTML does: every node with an explicit index",
-                    "comes first, ascending (ties in document order), and everything left at -1",
-                    "follows in document order. -1 means \"no explicit index\", NOT \"unreachable\" --",
-                    "that is what `tabEnabled` and `disabled` are for.",
-                    "Below, the LAST two buttons carry indices 0 and 1, so the ring starts at the",
-                    "third row, not at the first button."
+                    "`Control.action` is an action ID. With one set, Enter or Space runs the ACTION and does NOT also run `onClick` -- one press, one effect. A control without an action keeps the plain click, so nothing changes for code that never names one.",
+                    "`tabIndex` orders the ring the way HTML does: every node with an explicit index comes first, ascending (ties in document order), and everything left at -1 follows in document order. -1 means \"no explicit index\", NOT \"unreachable\" -- that is what `tabEnabled` and `disabled` are for.",
+                    "Below, the LAST two buttons carry indices 0 and 1, so the ring starts at the third row, not at the first button."
                 ], [
                     "button({ action: \"docs.act\", label: \"Enter runs the action\" })",
                     "button({ label: \"first in the document\" })",
@@ -1065,14 +908,8 @@ package demo
             // ---- the environment (MOBILE.md E1/E2) ---------------------------
             if (id == "env") return [
                 new DocSection("The platform answers through ONE interface", [
-                    "`UiApp.env` is always an `Env`: nine read-only answers about the window the",
-                    "app lives in -- safe area, keyboard rect, pixel ratio, touch/hover, reduce",
-                    "motion, app state, dark mode, locale -- plus a subscription for the ones that",
-                    "change. An app that says nothing gets `DesktopEnv` (zeros and a mouse), and a",
-                    "phone shell binds its own before `mount`; `bindEnv(null)` THROWS, because an",
-                    "app that cannot say what platform it is on has a bug, not a default.",
-                    "The values below are read live from the running app, so this page cannot",
-                    "drift from the code: a chip that disagrees with its own sentence is visible."
+                    "`UiApp.env` is always an `Env`: nine read-only answers about the window the app lives in -- safe area, keyboard rect, pixel ratio, touch/hover, reduce motion, app state, dark mode, locale -- plus a subscription for the ones that change. An app that says nothing gets `DesktopEnv` (zeros and a mouse), and a phone shell binds its own before `mount`; `bindEnv(null)` THROWS, because an app that cannot say what platform it is on has a bug, not a default.",
+                    "The values below are read live from the running app, so this page cannot drift from the code: a chip that disagrees with its own sentence is visible."
                 ], [
                     "app.bindEnv(new DesktopEnv());   // the floor: no notch, a hovering mouse",
                     "var e:Env = app.env;",
@@ -1099,14 +936,8 @@ package demo
                 }),
 
                 new DocSection("safeArea is padding, on the box that ASKS for it", [
-                    "`safeArea: true` adds the platform inset to a container's OWN padding, on the",
-                    "edges it names (`[\"top\"]` is just the status bar). It goes into PADDING, so",
-                    "the box still fills the window: the background runs under the notch and only",
-                    "the content moves in. It adds to the padding you wrote, and it is not",
-                    "inherited -- a child that does not ask keeps exactly its own numbers.",
-                    "On this desktop every inset is zero, so the two boxes below look identical on",
-                    "purpose. `probes/widgets/env` pulls the same tree through 47 / 0 / 34 / 0 and",
-                    "asserts the arithmetic (and a rotation back to zero)."
+                    "`safeArea: true` adds the platform inset to a container's OWN padding, on the edges it names (`[\"top\"]` is just the status bar). It goes into PADDING, so the box still fills the window: the background runs under the notch and only the content moves in. It adds to the padding you wrote, and it is not inherited -- a child that does not ask keeps exactly its own numbers.",
+                    "On this desktop every inset is zero, so the two boxes below look identical on purpose. `probes/widgets/env` pulls the same tree through 47 / 0 / 34 / 0 and asserts the arithmetic (and a rotation back to zero)."
                 ], [
                     "column({ padding: 4, safeArea: true }, [ ... ]);   // all four edges",
                     "box({ safeArea: [\"top\"] }, [ ... ]);               // status bar only",
@@ -1129,9 +960,7 @@ package demo
                 }),
 
                 new DocSection("keyboardRect is the other inset", [
-                    "A phone keyboard is a rect, not a boolean: a form needs to know how much of the",
-                    "window is covered, and whether it is covering the BOTTOM or floating. Zero height",
-                    "on a desktop is the truthful answer, not a missing value."
+                    "A phone keyboard is a rect, not a boolean: a form needs to know how much of the window is covered, and whether it is covering the BOTTOM or floating. Zero height on a desktop is the truthful answer, not a missing value."
                 ], [
                     "e.keyboardRect;   // x, y, width, height in logical points; 0 high = no keyboard",
                     "e.safeArea.bottom;  // the home indicator, when there is one"
@@ -1150,10 +979,7 @@ package demo
                 }),
 
                 new DocSection("reduceMotion is carried, not obeyed yet", [
-                    "The interface answers `reduceMotion` and the kit replays it faithfully -- but no",
-                    "widget reads it yet: a transition still runs at full duration when the system asks",
-                    "for less motion. That is a stated gap rather than a silent fallback, and it is on",
-                    "the list before any mobile shell ships. The value itself is live below."
+                    "The interface answers `reduceMotion` and the kit replays it faithfully -- but no widget reads it yet: a transition still runs at full duration when the system asks for less motion. That is a stated gap rather than a silent fallback, and it is on the list before any mobile shell ships. The value itself is live below."
                 ], [
                     "e.reduceMotion;   // plumbed through EnvBase, read by nothing yet",
                     "// planned: transitionMs == 0 (and spin == false) when it is true"

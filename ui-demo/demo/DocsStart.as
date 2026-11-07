@@ -33,8 +33,7 @@ package demo
 
             return [
                 new DocSection("Describe", [
-                    "render() returns a description -- a tree of factories. It is pure: no addChild, no",
-                    "side effects, no reliance on evaluation order. It is called only on a dirty frame."
+                    "render() returns a description -- a tree of factories. It is pure: no addChild, no side effects, no reliance on evaluation order. It is called only on a dirty frame."
                 ], [
                     "override public function render():Node {",
                     "    return column({ padding: 24, gap: 12 }, [",
@@ -54,8 +53,7 @@ package demo
                 }),
 
                 new DocSection("Mount", [
-                    "UiApp owns the retained tree and the frame loop. mount() binds it to a stage;",
-                    "attachRoot() runs the first describe + reconcile + measure/arrange/paint."
+                    "UiApp owns the retained tree and the frame loop. mount() binds it to a stage; attachRoot() runs the first describe + reconcile + measure/arrange/paint."
                 ], [
                     "var app:UiApp = new UiApp(new HelloView());",
                     "app.mount(stage);      // ENTER_FRAME drives reflow()",
@@ -71,8 +69,7 @@ package demo
                 }),
 
                 new DocSection("Style", [
-                    "Every node takes a style refinement: shorthand keys (padding, gap, background,",
-                    "border, text, ...) or an explicit partial. Sizes are [width, height]."
+                    "Every node takes a style refinement: shorthand keys (padding, gap, background, border, text, ...) or an explicit partial. Sizes are [width, height]."
                 ], [
                     "box({",
                     "    size: [160, 44], padding: 8, gap: 6,",
@@ -88,8 +85,7 @@ package demo
                 }),
 
                 new DocSection("State", [
-                    "A widget never keeps its own state: it reports through a callback, the model writes,",
-                    "and the next render re-describes the tree. This button's count lives in DocsModel."
+                    "A widget never keeps its own state: it reports through a callback, the model writes, and the next render re-describes the tree. This button's count lives in DocsModel."
                 ], [
                     "button({",
                     "    label: \"Clicked \" + model.n + \"x\",",

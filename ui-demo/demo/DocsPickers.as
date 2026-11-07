@@ -31,8 +31,7 @@ package demo
 
             if (id == "select") return [
                 new DocSection("Options behind a trigger", [
-                    "`value` is the SELECTED OPTION'S VALUE, not its index, and onSelect reports the",
-                    "row index. Both facts matter: the label lives in the option, the key in the model."
+                    "`value` is the SELECTED OPTION'S VALUE, not its index, and onSelect reports the row index. Both facts matter: the label lives in the option, the key in the model."
                 ], [
                     "select({ key: \"plan\", width: 200, value: model.plan,",
                     "         open: model.planOpen, placeholder: \"Choose a plan\",",
@@ -53,8 +52,7 @@ package demo
                 }),
 
                 new DocSection("Open is author-owned too", [
-                    "The widget does not close itself behind your back: every open/close is reported",
-                    "through onOpenChange and drawn from the `open` you pass back in."
+                    "The widget does not close itself behind your back: every open/close is reported through onOpenChange and drawn from the `open` you pass back in."
                 ], [
                     "// A click on the trigger reports onOpenChange(true);",
                     "// only the model closes it -- so a select can be closed by a",
@@ -69,9 +67,7 @@ package demo
                 }),
 
                 new DocSection("The placeholder is the empty string", [
-                    "Two pickers, one model field each: the left one has no value yet and shows the",
-                    "placeholder, the right one has `Team` and shows the option's label. The trigger",
-                    "does not fall back to the first option -- an empty value must look empty."
+                    "Two pickers, one model field each: the left one has no value yet and shows the placeholder, the right one has `Team` and shows the option's label. The trigger does not fall back to the first option -- an empty value must look empty."
                 ], [
                     "select({ value: \"\",     placeholder: \"Choose a plan\", options: [...] })",
                     "select({ value: \"Team\", placeholder: \"Choose a plan\", options: [...] })"
@@ -90,8 +86,7 @@ package demo
                 }),
 
                 new DocSection("Disabled keeps the choice", [
-                    "A locked picker shows the value it was given and refuses to open -- the panel",
-                    "never appears, because the press does not reach the trigger."
+                    "A locked picker shows the value it was given and refuses to open -- the panel never appears, because the press does not reach the trigger."
                 ], [
                     "select({ value: \"Business\", disabled: true, options: [\"Free\", \"Team\"] })"
                 ], 76, function ():Node
@@ -107,8 +102,7 @@ package demo
 
             if (id == "combobox") return [
                 new DocSection("Type to filter", [
-                    "The factory renders whatever options it is given and does NOT filter: onQuery hands",
-                    "you the text, and the match rule (case, accents, word-start) is yours to choose."
+                    "The factory renders whatever options it is given and does NOT filter: onQuery hands you the text, and the match rule (case, accents, word-start) is yours to choose."
                 ], [
                     "combobox({ key: \"city\", width: 220, value: model.q, open: model.cbOpen,",
                     "           options: filter(model.q), placeholder: \"Type a city\",",
@@ -130,8 +124,7 @@ package demo
                 }),
 
                 new DocSection("The trigger is a real textField", [
-                    "Typing goes through the same text field as everywhere else -- selection, caret and",
-                    "the CHANGE event all come from the runtime, not from key sniffing in the widget."
+                    "Typing goes through the same text field as everywhere else -- selection, caret and the CHANGE event all come from the runtime, not from key sniffing in the widget."
                 ], [
                     "// the trigger is textField({ onChange: onQuery }) -- nothing else"
                 ], 76, function ():Node
@@ -141,9 +134,7 @@ package demo
                 }),
 
                 new DocSection("An empty result is a row you draw", [
-                    "The panel renders exactly the options it is given, so \"nothing matched\" is not a",
-                    "widget state to configure -- it is one option row with a label of your choosing,",
-                    "and one index the handler ignores."
+                    "The panel renders exactly the options it is given, so \"nothing matched\" is not a widget state to configure -- it is one option row with a label of your choosing, and one index the handler ignores."
                 ], [
                     "var shown:Array = match(CITIES, q);",
                     "if (shown.length == 0) shown = [\"no city matches \" + q];"
@@ -168,9 +159,7 @@ package demo
                 }),
 
                 new DocSection("The query is just a model string", [
-                    "`onQuery` is onChange under a second name, so anything that writes the model can",
-                    "drive it: a Clear button that puts the empty string back shows every option again,",
-                    "with no widget API involved."
+                    "`onQuery` is onChange under a second name, so anything that writes the model can drive it: a Clear button that puts the empty string back shows every option again, with no widget API involved."
                 ], [
                     "onQuery: function (t:String):void { model.q = t; }",
                     "button({ label: \"Clear\", onClick: function ():void { model.q = \"\"; } })"
@@ -193,10 +182,7 @@ package demo
 
             if (id == "multiSelect") return [
                 new DocSection("A select that stays open", [
-                    "values is an Array the AUTHOR owns: the widget reports the clicked INDEX through",
-                    "onToggle(i) and never edits the array itself. The menu stays open after a toggle --",
-                    "one that closed on every pick would be a select -- so it closes on Escape, on a",
-                    "second click on the trigger, or when the author hands back open: false.",
+                    "values is an Array the AUTHOR owns: the widget reports the clicked INDEX through onToggle(i) and never edits the array itself. The menu stays open after a toggle -- one that closed on every pick would be a select -- so it closes on Escape, on a second click on the trigger, or when the author hands back open: false.",
                     "The trigger summary lists the picked labels in OPTION order, or the placeholder."
                 ], [
                     "multiSelect({ key: \"tags\", width: 220, open: model.tagsOpen,",
@@ -224,9 +210,7 @@ package demo
                 }),
 
                 new DocSection("Nothing inside the widget", [
-                    "There is no tick state, no summary string and no open flag stored in the widget:",
-                    "all three are rebuilt from values + options on every render. That is why a toggle",
-                    "shows up on the next frame without the widget having to repaint itself."
+                    "There is no tick state, no summary string and no open flag stored in the widget: all three are rebuilt from values + options on every render. That is why a toggle shows up on the next frame without the widget having to repaint itself."
                 ], [
                     "// the widget paints the check mark into the row's 26pt left padding --",
                     "// the row style owns the space, so no glyph ever sits on the label"
@@ -237,9 +221,7 @@ package demo
                 }),
 
                 new DocSection("The summary follows option order", [
-                    "The trigger line is built by walking the OPTIONS and keeping the selected ones, so",
-                    "it reads in menu order and never in the order the user clicked. The readout below",
-                    "is built the same way -- option order, not click order."
+                    "The trigger line is built by walking the OPTIONS and keeping the selected ones, so it reads in menu order and never in the order the user clicked. The readout below is built the same way -- option order, not click order."
                 ], [
                     "var words:Array = [];",
                     "for (var i:int = 0; i < options.length; i++) { if (pick[i]) words.push(options[i]); }"
@@ -265,9 +247,7 @@ package demo
                 }),
 
                 new DocSection("An empty selection is the placeholder", [
-                    "values: [] is a legal state, not a missing one -- the trigger shows the placeholder",
-                    "and the panel shows nothing ticked. A multi-select that forced a first pick would",
-                    "not be able to represent \"none yet\"."
+                    "values: [] is a legal state, not a missing one -- the trigger shows the placeholder and the panel shows nothing ticked. A multi-select that forced a first pick would not be able to represent \"none yet\"."
                 ], [
                     "multiSelect({ values: [], placeholder: \"Pick some\", options: [...] })"
                 ], 84, function ():Node
@@ -286,8 +266,7 @@ package demo
 
             if (id == "datePicker") return [
                 new DocSection("A calendar panel", [
-                    "`value` is an ISO string (YYYY-MM-DD), and `year`/`month` say which month the",
-                    "panel shows -- so paging months is a model write, not widget state."
+                    "`value` is an ISO string (YYYY-MM-DD), and `year`/`month` say which month the panel shows -- so paging months is a model write, not widget state."
                 ], [
                     "datePicker({ key: \"due\", width: 190, value: model.due,",
                     "             open: model.dpOpen, year: model.y, month: model.m,",
@@ -313,8 +292,7 @@ package demo
                 }),
 
                 new DocSection("Always six weeks", [
-                    "The grid is six week rows even in a five-week month, so paging to March does not",
-                    "make the panel (and everything under it) jump by one row."
+                    "The grid is six week rows even in a five-week month, so paging to March does not make the panel (and everything under it) jump by one row."
                 ], [
                     "// six rows by construction -- see datePicker.as"
                 ], 76, function ():Node
@@ -324,9 +302,7 @@ package demo
                 }),
 
                 new DocSection("Paging months is two model numbers", [
-                    "`year` and `month` are the panel's view, not the widget's memory: the arrows report",
-                    "through onMonthChange and the next render draws whatever the model says. December",
-                    "rolling into January is the model's arithmetic, not a special case here."
+                    "`year` and `month` are the panel's view, not the widget's memory: the arrows report through onMonthChange and the next render draws whatever the model says. December rolling into January is the model's arithmetic, not a special case here."
                 ], [
                     "datePicker({ year: model.y, month: model.m,",
                     "             onMonthChange: function (y:int, mo:int):void { model.y = y; model.m = mo; } })"
@@ -350,8 +326,7 @@ package demo
                 }),
 
                 new DocSection("Disabled keeps the date", [
-                    "A locked picker still shows the chosen day; it just refuses to open. This is the",
-                    "shape a booking form uses once the date has been confirmed elsewhere."
+                    "A locked picker still shows the chosen day; it just refuses to open. This is the shape a booking form uses once the date has been confirmed elsewhere."
                 ], [
                     "datePicker({ value: \"2026-11-07\", disabled: true })"
                 ], 76, function ():Node
@@ -368,8 +343,7 @@ package demo
 
             if (id == "pagination") return [
                 new DocSection("Page numbers with ellipses", [
-                    "The visible window is computed by the same function that maps a click back to a",
-                    "page, so a rendered slot and a clicked slot cannot disagree."
+                    "The visible window is computed by the same function that maps a click back to a page, so a rendered slot and a clicked slot cannot disagree."
                 ], [
                     "pagination(model.page, 20, {",
                     "    key: \"pg\", windowSize: 5,",
@@ -400,11 +374,8 @@ package demo
                 // The Binding path exists so the page does NOT have to be rebuilt by
                 // hand: the widget writes the value itself, then calls onSelect.
                 new DocSection("`page` can be a Binding", [
-                    "A Binding is the other owner: `page: bindTo(model, \"pgIdx\")` makes the WIDGET",
-                    "write `model.pgIdx` when a number is clicked, and the model's notify re-renders.",
-                    "The write happens BEFORE `onSelect`, so a listener on the binding and the",
-                    "callback see the same transition -- and clicking the page you are already on",
-                    "reports nothing at all: no callback, no write."
+                    "A Binding is the other owner: `page: bindTo(model, \"pgIdx\")` makes the WIDGET write `model.pgIdx` when a number is clicked, and the model's notify re-renders.",
+                    "The write happens BEFORE `onSelect`, so a listener on the binding and the callback see the same transition -- and clicking the page you are already on reports nothing at all: no callback, no write."
                 ], [
                     "pagination(2, 12, { key: \"pgB\", windowSize: 5,",
                     "                      page: bindTo(model, \"pgIdx\"),",
@@ -424,9 +395,7 @@ package demo
                 }),
 
                 new DocSection("windowSize bounds the chips, not the page", [
-                    "Forty pages and a window of three: the widget renders first, last, the current",
-                    "neighbourhood and an ellipsis for each gap. The number of chips does not grow with",
-                    "the page count, so a 400-page list and a 12-page list are the same width."
+                    "Forty pages and a window of three: the widget renders first, last, the current neighbourhood and an ellipsis for each gap. The number of chips does not grow with the page count, so a 400-page list and a 12-page list are the same width."
                 ], [
                     "pagination(20, 40, { windowSize: 3, onSelect: pick })",
                     "// 1 ... 19 [20] 21 ... 40"
