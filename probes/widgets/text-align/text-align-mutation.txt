@@ -1,0 +1,13 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  the alignment offset is dropped -- the pre-fix behaviour: the field is autoSize "left", so the run sits at the box's left edge whatever textAlign says (this is the reported tab-bar symptom)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the centred run's ink centre is 36, want 90 (the box's centre); the right-aligned run ends at x=62, want 164..170 (the box's right edge); the centred run sits only 0px right of the left-aligned one -- the two boxes are 160 wide;
+     restore: byte-identical (3bb5aed753fb7ba5)
+M2  CAUGHT  RIGHT is treated as CENTRE -- the offset uses slack/2 for both, so a right-aligned run lands in the middle of its box (and a numeric column stops hugging its right edge)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the right-aligned run ends at x=116, want 164..170 (the box's right edge);
+     restore: byte-identical (3bb5aed753fb7ba5)
+
+MUTATION text-align: 2/2 caught, 0 problem(s)
+RESULT: PASS

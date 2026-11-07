@@ -171,7 +171,7 @@ package demo
                     column({ key: "liveRows", style: col }, list)
                 ]),
                 text(footNote(view, rows.length), { key: "liveFoot", style: StyleRefinement.from({
-                    size: [Length.pct(1), Length.px(FOOT_H)], padding: [0, 14],
+                    size: [Length.pct(1), Length.px(FOOT_H)], padding: [14, 0],
                     text: { fontSize: 10, color: 0x94A3B8 }
                 }), ariaName: "" })
             ]);
@@ -189,7 +189,7 @@ package demo
 
             return row({ key: "liveStrip", style: StyleRefinement.from({
                 flexDirection: "row", alignItems: "center", gap: 10,
-                size: [Length.pct(1), Length.px(STRIP_H)], padding: [0, 14],
+                size: [Length.pct(1), Length.px(STRIP_H)], padding: [14, 0],
                 borderWidths: [0, 0, 1, 0], borderColor: HAIR
             }) }, [
                 text("COMPOSITE", { style: StyleRefinement.from({
@@ -256,7 +256,7 @@ package demo
             ];
             return row({ key: "liveFilters", style: StyleRefinement.from({
                 flexDirection: "row", alignItems: "center", gap: 10,
-                size: [Length.pct(1), Length.px(FILTER_H)], padding: [0, 14]
+                size: [Length.pct(1), Length.px(FILTER_H)], padding: [14, 0]
             }) }, [
                 tabs(labels, { key: "liveTabs",
                     style: StyleRefinement.from({ size: [Length.px(272), Length.px(26)] }),
@@ -273,7 +273,7 @@ package demo
         {
             return row({ key: "liveHead", style: StyleRefinement.from({
                 flexDirection: "row", alignItems: "center", gap: 12,
-                size: [Length.pct(1), Length.px(HEAD_H)], padding: [0, 14],
+                size: [Length.pct(1), Length.px(HEAD_H)], padding: [14, 0],
                 borderWidths: [0, 0, 1, 0], borderColor: HAIR
             }) }, [
                 text("SYMBOL", { style: StyleRefinement.from({
@@ -296,7 +296,7 @@ package demo
             var series:Array = s.series as Array;
             return row({ key: "liveRow:" + String(s.code), style: StyleRefinement.from({
                 flexDirection: "row", alignItems: "center", gap: 12,
-                size: [Length.pct(1), Length.px(ROW_H)], padding: [0, 14],
+                size: [Length.pct(1), Length.px(ROW_H)], padding: [14, 0],
                 borderWidths: first ? [0, 0, 0, 0] : [0, 0, 1, 0], borderColor: 0xF1F5F9
             }) }, [
                 column({ style: StyleRefinement.from({

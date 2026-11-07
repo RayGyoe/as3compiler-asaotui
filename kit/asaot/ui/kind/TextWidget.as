@@ -108,11 +108,31 @@ package asaot.ui.kind
         public function arrange(n:UiNode):void
         {
             if (n.tf == null) return;
+            var s:Style = n.resolved;
             // textWidth/textHeight describe the paragraph, whose paint origin is
             // (2, 2) inside the field. Align the paragraph to the content box,
             // not the field's outer rectangle (notably in flex-centred rows).
             n.tf.x = PaintKit.insetX(n) - PaintKit.TEXT_GUTTER;
             n.tf.y = PaintKit.insetY(n) - PaintKit.TEXT_GUTTER;
+            // `textAlign` ON A RUN THAT DOES NOT WRAP. The field is autoSize "left",
+            // i.e. exactly as wide as the run, so the field's own alignment has no
+            // slack to move within and silently does nothing -- measured: a 160pt
+            // right-aligned node holding "12.34" painted at x 5..30, and a tab label
+            // centred in a 106.67pt cell painted at 1..26 (cell centre 53.3). Only a
+            // WRAPPED node ever had a field wider than its run (field.width = wrapW),
+            // which is how `textAlign` stayed "working" in the one case the docs
+            // demonstrated. Move the RUN inside the content box instead, the same way
+            // PaintKit.centerText places a widget's own field: no re-shape, no second
+            // text pipeline, and nothing changes for "left" (or for a run wider than
+            // its box, which still overflows to the right as before).
+            var al:String = s.text.textAlign;
+            if (s.text.whiteSpace != "normal" && (al == "center" || al == "right"))
+            {
+                var contentW:Number = PaintKit.w1(n) - PaintKit.padH(s.padding)
+                    - PaintKit.borderH(s.borderWidths);
+                var slack:Number = contentW - n.tf.textWidth;
+                if (slack > 0.5) n.tf.x = n.tf.x + (al == "center" ? slack / 2 : slack);
+            }
         }
 
         public function paint(n:UiNode):void

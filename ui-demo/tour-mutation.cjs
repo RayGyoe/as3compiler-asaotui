@@ -44,6 +44,23 @@ const MUTATIONS = [
     replace: '            scratch.setTextFormat(PaintKit.formatFor(style));\n            scratch.text = s;',
     expect: 'prose line painting wider than its box',
   },
+  {
+    id: 'M5 live row loses its horizontal padding',
+    // Edges.fromArray reads the 2-element form as [horizontal, vertical], so the row that
+    // was written [0, 14] got 14pt of VERTICAL padding and none horizontally -- invisible
+    // until the numeric column started really right-aligning, at which point the digits
+    // ended exactly on the scrollView's overlay track.
+    file: 'ui-demo/demo/DocsLive.as',
+    find: [
+      '                flexDirection: "row", alignItems: "center", gap: 12,',
+      '                size: [Length.pct(1), Length.px(ROW_H)], padding: [14, 0],',
+    ].join('\n'),
+    replace: [
+      '                flexDirection: "row", alignItems: "center", gap: 12,',
+      '                size: [Length.pct(1), Length.px(ROW_H)], padding: [0, 14],',
+    ].join('\n'),
+    expect: 'under the scroll bar that starts at',
+  },
 ];
 
 function sha(file) {

@@ -871,6 +871,7 @@ package demo
                 this.model.pick(String(stops[k]));
                 this.app.invalidate(Dirty.ALL);
                 this.app.reflow();
+                if (String(stops[k]) == "live") this.liveColumn();
                 if (String(stops[k]) == "dialog")
                 {
                     var ob:UiNode = this.app.findByKey("demoDlgBtn");
@@ -906,6 +907,52 @@ package demo
                     + ", so the content below them paints over the bars; ";
             }
             return "";
+        }
+
+        // A RIGHT-ALIGNED NUMERIC COLUMN HAS TO CLEAR THE OVERLAY SCROLLBAR.
+        //
+        // The live board right-aligns LAST/CHG% inside a 160pt column, and the list it
+        // scrolls is `scrollbarGutter: "stable"`, so the content box is barThickness (8)
+        // narrower than the view and the track is PAINTED OVER the last 8pt. An alignment
+        // that ignores that puts the digits under the bar -- half a glyph, on the one page
+        // a reader sees first. Measured after the fact, not assumed: the row's padding is
+        // what buys the clearance, and it was written [0, 14] (Edges.fromArray reads the
+        // 2-element form as [horizontal, vertical]), i.e. 14pt of VERTICAL padding and none
+        // horizontally, so the column ended exactly on the track.
+        private function liveColumn():void
+        {
+            var list:UiNode = this.app.findByKey("liveScroll");
+            if (list == null) { this.problems = this.problems + "the live board's list is not mounted; "; return; }
+            var content:UiNode = (list.children.length > 0) ? list.children[0] : null;
+            var rowN:UiNode = null;
+            for (var i:int = 0; content != null && i < content.children.length; i++)
+            {
+                if (String(content.children[i].key).indexOf("liveRow:") == 0)
+                {
+                    rowN = content.children[i];
+                    break;
+                }
+            }
+            if (rowN == null) { this.problems = this.problems + "the live board mounted no row; "; return; }
+            var priceCol:UiNode = rowN.children[rowN.children.length - 1];
+            if (priceCol == null || priceCol.children.length == 0)
+            {
+                this.problems = this.problems + "the live board's row has no price column; ";
+                return;
+            }
+            var lastT:UiNode = priceCol.children[0];
+            var barW:Number = Number((list.desc as ScrollViewNode).barThickness);
+            var track:Number = list.absX + list.absW - barW;
+            var colRight:Number = priceCol.absX + priceCol.absW;
+            this.report = this.report + "  price column ends at " + colRight + ", track at "
+                + track + " (align " + lastT.resolved.text.textAlign + ", clearance "
+                + (track - colRight) + ")\n";
+            if (colRight > track - 2)
+            {
+                this.problems = this.problems + "the live board's price column ends at "
+                    + colRight + ", under the scroll bar that starts at " + track
+                    + " (its row lost the horizontal padding); ";
+            }
         }
 
         // Sum of the blocks DocSection.height() produces, in the same order and with

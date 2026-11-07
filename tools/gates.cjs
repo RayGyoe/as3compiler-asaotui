@@ -634,9 +634,21 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
                  // back as `resolved.text.color` against Theme.tokens(), the three taps
                  // that prove each cell reports ITS OWN index (the AS3 loop-closure trap),
                  // a shrinking `items` dropping the stale cell, a Node icon keeping the
-                 // author's colour, and the home indicator as 34px of bar PADDING. Teeth:
-                 // probes/widgets/tabbar/mutation.cjs 9/9.
+                 // author's colour, and the home indicator as 34px of bar PADDING -- plus, in PIXELS,
+                 // that each label's RUN is centred in its cell (the box is the cell's width either
+                 // way, so only the ink tells a centred label from a left-aligned one). Teeth:
+                 // probes/widgets/tabbar/mutation.cjs 12/12.
                  'widgets/tabbar',
+                 // `text-align` is the mechanism behind those centred labels: `textAlign` on a run
+                 // that does NOT wrap. The field is autoSize "left", i.e. exactly as wide as the run,
+                 // so the alignment used to be a silent no-op -- a 160pt right-aligned node painted at
+                 // x 5..30. TextWidget.arrange now places the run inside the content box. Three
+                 // identical 160pt boxes, one per alignment, asserted by INK (left starts at the box
+                 // edge, centre's ink centre is the box centre, right's ink ends at the box edge) with
+                 // the three run widths as the control. Teeth: probes/widgets/text-align/mutation.cjs
+                 // 2/2 (the offset dropped -- the reported defect -- and RIGHT treated as CENTRE, which
+                 // the two ends would otherwise mask).
+                 'widgets/text-align',
                  // `icon` (SVG path data: cubic subdivision, stroke scaling, and the
                  // refusals an arc and a junk command must get) joined with the icons
                  // batch; it is the only probe in the kit that drives a PARSER.

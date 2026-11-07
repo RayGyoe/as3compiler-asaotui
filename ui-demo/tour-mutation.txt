@@ -4,12 +4,14 @@ M1 nav label carries the row height: CAUGHT  [FAIL] the index label sits at y+0 
 M2 dialog body loses its point width: CAUGHT  [FAIL] the popover body is at 449.2734375 w=292, expected the panel's content box (449.2734375 w=204); the dialog body is 459.28271484375 wide, expected 262 (the panel content box); the dialog body is 12 tall: the sentence does not fit on one line at 262, so it must have wrapped; the dialog body spans 369..828.28271484375, outside the panel's content box 369..631;
 M3 dialog body loses whiteSpace normal: CAUGHT  [FAIL] the popover body paints 292pt of ink in a 204pt box; the dialog body is 12 tall: the sentence does not fit on one line at 262, so it must have wrapped; the dialog body paints 459.28271484375pt of ink in a 262pt box;
 M4 DocsWrap measures with the default face: CAUGHT  [FAIL] 392 block(s) have a child outside their box, or a prose line painting wider than its box (DocSection.height() / DocsWrap disagree with the layout);
+M5 live row loses its horizontal padding: CAUGHT  [FAIL] the live board's price column ends at 950, under the scroll bar that starts at 950 (its row lost the horizontal padding);
 
 restore ok   ui-demo/demo/DocsStyle.as  64cdec95a6786315
 restore ok   ui-demo/demo/DocsView.as  d7eee63ce3b56786
 restore ok   ui-demo/demo/DocsWrap.as  c3363e2e212670e1
+restore ok   ui-demo/demo/DocsLive.as  b2171c11edbb21ae
 
 final baseline (the artifacts left in air-gallery must be the REAL ones):
 final: PASS
 
-4 CAUGHT / 0 survived  of 4
+5 CAUGHT / 0 survived  of 5

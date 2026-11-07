@@ -1,0 +1,58 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/text-align/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "240x120 window, root column: background #FFFFFF, padding 10, gap 6, alignItems flex-start. Three 160x17 text nodes, so y = 10, 10+17+6 = 33, 33+17+6 = 56 and every x = 10 (the padding). Box centre x = 10 + 160/2 = 90; box right edge = 170.",
+    "ink": "The RUN's position is asserted in Main.as, not frozen here, because it is the field's own textWidth that decides where the first glyph lands -- a number this file would have to guess. Main.as checks the ink against the box: left starts at the box's left edge, centre's ink centre is 90, right's ink ends at the box's right edge.",
+    "points": [
+      "(4,4) is inside the root but above the first line (which starts at y=10) -> #FFFFFF.",
+      "(118,4) likewise.",
+      "(4,110) is below the last line (which ends at y=73) -> #FFFFFF."
+    ],
+    "not_pinned": "The three ink extents, the equal-width control and the 40px minimum shift are asserted in Main.as."
+  },
+  "w": 240,
+  "h": 120,
+  "rects": {
+    "root": [
+      0,
+      0,
+      240,
+      120
+    ],
+    "l": [
+      10,
+      10,
+      160,
+      17
+    ],
+    "c": [
+      10,
+      33,
+      160,
+      17
+    ],
+    "r": [
+      10,
+      56,
+      160,
+      17
+    ]
+  },
+  "points": [
+    {
+      "x": 4,
+      "y": 4,
+      "rgb": "#FFFFFF"
+    },
+    {
+      "x": 118,
+      "y": 4,
+      "rgb": "#FFFFFF"
+    },
+    {
+      "x": 4,
+      "y": 110,
+      "rgb": "#FFFFFF"
+    }
+  ]
+}

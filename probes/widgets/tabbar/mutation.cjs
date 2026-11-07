@@ -128,6 +128,14 @@ const MUTATIONS = [
     replace: 'text: { fontSize: 11, textAlign: "center" } })',
     expect: 'was not truncated at all',
   },
+  {
+    id: 'M12',
+    why: 'the label stops ASKING to be centred -- the box is still the cell\'s width (so truncation still works and every rect is right) but the run paints from the cell\'s left edge, which is exactly how the bar was reported: "why isn\'t the tabbar text horizontally centred?"',
+    file: 'kit/asaot/ui/tabBar.as',
+    find: 'text: { fontSize: 11, textAlign: "center", textOverflow: "ellipsis" } })',
+    replace: 'text: { fontSize: 11, textOverflow: "ellipsis" } })',
+    expect: 'is centred at',
+  },
 ];
 
 function runProbe() {

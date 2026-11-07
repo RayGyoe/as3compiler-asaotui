@@ -258,6 +258,32 @@ function ready():void
     if (last != null && Math.abs(last.absX + last.absW - 320) > 1)
         fail("the last cell ends at " + (last.absX + last.absW) + ", want 320");
 
+    // (a2) THE LABEL IS CENTRED IN ITS CELL -- IN PIXELS. The label box is the
+    // cell's width whether or not the run is centred (that is what makes it
+    // truncatable), so a rect check cannot see this: the RUN is what moves. The
+    // field is autoSize "left", i.e. exactly as wide as the run, so the alignment
+    // has to be applied by TextWidget.arrange; with it dropped every label paints
+    // at its cell's LEFT edge, which is how the bar was reported.
+    var bdC:BitmapData = frame();
+    for (var k:int = 0; k < 3; k++)
+    {
+        var ck:UiNode = node("t" + k);
+        var labC:UiNode = (ck == null) ? null : childAt(ck, ck.children.length - 1);
+        if (labC == null) { fail("cell t" + k + " has no label"); continue; }
+        var rowC:int = int(labC.absY + labC.absH / 2);
+        var loC:int = -1;
+        var hiC:int = -1;
+        for (var pxC:int = int(ck.absX); pxC < int(ck.absX + ck.absW); pxC++)
+        {
+            if (rgbAt(bdC, pxC, rowC) != BAR_BG) { if (loC < 0) loC = pxC; hiC = pxC; }
+        }
+        if (loC < 0) { fail("the label of t" + k + " painted no ink on row " + rowC); continue; }
+        var gotC:Number = (loC + hiC) / 2;
+        var wantC:Number = ck.absX + ck.absW / 2;
+        check(Math.abs(gotC - wantC) <= 1.5, "the label of t" + k + " is centred at "
+            + gotC + ", want the cell's centre " + wantC);
+    }
+
     // (b) THE TINT IS THE SELECTED STATE. model.sel is 1.
     var t2:ThemeTokens = Theme.tokens();
     check(labelColor("t1") == t2.accent, "the selected label is " + hex(labelColor("t1"))
