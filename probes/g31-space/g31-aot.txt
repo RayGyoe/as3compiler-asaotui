@@ -1,0 +1,13 @@
+# G31 AOT arm -- ink gaps, Arial 12
+# text	ink
+A |	span=11 gaps=[ 2 ]
+b |	span=11 gaps=[ 5 ]
+X |	span=12 gaps=[ 3 ]
+T |	span=12 gaps=[ 4 ]
+V |	span=12 gaps=[ 3 ]
+Q |	span=14 gaps=[ 4 ]
+1 |	span=11 gaps=[ 6 ]
+A box	span=29 gaps=[ 2 1 1 ]
+Abox	span=27 gaps=[ 1 1 ]
+A  box	span=32 gaps=[ 5 1 1 ]
+A card is a box	span=79 gaps=[ 2 1 2 1 5 2 5 5 1 1 ]

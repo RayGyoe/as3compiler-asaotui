@@ -71,10 +71,17 @@ console.log('== closure dump (tools/reach-dump.cjs) ==');
 }
 
 // --- arms A and B: same source, two faces, both must build and run -----------
+// The vendored skia.lib is built with the D3D12 backend on Windows, so ANY arm that
+// pulls in graphics has to name those import libs at link time -- exactly what
+// run-gallery.cjs and probes/g31-space/run.cjs already do. Without them this probe
+// reported "arm B builds and links" FAIL with `undefined symbol:
+// D3D12SerializeRootSignature`, which reads like a reach bug and is a link flag.
+const NATIVE_LIBS = process.platform === 'win32' ? ['--cflag', '-ld3d12', '--cflag', '-ld3dcompiler'] : [];
+
 function build(extraArgs, label) {
   if (fs.existsSync(EXE)) fs.unlinkSync(EXE);   // a stale exe would fake a pass
   const r = sh(['src/index.ts', '--air-app', path.join(HERE, 'app.xml'),
-    '--main-class', 'p.Main', ...extraArgs, '--cc', clang], COMPILER);
+    '--main-class', 'p.Main', ...extraArgs, ...NATIVE_LIBS, '--cc', clang], COMPILER);
   const out = both(r);
   console.log('== ' + label + ' ==');
   console.log('     exit ' + r.status + '  ' + (r.error ? String(r.error) : ''));

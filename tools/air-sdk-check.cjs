@@ -132,8 +132,13 @@ console.log('[air-sdk-check] fixture: ' + ROOT);
 // 7. ...and when it does not (a path from another OS), the resolver KEEPS LOOKING
 //    instead of answering "no SDK". This is the exact dev-box failure: AIRSDK_HOME
 //    held D:/Adobe/... and the SDK was in ~/Documents/Software/.
+//    The foreign path has to be foreign TO THIS HOST: `D:/Adobe/...` is a real, valid
+//    SDK on a Windows box, so hard-coding it turned this case into "a Windows
+//    AIRSDK_HOME should be ignored" -- which it correctly is not. Graded as the
+//    platform's own expectation (CONTRIBUTING A25), with a host-symmetric pair.
 {
-  const r = resolve({ AIRSDK_HOME: 'D:/Adobe/Flex_Sdk/AIRSDK_51.4.1', ASC_AIR_SDK_SEARCH_DIRS: A });
+  const FOREIGN_HOME = WIN ? '/d/Adobe/Flex_Sdk/AIRSDK_51.4.1' : 'D:/Adobe/Flex_Sdk/AIRSDK_51.4.1';
+  const r = resolve({ AIRSDK_HOME: FOREIGN_HOME, ASC_AIR_SDK_SEARCH_DIRS: A });
   const recorded = (r.tried || []).some((t) => t.source === 'AIRSDK_HOME' && t.ok === false);
   check('a foreign-OS AIRSDK_HOME is recorded as a miss and the search still runs',
     r.root === real(NEW) && r.source === 'scan' && recorded, 'got ' + r.root + ' via ' + r.source);

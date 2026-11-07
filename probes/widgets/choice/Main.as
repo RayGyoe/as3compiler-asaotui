@@ -355,15 +355,22 @@ function afterExpand():void
     var want:String = "tr:tsrc,tr:tlib,tr:tc,tr:treadme";
     if (rows(tr) != want) fail("after expanding lib the rows are " + rows(tr) + " not " + want);
     // The expanded child is INDENTED two steps (10 + 22 + 18 + 10 = 60) and sits on the
-    // THIRD row: tsrc, tlib, tc -- so its top is 20 + 2*26 = 72, and a 15pt label is
-    // centred at 72 + (26 - 15)/2 = 77.5. The old number here was 79 (the row's top
-    // plus nothing), i.e. it asserted the OLD top-aligned placement; the centring
-    // identity is asserted too, so a different font metric says "not centred" rather
-    // than quietly moving the literal.
+    // THIRD row: tsrc, tlib, tc -- so its top is 20 + 2*26 = 72.
+    //
+    // The ABSOLUTE y is a text-metric fact, not a row-placement one: both backends add the
+    // same 4pt gutter around a single line, but they disagree about the line itself --
+    // AIR reports textHeight 15 for a 12pt run (1.25 x size), we report 12. Measured both
+    // ways in `temp/air-text-h/run.cjs`, registered as G33 in compiler-gaps.md. So the
+    // contract asserted here is the CENTRING (which must hold either way) and the x, not
+    // a literal that only one backend can satisfy. A row that stops centring (the old
+    // top-aligned placement put the label at y=72) still fails: wantY would be 79 and the
+    // identity on the next line would break too.
     var lc:UiNode = app.findByKey("tr:tc:l");
     if (lc == null) { fail("the expanded child has no label"); finish(); return; }
-    if (lc.absX != 60 || lc.absY != 77.5)
-        fail("the child row's label is at " + lc.absX + "," + lc.absY + " not 60,77.5 (the label is vertically centred in the 26pt row)");
+    var wantY:Number = 72 + (26 - lc.absH) / 2;   // AIR 15pt -> 77.5, ours 12pt -> 79
+    if (lc.absX != 60 || lc.absY != wantY)
+        fail("the child row's label is at " + lc.absX + "," + lc.absY + " not 60," + wantY
+            + " (the label is vertically centred in the 26pt row for a " + lc.absH + "pt label)");
     if (2 * (lc.absY - 72) + lc.absH != 26) fail("the child row's label is not centred in its row (top " + lc.absY + ", height " + lc.absH + ")");
     say("afterExpand: rows " + rows(tr) + " child label " + lc.absX + "," + lc.absY);
 

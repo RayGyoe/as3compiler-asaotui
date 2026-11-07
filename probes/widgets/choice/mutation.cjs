@@ -57,8 +57,8 @@ const MUTATIONS = [
     why: 'the selected row loses its declarative background -> the tree shows no selection at all '
       + '(this one is caught by a PIXEL, not by a rect)',
     file: 'kit/asaot/ui/tree.as',
-    find: '            if (n.selectedKey != null && n.selectedKey == key)',
-    replace: '            if (n.selectedKey != null && n.selectedKey == key + "!")',
+    find: '            if (n.selectedKey != null && n.selectedKey == String(spec.key))',
+    replace: '            if (n.selectedKey != null && n.selectedKey == String(spec.key) + "!")',
     expect: 'the selected row\'s background at (200,59)',
   },
   {

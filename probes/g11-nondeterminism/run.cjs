@@ -118,6 +118,13 @@ const CC_FLAGS = [
   '-fsyntax-only',
   '-O2',
   '-ffp-contract=off',
+  // The generated C reaches zlib.h (ByteArray.compress) and the vendored curl include
+  // directory is where every host has a copy -- it is exactly the path the Windows
+  // build manifest adds. Naming it here keeps the three artefacts compiling on this
+  // host; without it clang answers `fatal error: 'zlib.h' file not found`, which the
+  // reader below cannot parse, so the probe used to report "0 errors" for all three
+  // and call the naming fine.
+  '-I', path.join(REPO, 'vendor', 'curl', 'include'),
   '-D', 'ASC_USE_SKIA=1',
   '-D', 'ASC_USE_WINDOW=1',
   '-D', 'ASC_HAVE_TEXT'
