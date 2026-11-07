@@ -58,7 +58,13 @@ package asaot.ui
         public var layoutSolves:int;
         public var measurePasses:int;
         public var arrangePasses:int;
-        public var paintPasses:int;
+        public var paintPasses:int = 0;
+        // Bumped by every scroll viewport whose PUBLISHED slide moved (see
+        // ScrollViewWidget.paint). The slide is written during paint, i.e. after both
+        // trees were solved, so `reflow` compares this epoch with the one the overlay
+        // was last solved at and re-solves it in the same frame when a pane slid under
+        // an open popover/menu (probes/widgets/popover-scroll).
+        public var scrollEpoch:int = 0;
         public var invalidateCalls:int;
         public var enterFrameTicks:int;
         // Keyboard/focus diagnostics. `tabMoves` counts ring moves the LIBRARY
@@ -112,7 +118,9 @@ package asaot.ui
         private var reconciler:Reconciler;
         private var _pending:int;
         private var _needsPaint:Boolean;
-        private var _solvedW:Number;
+        private var _solvedW:Number = 0;
+        // The `scrollEpoch` the overlay tree was last solved at.
+        private var _overlayEpoch:int = 0;
         private var _solvedH:Number;
         private var _running:Boolean;
         // The palette generation this app has already applied. `Theme.themeEpoch()`
@@ -1117,11 +1125,42 @@ package asaot.ui
                 if (profile) this.profPaintMs = this.profPaintMs + (getTimer() - tPaint2);
             }
 
+            // THE FLOATING LAYER GETS THE LAST WORD ON ITS OWN PLACEMENT. Two inputs it
+            // reads are only final HERE, after the main tree has been arranged and
+            // painted:
+            //   * the SLIDE a pane publishes (written in paint), which is what makes an
+            //     anchored panel follow the trigger the reader is looking at;
+            //   * the rect of an ANCHOR THAT IS ITSELF AN OVERLAY (a submenu hangs off a
+            //     row of its parent menu). On the frame a nested surface is created its
+            //     parent panel has not been arranged yet, so that first measure reads the
+            //     previous frame's row -- and because a scroll raises no layout dirty bit,
+            //     nothing ever solved it again: the submenu kept its first-frame position
+            //     forever (probes/widgets/popover-scroll phase 5).
+            // The cost is one more solve+paint of a tree that is a panel and its children,
+            // and only on a frame where the overlay changed or a pane actually moved.
+            // viewport publishes is written in PAINT, so at the moment the overlay tree
+            // was solved above it still read the PREVIOUS frame's shift -- and, because
+            // scrolling raises no layout dirty bit, it was never solved again at all:
+            // an anchored popover/menu stayed at the height the anchor had BEFORE the
+
+            if (this.overlayRoot != null
+                && (reconciledOverlay || this.scrollEpoch != this._overlayEpoch))
+            {
+                this.overlayRoot.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE;
+                this.overlayRoot.markLayoutDirty();
+                this.solveRoot(this.overlayRoot, availW, availH);
+                this.paintPasses = this.paintPasses + 1;
+                paintAll(this.overlayRoot);
+            }
+
             // The HUD's own describe/solve/paint, on its own 4Hz clock. Runs AFTER
             // both author trees so it is described against a final window size.
             if (this._fps != null && this._fpsDirty) this.reflowFps(availW, availH);
 
             this._pending = 0;
+            // The overlay has now been solved at THIS scroll state (either by the
+            // normal path or by the re-solve above).
+            this._overlayEpoch = this.scrollEpoch;
             // The lifted popups are the one thing whose stage position depends on an
             // ANCESTOR's scroll, so they are re-seated after the paint pass, when this
             // frame's scrollRect values are final (see liftedList).

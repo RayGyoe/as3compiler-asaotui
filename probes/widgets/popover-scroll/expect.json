@@ -1,0 +1,28 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/popover-scroll/Main.as (the SETTLE frame: no panel open, offsetY 0). Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "Window 320x300. Root column, padding 10, background 0x111111, one child: the viewport (280x150) at (10,10) with background 0xF5F5F5 and both bars \"never\". Viewport children in order: spacer 280x40 0xDDDDDD, trigger 200x34 0x2563EB, spacer 280x200 0xCCCCCC. So contentH = 40+34+200 = 274 and maxOffsetY = 274-150 = 124. The trigger sits at y = 10 + 40 = 50 -> (10,50,200,34).",
+    "points": [
+      "(60,20) is 10px inside the viewport, in the first spacer 10..50 -> 0xDDDDDD.",
+      "(60,60) is 10px into the trigger 50..84 -> 0x2563EB.",
+      "(260,60) is in the viewport's empty right part beside the narrow trigger -> 0xF5F5F5.",
+      "(60,100) is in the second spacer, which starts at 10+40+34 = 84 -> 0xCCCCCC.",
+      "(300,10) is in the root's right padding -> 0x111111."
+    ],
+    "not_pinned": "The open panels cannot live here because expect.json describes ONE frame. probes/widgets/popover-scroll/Main.as asserts them itself: the popover's y at offset 0 (92 = trigger bottom 84 + offset 8) and at offset 40 (52 = drawn trigger bottom 44 + 8), the same two frames for a MENU anchored to the same trigger, and the pixels of both (white where the panel belongs now, the pane's own 0xCCCCCC where the stale panel used to be)."
+  },
+  "w": 320,
+  "h": 300,
+  "rects": {
+    "root": [0, 0, 320, 300],
+    "sv": [10, 10, 280, 150],
+    "trg": [10, 50, 200, 34]
+  },
+  "points": [
+    { "x": 60, "y": 20, "rgb": "#dddddd" },
+    { "x": 60, "y": 60, "rgb": "#2563eb" },
+    { "x": 260, "y": 60, "rgb": "#f5f5f5" },
+    { "x": 60, "y": 100, "rgb": "#cccccc" },
+    { "x": 300, "y": 10, "rgb": "#111111" }
+  ]
+}

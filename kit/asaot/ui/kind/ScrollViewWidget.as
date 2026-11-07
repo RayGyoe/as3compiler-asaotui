@@ -477,7 +477,7 @@ package asaot.ui.kind
             // sitting still. The bookkeeping array is reused for the same reason --
             // scrolling is a per-frame path and section 7 forbids per-frame garbage.
             var applied:Array = n.extra[APPLIED] as Array;
-            if (applied == null) { applied = [0, 0, 0, 0]; n.extra[APPLIED] = applied; }
+            if (applied == null) { applied = [0, 0, 0, 0, 0, 0]; n.extra[APPLIED] = applied; }
             if (applied[0] != vx || applied[1] != vy || applied[2] != w || applied[3] != h)
             {
                 n.backing.scrollRect = new Rectangle(vx, vy, w, h);
@@ -493,6 +493,21 @@ package asaot.ui.kind
             // re-assignment (the setter copies), the value is always this frame's.
             n.scrollShiftX = vx;
             n.scrollShiftY = vy;
+            // ... and BUMP THE EPOCH when it actually moved. The floating layer is
+            // solved against the window, so an anchored panel reads its anchor VISUALLY
+            // (PopoverWidget.measure) -- but "visually" is this number, and this number
+            // is written in PAINT, after both trees were solved. A scroll dirties no
+            // layout bit anywhere, so without a signal the overlay tree was never
+            // solved again and the panel sat at the unscrolled height until an
+            // unrelated describe moved it (probes/widgets/popover-scroll). UiApp reads
+            // this counter after the paint pass and re-solves the overlay in the SAME
+            // frame, which is what makes the panel move WITH the pixels.
+            if (applied[4] != vx || applied[5] != vy)
+            {
+                applied[4] = vx;
+                applied[5] = vy;
+                if (n.app != null) n.app.scrollEpoch = n.app.scrollEpoch + 1;
+            }
 
             this.paintBars(n, w, h, maxX, maxY, ox, oy, vx, vy);
 

@@ -1,0 +1,17 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE ANCHOR IS READ IN LAYOUT COORDINATES: the panel is placed where the trigger would be WITHOUT the scroll -- the reported defect, at the one line that decides where an anchored panel goes
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the panel is at y 92 after scrolling 40, want 52 (10 + 34 + 8); the panel is not under the scrolled trigger: (60,60) is #cccccc, want #ffffff; the panel is still hanging at its unscrolled height: (60,100) is #ffffff, want #cccccc; the menu is at y 92 after scrolling 40, want 52; the menu's first row is not at (60,60): #cccccc, want #ffffff; the menu is still where the unscrolled trigger was: (60,145) is #ffffff, want #cccccc; the submenu's parent menu is at y 92, want 52; the submenu is at y 123, want 83 (menu 52 + border 1 + padding 4 + row 26); a parent read in LAYOUT coordinates lands it a slide away;
+     restore: byte-identical (f3f6bea3f90d14d6)
+M2  CAUGHT  THE PANEL IS NEVER RE-SOLVED WHEN A PANE SLIDES: a scroll raises no layout dirty bit, so the frame that moves the pane leaves the panel at the height the trigger had before it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the panel is at y 92 after scrolling 40, want 52 (10 + 34 + 8); the panel is not under the scrolled trigger: (60,60) is #cccccc, want #ffffff; the panel is still hanging at its unscrolled height: (60,100) is #ffffff, want #cccccc; the submenu is at y 52, want 83 (menu 52 + border 1 + padding 4 + row 26); a parent read in LAYOUT coordinates lands it a slide away; the submenu is at x 14, want 129 (row left 15 + width 110 + offset 4);
+     restore: byte-identical (ce6b751f0cdb6212)
+M3  CAUGHT  THE VIEWPORT NEVER BUMPS THE EPOCH: the slide reaches visualX/Y correctly, but nothing tells UiApp that the floating layer has to be solved again
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the panel is at y 92 after scrolling 40, want 52 (10 + 34 + 8); the panel is not under the scrolled trigger: (60,60) is #cccccc, want #ffffff; the panel is still hanging at its unscrolled height: (60,100) is #ffffff, want #cccccc;
+     restore: byte-identical (b9d2ecf56208c4b2)
+
+MUTATION popover-scroll: 3/3 caught, 0 problem(s)
+RESULT: PASS

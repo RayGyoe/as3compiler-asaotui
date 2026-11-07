@@ -164,19 +164,37 @@ package asaot.ui.kind
             n.extra[MISS_KEY] = a == null ? 1 : 0;
             if (a == null) return;
 
+            // THE ANCHOR AS THE READER SEES IT, not as the solver placed it.
+            // absX/absY are LAYOUT coordinates: a scroll viewport slides its content
+            // in the CLIP (backing.scrollRect), so a node inside a scrolled pane keeps
+            // its rect while its pixels move. This panel is solved against the WINDOW
+            // (see windowW/H), so taking the raw layout rect put it where the trigger
+            // would be WITHOUT the scroll -- exactly one scroll offset away from under
+            // it. visualX/visualY publish layout minus every ancestor viewport's slide;
+            // select has been using them since probes/widgets/select-scroll, and the docs
+            // app anchors BOTH of its floating demos inside a scrolling reading pane
+            // (probes/widgets/popover-scroll).
+            var ax:Number = a.visualX();
+            var ay:Number = a.visualY();
             var off:Number = Number(n.extra[OFFSET_KEY]);
             var want:String = String(n.extra[PLACE_KEY]);
             var winW:Number = PopoverWidget.windowW(n);
             var winH:Number = PopoverWidget.windowH(n);
 
-            // ABSOLUTE -> PARENT-LOCAL. The engine's insets are relative to the
-            // PARENT's padding box (its border box inset by the border), and the
-            // anchor's `absX/absY` are absolute. For a top-level surface the parent
-            // is the overlay root at the window origin with no border, so ox/oy are
-            // 0 and ow/oh are the window -- which is why this used to be written
-            // straight through with absolute numbers and worked. A SUBMENU is the
-            // first surface whose parent is not at the origin; without this
-            // conversion its panel landed one menu-offset away from its row.
+            // WINDOW -> PARENT-LOCAL. The engine's insets are relative to the
+            // PARENT's padding box (its border box inset by the border), and ax/ay
+            // are window coordinates. For a top-level surface the parent is the
+            // overlay root at the window origin with no border, so ox/oy are 0 and
+            // ow/oh are the window -- which is why this used to be written straight
+            // through with these numbers and worked. A SUBMENU is the first surface
+            // whose parent is not at the origin; without this conversion its panel
+            // landed one menu-offset away from its row.
+            //
+            // The parent's LAYOUT rect is the right one here, unlike the anchor's: a
+            // parent is always an overlay node (the overlay root, or the panel this one
+            // hangs off), and the overlay layer has no viewport ancestor, so there is
+            // no slide to subtract. Do not "make it symmetric" with ax/ay without a
+            // probe that can see the difference -- none can, because there is none.
             var ox:Number = 0, oy:Number = 0;
             if (n.parent != null)
             {
@@ -209,43 +227,42 @@ package asaot.ui.kind
             var place:String = want;
             if (pw > 0 && ph > 0)
             {
-                if (want == "bottom" && a.absY + a.absH + off + ph > winH
-                    && a.absY - off - ph >= 0) place = "top";
-                else if (want == "top" && a.absY - off - ph < 0
-                    && a.absY + a.absH + off + ph <= winH) place = "bottom";
-                else if (want == "right" && a.absX + a.absW + off + pw > winW
-                    && a.absX - off - pw >= 0) place = "left";
-                else if (want == "left" && a.absX - off - pw < 0
-                    && a.absX + a.absW + off + pw <= winW) place = "right";
+                if (want == "bottom" && ay + a.absH + off + ph > winH
+                    && ay - off - ph >= 0) place = "top";
+                else if (want == "top" && ay - off - ph < 0
+                    && ay + a.absH + off + ph <= winH) place = "bottom";
+                else if (want == "right" && ax + a.absW + off + pw > winW
+                    && ax - off - pw >= 0) place = "left";
+                else if (want == "left" && ax - off - pw < 0
+                    && ax + a.absW + off + pw <= winW) place = "right";
             }
             n.extra[EFF_KEY] = place;
-
             if (place == "top")
             {
-                eng.setPosition(e, LayoutConstants.EDGE_LEFT, clampX(a.absX, pw, winW) - ox,
+                eng.setPosition(e, LayoutConstants.EDGE_LEFT, clampX(ax, pw, winW) - ox,
                                 LayoutConstants.UNIT_POINT);
-                eng.setPosition(e, LayoutConstants.EDGE_TOP, a.absY - off - ph - oy,
+                eng.setPosition(e, LayoutConstants.EDGE_TOP, ay - off - ph - oy,
                                 LayoutConstants.UNIT_POINT);
             }
             else if (place == "right")
             {
-                eng.setPosition(e, LayoutConstants.EDGE_LEFT, a.absX + a.absW + off - ox,
+                eng.setPosition(e, LayoutConstants.EDGE_LEFT, ax + a.absW + off - ox,
                                 LayoutConstants.UNIT_POINT);
-                eng.setPosition(e, LayoutConstants.EDGE_TOP, clampY(a.absY, ph, winH) - oy,
+                eng.setPosition(e, LayoutConstants.EDGE_TOP, clampY(ay, ph, winH) - oy,
                                 LayoutConstants.UNIT_POINT);
             }
             else if (place == "left")
             {
-                eng.setPosition(e, LayoutConstants.EDGE_LEFT, a.absX - off - pw - ox,
+                eng.setPosition(e, LayoutConstants.EDGE_LEFT, ax - off - pw - ox,
                                 LayoutConstants.UNIT_POINT);
-                eng.setPosition(e, LayoutConstants.EDGE_TOP, clampY(a.absY, ph, winH) - oy,
+                eng.setPosition(e, LayoutConstants.EDGE_TOP, clampY(ay, ph, winH) - oy,
                                 LayoutConstants.UNIT_POINT);
             }
             else
             {
-                eng.setPosition(e, LayoutConstants.EDGE_LEFT, clampX(a.absX, pw, winW) - ox,
+                eng.setPosition(e, LayoutConstants.EDGE_LEFT, clampX(ax, pw, winW) - ox,
                                 LayoutConstants.UNIT_POINT);
-                eng.setPosition(e, LayoutConstants.EDGE_TOP, a.absY + a.absH + off - oy,
+                eng.setPosition(e, LayoutConstants.EDGE_TOP, ay + a.absH + off - oy,
                                 LayoutConstants.UNIT_POINT);
             }
         }
