@@ -622,38 +622,54 @@
 | 验证方式 | 改完后 `ASC_BAKE_TRACE=1 ASC_NO_OPEN=1` 跑 `asaotui/probes/widgets/repaint-boundary`（动态探针），改 s1 颜色后 `stable` 应出现 `bake_patch`（含 clip 矩形），且 `bake_rebuild` 次数不增长（surface 不重新分配）。当前 A/B 证据：`asaotui/temp/rb-ab/bake-A-no-cache.log`、`bake-B-cache.log`、`bake-dyn-cache.log` |
 | 状态 | ✅ **已完成（v0.4.343 / 阶段三百七十八）**：核心改动**两处**——`Graphics_clear` 精确脏矩形 + render-input 标量写点变化检测，外加 asaotui 侧 `backing.alpha` 有条件写（**修正**了「asaotui 侧无需改 paint」的原判断，实测需改）。`ASC_BAKE_TRACE=1` 探针验证 `bake_patch` 出现；全量 `node test.ts` **636/636** |
 
-### G31 —— 12pt 下 `A` 后面的空格被画**窄 2px**（词距随字母漂），文档正文读起来像连字 —— ⚠️ **已定位：字形 advance 被整数取整（AIR 不取整）**
+### G31 —— 12pt 下 `A` 后面的空格被画**窄 2px**（词距随字母漂），文档正文读起来像连字 —— ⚠️ **已精准定位：AIR 的 advance 是整数值（GDI），Skia 的 kSlight 留分数**
 
-> **本条被复核过两次，结论按证据升级：**
-> ① 最早写的「两个空格只剩一个 / 空格整块消失」**不成立** —— 那是把放大截图当量具的误读；
-> ② 现在有 **AIR 51.5.1 的同串实测**（`probes/g31-space/`）：空格一直在，问题是**它比 AIR 的窄 2px**，
-> 而整行总宽与 AIR **逐项相等** —— 即字没少，是**各字形的 advance 被分别取整**。
-
-| 项 | 内容 |
-|---|---|
-| 实测（A/B，12pt Arial，同一探针两臂） | `A \|`：AIR 间隙 **4px** / 我们 **2px**；`b \|`：4 / **5**；`X \|`：4 / 3；`T \|`：4 / 4；`V \|`：4 / 3；`Q \|`：4 / 4；`1 \|`：6 / 6 ⇒ **AIR 对每个字母都恰好 4px，我们随字母在 2–5px 之间漂**。同尾串设计（尾巴都是 `\|`）保证差异只可能来自「那个字母 + 空格」 |
-| 关键对照：总宽 | `A box`：**29 = 29**；`A  box`：**32 = 32**；`A card is a box`：**79 = 79**（`span` 一栏逐项相等）⇒ **不是丢字、不是行宽算错、也不是换行差异**，而是 advance 的**整数取整**把 1–2px 从空格挪给了相邻字母 |
-| 尺寸依赖 | `A box` 的空格贡献：11pt 3px / **12pt 2px** / 13pt 3px / 14pt 3px ⇒ **12pt 最差**，而文档正文正好 12pt（`DocsStyle.PROSE`）；等宽面（Consolas）无此现象 |
-| 与换行无关 | 同一串在「不换行」与 `wrap=408` / `wrap=200` 三种模式下，首行间隙**逐项相同** ⇒ 不是 SkParagraph 的行分割/尾随空白裁剪 |
-| 与库无关 | 上述量全部来自**裸 `TextField`**（不经 `asaot.ui` 任何代码）；生成的 C 里字符串字面量逐字节完好（`GalleryApp.c:5884625`） |
-| 代码事实（读 `../as3compiler`，未改） | `vendor/skia_text_glue.cc` 的 `sk_textlayout_new` / `mkStyle` 只设 `size/color/weight/slant/families/height`：**既没有 kerning 也没有 letterSpacing**（`sk_text_run` 结构同样没有这两个字段）⇒ 走的是 Skia/SkParagraph 默认的字形定位（hinted，advance 取整），而 AIR 的 Flash 文本引擎保留亚像素 advance |
-| 量化旁证 | 同机 Chrome（同 Skia/HarfBuzz 家族）12pt Arial：`A \|` kern=13.79 / nokern=14.46 ⇒ (A, 空格) 的 **kern 只有 −0.67px**，不足以解释 2px；而 AIR 对 A 与 b **给同样的 4px**（说明它没在 kern） |
-| 判定 | **后端保真缺口（遗留欠账）**：AIR 有、我们没有，且已被 AIR 同串实测钉住（`probes/g31-space/run.cjs` 退出码 0 = 复现）。修完后该探针应给出 `A \|` = 4px 且其余行与总宽不变 |
-| 建议上游修法（**未改**） | 让段落排版走**亚像素字形定位**（不把 advance hint/round 到整数；SkFont 走线性度量），使 3.33px 的空格真的落成 3.33px；不必去动 kerning（AIR 的 4px 是均匀的，说明它本就没 kern）——但 `TextFormat.kerning` 仍未接线，见下一条 |
-| 库侧是否绕路 | **不绕**。文档照旧写 `"A …"`，不换词、不插 NBSP —— 库侧一绕，这个后端缺陷就再也不会暴露 |
-| 复现 | `node probes/g31-space/run.cjs`（一条命令两臂并排；`ASC_SKIP_AIR=1` 只跑我们这臂）；或看 `ui-demo/air-gallery/gallery-page1.png` 的 box 页正文首行 `Acard` |
-| 状态 | ⚠️ **已定位（advance 取整），未修，未改 `as3compiler/`**（2026-11-07 二度复核，带 AIR 实测） |
-
-### G32 —— `TextFormat.letterSpacing` 被接受但**完全不参与排版**（静默无效）—— ⚠️ **待实测确认（仅代码事实）**
+> **本条复核过三次。** ① 「空格整块消失」**不成立**（放大截图当量具的误读）；
+> ② 「整行总宽与 AIR 相等 ⇒ 只有空格错」**也不成立** —— 用逐串两臂探针（`temp/g31w/`）量到 `1` 这类字形同样偏小；
+> ③ 现在有**逐字号 × 逐字形的两臂实测**，结论是**字形 advance 的量化口径不同**：AIR 给整数，Skia 的 `kSlight` hinting 留分数。
 
 | 项 | 内容 |
 |---|---|
-| 现象 | 设 `TextFormat.letterSpacing` 对 `textWidth`/`textHeight`/绘制**没有任何影响**。`asaotui` 侧 `Style.text.letterSpacing` 一路传到 `PaintKit.formatFor` → `f.letterSpacing`，看起来生效，实际**全链无效** |
-| 证据（代码事实） | `src/emit.ts` 里 `letterSpacing` 只出现在**存/等比/复制**五处（24485、24514、24537、25824、25837、25848），`as_tf_paragraph` 读 `fmt` 时只取 `size/bold/italic/leading/color/font`；`vendor/skia_text_glue.cc` 全文**没有** `letterSpacing`，`sk_text_run` 也没有该字段 ⇒ 从未到达 Skia |
-| 影响面 | 任何靠字距收紧的排版（标题 tracking、等宽代码块的行宽对齐）在两臂间必然不一致：AIR 生效、我们不生效。库侧目前**未使用** letterSpacing，故当前无可视缺陷，但这是**静默降级**，违反 AGENTS.md §1.5 的「缺能力就报明」 |
-| 判定 | **后端缺口（未实测，仅代码事实）**：`emit.ts` 把该字段读了存了，shim 侧接口不存在 ⇒ 不是「AIR 没有」的边界，而是我们没接 |
-| 建议上游修法（**未改**） | `sk_text_run` 加 `letterSpacing`，`mkStyle` 里 `ts.setLetterSpacing(...)`；零值不改变现有产物的像素，可用现有 `probes/widgets/textfx` 做回归；同时进段落缓存键 |
-| 状态 | ⚠️ **待实测确认**（2026-11-07 登记；未修，未改 `as3compiler/`） |
+| 实测（A/B，`temp/g31w/run.cjs`，Arial，`autoSize = LEFT`） | 无空格串**逐项相等**：`A` 11=11、`i` 7=7、`W` 15=15、`AAAA` 32=32、`iiii` 16=16、`WWWW` 48=48、`Xy` 16=16、`Ab` 18=18、`Abox` 30=30 ⇒ 多数常用字形**已经对齐** |
+| 实测（同探针，分歧项） | `11`：AIR **18** / 我们 **17.11**（每个 `1` 6.555 vs 7）；`A `：14 / **13.34**；`A  `：17 / 16.34；`A box`：33 / 32.34 ⇒ **差异不止空格**，只是空格最显眼 |
+| 空格逐字号（同探针） | AIR：11pt **3** / 12pt **3** / 13pt **4** / 14pt **4** / 16pt **4** —— 恰为 `round(0.278 × size)`（Arial 的 space 是 278/1000 em）；我们：2.39 / 2.34 / 3.28 / 3.23 / 3.12（Skia hinted 的分数） |
+| 关键对照：总宽 | 12pt `A box` AIR 33 / 我们 32.34；`A card is a box` 79 / 78 ⇒ 「近似相等」掩盖了**逐字形**的分歧 |
+| 与换行无关 | 同一串在「不换行」与 `wrap=408` / `wrap=200` 下首行间隙逐项相同 ⇒ 不是断行或尾随空白裁剪 |
+| 与库无关 | 全部来自**裸 `TextField`**，不经 `asaot.ui` 任何代码 |
+| 已试方案 ①：`kNone` hinting | 改 Skia 的 `TextLine.cpp` / `OneLineShaper.cpp`（都硬编码 `kSlight`）⇒ 空格间隙变 4px（**G31 的表象修好**），但所有字形的 advance 回到未量化值 ⇒ 整串宽度整体漂移（`A box` 29→30、`A card is a box` 79→78），**不是纯改善** |
+| 已试方案 ②：`kNone` + `setLinearMetrics(true)` | `textWidth` 全线上浮约 12%（16→18.0039、19→20.34、22→22.67，AIR 是 16/19/22）⇒ 更差；两个开关不可叠加 |
+| 已试方案 ③：`TextStyle::setWordSpacing` 补偿（**代码已回滚**） | **不可行，两条独立原因**：① SkParagraph 只对「空格后紧跟非空格」应用 wordSpacing（`ParagraphImpl` 的 `wordSpacingPending` + `soFarWhitespacesOnly`），**行尾空格**（`textWidth` 量的正是它）永远拿不到；② 修正量无法在本地求出 —— `SkFont::measureText(" ")` 报 **3.0**（正好等于 AIR），而段落自己推进 **2.34**，没有任何本地测量能给出这个差 |
+| 判定 | **后端保真缺口（遗留欠账）**：AIR 有、我们没有。但根因是**渲染后端的 hinted 度量口径**，不是某个可调参数 |
+| 真正的修法（未做） | 在 Skia 内把 hinting 改成「整数化 advance」（改 `TextLine.cpp` / `OneLineShaper.cpp` 的设置并在簇级取整），使每个 glyph 的 advance 都落到整像素 —— 这是**全文本排版的量化改动**，须按 `vendor/skia/patches/README.md` 立补丁并全量验证，不能当参数改 |
+| 库侧是否绕路 | **不绕**。文档照旧写 `"A …"`，不换词、不插 NBSP |
+| 复现 | `node temp/g31w/run.cjs`（一条命令两臂并排）；历史视觉探针 `node probes/g31-space/run.cjs` |
+| 状态 | ⚠️ **已精准定位（逐字形 advance 量化口径），未修**（2026-11-07 三度复核，两臂逐项数据；`as3compiler` 未因此改动） |
+
+### G32 —— `TextFormat.letterSpacing` 被接受但**完全不参与排版**（静默无效）—— ✅ **已修（阶段三百八十六，v0.4.353）**
+
+| 项 | 内容 |
+|---|---|
+| 现象（修前） | 设 `TextFormat.letterSpacing` 对 `textWidth`/`textHeight`/绘制**没有任何影响**：`emit.ts` 把该字段存了、复制了、比较了，但 `as_tf_paragraph` 只把 `size/bold/italic/leading/color/font` 交给 shim，`sk_text_run` 也没有这个字段 |
+| 误判风险 | 曾登记为「待实测确认（仅代码事实）」；实测后确认 **AIR 侧生效**（`adl` 的 `abcd` 在 ls 0/2/4 下是 31/39/47）⇒ 是**我们没接**，属 AGENTS §1.5 的**遗留缺陷**，不是增强项 |
+| 修法 | 全链按**像素**直通（AIR 的 `TextFormat.letterSpacing` 是 px，SkParagraph 的 `TextStyle::setLetterSpacing` 由 `Run::addSpacesEvenly` 逐簇加上，同为 px，接缝处不做换算）：`TextFormat.letterSpacing` → `sk_text_run.letterSpacing`（C 侧 `runtime.ts` 与 C++ 侧 glue 两份结构同步）→ `TextStyle::setLetterSpacing`（富文本 run 与单样式 flat **两条路径都要**）→ `TextField._para_ls`（**进段落缓存键**，否则改了字距仍复用旧排版） |
+| 实测（A/B 修后，`temp/g31w/`） | `abcd`：31 / **39** / **47**；`abcdefgh`：55 / **71** / **87**（ls 0/2/4）—— 两臂**逐项相等**，增量 = 字符数 × 字距，与字形无关 |
+| 回归钉 | `examples/text-letterspacing.as`（关系式 `Δwidth = 字符数 × letterSpacing` + 活体编辑路径）；`test/unit/display.ts` 四组：读入本地、写到 run 与默认 run、进缓存键、两个构建器都按 px 直通；`sk_text_run` 两侧结构同步钉扩到 10 字段并新增 `letterSpacing` 位次 |
+| 库侧 | `asaot.ui` 目前未使用 letterSpacing，故修复前无可视缺陷 —— 但这是**静默降级**，现已被能力补齐 |
+| 状态 | ✅ **已修（阶段三百八十六，v0.4.353）**；`as3compiler` 改动 = `src/emit.ts`、`src/runtime.ts`、`vendor/skia_text_glue.cc`、`test/unit/display.ts`、`test/examples.ts` + 新示例 |
+
+### G33 —— 单行文本的**行高被算成 `fontSize`**（AIR 是 ≈1.25×），居中文字上移 1.5px、多行段落整体偏矮 —— ⚠️ **已定位：AIR 用的是 GDI hinted 的整数量度，无法从 Skia 度量推导**
+
+| 项 | 内容 |
+|---|---|
+| 实测（A/B，Arial 单行 `"Xy"`，`autoSize = LEFT`） | `height / textHeight / textWidth`：12pt AIR **19 / 15 / 16** 我们 **16 / 12 / 16**；14pt AIR **20 / 16 / 19** 我们 **17 / 13 / 19**；16pt AIR **22 / 18 / 22** 我们 **19 / 15 / 22** ⇒ **宽度全对，只有高度差恒定 3px** |
+| 影响面 | 垂直居中就是 `(rowH - h) / 2`：26pt 行里 12pt 文字 AIR 落 **77.5**、我们落 **79**（`probes/widgets/choice` 原先就红在这里）；多行段落每行矮 3px |
+| 复现 | `node temp/air-text-h/run.cjs`（同一仪器两臂：AIR `mxmlc` → `adl`，我们 `--air-app`） |
+| 代码事实 | 我们走 `sk_air_line_metrics` 的 `round_half(ascent) + round_half(descent)`（Arial 12pt 得 9+3=12）；Skia 报的**整盒**（ascent+descent+lineGap）是 14/15/17 |
+| 已试方案（**代码已回滚**） | 把 model 改成「整盒 + 1」⇒ **Arial 三档全中**（14/15/17 → 15/16/18），`height/textHeight/textWidth` 与 AIR **逐项相同**；但它是**拟合不是规则**：Monaco 12pt 的 AIR 行高是 **15**，而它的整盒是 **16.002** ⇒ 同一公式给 17。Arial(15/16/18)、Monaco(15)、Times(12)、Helvetica(12)、Courier(12) **没有任何单一公式同时成立** |
+| 判定 | **后端保真缺口（遗留欠账）**。AIR 的数字来自 GDI 的 hinted 整数量度（Flash 经典值：Arial 12 → 行高 15），Skia 的 `SkFontMetrics` 给的是另一套（且 Arial 走 typo 而非 usWin）⇒ **不可推导** |
+| 可能的修法（未做） | 要么按「字体族 × 字号」实测建表（对齐彻底，但要覆盖所有面）；要么在 Skia 侧取 usWin 度量 —— 需先确认 face 接口能否拿到 `usWinAscent`/`usWinDescent` |
+| 库侧是否绕路 | **不绕**。居中一律 `(row - h) / 2`，不写死偏移量 |
+| 状态 | ⚠️ **已定位（2026-11-07 三档实测 + 反例），未修**；回滚后 `as3compiler` 无残留改动 |
 
 ---
 
