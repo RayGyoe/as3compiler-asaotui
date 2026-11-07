@@ -102,6 +102,13 @@ package asaot.ui
         // the main root, so it is painted last and can cover the whole window;
         // it never participates in the main tree's flex layout.
         private var overlayRoot:UiNode;
+        // The FPS HUD's own tree (see showFps). A THIRD retained root: chrome that
+        // must sit above BOTH author trees and must never take a click. Its backing
+        // is attached LAST and re-raised on every reconcile, which is the whole
+        // "nothing can cover it" guarantee -- there is no z-index in this engine.
+        private var _fps:FpsPanel;
+        private var fpsRoot:UiNode;
+        private var _fpsDirty:Boolean;
         private var reconciler:Reconciler;
         private var _pending:int;
         private var _needsPaint:Boolean;
@@ -143,6 +150,9 @@ package asaot.ui
             this.rectScratch = [0, 0, 0, 0];
             this.reconciler = new Reconciler(this);
             this.root = null;
+            this._fps = null;
+            this.fpsRoot = null;
+            this._fpsDirty = false;
             this._pending = 0;
             this._needsPaint = false;
             this._solvedW = -1;
@@ -233,6 +243,124 @@ package asaot.ui
             {
                 this.stageContainer.addChild(this.root.backing);
             }
+            // The HUD's tree can have been described BEFORE this call (showFps()
+            // invoked before mount), so it is attached here as well -- and LAST,
+            // which is exactly what makes it the topmost object on the stage.
+            if (this.fpsRoot != null && this.fpsRoot.backing != null
+                && this.fpsRoot.backing.parent == null && this.stageContainer != null)
+            {
+                this.stageContainer.addChild(this.fpsRoot.backing);
+                this.markFpsChrome();
+            }
+        }
+
+        // ---- the FPS HUD (showFps) ----------------------------------------
+        // `showFps("top-right")` mounts a frame-rate panel in a THIRD retained tree
+        // described by `asaot.ui.FpsPanel`. WHY A THIRD TREE AND NOT A CHILD OF THE
+        // OVERLAY: `View.renderOverlay()` belongs to the AUTHOR (dialog, drawer,
+        // popover, toast), and appending library chrome to it would put a node in
+        // every app's overlay root that the author never described -- a dialog's
+        // own tree would sit one child deeper, and a probe pinning "the overlay has
+        // N children" would then be measuring the HUD instead of the app.
+        //
+        // The panel is OPT-IN, OFF by default: an instrument that appears without
+        // being asked for is not chrome, it is a defect.
+        public function showFps(corner:String = "top-right"):void
+        {
+            // The constructor validates the corner and THROWS on an unknown one --
+            // a silently mis-placed HUD is a bug you would only find in a screenshot.
+            if (this._fps == null)
+            {
+                this._fps = new FpsPanel(corner);
+            }
+            else if (this._fps.corner != corner)
+            {
+                // A CORNER CHANGE REBUILDS THE NODES, it does not merely re-describe
+                // them. `inset` merges PER COMPONENT in the style resolver (a null side
+                // means "keep the parent's"), so describing the same node with
+                // `[12,12,null,null]` after `[null,null,12,12]` produces a box pinned to
+                // ALL FOUR edges -- measured: a 104x216 slab in the wrong corner.
+                // Dropping the retained tree rebuilds it from the baseline, where no
+                // inset is set yet. The MEASUREMENT survives (same FpsPanel).
+                this._fps.setCorner(corner);
+                this.dropFpsRoot();
+            }
+            this._fpsDirty = true;
+            // Describe NOW when the app is already mounted. The caller is typically
+            // an entry point that captures `stage.numChildren` as a baseline on the
+            // next line; a root that appeared two frames later would read as a leak.
+            if (this.stage != null && this.view != null) this.reflow();
+            else this.invalidate(Dirty.ALL);
+        }
+
+        public function hideFps():void
+        {
+            this.dropFpsRoot();
+            this._fps = null;
+            this._fpsDirty = false;
+        }
+
+        // Tear the HUD's tree down but keep its sampled numbers (see showFps).
+        private function dropFpsRoot():void
+        {
+            if (this.fpsRoot != null)
+            {
+                this.reconciler.destroyRoot(this.fpsRoot);
+                this.fpsRoot = null;
+            }
+            this._fpsDirty = true;
+        }
+
+        // The panel's own published numbers, for a probe or an in-app readout.
+        // Null while the HUD is hidden.
+        public function fpsPanel():FpsPanel
+        {
+            return this._fps;
+        }
+
+        // One describe + solve + paint of the HUD tree. Deliberately NOT routed
+        // through the main-tree branches above: the HUD changes on its own clock
+        // (4x/second), and a reflow of the whole page to update three numbers would
+        // make the instrument a measurable part of what it measures.
+        private function reflowFps(availW:Number, availH:Number):void
+        {
+            this._fpsDirty = false;
+            this.fpsRoot = this.reconciler.reconcile(this.fpsRoot, this._fps.describe(), null);
+            if (this.fpsRoot.backing != null && this.fpsRoot.backing.parent == null
+                && this.stageContainer != null)
+            {
+                this.stageContainer.addChild(this.fpsRoot.backing);
+            }
+            this.markFpsChrome();
+            this.solveRoot(this.fpsRoot, availW, availH);
+            this.paintAll(this.fpsRoot);
+            this.raiseFps();
+        }
+
+        // BOTH FLAGS. `mouseEnabled = false` only stops the HUD's own box from
+        // reporting a hit; `as_pick_hit_m` still walks its CHILDREN, and the panel
+        // has a painted background, so it would answer for them. mouseChildren =
+        // false takes the whole subtree out of the hit test, which is what "chrome
+        // drawn over content" has to mean: the control underneath keeps its clicks.
+        private function markFpsChrome():void
+        {
+            if (this.fpsRoot == null || this.fpsRoot.backing == null) return;
+            this.fpsRoot.backing.mouseEnabled = false;
+            this.fpsRoot.backing.mouseChildren = false;
+        }
+
+        // Keep the HUD the LAST child of the container. Normally it already is
+        // (it was attached after both author roots); this repairs the case where a
+        // root was re-attached later in the frame.
+        private function raiseFps():void
+        {
+            if (this.fpsRoot == null || this.fpsRoot.backing == null) return;
+            if (this.stageContainer == null || this.fpsRoot.backing.parent == null) return;
+            var top:int = this.stageContainer.numChildren - 1;
+            if (top >= 0 && this.stageContainer.getChildIndex(this.fpsRoot.backing) != top)
+            {
+                this.stageContainer.setChildIndex(this.fpsRoot.backing, top);
+            }
         }
 
         public function rootDisplay():DisplayObject
@@ -251,6 +379,15 @@ package asaot.ui
         public function overlayDisplay():DisplayObject
         {
             return this.overlayRoot != null ? this.overlayRoot.backing : null;
+        }
+
+        // The HUD's retained root (null until showFps() describes one). Exposed for
+        // the same reason as getOverlayRoot(): a test has to be able to read the
+        // tree the panel lives in, and it is deliberately NOT a child of either
+        // author tree.
+        public function getFpsRoot():UiNode
+        {
+            return this.fpsRoot;
         }
 
         // ---- the single dirty entry point -------------------------------
@@ -775,6 +912,9 @@ package asaot.ui
             // why not an epoch clock. The SAME value drives the animator, so the
             // clock is read exactly once per frame.
             var now:Number = getTimer();
+            // The HUD's clock. ONE call per frame, and it returns true only when a
+            // 250ms sampling window closed -- the sole reason the HUD re-describes.
+            if (this._fps != null && this._fps.tick(now)) this._fpsDirty = true;
             this.view.tick(now);
             // Advance wall-time tweens and keep their nodes repainting until they
             // land. `advance` returns true while anything is still animating (a
@@ -798,7 +938,7 @@ package asaot.ui
             {
                 this.invalidate(Dirty.STRUCTURE);
             }
-            if (this._pending != 0 || this._needsPaint) this.reflow();
+            if (this._pending != 0 || this._needsPaint || this._fpsDirty) this.reflow();
         }
 
         private function onResize(e:Event):void
@@ -847,6 +987,14 @@ package asaot.ui
                 {
                     this.overlayRoot.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE;
                     this.overlayRoot.markLayoutDirty();
+                }
+                // The HUD is window-anchored too (`inset` against a 100% host), so
+                // a resize has to re-solve it or it keeps the old corner offset.
+                if (this.fpsRoot != null)
+                {
+                    this.fpsRoot.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE;
+                    this.fpsRoot.markLayoutDirty();
+                    this._fpsDirty = true;
                 }
             }
 
@@ -904,6 +1052,9 @@ package asaot.ui
                     this.stageContainer.setChildIndex(this.overlayRoot.backing, top);
                 }
             }
+            // ... and the HUD above the overlay, for the same reason and every
+            // frame: it is chrome and content must never paint over it.
+            this.raiseFps();
 
             // SAFE AREA FOLD (MOBILE.md E2). Runs BEFORE the layout gate, because
             // folding an inset changes padding -- i.e. it is a layout input -- and
@@ -965,6 +1116,10 @@ package asaot.ui
                 if (this.overlayRoot != null) paintDirty(this.overlayRoot);
                 if (profile) this.profPaintMs = this.profPaintMs + (getTimer() - tPaint2);
             }
+
+            // The HUD's own describe/solve/paint, on its own 4Hz clock. Runs AFTER
+            // both author trees so it is described against a final window size.
+            if (this._fps != null && this._fpsDirty) this.reflowFps(availW, availH);
 
             this._pending = 0;
             // The lifted popups are the one thing whose stage position depends on an
@@ -1329,7 +1484,11 @@ package asaot.ui
             // The overlay tree is a second root; a key is unique across BOTH trees
             // (the main tree wins a collision, which is also what a test author
             // expects: content over chrome).
-            return findScoped(this.overlayRoot, k);
+            hit = findScoped(this.overlayRoot, k);
+            if (hit != null) return hit;
+            // ... and the HUD tree is the third, searched LAST for the same reading:
+            // an app key never loses to a library key.
+            return findScoped(this.fpsRoot, k);
         }
 
         private function findScoped(n:UiNode, k:Object):UiNode

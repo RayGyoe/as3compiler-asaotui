@@ -1,0 +1,21 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  THE HUD IS NEVER RE-RAISED: with a dialog open the overlay is added after the HUD, so the last child is the dialog and the panel is painted under it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the HUD is at display index 1 with a dialog open, want the last; the dialog is drawn after the HUD (HUD 1, overlay 2); with a dialog open the panel's own pixel is #112233, want the panel background #1f2937 (the HUD is painted under the dialog);
+     restore: byte-identical (24003a43e5fffd91)
+M2  CAUGHT  THE HUD STILL HIT-TESTS ITS CHILDREN: mouseEnabled is not enough, because the hit test walks the subtree and the panel has a painted background
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the HUD backing still hit-tests its children (mouseChildren); a click inside the HUD reported 0 picks from the button underneath, want 1 (the HUD must not be clickable); a click after hideFps reported 1 picks, want 2;
+     restore: byte-identical (24003a43e5fffd91)
+M3  CAUGHT  THE HUD HIT-TESTS ITSELF: the panel box answers the click, so the button underneath never sees it
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the HUD backing still takes the mouse (mouseEnabled); a click inside the HUD reported 0 picks from the button underneath, want 1 (the HUD must not be clickable); a click after hideFps reported 1 picks, want 2;
+     restore: byte-identical (24003a43e5fffd91)
+M4  CAUGHT  THE RATE IS A CONSTANT: the band (45..75 at 60Hz) and the arithmetic (1000/fps == avgMs) both still hold, so only the 30Hz phase can tell a measurement from an echo of the request
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL at stage.frameRate = 30 the HUD reads 60, want 20..40 (an echo of the request would still say 60);
+     restore: byte-identical (4f9012063fd93008)
+
+MUTATION fps: 4/4 caught, 0 problem(s)
+RESULT: PASS

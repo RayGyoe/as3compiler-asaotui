@@ -699,6 +699,17 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
                  // never reaches the display object; default flips to true so the
                  // undeclared root is cached too).
                  'widgets/static-layer',
+                 // `fps` is `UiApp.showFps()`: the frame-rate HUD in the library's THIRD
+                 // retained tree. Four things a screenshot cannot show are pinned: the
+                 // HUD backing is the LAST stage child and is re-raised every reflow, so
+                 // an author dialog opened afterwards still paints UNDER it; the backing
+                 // takes neither `mouseEnabled` nor `mouseChildren`, so a click in the
+                 // panel's corner reaches the control underneath; hideFps restores the
+                 // exact child count; and the published rate FOLLOWS the stage (asked for
+                 // 60, then 30, and the number halves). Teeth: probes/widgets/fps/
+                 // mutation.cjs 4/4 -- including "the rate is a constant 60", which the
+                 // band and the 1000/fps arithmetic both let through at 60Hz.
+                 'widgets/fps',
                  // probes/perf is not a pixel probe but a stopwatch: 300 keyed buttons,
                  // timed idle / describe / one-node-change / solve / paint phases.
                  // Its one assertion is a 15ms ceiling on a NO-CHANGE describe

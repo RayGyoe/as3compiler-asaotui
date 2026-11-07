@@ -1,0 +1,35 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/fps/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "geometry": "320x240 window; the root is a column with padding 12 and alignItems flex-end, holding ONE button (104x73) -- so the button sits at (320-12-104, 12) = (204,12). UiApp.showFps('top-right') puts the panel at the same place by construction: inset 12 from the top and the right, 104 wide. The two rects coincide ON PURPOSE: that is what makes 'the HUD does not eat the click' testable with one click at (256,40).",
+    "fps_height_not_pinned": "The panel's HEIGHT is a text-metric sum (head 20 + sub 13 + sparkline 20 + two 3pt gaps + 2x7 padding + border), so it is pinned as a 66..82 band inside Main.as instead of a JSON number: a font change is then a deliberate edit there, not a silently different picture here.",
+    "final_state": "The probe finishes with the HUD SHOWN in the bottom-left corner (a second showFps('bottom-left') after a hide/show cycle), which is what the BMP shows: the panel in the lower-left, the green button visible again in the top-right.",
+    "points": [
+      "(40,40) is the page background above and left of both the button and the HUD's final bottom-left corner -> the root's white #FFFFFF. NOT (40,200): that is where the panel ends up after the probe's last showFps('bottom-left'), and pinning a point inside a panel whose height is a text-metric sum would make this file a copy of the probe's own output."
+    ],
+    "not_pinned": "The panel's own pixels, the fps/avg/peak numbers, the click count, the stage child count on both sides of hideFps() and the throw on an unknown corner are all asserted mid-run in Main.as: they are the RUNNING properties of the widget, not a layout fact that a frozen rect could express."
+  },
+  "w": 320,
+  "h": 240,
+  "rects": {
+    "root": [
+      0,
+      0,
+      320,
+      240
+    ],
+    "btn": [
+      204,
+      12,
+      104,
+      73
+    ]
+  },
+  "points": [
+    {
+      "x": 40,
+      "y": 40,
+      "rgb": "#FFFFFF"
+    }
+  ]
+}
