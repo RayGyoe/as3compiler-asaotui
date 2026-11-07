@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  AOT arm descriptor for the G31 A/B (compiler-gaps.md G31).
+
+  Built exactly like the gallery -- `as-aot --air-app app.xml` -- because that is the
+  one route where a real window exists and text therefore shapes. A hand-written
+  manifest plus `new Stage()` does NOT: the field draws nothing and every case
+  reports NO INK (measured). The window is 200x26 and invisible in spirit: the app
+  writes its numbers and calls NativeApplication.exit() on the first frame.
+-->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+  <id>asaotui.g31aot</id>
+  <versionNumber>0.0.1</versionNumber>
+  <filename>g31aot</filename>
+  <architecture>64</architecture>
+  <initialWindow>
+    <content>g31aot.swf</content>
+    <title>probe g31</title>
+    <visible>true</visible>
+    <width>120</width>
+    <height>40</height>
+    <resizable>false</resizable>
+    <renderMode>cpu</renderMode>
+    <requestedDisplayResolution>standard</requestedDisplayResolution>
+  </initialWindow>
+</application>
