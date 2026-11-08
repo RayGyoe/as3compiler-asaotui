@@ -46,9 +46,25 @@ class PerfView extends View
 
     public var label:String = "row";
     public var only:int = -1;
+    public var useMemo:Boolean = false;
+    public var builds:int = 0;
     public function PerfView():void { super(); }
 
     public override function render():Node
+    {
+        if (!this.useMemo) return this.buildRows();
+        var self:PerfView = this;
+        // Memo wraps the WHOLE factory call, not each button(): on a hit none of
+        // the 300 children is constructed, and Reconciler visits only this root.
+        // The same pattern works unchanged for every component returning Node.
+        return this.memo("rows", this.label + ":" + this.only, function ():Node
+        {
+            self.builds++;
+            return self.buildRows();
+        });
+    }
+
+    private function buildRows():Node
     {
         var kids:Array = [];
         for (var i:int = 0; i < N; i++)
@@ -149,6 +165,37 @@ function run():void
     t = getTimer();
     for (i = 0; i < REPS; i++) { app.markPaint(n); app.reflow(); }
     report("paint   ", getTimer() - t, c);
+
+    // A versioned memo must avoid the 300-button factory entirely, not merely
+    // make reconciliation cheaper after allocating another equal tree.
+    v.useMemo = true;
+    v.label = "row";
+    v.only = -1;
+    var builds0:int = v.builds;
+    c = counters();
+    t = getTimer();
+    for (i = 0; i < REPS; i++) { app.invalidate(Dirty.VALUE); app.reflow(); }
+    report("memo    ", getTimer() - t, c);
+    if (v.builds - builds0 != 1) problems = problems + "memo rebuilt an unchanged subtree; ";
+    // The first hit pays for the initial 301-node mount; the other nine
+    // describes visit only the cached root.
+    if (app.reconcileVisits - c[1] != N + REPS) problems = problems
+        + "memo reconcile walked an unchanged subtree; ";
+
+    // Both an input change and a theme change still reach the retained tree.
+    // The former must rebuild exactly once; the latter must NOT rebuild, because
+    // palette/inheritance resolution belongs to Reconciler, not this factory.
+    v.label = "changed";
+    app.invalidate(Dirty.VALUE);
+    app.reflow();
+    if (v.builds - builds0 != 2) problems = problems + "memo ignored a version change; ";
+    var themeVisits:int = app.reconcileVisits;
+    staleAll(app.getRoot());
+    app.invalidate(Dirty.THEME | Dirty.VALUE);
+    app.reflow();
+    if (v.builds - builds0 != 2) problems = problems + "theme resolution invalidated memo content; ";
+    if (app.reconcileVisits - themeVisits != N + 1) problems = problems
+        + "memo pointer reuse skipped stale theme resolution; ";
 
     finish();
 }

@@ -390,3 +390,156 @@ E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04
 PASS: 5 builds of one input on the generator revision 449fb0ff7f42797c produced ONE generated C;
       the built-in spellings agree in all three places, and the only surviving failure
       artifacts are from a compiler tree that was being edited.
+
+== G11 closing measurement ==  2026-11-07T16:42:43.920Z
+
+A. compiler tree: HEAD fc048cd, src/ content hash 2070b17e3323b365
+   tracked modifications:  M src/emit.ts
+   untracked: (none)
+   -> a modified tree is where "two builds of one program emit different C" came from
+      (another session here edits the compiler). It does NOT by itself invalidate this
+      run: what does is the src/ hash MOVING during it, which is checked after B.
+
+B. 5 builds of probes/array-scope/Main.as, same command, same tree
+   input: 205 .as files, sha256/16 f6cb0f5bb5a809b5 (0 missing)
+   run 1: 6469820 B  sha256/16 38f4f3af73843c93  (12.6s)  [src 2070b17e]
+   run 2: 6469820 B  sha256/16 38f4f3af73843c93  (12.6s)  [src 2070b17e]
+   run 3: 6469820 B  sha256/16 38f4f3af73843c93  (12.6s)  [src 2070b17e]
+   run 4: 6469820 B  sha256/16 38f4f3af73843c93  (12.7s)  [src 2070b17e]
+   run 5: 6469820 B  sha256/16 38f4f3af73843c93  (12.7s)  [src 2070b17e]
+   input hash after the runs: f6cb0f5bb5a809b5 (unchanged)
+   src/ content hash after the runs: 2070b17e3323b365 (unchanged -> the generator revision was stable)
+   distinct hashes: 1 of 5  -> ONE output for one input
+
+C. spelling tripwire on the freshly generated C (struct / props table / body literal)
+   all 3 built-in fields agree in all three places
+
+D. the three surviving artifacts from the 84-second window that rewrote the naming
+   artifact-1-struct-time__.c  2026-10-23 04:00:10 +0800
+       2574303 B, sha256/16 710dab8769241f9b, clang errors 19 (want >=16 (capped)), clang summary 20, truncated true, first: 38434:37 no member named '_time' in 'struct Date'
+       kinds: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+       struct Date { double time__; } + offsetof(Date, time__) while the body literal is o->_time
+   artifact-2-struct-socket-1-error.c  2026-10-23 04:00:50 +0800
+       2574267 B, sha256/16 98cd3d4e6e259221, clang errors 1 (want 1), clang summary 1, truncated false, first: 41310:8 no member named 'socket' in 'struct ServerSocketConnectEvent'
+       kinds: ServerSocketConnectEvent.socket
+       Date repaired; the remaining break is ServerSocketConnectEvent.socket
+   artifact-3-consistent.c  2026-10-23 04:01:34 +0800
+       2574236 B, sha256/16 f63f256a66b64923, clang errors 0 (want 0), clang summary null, truncated false
+       kinds: (none)
+       all three spellings agree; this is the first state that links
+   -> same program, three different C files, errors decaying to zero in 84 s: the tree was mid-edit.
+
+E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04:00:19 +0800)
+   my build broke on:      Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   artifact-1 (04:00:10) broke on: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   -> identical hazard set, from two different programs, 9 seconds apart: one tree state.
+
+---- verdict ----
+PASS: 5 builds of one input on the generator revision 2070b17e3323b365 produced ONE generated C;
+      the built-in spellings agree in all three places, and the only surviving failure
+      artifacts are from a compiler tree that was being edited.
+      NOTE: HEAD fc048cd has 1 modified source file(s) ( M src/emit.ts). Determinism is certified for the CONTENT hash above,
+      i.e. for that tree state -- not for the commit.
+
+== G11 closing measurement ==  2026-11-07T16:51:21.332Z
+
+A. compiler tree: HEAD fc048cd, src/ content hash 2070b17e3323b365
+   tracked modifications:  M src/emit.ts
+   untracked: (none)
+   -> a modified tree is where "two builds of one program emit different C" came from
+      (another session here edits the compiler). It does NOT by itself invalidate this
+      run: what does is the src/ hash MOVING during it, which is checked after B.
+
+B. 5 builds of probes/array-scope/Main.as, same command, same tree
+   input: 205 .as files, sha256/16 f6cb0f5bb5a809b5 (0 missing)
+   run 1: 6469820 B  sha256/16 38f4f3af73843c93  (12.8s)  [src 2070b17e]
+   run 2: 6469820 B  sha256/16 38f4f3af73843c93  (12.7s)  [src 2070b17e]
+   run 3: 6469820 B  sha256/16 38f4f3af73843c93  (12.6s)  [src 2070b17e]
+   run 4: 6469820 B  sha256/16 38f4f3af73843c93  (12.6s)  [src 2070b17e]
+   run 5: 6469820 B  sha256/16 38f4f3af73843c93  (12.7s)  [src 2070b17e]
+   input hash after the runs: f6cb0f5bb5a809b5 (unchanged)
+   src/ content hash after the runs: 2070b17e3323b365 (unchanged -> the generator revision was stable)
+   distinct hashes: 1 of 5  -> ONE output for one input
+
+C. spelling tripwire on the freshly generated C (struct / props table / body literal)
+   all 3 built-in fields agree in all three places
+
+D. the three surviving artifacts from the 84-second window that rewrote the naming
+   artifact-1-struct-time__.c  2026-10-23 04:00:10 +0800
+       2574303 B, sha256/16 710dab8769241f9b, clang errors 19 (want >=16 (capped)), clang summary 20, truncated true, first: 38434:37 no member named '_time' in 'struct Date'
+       kinds: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+       struct Date { double time__; } + offsetof(Date, time__) while the body literal is o->_time
+   artifact-2-struct-socket-1-error.c  2026-10-23 04:00:50 +0800
+       2574267 B, sha256/16 98cd3d4e6e259221, clang errors 1 (want 1), clang summary 1, truncated false, first: 41310:8 no member named 'socket' in 'struct ServerSocketConnectEvent'
+       kinds: ServerSocketConnectEvent.socket
+       Date repaired; the remaining break is ServerSocketConnectEvent.socket
+   artifact-3-consistent.c  2026-10-23 04:01:34 +0800
+       2574236 B, sha256/16 f63f256a66b64923, clang errors 0 (want 0), clang summary null, truncated false
+       kinds: (none)
+       all three spellings agree; this is the first state that links
+   -> same program, three different C files, errors decaying to zero in 84 s: the tree was mid-edit.
+
+E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04:00:19 +0800)
+   my build broke on:      Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   artifact-1 (04:00:10) broke on: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   -> identical hazard set, from two different programs, 9 seconds apart: one tree state.
+
+---- verdict ----
+PASS: 5 builds of one input on the generator revision 2070b17e3323b365 produced ONE generated C;
+      the built-in spellings agree in all three places, and the only surviving failure
+      artifacts are from a compiler tree that was being edited.
+      NOTE: HEAD fc048cd has 1 modified source file(s) ( M src/emit.ts). Determinism is certified for the CONTENT hash above,
+      i.e. for that tree state -- not for the commit.
+
+== G11 closing measurement ==  2026-11-07T20:26:03.604Z
+
+A. compiler tree: HEAD 99e1523, src/ content hash c261e3b98c1429c4
+   tracked modifications:  M src/runtime.ts
+   untracked: (none)
+   -> a modified tree is where "two builds of one program emit different C" came from
+      (another session here edits the compiler). It does NOT by itself invalidate this
+      run: what does is the src/ hash MOVING during it, which is checked after B.
+
+B. 5 builds of probes/array-scope/Main.as, same command, same tree
+   input: 205 .as files, sha256/16 015541a6cbf2cd83 (0 missing)
+   run 1: 6477365 B  sha256/16 16ba466f31381b93  (12.5s)  [src c261e3b9 -> f36f0cc9 MOVED]
+   run 2: 6476871 B  sha256/16 45a25dcdabf403fc  (12.5s)  [src f36f0cc9 MOVED]
+   run 3: 6476871 B  sha256/16 45a25dcdabf403fc  (12.4s)  [src f36f0cc9 -> e9b7741e MOVED]
+   run 4: 6476322 B  sha256/16 cf0d4ac9e232e0df  (12.4s)  [src e9b7741e MOVED]
+   run 5: 6476322 B  sha256/16 cf0d4ac9e232e0df  (12.5s)  [src e9b7741e MOVED]
+   input hash after the runs: 015541a6cbf2cd83 (unchanged)
+   src/ content hash after the runs: e9b7741e2152bcc6 (CHANGED -> the compiler moved mid-run)
+   distinct hashes: 3 of 5  -> the generator MOVED mid-run (see the src/ stamp on each build above) -- NOT evidence of nondeterminism
+
+C. spelling tripwire on the freshly generated C (struct / props table / body literal)
+   all 3 built-in fields agree in all three places
+
+D. the three surviving artifacts from the 84-second window that rewrote the naming
+   artifact-1-struct-time__.c  2026-10-23 04:00:10 +0800
+       2574303 B, sha256/16 710dab8769241f9b, clang errors 19 (want >=16 (capped)), clang summary 20, truncated true, first: 38434:37 no member named '_time' in 'struct Date'
+       kinds: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+       struct Date { double time__; } + offsetof(Date, time__) while the body literal is o->_time
+   artifact-2-struct-socket-1-error.c  2026-10-23 04:00:50 +0800
+       2574267 B, sha256/16 98cd3d4e6e259221, clang errors 1 (want 1), clang summary 1, truncated false, first: 41310:8 no member named 'socket' in 'struct ServerSocketConnectEvent'
+       kinds: ServerSocketConnectEvent.socket
+       Date repaired; the remaining break is ServerSocketConnectEvent.socket
+   artifact-3-consistent.c  2026-10-23 04:01:34 +0800
+       2574236 B, sha256/16 f63f256a66b64923, clang errors 0 (want 0), clang summary null, truncated false
+       kinds: (none)
+       all three spellings agree; this is the first state that links
+   -> same program, three different C files, errors decaying to zero in 84 s: the tree was mid-edit.
+
+E. the failing build this gap was registered from (probes/array-scope/cc.txt, 04:00:19 +0800)
+   my build broke on:      Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   artifact-1 (04:00:10) broke on: Date._time, ServerSocketConnectEvent.socket, TextField.___restrict
+   -> identical hazard set, from two different programs, 9 seconds apart: one tree state.
+
+---- verdict ----
+INCONCLUSIVE: every measurement above is green, but the compiler source MOVED:
+  blocked by: the compiler source changed mid-run (c261e3b98c1429c4 -> e9b7741e2152bcc6)
+  blocked by: the compiler source changed during build 1 (c261e3b98c1429c4 -> f36f0cc9439dcab3)
+  blocked by: the compiler source changed during build 2 (f36f0cc9439dcab3 -> f36f0cc9439dcab3)
+  blocked by: the compiler source changed during build 3 (f36f0cc9439dcab3 -> e9b7741e2152bcc6)
+  blocked by: the compiler source changed during build 4 (e9b7741e2152bcc6 -> e9b7741e2152bcc6)
+  blocked by: the compiler source changed during build 5 (e9b7741e2152bcc6 -> e9b7741e2152bcc6)
+      Re-run when the tree is stable. (No retry loop hides this: see ui-demo/air-run.cjs.)

@@ -18,6 +18,8 @@
 //       throws, the toasts simply stop being 8 apart)
 //   M3  kit/asaot/ui/kind/ScrollViewWidget.as   drop `n.aboveContent = n.shapeB`
 //       (structure only: the bars are painted, then buried)
+//   M4-M7  live region versions: quote-only rebuilds and missed control/name inputs
+// ASC_ONLY=M4 runs one focused case without rebuilding the other mutation arms.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -34,7 +36,7 @@ function runTour() {
     cwd: DEMO,
     env: { ...process.env, AIRSDK_HOME: process.env.AIRSDK_HOME || 'D:/Adobe/Flex_Sdk/AIRSDK_51.4.1', ASC_CC: process.env.ASC_CC || 'clang', ASC_NO_OPEN: '1' },
     encoding: 'utf8',
-    timeout: 900000,
+    timeout: 120000,
     maxBuffer: 1 << 28
   });
   const donePath = path.join(DEMO, 'air-gallery', 'gallery.done');
@@ -68,12 +70,46 @@ const CASES = [
     from: '            n.aboveContent = n.shapeB;',
     to: '            // M3: the bars are left in the child base index',
     want: /bars sit at display index \d+ of \d+, so the content below them paints over the bars/
+  },
+  {
+    id: 'M4',
+    name: 'live stats incorrectly follow every quote tick',
+    file: path.join(DEMO, 'demo', 'DocsLive.as'),
+    from: 'view.memoLive("stats", view.liveStatsVersion,',
+    to: 'view.memoLive("stats", view.market.ticks,',
+    want: /live stats rebuilt on a quote-only tick/
+  },
+  {
+    id: 'M5',
+    name: 'stock identity incorrectly follows every quote revision',
+    file: path.join(DEMO, 'demo', 'DocsLive.as'),
+    from: 'view.memoLive("identity:" + String(s.code), String(s.name),',
+    to: 'view.memoLive("identity:" + String(s.code), String(s.rev),',
+    want: /live identity rebuilt on a quote-only tick/
+  },
+  {
+    id: 'M6',
+    name: 'stock identity omits the company name from its version',
+    file: path.join(DEMO, 'demo', 'DocsLive.as'),
+    from: 'view.memoLive("identity:" + String(s.code), String(s.name),',
+    to: 'view.memoLive("identity:" + String(s.code), 0,',
+    want: /live identity ignored a symbol name change/
+  },
+  {
+    id: 'M7',
+    name: 'live controls omit the pause state from their version',
+    file: path.join(DEMO, 'demo', 'DocsLive.as'),
+    from: 'view.memoLive("controls", m.bool("live.run", true),',
+    to: 'view.memoLive("controls", 0,',
+    want: /live controls ignored the pause state/
   }
 ];
 
 let caught = 0;
 let missed = 0;
+const only = process.env.ASC_ONLY || '';
 for (const c of CASES) {
+  if (only && c.id !== only) continue;
   const before = sha(c.file);
   const src = fs.readFileSync(c.file, 'utf8');
   const hits = src.split(c.from).length - 1;

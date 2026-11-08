@@ -3,22 +3,47 @@
 // `render()` is the ONLY method an author must implement, and its contract is
 // GPUI's `Render::render` (asaotui/gpui-src/crates/gpui/src/element.rs:164-166):
 // pure description, no side effects, no addChild, no reliance on evaluation
-// order, and the return value must not be stored. The difference from GPUI is
-// the FREQUENCY: GPUI drops and rebuilds the whole element tree every frame
+// order, and the return value must not be stored BY AUTHOR CODE. `memo()` below
+// is the explicit framework-owned exception for immutable description subtrees.
+// The difference from GPUI is the FREQUENCY: GPUI drops and rebuilds the whole element tree every frame
 // (element.rs:10-14), while we call `render()` only on a dirty frame and then
 // diff the description against the retained UiNode tree.
 package asaot.ui
 {
     import flash.display.Stage;
+    import flash.utils.Dictionary;
 
     public class View extends Observable
     {
         protected var app:UiApp;
+        private var _memo:Dictionary;
 
         public function View():void
         {
             super();
             this.app = null;
+            this._memo = new Dictionary();
+        }
+
+        // Reuse an immutable description subtree until one of its inputs changes.
+        // The factory runs ONLY on a miss; this is what avoids allocating the whole
+        // subtree, not a deep-equality check after it has already been allocated.
+        // `key` names the slot in this View; `version` must capture every input read
+        // by the factory (strict === semantics, so use a scalar string/number/bool).
+        // The returned Node and its descendants must never be mutated after the
+        // factory returns. Reconciliation still applies theme/inherited changes to
+        // the retained tree, so a palette switch does not need a cache-version bump.
+        protected function memo(key:String, version:*, build:Function):Node
+        {
+            var entry:Array = this._memo[key] as Array;
+            if (entry != null && entry[0] === version) return entry[1] as Node;
+            var n:Node = build();
+            // Only this explicit immutable-cache contract licenses Reconciler's
+            // same-object subtree skip. Legacy views may retain and mutate an
+            // ordinary Node, which must continue to reconcile on every render.
+            n.memoRoot = true;
+            this._memo[key] = [version, n];
+            return n;
         }
 
         public function render():Node

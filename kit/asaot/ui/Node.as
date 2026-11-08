@@ -17,6 +17,10 @@ package asaot.ui
         public var style:StyleRefinement;
         public var keyContext:String;
         public var children:Vector.<Node>;
+        // Framework-owned marker set ONLY by View.memo on the cached root.
+        // Ordinary descriptions may be retained and mutated by existing author
+        // code, so object identity alone must never imply immutable content.
+        public var memoRoot:Boolean;
 
         public function Node(kind:String):void
         {
@@ -25,6 +29,7 @@ package asaot.ui
             this.style = null;
             this.keyContext = null;
             this.children = null;
+            this.memoRoot = false;
         }
 
         public function addChild(c:Node):void

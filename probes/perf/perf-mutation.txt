@@ -1,0 +1,6 @@
+baseline: PASS
+M1 CAUGHT: disable memo hits
+M1 restore: byte-identical
+M2 CAUGHT: walk an unchanged memo subtree
+M2 restore: byte-identical
+RESULT: PASS

@@ -56,6 +56,18 @@ package asaot.ui
         public function reconcile(old:UiNode, desc:Node, parent:UiNode):UiNode
         {
             this.app.reconcileVisits = this.app.reconcileVisits + 1;
+            // View.memo returns the SAME explicitly marked immutable Node on a
+            // hit. If the retained node still owns that object, neither its
+            // payload nor any descendant description can have changed, so walking
+            // the subtree would only repeat key interning, payload comparisons
+            // and child scans for every component kind. Keep state and return.
+            // The marker is essential: legacy probes/apps also retain ordinary
+            // Nodes and mutate fields such as scroll offset in place; their same
+            // object identity does NOT mean unchanged and must take the full path.
+            // A stale style is the explicit exception: theme/inherited/safe-area
+            // propagation marks the affected root AND its descendants stale, so
+            // the full path still re-resolves them instead of hiding the change.
+            if (old != null && desc.memoRoot && old.desc === desc && !old.lastStyleStale) return old;
             var n:UiNode;
             if (old == null || old.kind != desc.kind)
             {

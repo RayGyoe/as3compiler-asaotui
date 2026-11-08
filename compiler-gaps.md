@@ -685,6 +685,39 @@
 | 回归证据（补丁临时在树上时） | `asaotui` 全量门 **70/70 PASS（515.6s）**：`layout-check text half`（133 检查）、`layout-check visual half`、`gallery tour` 60 页手算矩形、`widgets/textfx`、`widgets/static-layer`、`descriptor DPI A/B`、G19/G20/G21 的 AIR 逐项对照均绿；`examples/tf-autosize-empty|tf-scale-metrics|textwidth-trailing` PASS，`textfield-dyn-set` 全检通过，`textfield-align` 无光栅后端跳过（后两条本机需要 `--cc clang`，测试框架默认 `cc` 不在 PATH） |
 | 与 G31/G32/G33 的区别 | 那三条是**度量口径**（宽度数字本身不对）；这条的**数字全对**，错的是"用哪个宽度去建烘焙面" |
 | 状态 | ✅ **已修（阶段三百八十七，v0.4.354，提交 `99e1523`）**：`node test.ts` 651 tests / 629 pass / 19 fail / 3 skipped（19 个失败 = 上一阶段同一批，8 个失败示例在未打补丁的树上复跑同样全红）；`asaotui` 门 70/70 |
+### G35 —— 交互期**帧成本被 GC 长暂停吞掉**：窗口拖拽时 `describe`/`reconcile` 从 ~2ms 涨到 22–32ms，最坏 `69ms/帧`（14fps）—— ⚠️ **已定位，未立项（运行时 GC 策略，非语义缺口）**
+
+| 项 | 内容 |
+|---|---|
+| 现象（2026-11-08 报） | `ui-demo/air-gallery` 的 `live` 页（22 行情 + 22 sparkline，10Hz tick）在 AOT 原生 / `--gpu gl` / web 三臂只有 15–60 帧，AIR 臂流畅；**最省事的复现是对窗口做 resize** |
+| 真实条件 | 高分模式（`ASC_DISPLAY_HIGH=1`，manifest 从 `GalleryApp.build.json` 派生，不手抄）：1000×700 逻辑 = 1501×1050 物理，150% 缩放 |
+| 复现（真实窗口，非改 stage） | `temp/perf-live/resize.cs` 的 `SetWindowPos` 驱动（40 步 × 25ms，820–1080 物理宽循环）+ `temp/perf-live/ab-hud.cjs`；读数取自 **app 自己的 FPS HUD**（客户区右上角像素抓取，`FromRight`） |
+| 读数（HUD 截图） | 静止 **60 fps / 16.8 ms / max 27**；拖拽中最坏 **14 fps / 69.0 ms / max 122**（同一串中途还有 43 fps / 23.1 ms / max 104） |
+| 两侧拆账（`UiApp.profile` + 自量帧间隔） | **光栅+呈现（rest/frame）11–15ms，全程稳定** ⇒ 崩点不在后端；AS3 侧每帧 0.6–27ms 且忽高忽低，`rnd` 与 `rec` **同涨同落**（最坏同帧 23ms / 32ms） |
+| 先排除的方向（都已实测否掉） | ① `DocsWrap` 换行缓存冷启动：每次 describe 只有 40–70 次 `widthOf`（单价 ≤0.027ms，合计 ≤1.9ms），且存在 `wrapcalls+=0` 却 `doc=15ms` 的样本；② `TextField.textWidth` 单价：同串 0.005 / 新串 0.027 / 增长前缀 0.009 ms；③ 页面构建器：`DocsCatalog.sections()` = **0ms** |
+| 实测真因 | 堆在 **5MB ↔ 27MB 每秒锯齿**一次，全量回收 **avg 3.8 ms / max 26 ms**（`System.gc` ×10）；坏帧精确落在 mem 高位样本上（`mem=25MB → rec=31.7ms` 同帧）。拖拽时 describe 频率翻倍 ⇒ 分配速率翻倍 ⇒ 回收更密，长暂停直接落进 `describe`/`reconcile` |
+| FPS 面板本身 | 静止 **+0.4ms（两边都 60fps）**，不是负担；但拖拽中把 as3/帧从 **5.5ms 抬到 12.8ms**（2.3×），且 `desc+` 合计几乎不变（84 vs 78）⇒ 它不产生渲染工作量，只是**把堆更快推到回收阈值**（mem 均值 13→16MB） |
+| 为什么是「runtime 策略」而非语义缺口 | 语义、数字、API 全对；缺的是**分配量 → 回收频率 → 单次暂停**这条链上的预算/分代/sweep 策略（`docs/zh-cn/gc.md` §4.2.1 的增量标记已有，sweep 与整堆收集仍是同步的） |
+| 状态 | ⚠️ **部分缓解，未验证**：编译器侧 **v0.4.356（提交 `0a7a962`）** 已落地 `System.gc()` 帧边界 defer（不再 mid-frame 停机）+ 增量切片墙钟封顶（`ASC_GC_TIME_BUDGET_MS` 默认 3ms）。堆锯齿/分配开销（根在 G36）与 `gc_mark_roots`/`gc_finish_cycle` 一次性步骤仍未动 |
+| 编译器侧进展（2026-11-08，A/B 实测） | 旧 v0.4.355 vs 新 v0.4.356（40 步×25ms resize，60 sample/臂，`temp/perf-live/gc-ab.cjs`）：`as3/frame` max **14.5 / 16.1** ms、p95 12.5 / 11.1、avg 3.3 / 3.3；fps min 37 / 35；mem max 24 / 31 MB。**两臂均未复现本条记录的 22–32ms / 69ms 坏帧**，差异在单次运行噪声内 ⇒ 改动是「部分缓解」，未被证明消除坏帧；封顶也未覆盖 `gc_mark_roots`/`gc_finish_cycle` 一次性步骤 |
+| 证据文件 | `temp/perf-live/{hud-00-rest,hud-04-drag,fast-38-drag,fast-40-drag}.png`（HUD 截图）、`perf-live.txt`、`ab-off.txt` / `ab-on.txt`（A/B 原始采样）、`DocsView.as.orig` / `DocsWrap.as.orig` + `api/*.instr`（临时插桩与还原） |
+
+---
+
+### G36 —— **每个对象/字符串的分配开销过大**：类实例 ≈110B + 8B/字段，5 字符字符串 ≈200B —— ⚠️ **已定量，待上游（编译器仓库有其它工作，暂不立项）**
+
+| 项 | 内容 |
+|---|---|
+| 为什么值得单独立案 | G35 把帧损失归到「堆锯齿 + 26ms 全量回收」。本节回答**垃圾从哪来**：不是数据，是**每个对象本身的固定开销**。同一份 UI 在 AIR 上不颤，差的就是这一项 |
+| 计量方法 | `System.totalMemory` 在 Windows 上有一个陷阱：它**只在新堆段提交时跳变**（先拿 8MB `ByteArray` 标定：报 **8192 KB**，准）。所以不能按散件量；方法是**留引用 + 放大到 2 万件**：`temp/perf-live/Main.as` 的 `unit()`，每项 20 000 个全留在一个数组里，不被回收 |
+| 实测单价（AOT 原生 / `clang -O2`，高分模式） | `Length`（2 字段）**139.8 B**；`Size`（2 引用）**251.9 B**；`Edges`（4 double）**284.0 B**；`StyleRefinement`（~30 可空字段）**1070.7 B**；`text("hello", …)`（1 个 TextNode）**654.4 B**；字符串 `"b" + i + ":p3"`（5 字符）**281.5 B** |
+| 拟合 | 类实例 ≈ **110 B 固定 + 8 B/字段**（`Length` 2 字段 = 140、`Size` = 252、`Edges` = 284、`StyleRefinement` 30 字段 = 1071 均落在线上，且每对象带 vtable 引用）；字符串 ≈ **200 B 固定 + 字节** —— 一个 5 字符串 281 B，即 56 字符的键就要 280 B |
+| 一次 describe 的总量 | live 页 **408 个描述节点 = 558–571 KB**（`start` 页 203 节点 = 220 KB，≈1.1KB/节点 + ~100KB 固定）；其中 **demo 的数据构建 `DocsCatalog.sections()` 只占 2 KB**，剩下的全在「数据 → 节点」那一步 |
+| 账目对得上 | 408 节点 ≈ 265 KB（节点本体 650B）+ 114 KB（每节点 key 字符串 280B）+ 56 KB（`Length`）+ 43 KB（`StyleRefinement`）+ 14 KB（`Size`/`Edges`）≈ 490 KB，与实测 558 KB 同量级 |
+| 与 AIR 的差距 | AIR/AVM2 的一个对象约 24–48 B、短字符串约 40–64 B ⇒ 同一棵树 AIR 只要 ~60–90 KB。分配量差 6–9 倍，回收频率与暂停自然差同量级 |
+| 库侧能做的（已做，见下） | `Length.px/pct` 共享实例（全库只有构造函数写 `unit`、`value` 从无赋值 ⇒ 实例事实上不可变）—— 能拗回约 10%，扭不动根本 |
+| 状态 | ⚠️ **已定量，暂不立项**（用户 2026-11-08：编译器仓库此刻有其它工作在进行）。本条是给上游的**可复现数据**；立项时以 `temp/perf-live/Main.as` 的 `unit()` 为验收尺 |
+
 ---
 
 ## 2 不是缺口：已澄清 / 已关闭

@@ -86,6 +86,9 @@ package demo
         // would be a number the app never measured, and it reads as a dead demo; a
         // static capture (the tour's screenshots) is exactly the case that shows it.
         public var sampled:Boolean = false;
+        // Changes only when the once-a-second values above change. Live regions use
+        // this instead of the 100ms market tick, so stats do not rebuild 10x/second.
+        internal var liveStatsVersion:int = 0;
 
         private var _lastStep:int = 0;
         private var _frames:int = 0;
@@ -133,6 +136,7 @@ package demo
                 var first:UiNode = this.app.getRoot();
                 this.nodeCount = first == null ? 0 : countNodes(first);
                 this._nodeSeeded = true;
+                this.liveStatsVersion = this.liveStatsVersion + 1;
             }
             this._frames = this._frames + 1;
 
@@ -164,6 +168,7 @@ package demo
                 this.nodeCount = root == null ? 0 : countNodes(root);
                 // From here on the rates are measured, not assumed.
                 this.sampled = true;
+                this.liveStatsVersion = this.liveStatsVersion + 1;
                 // The counters themselves are model values: repaint so the page
                 // shows THIS second's numbers rather than last second's.
                 if (this.model.doc == "live") this.model.notify(Dirty.VALUE);
@@ -180,6 +185,14 @@ package demo
             this._lastStep = now;
             this.market.step();
             this.model.notify(Dirty.VALUE);
+        }
+
+        // DocsLive is a package-internal builder, not a View subclass. Keep the
+        // protected View cache encapsulated while giving its independent regions
+        // one namespaced slot family.
+        internal function memoLive(key:String, version:*, build:Function):Node
+        {
+            return this.memo("live:" + key, version, build);
         }
 
         // Take the baseline for the next second's deltas.
@@ -255,8 +268,11 @@ package demo
 
             // row(), not column(): box() honours the style's flexDirection, but row()
             // also PINS the axis, so the two panes cannot be stacked by a later patch.
+            // The navigation subtree depends only on the selected page. Do not build
+            // its rows and click closures again for every live quote / window resize.
+            var self:DocsView = this;
             return row({ key: "root", style: DocsStyle.ROOT, ariaName: "asaot.ui documentation" }, [
-                this.sidebar(p),
+                this.memo("sidebar", p.id, function ():Node { return self.sidebar(p); }),
                 column({ key: "main", style: DocsStyle.MAIN, ariaName: "Component page" }, [
                     text(p.title, { key: "docTitle", style: DocsStyle.DOC_TITLE, ariaName: "Component" }),
                     text(p.blurb, { key: "docBlurb", style: DocsStyle.DOC_BLURB, ariaName: "Summary" }),
@@ -401,17 +417,21 @@ package demo
             var para:Array = sec.proseLines(wrapW);
             if (para.length > 0)
             {
-                var lines:Array = [];
-                for (var j:int = 0; j < para.length; j++)
+                var self:DocsView = this;
+                kids.push(this.memo("prose:" + this.model.doc + ":" + i, wrapW, function ():Node
                 {
-                    lines.push(text(String(para[j]),
-                        { key: pre + ":p" + j, style: DocsStyle.PROSE, ariaName: "" }));
-                }
-                var proseStyle:StyleRefinement = StyleRefinement.from({
-                    flexDirection: "column", gap: 0,
-                    size: [Length.pct(1), Length.px(para.length * DocsStyle.SEC_PROSE_H)]
-                });
-                kids.push(column({ key: pre + ":prose", style: proseStyle, ariaName: "" }, lines));
+                    var lines:Array = [];
+                    for (var j:int = 0; j < para.length; j++)
+                    {
+                        lines.push(text(String(para[j]),
+                            { key: pre + ":p" + j, style: DocsStyle.PROSE, ariaName: "" }));
+                    }
+                    var proseStyle:StyleRefinement = StyleRefinement.from({
+                        flexDirection: "column", gap: 0,
+                        size: [Length.pct(1), Length.px(para.length * DocsStyle.SEC_PROSE_H)]
+                    });
+                    return column({ key: pre + ":prose", style: proseStyle, ariaName: "" }, lines);
+                }));
             }
 
             var demoStyle:StyleRefinement = (sec.wide ? DocsStyle.DEMO_BLEED : DocsStyle.DEMO).withPatch(
@@ -420,15 +440,20 @@ package demo
             kids.push(box({ key: pre + ":demo", style: demoStyle, ariaName: "Example" },
                 demoNode == null ? [] : [demoNode]));
 
-            var code:Array = [];
-            for (var c:int = 0; c < sec.code.length; c++)
+            // DocSection.code is static source text (see DocSection's data-only
+            // contract); only the demo subtree above is model-live.
+            kids.push(this.memo("code:" + this.model.doc + ":" + i, 0, function ():Node
             {
-                code.push(text(String(sec.code[c]),
-                    { key: pre + ":c" + c, style: DocsStyle.CODE_LINE, ariaName: "" }));
-            }
-            var codeStyle:StyleRefinement = DocsStyle.CODE.withPatch(
-                StyleRefinement.from({ size: [Length.pct(1), Length.px(sec.codeHeight())] }));
-            kids.push(box({ key: pre + ":code", style: codeStyle, ariaName: "Source" }, code));
+                var code:Array = [];
+                for (var c:int = 0; c < sec.code.length; c++)
+                {
+                    code.push(text(String(sec.code[c]),
+                        { key: pre + ":c" + c, style: DocsStyle.CODE_LINE, ariaName: "" }));
+                }
+                var codeStyle:StyleRefinement = DocsStyle.CODE.withPatch(
+                    StyleRefinement.from({ size: [Length.pct(1), Length.px(sec.codeHeight())] }));
+                return box({ key: pre + ":code", style: codeStyle, ariaName: "Source" }, code);
+            }));
 
             var blockStyle:StyleRefinement = DocsStyle.SEC.withPatch(
                 StyleRefinement.from({ size: [Length.pct(1), Length.px(sec.height(wrapW))] }));

@@ -28,6 +28,7 @@ package demo
 {
     import asaot.ui.Dirty;
     import asaot.ui.ScrollViewNode;
+    import asaot.ui.TextNode;
     import asaot.ui.UiApp;
     import asaot.ui.UiNode;
     import flash.display.BitmapData;
@@ -871,7 +872,11 @@ package demo
                 this.model.pick(String(stops[k]));
                 this.app.invalidate(Dirty.ALL);
                 this.app.reflow();
-                if (String(stops[k]) == "live") this.liveColumn();
+                if (String(stops[k]) == "live")
+                {
+                    this.liveColumn();
+                    this.liveRegions();
+                }
                 if (String(stops[k]) == "dialog")
                 {
                     var ob:UiNode = this.app.findByKey("demoDlgBtn");
@@ -907,6 +912,79 @@ package demo
                     + ", so the content below them paints over the bars; ";
             }
             return "";
+        }
+
+        // Region memoization is tested by DESCRIPTION identity, not a private build
+        // counter: a quote-only tick must retain static descriptions and replace the
+        // sparkline; changing a region's declared input must replace exactly that region.
+        private function liveRegions():void
+        {
+            var header:UiNode = this.app.findByKey("liveHead");
+            var stats:UiNode = this.app.findByKey("liveStats");
+            var controls:UiNode = this.app.findByKey("liveCtl");
+            var footer:UiNode = this.app.findByKey("liveFoot");
+            var row:UiNode = this.app.findByKey("liveRow:AURX");
+            var spark:UiNode = this.app.findByKey("liveSp:AURX");
+            if (header == null || stats == null || controls == null || footer == null
+                || row == null || spark == null || row.children.length < 2)
+            {
+                this.problems = this.problems + "the live region probe could not find its nodes; ";
+                return;
+            }
+            var identity:UiNode = row.children[0];
+            var hd:Object = header.desc;
+            var sd:Object = stats.desc;
+            var cd:Object = controls.desc;
+            var fd:Object = footer.desc;
+            var id:Object = identity.desc;
+            var spd:Object = spark.desc;
+
+            this.view.market.step();
+            this.model.notify(Dirty.VALUE);
+            this.app.reflow();
+            if (this.app.findByKey("liveHead").desc !== hd)
+                this.problems = this.problems + "live header rebuilt on a quote-only tick; ";
+            if (this.app.findByKey("liveStats").desc !== sd)
+                this.problems = this.problems + "live stats rebuilt on a quote-only tick; ";
+            if (this.app.findByKey("liveCtl").desc !== cd)
+                this.problems = this.problems + "live controls rebuilt on a quote-only tick; ";
+            if (this.app.findByKey("liveFoot").desc !== fd)
+                this.problems = this.problems + "live footer rebuilt on a quote-only tick; ";
+            if (this.app.findByKey("liveRow:AURX").children[0].desc !== id)
+                this.problems = this.problems + "live identity rebuilt on a quote-only tick; ";
+            if (this.app.findByKey("liveSp:AURX").desc === spd)
+                this.problems = this.problems + "live sparkline did not follow its quote revision; ";
+
+            sd = this.app.findByKey("liveStats").desc;
+            fd = this.app.findByKey("liveFoot").desc;
+            this.view.liveStatsVersion = this.view.liveStatsVersion + 1;
+            this.model.notify(Dirty.VALUE);
+            this.app.reflow();
+            if (this.app.findByKey("liveStats").desc === sd)
+                this.problems = this.problems + "live stats ignored their sample version; ";
+            if (this.app.findByKey("liveFoot").desc === fd)
+                this.problems = this.problems + "live footer ignored its sample version; ";
+
+            cd = this.app.findByKey("liveCtl").desc;
+            this.model.put("live.run", false);
+            this.app.reflow();
+            if (this.app.findByKey("liveCtl").desc === cd)
+                this.problems = this.problems + "live controls ignored the pause state; ";
+            this.model.put("live.run", true);
+            this.app.reflow();
+
+            var stock:Object = this.view.market.rows[0];
+            var oldName:String = String(stock.name);
+            id = this.app.findByKey("liveRow:AURX").children[0].desc;
+            stock.name = "Version probe";
+            this.model.notify(Dirty.VALUE);
+            this.app.reflow();
+            identity = this.app.findByKey("liveRow:AURX").children[0];
+            if (identity.desc === id || TextNode(identity.children[1].desc).content != "Version probe")
+                this.problems = this.problems + "live identity ignored a symbol name change; ";
+            stock.name = oldName;
+            this.model.notify(Dirty.VALUE);
+            this.app.reflow();
         }
 
         // A RIGHT-ALIGNED NUMERIC COLUMN HAS TO CLEAR THE OVERLAY SCROLLBAR.

@@ -126,7 +126,10 @@ package demo
                     "var nodes:int = view.nodeCount;              // retained nodes in the tree",
                     "var solve:Number = (app.profSolveMs - s0) / (app.layoutSolves - l0);",
                     "var paint:Number = (app.profPaintMs - q0) / (app.paintPasses - p0);"
-                ], 76, function ():Node { return stats(view); }),
+                ], 76, function ():Node {
+                    return view.memoLive("stats", view.liveStatsVersion,
+                        function ():Node { return stats(view); });
+                }),
 
                 new DocSection("Pause, resume, reset", [
                     "The market is driven by the app's frame clock, not by a timer of its own: `frameTick()` steps it and calls `model.notify(Dirty.VALUE)`. Pausing is therefore one boolean in the model -- and a paused board proves the loop really is idle, because the paint counter stops moving."
@@ -135,7 +138,10 @@ package demo
                     "_lastStep = now;",
                     "market.step();",
                     "model.notify(Dirty.VALUE);   // one write, one invalidate, one reflow"
-                ], 76, function ():Node { return controls(view); })
+                ], 76, function ():Node {
+                    return view.memoLive("controls", m.bool("live.run", true),
+                        function ():Node { return controls(view); });
+                })
             ];
         }
 
@@ -149,7 +155,7 @@ package demo
             var list:Array = [];
             for (var i:int = 0; i < rows.length; i++)
             {
-                list.push(stockRow(rows[i], i == 0));
+                list.push(stockRow(view, rows[i], i == 0));
             }
             var listH:Number = rows.length * ROW_H;
             if (listH < LIST_H) listH = LIST_H;
@@ -163,17 +169,14 @@ package demo
             }) }, [
                 strip(view),
                 filterRow(view, rows.length),
-                headerRow(),
+                view.memoLive("header", 0, headerRow),
                 scrollView({ key: "liveScroll", style: StyleRefinement.from({
                     flexGrow: 1, flexBasis: 0, size: [Length.pct(1), null]
                 }), scrollbarGutter: "stable", barThickness: 8,
                    scrollbarX: "never", wheelStep: ROW_H }, [
                     column({ key: "liveRows", style: col }, list)
                 ]),
-                text(footNote(view, rows.length), { key: "liveFoot", style: StyleRefinement.from({
-                    size: [Length.pct(1), Length.px(FOOT_H)], padding: [14, 0],
-                    text: { fontSize: 10, color: 0x94A3B8 }
-                }), ariaName: "" })
+                footer(view, rows.length)
             ]);
         }
 
@@ -289,7 +292,7 @@ package demo
         // One row. A METHOD, not a closure built inside the loop: an AS3 closure
         // captures the VARIABLE, and `var` is function-scoped, so a row built in a
         // loop would report the last symbol for all 22 of them.
-        private static function stockRow(s:Object, first:Boolean):Node
+        private static function stockRow(view:DocsView, s:Object, first:Boolean):Node
         {
             var chg:Number = Number(s.chg);
             var tone:uint = toneOf(chg);
@@ -299,11 +302,8 @@ package demo
                 size: [Length.pct(1), Length.px(ROW_H)], padding: [14, 0],
                 borderWidths: first ? [0, 0, 0, 0] : [0, 0, 1, 0], borderColor: 0xF1F5F9
             }) }, [
-                column({ style: StyleRefinement.from({
-                    flexDirection: "column", gap: 2, flexGrow: 1, flexBasis: 0, size: [null, Length.px(32)] }) }, [
-                    text(String(s.code), { style: C_TITLE, ariaName: "" }),
-                    text(String(s.name), { style: C_NAME, ariaName: "" })
-                ]),
+                view.memoLive("identity:" + String(s.code), String(s.name),
+                    function ():Node { return stockIdentity(s); }),
                 sparkline({ key: "liveSp:" + String(s.code),
                             values: series, version: int(s.rev),
                             color: tone, fill: true, baseline: Number(s.prev),
@@ -317,6 +317,31 @@ package demo
                         StyleRefinement.from({ text: { color: tone } })), ariaName: "" })
                 ])
             ]);
+        }
+
+        // Symbol/company identity is independent of the quote revision. Keeping
+        // this three-node column out of the 100ms path leaves the sparkline and
+        // price column as the genuinely dynamic part of each row.
+        private static function stockIdentity(s:Object):Node
+        {
+            return column({ style: StyleRefinement.from({
+                flexDirection: "column", gap: 2, flexGrow: 1, flexBasis: 0,
+                size: [null, Length.px(32)] }) }, [
+                text(String(s.code), { style: C_TITLE, ariaName: "" }),
+                text(String(s.name), { style: C_NAME, ariaName: "" })
+            ]);
+        }
+
+        private static function footer(view:DocsView, shown:int):Node
+        {
+            return view.memoLive("footer",
+                shown + ":" + view.market.rows.length + ":" + view.liveStatsVersion,
+                function ():Node {
+                    return text(footNote(view, shown), { key: "liveFoot", style: StyleRefinement.from({
+                        size: [Length.pct(1), Length.px(FOOT_H)], padding: [14, 0],
+                        text: { fontSize: 10, color: 0x94A3B8 }
+                    }), ariaName: "" });
+                });
         }
 
         private static function footNote(view:DocsView, shown:int):String

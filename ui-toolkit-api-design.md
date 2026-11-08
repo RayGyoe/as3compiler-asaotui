@@ -98,6 +98,9 @@ package asaot.ui
         // 唯一需要作者实现的入口
         public function render():Node;
 
+        // 可选：按显式版本复用一个不可变描述子树（工厂只在 miss 时执行）
+        protected function memo(key:String, version:*, build:Function):Node;
+
         // 数据流接缝：把「我脏了」告诉调度器（不是直接重绘）
         protected function invalidate(dirty:int):void;
 
@@ -111,8 +114,23 @@ package asaot.ui
 
 1. **纯描述，无副作用**：不得 `addChild`、不得改业务状态、不得依赖求值顺序。
 2. **每帧最多跑一次，且只在脏时跑**（这是与 GPUI 最大的分歧，见 §1.3 与本仓主文档 §5）。
-3. **返回值不得被作者保存**：`Node` 是 describe 趟内的一次性数据。
+3. **返回值不得被作者自行保存或修改**：默认 `Node` 是 describe 趟内的一次性数据；
+   唯一例外是下面的 `View.memo()`，由 framework 持有缓存，作者仍不得修改缓存节点。
 4. 作者拿不到 `UiNode` 指针，也就无法绕过 reconcile 去动 retained 树。
+
+**`View.memo(key, version, build)` 的可选静态子树契约**：`key` 是这个 View 内稳定的槽位名，
+`version` 用 `===` 比较，必须完整覆盖 factory 读取的标量输入（String/Number/Boolean）；
+只有 miss 才调用 `build()`，所以收益来自「没有再次分配子树」，不是先建完再做深比较。
+缓存节点及其后代必须不可变。theme / 继承样式仍由 retained 树重解析，不需要抬版本；
+任何影响文本、事件闭包、布局或控件参数的业务输入都必须进入 `version`。需要动态 key 列表时，
+作者必须自己限制缓存键集合，不能让无界 key 把缓存变成常驻增长表。
+
+命中时 `memo()` 给缓存根加上 framework 专用的 `memoRoot` 标记；`Reconciler` 只有在
+「标记存在 + retained.desc 仍是同一对象 + 样式未失效」时才跳过整个子树的 key/payload/children
+重复协调，因此所有返回 `Node` 的组件工厂共用同一快速路径，不需要逐组件加选项。
+普通 `Node` 即使被作者保存并重复返回也不会走这条捷径：既有代码可以原地修改滚动量、
+spinner 相位等描述字段，对象同一性并不等于内容不可变。样式失效时仍走完整 resolve，
+并沿子孙传播，不能因为 memo 命中而冻结 theme、继承样式或安全区。
 
 对照：GPUI 的 `Render::render(&mut self, window, cx) -> impl IntoElement`（`element.rs:164-166`）与
 `RenderOnce::render(self, ...)`（`element.rs:180`）；GPUI 每帧递归重建整棵树，`element.rs:10-14`
