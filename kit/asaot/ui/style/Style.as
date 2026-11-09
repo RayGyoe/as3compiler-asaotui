@@ -284,7 +284,16 @@ package asaot.ui.style
             {
                 f |= 1;
             }
-            if (!textEq(prev.text, cur.text)) f |= 2 | 4;
+            // TEXT SPLIT INTO A METRICS HALF AND A PAINT HALF (subtree-level
+            // measure). Colour cannot move a glyph -- PaintKit.measureField keeps
+            // colour OUT of its measure cache for exactly that reason -- so a
+            // colour-only change must not raise M_MEASURE and drag the whole tree
+            // through measure + engine.calculate + arrange. The metrics half
+            // (font, leading, spacing, alignment, wrap, overflow) is what changes
+            // a measured size, and only it raises bit 2; the paint half raises
+            // bit 4 for ANY text change, colour included.
+            if (!textMetricsEq(prev.text, cur.text)) f |= 2;
+            if (!textEq(prev.text, cur.text)) f |= 4;
             if (!fillEq(prev.background, cur.background) || !numEq(prev.borderColor, cur.borderColor)
                 || !cornersEq(prev.cornerRadii, cur.cornerRadii) || !numEq(prev.opacity, cur.opacity)
                 || !shadowsEq(prev.boxShadow, cur.boxShadow)
@@ -445,12 +454,21 @@ package asaot.ui.style
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
+            return textMetricsEq(a, b) && numEq(a.color, b.color);
+        }
+
+        // Every text field that can move a glyph or change a measured size.
+        // Deliberately EXCLUDES colour: it cannot move a glyph (see diffFlags).
+        private static function textMetricsEq(a:TextStyle, b:TextStyle):Boolean
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
             return strEq(a.fontFamily, b.fontFamily) && numEq(a.fontSize, b.fontSize)
                 && strEq(a.fontWeight, b.fontWeight) && strEq(a.fontStyle, b.fontStyle)
-                && numEq(a.color, b.color) && numEq(a.leading, b.leading)
+                && numEq(a.leading, b.leading)
                 && numEq(a.letterSpacing, b.letterSpacing) && strEq(a.textAlign, b.textAlign)
                 // These two change the measured size as well as the pixels, so they
-                // ride the same flag textEq already contributes (2|4).
+                // belong to the metrics half.
                 && strEq(a.whiteSpace, b.whiteSpace) && strEq(a.textOverflow, b.textOverflow);
         }
 

@@ -1,0 +1,3 @@
+# 子树级 measure 改动（2026-11-09）-- 两个文件的可回退校验
+37dd3a3d869248bceadc4265513ae372804db6437eecff9d9d3e65fc5779ec02 *kit/asaot/ui/kind/TextWidget.as
+f86fd597dbec009bb6e8acf7dd02cc757f9c37cff447a79f276ee4e410ab6a99 *kit/asaot/ui/style/Style.as

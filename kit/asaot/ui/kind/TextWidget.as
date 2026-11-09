@@ -18,6 +18,7 @@
 //     ellipsis rather than collapsing back to one line.
 package asaot.ui.kind
 {
+    import asaot.ui.Dirty;
     import asaot.ui.PaintKit;
     import asaot.ui.TextNode;
     import asaot.ui.UiNode;
@@ -52,9 +53,33 @@ package asaot.ui.kind
             if (tc != n.textContent)
             {
                 n.textContent = tc;
-                return true;   // intrinsic width may change
+                // SUBTREE-LEVEL MEASURE (borrow gpui fast/dependencies.rs: a
+                // text node's measure input is its own content+font+wrap, and
+                // the intrinsic size is ONLY fed to the engine when the node is
+                // auto-sized or wraps). A fixed-size, single-line run whose
+                // content changed does NOT change its intrinsic size, so it must
+                // not markLayoutDirty() and drag the whole tree through
+                // measurePass + engine.calculate + arrangePass every tick. It is
+                // a paint-only change: the field text is re-synced (and the run
+                // re-aligned) inside paint(), and only this node repaints.
+                if (isFixedSize(n.resolved))
+                {
+                    n.dirty |= Dirty.M_PAINT;
+                    return false;
+                }
+                return true;   // auto-sized / wrapped: intrinsic size may change
             }
             return false;
+        }
+
+        // A run whose intrinsic size cannot feed the engine: neither axis is
+        // auto, and it does not wrap (a wrapped height is what an auto-height
+        // node publishes). Its content is display-only.
+        private function isFixedSize(s:Style):Boolean
+        {
+            return s.text.whiteSpace != "normal"
+                && !PaintKit.autoW(s)
+                && !PaintKit.autoH(s);
         }
 
         public function wantsPress():Boolean { return false; }
@@ -108,23 +133,32 @@ package asaot.ui.kind
         public function arrange(n:UiNode):void
         {
             if (n.tf == null) return;
-            var s:Style = n.resolved;
-            // textWidth/textHeight describe the paragraph, whose paint origin is
-            // (2, 2) inside the field. Align the paragraph to the content box,
-            // not the field's outer rectangle (notably in flex-centred rows).
+            placeRun(n, n.resolved);
+        }
+
+        // Position the field's run at the content box and honour center/right
+        // alignment. Shared by arrange (the full-solve path) and paint (the
+        // fixed-size paint-only path), so the two can never drift.
+        //
+        // textWidth/textHeight describe the paragraph, whose paint origin is
+        // (2, 2) inside the field. Align the paragraph to the content box,
+        // not the field's outer rectangle (notably in flex-centred rows).
+        //
+        // `textAlign` ON A RUN THAT DOES NOT WRAP. The field is autoSize "left",
+        // i.e. exactly as wide as the run, so the field's own alignment has no
+        // slack to move within and silently does nothing -- measured: a 160pt
+        // right-aligned node holding "12.34" painted at x 5..30, and a tab label
+        // centred in a 106.67pt cell painted at 1..26 (cell centre 53.3). Only a
+        // WRAPPED node ever had a field wider than its run (field.width = wrapW),
+        // which is how `textAlign` stayed "working" in the one case the docs
+        // demonstrated. Move the RUN inside the content box instead, the same way
+        // PaintKit.centerText places a widget's own field: no re-shape, no second
+        // text pipeline, and nothing changes for "left" (or for a run wider than
+        // its box, which still overflows to the right as before).
+        private function placeRun(n:UiNode, s:Style):void
+        {
             n.tf.x = PaintKit.insetX(n) - PaintKit.TEXT_GUTTER;
             n.tf.y = PaintKit.insetY(n) - PaintKit.TEXT_GUTTER;
-            // `textAlign` ON A RUN THAT DOES NOT WRAP. The field is autoSize "left",
-            // i.e. exactly as wide as the run, so the field's own alignment has no
-            // slack to move within and silently does nothing -- measured: a 160pt
-            // right-aligned node holding "12.34" painted at x 5..30, and a tab label
-            // centred in a 106.67pt cell painted at 1..26 (cell centre 53.3). Only a
-            // WRAPPED node ever had a field wider than its run (field.width = wrapW),
-            // which is how `textAlign` stayed "working" in the one case the docs
-            // demonstrated. Move the RUN inside the content box instead, the same way
-            // PaintKit.centerText places a widget's own field: no re-shape, no second
-            // text pipeline, and nothing changes for "left" (or for a run wider than
-            // its box, which still overflows to the right as before).
             var al:String = s.text.textAlign;
             if (s.text.whiteSpace != "normal" && (al == "center" || al == "right"))
             {
@@ -138,6 +172,23 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             var s:Style = n.resolved;
+            // PAINT-ONLY CONTENT SYNC. A fixed-size run skips the measure pass
+            // (payload returns false and raises only M_PAINT), so the field still
+            // holds the PREVIOUS content here. Re-shape it now, then re-align:
+            // this is the one place a fixed-size text's changed content reaches
+            // the display object, and it does not touch the engine. A wrapped or
+            // auto-sized run never reaches this branch (its payload returned true
+            // and the measure pass already re-shaped it), so `textContent` equals
+            // `tf.text` and this is a single cheap string compare per paint.
+            if (n.tf != null)
+            {
+                var want:String = n.textContent == null ? "" : n.textContent;
+                if (n.tf.text != want)
+                {
+                    PaintKit.measureField(n, n.tf, n.textContent, s, NaN);
+                    placeRun(n, s);
+                }
+            }
             // The field was configured during measure (it had to be, to get an
             // intrinsic size); update the format for a decor-only change.
             if (n.tf != null && s.text.color >= 0) n.tf.textColor = uint(s.text.color);

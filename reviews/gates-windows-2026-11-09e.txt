@@ -1,0 +1,148 @@
+# Windows 全量门禁 —— 2026-11-09（第 e 轮：编译器 9324353 下，子树级 measure 在树）
+#
+# 命令  : node tools/gates.cjs      (cwd = asaotui, 6 路并发)
+# 结果  : 73/75 PASS  in 550.7s   —— 两次单独复跑均复现，非并发抖动
+# 红 1   : probes/widgets/typing  —— 11111 续打 9 得 91111（可编辑字段光标复位）
+# 红 2   : probes/widgets/tabbar  —— 标签中心 50，期望 53.33（textWidth 由分数变整数）
+# 归因   : 上游 compiler 9324353（G41 HarfBuzz 快路径）。A/B 证据见
+#          reviews/compiler-9324353-asaotui-ab.txt：kit 回滚到 Git HEAD、只切编译器
+#          bf30a16 -> 两门皆绿；切到 9324353 -> 两门皆红。见 compiler-gaps.md G42。
+# 旁证   : 同一轮把 16 张画廊截图重写成与已入库版本逐字节不同（已 checkout 还原，
+#          不让红跑产物污染证据）。
+[air] reference runtime: D:\Adobe\Flex_Sdk\AIRSDK_51.5.1  (via PATH)
+[probes] 40 probe(s), parallel x6
+   ... widgets/nav pass 16.2s  [1/40]
+   ... widgets/chip pass 16.2s  [2/40]
+   ... widgets/form pass 16.3s  [3/40]
+   ... widgets/display pass 16.5s  [4/40]
+   ... widgets/media pass 17.4s  [5/40]
+   ... widgets/data pass 20.6s  [6/40]
+   ... widgets/flip pass 15.1s  [7/40]
+   ... widgets/vlist pass 18.5s  [8/40]
+   ... widgets/interact pass 19.5s  [9/40]
+   ... widgets/overlay pass 20.0s  [10/40]
+   ... redraw pass 15.8s  [11/40]
+   ... widgets/choice pass 19.6s  [12/40]
+   ... widgets/popup pass 16.9s  [13/40]
+   ... widgets/textfx pass 15.7s  [14/40]
+   ... lifecycle pass 16.5s  [15/40]
+   ... widgets/scrollbar pass 17.6s  [16/40]
+   ... widgets/callback pass 17.6s  [17/40]
+   ... widgets/typing EXIT 1 20.7s  [18/40]
+   ... widgets/pointer pass 18.4s  [19/40]
+   ... widgets/imaging pass 15.8s  [20/40]
+   ... widgets/gutter pass 15.6s  [21/40]
+   ... widgets/stick pass 17.6s  [22/40]
+   ... widgets/table2 pass 18.5s  [23/40]
+   ... widgets/select-scroll pass 18.0s  [24/40]
+   ... widgets/pointer-touch pass 18.5s  [25/40]
+   ... widgets/navstack pass 17.8s  [26/40]
+   ... widgets/text-align pass 15.2s  [27/40]
+   ... widgets/appbar pass 18.0s  [28/40]
+   ... widgets/tabbar EXIT 1 17.8s  [29/40]
+   ... widgets/icon pass 15.4s  [30/40]
+   ... widgets/accordion pass 16.1s  [31/40]
+   ... widgets/clip pass 15.6s  [32/40]
+   ... widgets/theme pass 17.2s  [33/40]
+   ... widgets/keys pass 20.0s  [34/40]
+   ... widgets/inputs pass 18.9s  [35/40]
+   ... widgets/actions pass 17.8s  [36/40]
+   ... widgets/static-layer pass 15.5s  [37/40]
+   ... widgets/env pass 17.9s  [38/40]
+   ... widgets/i18n pass 17.2s  [39/40]
+   ... widgets/fps pass 17.7s  [40/40]
+[PASS] probe widgets/nav (41 checks, 0 failures)  (exit 0)   16.2s
+[PASS] probe widgets/chip (19 checks, 0 failures)  (exit 0)   16.2s
+[PASS] probe widgets/form (41 checks, 0 failures)  (exit 0)   16.3s
+[PASS] probe widgets/display (48 checks, 0 failures)  (exit 0)   16.5s
+[PASS] probe widgets/media (43 checks, 0 failures)  (exit 0)   17.4s
+[PASS] probe widgets/data (77 checks, 0 failures)  (exit 0)   20.6s
+[PASS] probe widgets/flip (54 checks, 0 failures)  (exit 0)   15.1s
+[PASS] probe widgets/vlist (26 checks, 0 failures)  (exit 0)   18.5s
+[PASS] probe widgets/interact (25 checks, 0 failures)  (exit 0)   19.5s
+[PASS] probe widgets/overlay (65 checks, 0 failures)  (exit 0)   20.0s
+[PASS] probe redraw (14 checks, 0 failures)  (exit 0)   15.8s
+[PASS] probe widgets/choice (44 checks, 0 failures)  (exit 0)   19.6s
+[PASS] probe widgets/popup (26 checks, 0 failures)  (exit 0)   16.9s
+[PASS] probe widgets/textfx (18 checks, 0 failures)  (exit 0)   15.7s
+[PASS] probe lifecycle (9 checks, 0 failures)  (exit 0)   16.5s
+[PASS] probe widgets/scrollbar (44 checks, 0 failures)  (exit 0)   17.6s
+[PASS] probe widgets/callback (24 checks, 0 failures)  (exit 0)   17.6s
+[FAIL] probe widgets/typing (18 checks, 1 failures)  (exit 1)   20.7s
+[probe] building typing
+[probe] built probes\widgets\typing\Main.exe
+PROBE typing: 18 checks, 1 failures
+  FAIL  program verdict: FAIL after refocus + '9' the text is '91111' not '11119'; the click changed the text to '91111';
+RESULT: FAIL
+[PASS] probe widgets/pointer (23 checks, 0 failures)  (exit 0)   18.4s
+[PASS] probe widgets/imaging (31 checks, 0 failures)  (exit 0)   15.8s
+[PASS] probe widgets/gutter (37 checks, 0 failures)  (exit 0)   15.6s
+[PASS] probe widgets/stick (15 checks, 0 failures)  (exit 0)   17.6s
+[PASS] probe widgets/table2 (22 checks, 0 failures)  (exit 0)   18.5s
+[PASS] probe widgets/select-scroll (19 checks, 0 failures)  (exit 0)   18.0s
+[PASS] probe widgets/pointer-touch (30 checks, 0 failures)  (exit 0)   18.5s
+[PASS] probe widgets/navstack (16 checks, 0 failures)  (exit 0)   17.8s
+[PASS] probe widgets/text-align (22 checks, 0 failures)  (exit 0)   15.2s
+[PASS] probe widgets/appbar (22 checks, 0 failures)  (exit 0)   18.0s
+[FAIL] probe widgets/tabbar (13 checks, 1 failures)  (exit 1)   17.8s
+[probe] building tabbar
+[probe] built probes\widgets\tabbar\Main.exe
+PROBE tabbar: 13 checks, 1 failures
+  FAIL  program verdict: FAIL the label of t0 is centred at 50, want the cell's centre 53.333333333333336; the label of t2 is centred at 265, want the cell's centre 266.6666666666667;
+RESULT: FAIL
+[PASS] probe widgets/icon (66 checks, 0 failures)  (exit 0)   15.4s
+[PASS] probe widgets/accordion (18 checks, 0 failures)  (exit 0)   16.1s
+[PASS] probe widgets/clip (33 checks, 0 failures)  (exit 0)   15.6s
+[PASS] probe widgets/theme (75 checks, 0 failures)  (exit 0)   17.2s
+[PASS] probe widgets/keys (36 checks, 0 failures)  (exit 0)   20.0s
+[PASS] probe widgets/inputs (50 checks, 0 failures)  (exit 0)   18.9s
+[PASS] probe widgets/actions (73 checks, 0 failures)  (exit 0)   17.8s
+[PASS] probe widgets/static-layer (27 checks, 0 failures)  (exit 0)   15.5s
+[PASS] probe widgets/env (43 checks, 0 failures)  (exit 0)   17.9s
+[PASS] probe widgets/i18n (5 checks, 0 failures)  (exit 0)   17.2s
+[PASS] probe widgets/fps (12 checks, 0 failures)  (exit 0)   17.7s
+[probes] 5 probe(s), solo -- stopwatch probes: nothing else may be building
+   ... widgets/anim pass 15.9s  [1/5]
+   ... widgets/feedback pass 15.6s  [2/5]
+   ... widgets/motion pass 16.9s  [3/5]
+   ... widgets/touch-scroll pass 24.0s  [4/5]
+   ... perf pass 14.8s  [5/5]
+[PASS] probe widgets/anim (14 checks, 0 failures)  (exit 0)   15.9s
+[PASS] probe widgets/feedback (43 checks, 0 failures)  (exit 0)   15.6s
+[PASS] probe widgets/motion (23 checks, 0 failures)  (exit 0)   16.9s
+[PASS] probe widgets/touch-scroll (26 checks, 0 failures)  (exit 0)   24.0s
+[PASS] probe perf (1 checks, 0 failures)  (exit 0)   14.8s
+[probes] 45 probe(s) in 210.0s
+[PASS] i18n catalog (55 + 55 keys)  (exit 0)   0.3s
+[PASS] web font covers the page (1239 codepoints)  (exit 0)   0.6s
+[PASS] layout-check text half (133 checks, 0 failures)  (exit 0)   7.7s
+[PASS] ui-demo CheckUi (37 checks, 0 failures)  (exit 0)   13.2s
+[PASS] layout-check visual half (12 checks, 0 failures)  (exit 0)   10.3s
+[PASS] gallery tour: 61 component pages (incl. the overlay tree), hand-computed rects (PASS)  (exit 0)   23.1s
+[PASS] gallery kind coverage: all registered widgets are shown (45/45)  (exit 0)   0.4s
+[PASS] docs demos pass only options the factories read (0 unknown)  (exit 0)   0.4s
+[PASS] author callbacks carry their documented argument (24 calls / 262 handlers) (0 violations)  (exit 0)   1.0s
+[PASS] AIR arm (build.sh default) compiles under mxmlc (224679 B SWF)  (exit 0)   2.0s
+[PASS] build.sh --gpu selects renderMode + backend, app.xml untouched (32 checks, 0 failures)  (exit 0)   4.3s
+[PASS] build.sh web: toolchain spawned, argv pinned, refusals, staged dir untracked (26 checks, 0 failures)  (exit 0)   2.5s
+[PASS] docs app on AIR (adl): every page, popups open, pointer drill, no runtime error (61/61 pages, 17/17 popups, 0 errors, 1747/8292 destroyed)  (exit 0)   43.1s
+[PASS] kit listeners are all releasable (UiNode.listen + destroySubtree) (45 wired, 0 raw)  (exit 0)   0.3s
+[PASS] G13 air-app reach: closure keeps 5/5, both faces build+run (PASS)  (exit 0)   10.7s
+[PASS] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (PASS)  (exit 0)   45.7s
+[PASS] incremental repaint == full repaint (4 paint-only scenarios) (PASS)  (exit 0)   13.7s
+[PASS] style scan: no Object-typed local is used as a condition (0 found)  (exit 0)   0.3s
+[PASS] G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (1 distinct hash for 5 builds)  (exit 0)   70.5s
+[PASS] G14 array-in-Object-slot identity (26 cases, AOT vs AIR) -- deviations none  (exit 0)   8.1s
+[PASS] G16 ternary-null (20 cases, AOT vs AIR) -- AOT deviations: none  (exit 0)   14.0s
+[PASS] G19 drawRoundRect, AOT vs AIR -- 302 byte-identical, 18 within the AA tolerance, 0 disagreeing, 40 known (negative radius)  (exit 0)   12.8s
+[PASS] G20 setTextFormat replaces the range (AOT vs AIR) (PASS (12 relational cases; both arms treat a repeated range format as a replacement))  (exit 0)   7.2s
+[PASS] G21 getTextFormat reads the run table (AOT vs AIR) (PASS (30 cases; both arms agree and the emitted getTextFormat is range-aware))  (exit 0)   8.6s
+[PASS] G22 closure statics initialise (AOT vs AIR, emitted C audited) (PASS (10 cases; both arms agree and every static read carries its _cinit() guard))  (exit 0)   7.8s
+[PASS] Vector vs Array throughput, both runtimes (AOT ratio 0.18x)  (exit 0)   8.7s
+[PASS] style fromAny is total: 19 cases, AOT vs AIR (PASS (19 cases; both arms agree with the hand-derived answers))  (exit 0)   14.1s
+[PASS] Array(x) wraps on both runtimes (8 cases, AOT vs AIR) (AGREE)  (exit 0)   7.9s
+[PASS] AIR SDK resolution: env -> PATH -> install locations, verified per host (PASS (11/11 cases))  (exit 0)   0.7s
+[PASS] fingerprint porcelain parsing: no dropped records (PASS)  (exit 0)   0.3s
+
+==== 73/75 gates PASS  in 550.7s ====
+FAILED: probe widgets/typing (18 checks, 1 failures) | probe widgets/tabbar (13 checks, 1 failures)

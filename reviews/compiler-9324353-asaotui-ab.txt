@@ -1,0 +1,80 @@
+================================================================================
+A/B: asaotui probe suite on compiler bf30a16 (v0.4.365) vs 9324353 (v0.4.366)
+     "perf(text): G41 HarfBuzz fast path for short pure-ASCII single-line fields"
+================================================================================
+
+Everything below was measured on 2026-11-09/10, Windows, same machine, same
+`asaotui` working tree. The kit arm was held at **git HEAD** (`kit/` unmodified)
+for both compiler arms, so the only variable is the compiler commit.
+
+--------------------------------------------------------------------------------
+ARM A: compiler bf30a16   (git checkout -q bf30a16 in ../as3compiler)
+--------------------------------------------------------------------------------
+  node tools/probe.cjs probes/widgets/typing
+    PROBE typing: 18 checks, 0 failures        RESULT: PASS
+
+  node tools/probe.cjs probes/widgets/tabbar
+    PROBE tabbar: 13 checks, 0 failures        RESULT: PASS
+
+--------------------------------------------------------------------------------
+ARM B: compiler 9324353   (git checkout main)
+--------------------------------------------------------------------------------
+  node tools/probe.cjs probes/widgets/typing
+    PROBE typing: 18 checks, 1 failures
+      FAIL  program verdict: FAIL after refocus + '9' the text is '91111' not
+            '11119'; the click changed the text to '91111';
+    RESULT: FAIL
+
+  node tools/probe.cjs probes/widgets/tabbar
+    PROBE tabbar: 13 checks, 1 failures
+      FAIL  program verdict: FAIL the label of t0 is centred at 50, want the
+            cell's centre 53.333333333333336; the label of t2 is centred at 265,
+            want the cell's centre 266.6666666666667;
+    RESULT: FAIL
+
+Both reproduce SOLO (not a pool/parallel artefact) and reproduce with `git
+checkout -- kit/` (i.e. the library at the last committed revision).
+
+--------------------------------------------------------------------------------
+THE NUMBER THAT EXPLAINS THE 3.33pt: textWidth CHANGED SHAPE, NOT JUST VALUE
+--------------------------------------------------------------------------------
+`probes/g20-settextformat` prints the raw metrics of the same strings under both
+compilers. Its committed file (bf30a16) vs the file regenerated under 9324353:
+
+    case                                bf30a16                       9324353
+    raw tw1/tw2/tw3                     46.65999984741211 (x3)        52 (x3)
+    ink1 / ink3                         45 / 45                       50 / 50
+    raw override / fresh                39.54999923706055             44
+    raw plain / formatted               39.54999923706055 / 46.66     44 / 52
+    raw sub tw1 / tw3                   44.734375                    44.734375   (unchanged)
+    raw ab / ba                         46.65999984741211            46.65999984741211 (unchanged)
+    raw splitTail / splitMid            37.33 / 39.11                37.33 / 39.11 (unchanged)
+
+SkParagraph answers a FRACTIONAL advance (46.65999984741211); the fast path
+answers an INTEGER (52). It is not a rounding of the same measurement -- 46.66 ->
+52 is +5.34pt, and the ink box grows by 5px with it. The cases that still go
+through SkParagraph (a run table from `setTextFormat`, and the `sub`/`split`
+cases) are bit-identical, which is how the two paths can be told apart at all.
+
+A centred label is placed by `contentW - textWidth` / 2, so +6.67pt of width is
+-3.33pt of position: exactly the tabbar failure (53.33 -> 50).
+
+--------------------------------------------------------------------------------
+VISIBLE CONSEQUENCE: EVERY GALLERY SCREENSHOT MOVED
+--------------------------------------------------------------------------------
+One full `node tools/gates.cjs` run under 9324353 rewrote all 16 committed
+gallery PNGs (8 pages x 2 DPI arms, `ui-demo/air-gallery*/gallery-page*.png`).
+They are byte-different from the committed images taken under bf30a16, i.e. the
+drift above reaches the pixels.
+
+--------------------------------------------------------------------------------
+WHAT THIS FILE IS NOT
+--------------------------------------------------------------------------------
+* It is not a claim about the fast path's *speed*. Only its metrics and its
+  effect on editable fields are measured here.
+* The caret mechanism is UNPROVEN: all this establishes is that the fast path is
+  what flips `typing` from PASS to FAIL. A plausible mechanism (the run table /
+  paragraph is re-created under the field, and `selectionIndex` goes with it) is
+  a hypothesis, not a measurement.
+* The kit arm was at HEAD, so none of this is attributable to the uncommitted
+  subtree-measure work; that work was measured separately (73/75, same two reds).

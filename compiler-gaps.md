@@ -822,6 +822,35 @@
 | 正确修法在上游 | 给 `SkFontMgr_New_Custom_Data` 包一层实现 `onMatchFamilyStyleCharacter`（或改用带 cascade 的 data fontmgr），让「同一 family 缺码点」能落到已注册的其它面。修好后 `web-gallery.cjs` 的 3a 可以直接回到「系统 Latin 面 + CJK 面」两件套，英文也就回到 Arial |
 | AIR 对照 | 无 `adl` 对照可言：AIR 桌面端用系统字体栈，天然回退。这是**后端能力缺口**（web/wasm），按 §1.5 归「增强/后端缺口」而非 AS3 语义缺陷 |
 
+---
+
+### G41 —— live 场景的 paint 相位 89% 是 **TextField 整形**，不是光栅化 ⇒ 「增量光栅化」不是下一步的正确杠杆 —— ⚠️ **已定位，未立项（运行时整形/缓存策略，非语义缺口）**
+
+| 项 | 内容 |
+|---|---|
+| 现象（2026-11-09 实测） | 子树级 measure 落地后（`Style.diffFlags` 拆分 + `TextWidget` 固定尺寸内容变化只标 `M_PAINT`），`probes/live/scan-rows.cjs` 显示 200 行 measure 10.46→0.40ms、solve 3.77→0.28ms，但 total 21.32→16.87ms 只降 20–28%——整形成本转移到了 paint（0.35→11.59ms） |
+| paint 相位拆分（`probes/live/dissect-paint.cjs`，200 行，sha256 还原） | **M1 无文本整形**：paint 11.61→**1.22ms**（省 10.39ms = **89%**）；**M2 无 sparkline 路径**：11.61→10.38ms（省 1.23ms = 10%）；**M3 无 paintbox/decorate**：11.61→11.22ms（省 0.39ms = 3%） |
+| 89% 是什么 | `field.text = text`（重建 run table）+ `setTextFormat`（G20 后 REBUILD run table）+ 读 `textWidth`（强制同步整形）——每 tick 400 个变化文本（价格 + 涨跌）真的变，整形是**语义刚性成本**，不是失效颗粒问题 |
+| 已否掉的微优化 | reshape 时跳过 `setTextFormat`（依赖 `field.defaultTextFormat` 已应用）：paint 11.63 vs 11.61ms，**无收益** ⇒ `field.text=` + `textWidth` 读才是主导，不是二次 run table 重建 |
+| runtime 侧现状（`ASC_PASS_TRACE` 的 `live`/`cached`） | baseline `live=444 cached=23723`——运行时**已有** cacheAsBitmap 增量 re-bake（G30），`live` 是真正变化的对象、`cached` 是缓存命中。没有「没变却重画」的浪费可省 |
+| 结论 | **增量光栅化（Skia tile hash-diff）对这个 live 场景收益有限**：sparkline 命令记录 10% + paintbox 3% = 最多 ~14% 的 paint 相位，且 Graphics 是累积的（增量需 clear + 全重录，无法真正 tile）。瓶颈是文本整形，优化它在**编译器 runtime 侧**（run table 复用 / 布局缓存 / 短数字串的轻量 shape 路径），或**库侧虚拟化**（gallery 已虚拟化，`probes/live/Main.as` 刻意不虚拟化以量上界） |
+| 状态 | ⚠️ **已定位，未立项**。库侧子树级 measure（§1 L1 与 `cui-borrow-map.md` §3.8）是正确且收益大的一步；本条的剩余成本是「必须重整形」，留给编译器仓库的运行时整形/缓存策略（与 G36 的分配开销同属「已定量、待上游」） |
+
+---
+
+### G42 —— 上游 `9324353`（G41 HarfBuzz 快路径）落地后，本仓两个门变红：**文本宽度从分数变整数**（+5.3pt）与**可编辑字段光标复位** —— ⚠️ **已定位（A/B 证明在上游），未修**
+
+| 项 | 内容 |
+|---|---|
+| 触发 | 编译器 `HEAD` 从 `bf30a16`（v0.4.365）前进到 `9324353`（v0.4.366, `perf(text): G41 HarfBuzz fast path for short pure-ASCII single-line fields`）。**本仓 `kit/` 保持 Git HEAD** 测两态，唯一变量是编译器 |
+| 红一：宽度改变**性质** | `probes/g20-settextformat` 同字符串实测：`tw1/tw2/tw3` 由 `46.65999984741211`（SkParagraph 分数 advance）变成 **`52`（整数）**，`ink` 由 45 → 50；`plain` 由 `39.54999923706055` → `44`。不是同一测量的四舍五入（+5.34pt），而是 hinted 整数 advance 与 SkParagraph 的 subpixel advance 对不上。仍走 SkParagraph 的用例（带 run table 的 `sub`/`splitTail`/`splitMid`、`ab`）**逐位不变** —— 两态可辨认 |
+| 红二：可编辑字段光标复位 | `probes/widgets/typing`：`11111` 续打 `9` 得 **`91111`**（光标被送回 0）。机制未证（猜测：快路径在字段下重建了 run table / 段落，`selectionIndex` 随之丢失），但 A/B 只调编译器就够翻红 |
+| 可见后果 | 一次全量门（9324353）重写了 **16 张已入库的画廊截图**（8 页 × 2 个 DPI 臂），与 `bf30a16` 采的图逐字节不同 ⇒ 漂移已到像素 |
+| 与本仓子树级 measure 无关 | 上述红在 `kit/` 回滚到 Git HEAD 后**原样复现**；子树级 measure（`cui-borrow-map.md` §3.8）在 9324353 上是 73/75，红的就是这两道（本轮实测） |
+| 证据 | [`reviews/compiler-9324353-asaotui-ab.txt`](reviews/compiler-9324353-asaotui-ab.txt)（两臂命令与逐条输出、`g20` 数字对照、截图重写清单） |
+| 上游要改什么 | ① 快路径的 advance 必须与 SkParagraph **同口径**（未 hint 的分数 advance，或一律走 SkParagraph 的度量结果），否则任何依赖 `textWidth` 的居中/截断/行数都会漂移；② 编辑中的字段不得被任何「paint 期重整形」路径碰到（`tf.text=` 会丢 `selectionIndex`）。修好后本仓两道门应自绿，无需改库 |
+| 状态 | ⚠️ **已定位，未修**（属上游）。本仓在此期间的记录：全量 **73/75**，红项 = `typing`、`tabbar`；不粉饰、不改数 |
+
 
 ---
 
