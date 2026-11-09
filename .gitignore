@@ -153,6 +153,9 @@ aot-icudtl.dat
 /ui-demo/**/*.run.log
 # 2.4 MB 帧缓冲，verify-visual.cjs 每次重新生成
 /layout-check/*.bmp
+# RepaintDiff.as 的成对证据（每次运行重写 8 张 360x260 BMP——可再生输出不入库）。
+# 判据在程序内比较，BMP 只是给人看的；删掉不影响门。
+/ui-demo/*.bmp
 # 每跑一次就变的测量日志（计时随负载浮动 ±1ms；anim 那份还是**追加**写、会无限增长）。
 # durable 版本是 review/README 里的表格，不是这些转瞬即变的数字——不然每跑一次门都会把工作树弄脏。
 /probes/**/*.log.txt
