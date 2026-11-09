@@ -25,7 +25,7 @@ window.addEventListener('error', function (ev) { window.__ascErrors.push('error:
 window.addEventListener('unhandledrejection', function (ev) { window.__ascErrors.push('unhandled rejection: ' + String(ev.reason)); });
 // 字体字节流 URL（网络加载 + 全量覆盖）：wasm 沙箱无系统字体，这些字体在
 // main() 运行前 fetch 并注入 Skia 的自定义 FreeType 字体管理器。
-var FONT_URLS = ["fonts/arial.ttf"];
+var FONT_URLS = ["fonts/MiSans-DemoSubset.ttf"];
 var Module = {
   canvas: document.getElementById('canvas'),
   // trace() reaches stdout as printf, and these hooks keep it two ways: the
