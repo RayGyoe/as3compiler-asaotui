@@ -1457,10 +1457,18 @@ CLDR 复数规则全量、`Env.locale` 自动生效。跨端差异与后续方�
 - 闭包捕获"静态类型为接口"的形参、再把这个闭包交回**同一接口变量**的方法 ⇒ 生成的 C 编不过
   （`compiler-gaps.md` G37；`mxmlc` 接受同形代码）。库内已改用静态字段 + 静态回调。
 - 无 `localeCompare`（表的排序仍是码位序）；无 `TextField.direction`，故 RTL 只有布局镜像、没有 bidi。
-- **`String.length` / `charCodeAt` / `charAt` / `indexOf` / `substring` 对非 ASCII 是 UTF-8 字节偏移**
-  （`compiler-gaps.md` G38）：一个汉字算 3。所以任何"按字符切"的逻辑都必须是字节游标——
-  `DocsWrap` 的 CJK 分段与 `PaintKit.ellipsize` 的截断点、`AvatarWidget` 的首字母都已改成
-  按码点边界走。新写任何截断/省略号/单字符处理前，先读 G38。
+- ~~`String.length` / `charCodeAt` / `charAt` / `indexOf` / `substring` 对非 ASCII 是 UTF-8 字节偏移~~
+  —— **✅ 上游已修（编译器阶段三百九十，v0.4.361，`compiler-gaps.md` G38）**：索引空间改成
+  **UTF-16 码元**，存储仍是 UTF-8。一个汉字现在算 **1**（不再算 3），`charAt(i)` 拿到的就是整个字。
+  库侧随之把绕行全删了：`DocsWrap` 的字节游标（`leadLen`/字节版 `head`/`tail`）换回
+  `charAt(0)` / `charAt(len-1)`，`PaintKit.ellipsize` 的 `atCodepoint` 只在**代理对中间**
+  回退 1 码元，`AvatarWidget.initialsOf` 同样只在该处取 2 码元。**唯一残留的界**是
+  `TextField` 的**编辑索引**（`caretIndex`/选区/行表）仍是字节域 ⇒ 对非 ASCII，
+  `tf.text.length`（码元）与 `tf.caretIndex`（字节）不同域，做「光标按字符移动」前要自己换算。
+  另：`charCodeAt` 越界 AIR 给 `NaN`、我们给 `0`（G39 级小项，未修）。
+- **跨度判断仍用 `>= 0x80` 作宽字符近似**：`DocsWrap` 的「这个 token 是不是全宽」拿**首码元 ≥ 0x80**
+  当判据，它把 Latin-1 重音（é）和破折号也算一个 em。方向是安全的（高估 ⇒ 早折行，不会溢出），
+  但**不是**精确值；要精确得自带一张宽字符表，那是另一件事。
 
 ### 13.8 文档站怎么用它（`ui-demo`，本轮落地）
 

@@ -120,10 +120,10 @@ package demo
         // A paragraph with any non-ASCII in it is filled by SUMMING token advances
         // instead of measuring the candidate string. `textWidth` is not an answer we can
         // use here: for long mixed Chinese runs it under-reports (measured: a line of 60
-        // Han characters, 180 BYTES, reporting 757pt -- ~4.2pt per glyph against the 12pt
-        // this backend really advances), and for short runs it answers 0 outright -- so
-        // `widthOf(cand) > wrapW` stayed false and a whole translated paragraph was
-        // emitted as ONE line, straight out of the pane. A Han/Kana/Hangul glyph is
+        // Han characters -- 180 in the byte-index era, 60 code units now -- reporting
+        // 757pt, ~4.2pt per glyph against the 12pt this backend really advances), and for
+        // short runs it answers 0 outright -- so `widthOf(cand) > wrapW` stayed false and
+        // a whole translated paragraph was emitted as ONE line, straight out of the pane. A Han/Kana/Hangul glyph is
         // FULL-WIDTH by definition (its advance IS the em), so the wide-glyph advance is
         // the em from the TextFormat, not a per-candidate measurement; a Latin word is
         // still measured, with an over-estimate as the fallback -- which only ever breaks
@@ -181,11 +181,17 @@ package demo
             return w;
         }
 
-        // One token's advance. A WIDE token is a single multi-byte codepoint and takes
+        // One token's advance. A WIDE token is a single non-ASCII code unit and takes
         // the em; a Latin run is measured, and when the measurement answers nothing
-        // usable it is over-estimated. The test is the LEAD BYTE, not the length: a
-        // 25-byte ASCII identifier is also `length > 1`, and treating it as one em
-        // under-counts it by ~140pt (measured: a line summed to 660pt painted 859pt).
+        // usable it is over-estimated. The test is the FIRST CODE UNIT, not the length:
+        // a 25-character ASCII identifier is also `length > 1`, and treating it as one
+        // em under-counts it by ~140pt (measured: a line summed to 660pt painted 859pt).
+        //
+        // `>= 0x80` is deliberately coarse -- "non-ASCII", not "full-width". A Latin-1
+        // accent (é) or an em dash therefore costs a whole em where the face charges
+        // half of one. That errs in the safe direction (over-estimate -> break a line
+        // earlier -> never overflow), and narrowing it to a Han/Kana/Hangul range would
+        // need a wide-table this class has no business owning.
         private static function tokenWidth(w:String, style:Style, em:Number):Number
         {
             if (w.length > 0 && w.charCodeAt(0) >= 0x80) return em;
@@ -222,7 +228,9 @@ package demo
         }
 
         // Any non-ASCII text at all: that is what needs the summed fill instead of
-        // the candidate-string measurement (see wrapCJK).
+        // the candidate-string measurement (see wrapCJK). Same coarse `>= 0x80` test as
+        // tokenWidth -- a paragraph of Latin-1 accented text takes this path too, and
+        // pays a fraction of an em per glyph. Safe, not exact.
         private static function hasCJK(p:String):Boolean
         {
             for (var i:int = 0; i < p.length; i++)
@@ -233,7 +241,7 @@ package demo
         }
 
         // The tokens `wrap` fills: a run of non-space ASCII characters is ONE token
-        // (a word, identifier or URL); every multi-byte codepoint is its own token,
+        // (a word, identifier or URL); every non-ASCII code unit is its own token,
         // because a break is legal between any two of them. Spaces are separators,
         // never tokens -- which is what keeps the ASCII path identical to `split(" ")`.
         private static function segment(p:String):Array
@@ -253,8 +261,8 @@ package demo
                 if (b >= 0x80)
                 {
                     // One code unit is one break opportunity. A surrogate half is its
-                    // own token, which keeps the pair together only if they happen to
-                    // land together -- acceptable: neither half is painted alone.
+                    // own token (so an astral character costs two em rather than one --
+                    // an over-estimate again); neither half is ever painted alone.
                     if (cur.length > 0) { out.push(cur); cur = ""; }
                     out.push(p.charAt(i));
                     i = i + 1;

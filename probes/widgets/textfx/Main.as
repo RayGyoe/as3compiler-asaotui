@@ -205,13 +205,17 @@ function node(key:String):UiNode
 // U+2026 as an escape: the generated C carries string literals byte-for-byte, so a
 // source-encoded glyph would depend on how this file was saved.
 //
-// SEARCHED, not compared against the last CHARACTER: this runtime indexes strings by
-// BYTE, so charAt(length-1) of a UTF-8 ellipsis is a lone continuation byte (measured:
-// the first version of this probe failed on exactly that). The contract is "the
-// truncated run carries an ellipsis", and indexOf states it on either encoding.
+// THE LAST CODE UNIT, asserted directly. While this runtime indexed strings by BYTE
+// (compiler-gaps.md G38, fixed upstream in compiler stage 390) charAt(length-1) of a
+// UTF-8 ellipsis was a lone continuation byte -- measured, the first version of this
+// probe failed on exactly that -- so the assertion had to settle for "somewhere in the
+// run". Code-unit indexing makes the natural contract expressible, and asserting it is
+// what turns a regression back to byte offsets into a RED gate instead of a silent one.
+// indexOf stays: the same answer spelled from the other end.
 function hasEllipsis(s:String):Boolean
 {
-    return s.indexOf("\u2026") >= 0;
+    if (s.length == 0) return false;
+    return s.charAt(s.length - 1) == "\u2026" && s.indexOf("\u2026") >= 0;
 }
 
 function hasBreak(s:String):Boolean

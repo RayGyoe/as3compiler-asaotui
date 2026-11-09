@@ -743,7 +743,7 @@
 | 现象（2026-11-09 报） | `"行令由应用自身…"`（60 个汉字）的 `.length` 是 **180**；`charCodeAt(0)` 回的是首字节 **0xE8**，不是 `0x884C`。于是任何 `charCodeAt(i) >= 0x2E80` 式的 CJK 判断**永远为假**，任何 `substr(i, 1)` 取字符会切在 UTF-8 序列中间 |
 | 根因位置（上游源码） | `runtime.ts` 的 `as_str_charCodeAt` 为 `return (unsigned char)s[i];`，`as_str_charAt` 只分配 2 字节并拷贝 1 字节，`length`/`indexOf` 直接是 `strlen`/`strstr` 指针差。上游自己已把这条登记在 `emit.ts` 的 `displayAsPassword` 注释里（"this runtime models strings as UTF-8 BYTES (String.length/charCodeAt/indexOf are byte offsets …) registered limitation"） |
 | 在库里造成的真实缺陷 | `ui-demo` 的中文折行第一版按 `charCodeAt(i)` 判 CJK、按字符切片：**一个汉字都没认出来**，每个中文段落变成一整条「词」，`DocsMain` 的 zh 扫描报 `61 页 / 71 个块` 的行画得比盒子宽（实测最宽 `1432pt` 画在 `678pt` 盒子里，`b2:p1 paints 757.22pt` 等）|
-| 库侧绕法（已落地，不是修复） | `ui-demo/demo/DocsWrap.as` 全部改为 **UTF-8 字节游标**：`leadLen(byte)` 定码点字节数、`head()/tail()` 取首尾码点、`segment()` 一个多字节码点一个 token、`hasCJK()` 判 `byte >= 0x80`。`tools/demo-i18n.cjs` 与 `tools/i18n-check.cjs` 在 Node 侧跑，不受影响 |
+| 库侧绕法（~~已落地，不是修复~~ → **已被下面的「修复」取代，仅作历史记录**） | `ui-demo/demo/DocsWrap.as` 全部改为 **UTF-8 字节游标**：`leadLen(byte)` 定码点字节数、`head()/tail()` 取首尾码点、`segment()` 一个多字节码点一个 token、`hasCJK()` 判 `byte >= 0x80`。`tools/demo-i18n.cjs` 与 `tools/i18n-check.cjs` 在 Node 侧跑，不受影响 |
 | 其它受影响面 | 任何对**已翻译文本**做截断/省略号的功能都会切坏：`textOverflow: "ellipsis"`、`maxLines`、`displayAsPassword`（上游已按字节发星号）。库内现有 demo 没有对中文做省略号截断，故本轮未见视觉缺陷；但新增这类功能前必须先按字节游标处理 |
 | AIR 对照（硬判据） | AS3 规范与 `adl` 都是 **UTF-16 码元**（`"中文".length == 2`）。所以这是**遗留缺陷**而非「增强」；正确修法在上游（`as_str_*` 改成按码点走，或内部改存 UTF-16），不适合在库里逐点打补丁 |
 | 处置 | **已修**（2026-11-09，上游阶段三百九十）：索引空间按 UTF-16 码元，存储不动；`DocsWrap`/`PaintKit`/`AvatarWidget` 的字节游标已迁回自然写法。下面的实测评估记录的是「换存储」这笔账，修复用的是设计 **B2**（码元索引层 + ASCII 快路），并额外加了**长度记忆**与两槽游标 —— 见本节末「修复」小节 |
