@@ -31,7 +31,13 @@ package demo
         public function DocSection(h:String, p:Array, c:Array, dh:Number, b:Function,
                                    w:Boolean = false):void
         {
-            this.heading = h;
+            // THE HEADING IS TRANSLATED HERE, the prose is not: a heading is one
+            // string, so a lookup costs nothing and every reader of `heading` (the
+            // block's text node, its ariaName) sees the localized one. `prose` stays
+            // the source array -- DocsWrap.lines translates each paragraph while it
+            // wraps, because translating here would allocate 267 fresh arrays on
+            // every describe.
+            this.heading = DemoText.t(h);
             this.prose = p == null ? [] : p;
             this.code = c == null ? [] : c;
             this.demoH = dh;

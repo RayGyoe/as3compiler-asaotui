@@ -79,7 +79,7 @@ package asaot.ui
         if (opts.scrollToIndex != null) n.scrollToIndex = int(opts.scrollToIndex);
         if (opts.overscan != null) n.overscan = int(opts.overscan);
         if (n.overscan < 0) n.overscan = 0;
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "list of " + count;
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.virtuallist.label", { n: count });
 
         // The viewport height decides how many rows exist. Prefer the style (so
         // `size: [w, h]` and `height: h` are both honoured), else the documented

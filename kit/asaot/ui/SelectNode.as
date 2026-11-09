@@ -37,7 +37,7 @@ package asaot.ui
             this.role = "combobox";
             this.open = false;
             this.value = null;
-            this.placeholder = "Select...";
+            this.placeholder = I18n.t("kit.select.placeholder");
             this.options = [];
             this.onSelect = null;
             this.onOpenChange = null;

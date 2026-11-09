@@ -71,7 +71,7 @@ package asaot.ui
         var self:StyleRefinement = new StyleRefinement();
         self.flexDirection = n.direction;
         n.style = (n.style == null ? new StyleRefinement() : n.style).withPatch(self);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "split pane";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.splitpane.label");
 
         // The grip. `size` here only matters on the very first frame, before the
         // widget has read a solved container size; after that the widget writes the

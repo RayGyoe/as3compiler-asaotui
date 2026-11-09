@@ -16,7 +16,7 @@
 //      DocSection.height(), which sums the same constants DocsStyle gives the
 //      engine. The tour compares the scroll view's published contentH against a
 //      recomputed sum, and then -- the part that cannot lie -- requires that no
-//      child's solved rect escapes its block on ANY of the 42 pages. A forgotten
+//      child's solved rect escapes its block on ANY of the 61 pages. A forgotten
 //      gap or a wrong line height shows up as a rect outside its box;
 //   3. a real wheel scroll (the content pane), asserting the offset, the clamp and
 //      that the pixels actually moved while the layout did not;
@@ -27,6 +27,7 @@
 package demo
 {
     import asaot.ui.Dirty;
+    import asaot.ui.I18n;
     import asaot.ui.ScrollViewNode;
     import asaot.ui.TextNode;
     import asaot.ui.UiApp;
@@ -150,7 +151,7 @@ package demo
             var docCW:Number = docW - DocsStyle.DOC_GUTTER;                   // 678
             var docY:Number = 100;   // 24 top pad + 30 title + 4 + 18 blurb + 4 + 16 meta + 4
             var docH:Number = winH - docY - 16;                            // 584
-            var navH:Number = winH - 68 - 16 - 4 - 16;                       // 596: foot + gap + bottom pad
+            var navH:Number = DocsStyle.navHeight(winH);                     // index viewport
             this.problems = this.problems + this.rect("side", 0, 0, DocsStyle.NAV_W, winH);
             this.problems = this.problems + this.rect("main", DocsStyle.NAV_W, 0,
                 winW - DocsStyle.NAV_W, winH);
@@ -323,7 +324,7 @@ package demo
             // frame boundary, which means a single widget can stop the TOUR (no
             // gallery.done, an opaque TIMEOUT) while the window keeps running. Catching
             // per page turns that into a named failure and lets the other 40 pages
-            // still report -- which is what a docs app has to do with 42 pages.
+            // still report -- which is what a docs app has to do with 61 pages.
             var pages:Array = DocsCatalog.pages();
             var badPages:int = 0;
             var badBlocks:int = 0;
@@ -625,11 +626,14 @@ package demo
                 w2 - DocsStyle.NAV_W, h2);
             this.problems = this.problems + this.rect("docScroll", docX, docY,
                 w2 - DocsStyle.NAV_W - DocsStyle.PAD_X * 2, docH2);
-            // The index viewport is the sidebar's leftover height: top 68 (brand + tag),
-            // then the foot (16), its gap (4) and the bottom padding (16).
-            this.problems = this.problems + this.rect("nav", 14, 68, 219, h2 - 68 - 16 - 4 - 16);
+            // The index viewport is the sidebar's leftover height. The top 68 is
+            // padding + brand + gap + tag + gap; below the index sit the language row,
+            // its two gaps, the foot and the bottom padding -- all of them in
+            // DocsStyle.navHeight(), because the switcher added a row and a copied
+            // number is exactly what would rot here.
+            this.problems = this.problems + this.rect("nav", 14, 68, 219, DocsStyle.navHeight(h2));
             this.report = this.report + "\n  resized to " + w2 + "x" + h2
-                + ": nav " + (h2 - 104) + " tall, content viewport " + docH2 + "\n";
+                + ": nav " + DocsStyle.navHeight(h2) + " tall, content viewport " + docH2 + "\n";
 
             var sv2:UiNode = this.app.findByKey("docScroll");
             if (sv2 != null && sv2.desc != null)
@@ -889,7 +893,210 @@ package demo
                 this.stage.render(DocsStyle.W, DocsStyle.H, OUT + "-page" + k + ".png");
             }
 
+            this.mark("8 i18n");
+
+            // ---- 8. the locale switch ---------------------------------------------
+            // Everything above ran in English. This stage is the localization itself, and
+            // it is driven the way a user drives it: a CLICK on the sidebar's language
+            // button, then a real ENTER_FRAME -- because the mechanism under test is the
+            // EPOCH LATCH (I18n.epoch() -> invalidate(Dirty.VALUE) + a layout re-solve in
+            // UiApp.onEnterFrame), not a test-only shortcut. The click alone must change
+            // nothing: it writes a locale and returns.
+            this.model.pick("i18n");
+            this.app.invalidate(Dirty.ALL);
+            this.app.reflow();
+            // The switcher's rect comes from the same constants its style uses, and it is
+            // also what makes the index viewport (nav, asserted above) add up.
+            this.problems = this.problems + this.rect("lang:en", 14, 68 + navH + 4,
+                DocsStyle.LANG_W, DocsStyle.LANG_H);
+            var zhBtn:UiNode = this.app.findByKey("lang:zh-CN");
+            var arBtn:UiNode = this.app.findByKey("lang:ar");
+            var enBtn:UiNode = this.app.findByKey("lang:en");
+            if (zhBtn == null || arBtn == null || enBtn == null)
+            {
+                this.problems = this.problems + "the sidebar has no language switcher; ";
+            }
+            else
+            {
+                var enHead:String = this.tf("b0:h");
+                var enGroup:String = this.tf("navg11");
+                var enBlurb:String = this.tf("docBlurb");
+                var enFoot:String = this.tf("foot");
+
+                this.click(zhBtn);
+                if (this.tf("b0:h") != enHead)
+                {
+                    this.problems = this.problems + "the click alone re-described the page; ";
+                }
+                this.stage.dispatchEvent(new Event(Event.ENTER_FRAME));
+                this.app.reflow();
+                var zhHead:String = this.tf("b0:h");
+                var zhGroup:String = this.tf("navg11");
+                var zhBlurb:String = this.tf("docBlurb");
+                var zhFoot:String = this.tf("foot");
+                this.report = this.report + "== i18n ==\n  zh-CN: '" + zhHead + "' / '"
+                    + zhGroup + "' / '" + zhFoot + "'\n";
+                if (I18n.locale() != "zh-CN")
+                {
+                    this.problems = this.problems + "the zh-CN button left the locale at "
+                        + I18n.locale() + "; ";
+                }
+                // NOT ASCII: a heading that changed to a different ENGLISH string would
+                // mean a missing row, not a translation.
+                if (zhHead == enHead || !this.hasWide(zhHead))
+                {
+                    this.problems = this.problems + "the section heading did not follow the locale ('"
+                        + zhHead + "'); ";
+                }
+                if (zhGroup == enGroup)
+                {
+                    this.problems = this.problems + "the index group heading stayed '" + zhGroup
+                        + "' -- the MEMOIZED sidebar did not re-describe for the new epoch; ";
+                }
+                if (zhBlurb == enBlurb)
+                {
+                    this.problems = this.problems + "the page blurb stayed English; ";
+                }
+                if (zhFoot == enFoot)
+                {
+                    this.problems = this.problems + "the index footer stayed '" + zhFoot + "'; ";
+                }
+                // A NAME IS NOT A TRANSLATION: the page title is the factory's spelling and
+                // the product name is a name.
+                if (this.tf("docTitle") != "i18n" || this.tf("brand") != "asaot.ui")
+                {
+                    this.problems = this.problems + "the API / product name was translated (title '"
+                        + this.tf("docTitle") + "' brand '" + this.tf("brand") + "'); ";
+                }
+                // ---- 8a. the same sweep, in Chinese --------------------------------
+                // Block heights are DERIVED from wrapped line counts (DocsWrap for the
+                // lines, DocSection.height() for the box), so another language is a new
+                // input to that pair -- and exactly the kind of drift a single-locale
+                // gate never sees. English is swept in stage 5; this is the same check
+                // with 700 translated strings in place.
+                var zhBad:int = 0;
+                var zhBlocks:int = 0;
+                var zhList:String = "";
+                var allPages:Array = DocsCatalog.pages();
+                for (var q:int = 0; q < allPages.length; q++)
+                {
+                    var qp:DocPage = DocPage(allPages[q]);
+                    this.mark("8 zh " + qp.id);
+                    try
+                    {
+                        this.model.pick(qp.id);
+                        this.app.invalidate(Dirty.ALL);
+                        this.app.reflow();
+                        var za:Object = { total: 0, nullEng: 0, zero: 0, detached: 0, shown: 0, text: "" };
+                        this.treeDiag(this.app.getRoot(), 0, za);
+                        if (int(za.nullEng) > 0 || int(za.zero) > 0 || int(za.detached) > 0)
+                        {
+                            zhBad = zhBad + 1;
+                            if (zhList.length < 480)
+                                zhList = zhList + "  " + qp.id + ": " + za.zero + " zero-rect / "
+                                    + za.nullEng + " without an engine node" + String(za.text) + "\n";
+                        }
+                        var zb:int = this.overflowingBlocks();
+                        if (zb > 0)
+                        {
+                            zhBlocks = zhBlocks + zb;
+                            if (zhList.length < 900)
+                                zhList = zhList + "  overflow " + qp.id + " blocks=" + zb + " heading='"
+                                    + this.tf("b0:h").substr(0, 24) + "'\n";
+                        }
+                    }
+                    catch (zerr:Error)
+                    {
+                        zhBad = zhBad + 1;
+                        if (zhList.length < 480) zhList = zhList + "  " + qp.id + ": threw " + zerr.message + "\n";
+                    }
+                }
+                this.report = this.report + "  zh sweep: pages=" + allPages.length + " badPages="
+                    + zhBad + " overflowingBlocks=" + zhBlocks + "\n" + zhList;
+                if (zhBad > 0)
+                {
+                    this.problems = this.problems + zhBad + " page(s) failed the sweep in zh-CN; ";
+                }
+                if (zhBlocks > 0)
+                {
+                    this.problems = this.problems + zhBlocks + " block(s) overflow in zh-CN"
+                        + " (a translated line count disagreed with DocSection.height()); ";
+                }
+                // Back to the page this stage is about, for the screenshot and for the
+                // RTL assertions that follow (they read `b0:h`, which every page has,
+                // but the mirror is what the picture is supposed to show).
+                this.model.pick("i18n");
+                this.app.invalidate(Dirty.ALL);
+                this.app.reflow();
+                this.stage.render(DocsStyle.W, DocsStyle.H, OUT + "-zh.png");
+
+                // ---- 8b. ar: RTL mirrors the LAYOUT; the text falls back to English ----
+                this.click(arBtn);
+                this.stage.dispatchEvent(new Event(Event.ENTER_FRAME));
+                this.app.reflow();
+                var rtlSide:UiNode = this.app.findByKey("side");
+                var rtlMain:UiNode = this.app.findByKey("main");
+                this.report = this.report + "  ar: rtl=" + I18n.isRTL() + " side.x="
+                    + (rtlSide == null ? -1 : rtlSide.absX) + " heading='" + this.tf("b0:h") + "'\n";
+                if (!I18n.isRTL())
+                {
+                    this.problems = this.problems + "the ar locale did not report RTL; ";
+                }
+                // No Arabic prose table ships, so the prose must come back as ENGLISH:
+                // mirroring and translation are two separate things, and this is the line
+                // that keeps them from being confused for one another.
+                if (this.tf("b0:h") != enHead)
+                {
+                    this.problems = this.problems + "ar did not fall back to the English heading ('"
+                        + this.tf("b0:h") + "'); ";
+                }
+                if (rtlSide == null || rtlSide.absX != winW - DocsStyle.NAV_W)
+                {
+                    this.problems = this.problems + "the RTL sidebar is at x="
+                        + (rtlSide == null ? -1 : rtlSide.absX) + ", expected "
+                        + (winW - DocsStyle.NAV_W) + " (the window's other edge); ";
+                }
+                if (rtlMain == null || rtlMain.absX != 0)
+                {
+                    this.problems = this.problems + "the RTL content pane is at x="
+                        + (rtlMain == null ? -1 : rtlMain.absX) + ", expected 0; ";
+                }
+                // Mirroring swaps the SIDES of the two panes; it resizes neither.
+                this.problems = this.problems + this.rect("docScroll", DocsStyle.PAD_X, docY, docW, docH);
+                this.stage.render(DocsStyle.W, DocsStyle.H, OUT + "-rtl.png");
+
+                // ---- 8c. back to en: the whole shell has to land where it started -------
+                this.click(enBtn);
+                this.stage.dispatchEvent(new Event(Event.ENTER_FRAME));
+                this.app.reflow();
+                if (I18n.locale() != "en")
+                {
+                    this.problems = this.problems + "the EN button left the locale at " + I18n.locale() + "; ";
+                }
+                if (this.tf("b0:h") != enHead || this.tf("navg11") != enGroup)
+                {
+                    this.problems = this.problems + "switching back to en did not restore the English text; ";
+                }
+                this.problems = this.problems + this.rect("side", 0, 0, DocsStyle.NAV_W, winH);
+                this.problems = this.problems + this.rect("main", DocsStyle.NAV_W, 0,
+                    winW - DocsStyle.NAV_W, winH);
+                this.problems = this.problems + this.rect("docScroll", docX, docY, docW, docH);
+                this.problems = this.problems + this.rect("nav", 14, 68, 219, navH);
+            }
+
             this.out(OUT + ".txt", this.report);
+        }
+
+        // Is any character in this string wide (non-ASCII)? Used to tell "translated"
+        // from "changed to another English string": a locale switch that lands on ASCII
+        // means a missing row, not a finished translation.
+        private function hasWide(s:String):Boolean
+        {
+            for (var i:int = 0; i < s.length; i++)
+            {
+                if (s.charCodeAt(i) > 127) return true;
+            }
+            return false;
         }
 
         // ---- helpers -----------------------------------------------------------
@@ -1085,11 +1292,15 @@ package demo
 
         // A PROSE LINE THAT PAINTS WIDER THAN ITS OWN BOX.
         //
-        // DocSection wraps prose at the reading width through DocsWrap, which measures
-        // candidate lines in a scratch TextField. When that measurement disagrees with
-        // the renderer every RECT is still right (the node carries the point width) and
-        // only the INK runs past it -- the line slides under the scroll bar and off the
-        // pane, which is the reported defect and something escapes() cannot see.
+        // DocSection wraps prose at the reading width through DocsWrap. On the ASCII
+        // path that means measuring candidate lines in a scratch TextField; a mixed
+        // Chinese paragraph is filled by summing advances instead, because the same
+        // measurement under-reports those runs. Whichever path produced the line, the
+        // gate is the same: the ink must stay inside the box. When the measurement
+        // disagrees with the renderer every RECT is still right (the node carries the
+        // point width) and only the INK runs past it -- the line slides under the
+        // scroll bar and off the pane, which is the reported defect and something
+        // escapes() cannot see.
         //
         // A wrapped node cannot fail this by construction (the renderer broke it), so
         // the check is scoped to prose LINES: keys of the form `<block>:p<n>`.

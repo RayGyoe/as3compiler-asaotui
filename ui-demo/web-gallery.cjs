@@ -297,7 +297,37 @@ function stageAppDir() {
   //    boxes -- as-aot warns about it, and this arm would rather not ship it).
   const fontsDir = path.join(appDir, 'fonts');
   fs.mkdirSync(fontsDir, { recursive: true });
-  if (fs.readdirSync(fontsDir).some((n) => /\.(ttf|otf|ttc)$/i.test(n))) return; // already staged
+
+  // 3a) THE ONE FACE THIS PAGE SHIPS: no single system font covers both scripts, and
+  //     the web font manager does not cascade between two. Measured on the built
+  //     page: `arial.ttf` alone paints every Chinese paragraph as .notdef boxes (Arial
+  //     has no Han glyphs -- U+6C49/U+4E2D/U+6587 all map to glyph 0); `arial.ttf` PLUS
+  //     a MiSans subset is still broken, because the family "Arial" matches Arial and
+  //     the missing Han codepoint has no fallback to reach the second face; MiSans
+  //     ALONE renders the Chinese correctly. So the staged face is a MiSans subset that
+  //     covers Latin + CJK (`tools/web-font.cjs`, 0.22 MB against the whole font's
+  //     7.56 MB, and `--check` keeps it in step with the translations). Registering ANY
+  //     second face here would break the CJK path again -- do not "improve" this by
+  //     adding the system font back.
+  const cjkFont = path.join(UI, 'ui-demo', 'fonts', 'MiSans-DemoSubset.ttf');
+  const stagedFonts = fs.readdirSync(fontsDir).filter((n) => /\.(ttf|otf|ttc)$/i.test(n));
+  if (fs.existsSync(cjkFont)) {
+    for (const stale of stagedFonts) {
+      if (stale !== path.basename(cjkFont)) {
+        fs.rmSync(path.join(fontsDir, stale), { force: true });
+        console.log('[web] font: dropped ' + stale + '  (two faces break CJK -- see 3a)');
+      }
+    }
+    fs.copyFileSync(cjkFont, path.join(fontsDir, path.basename(cjkFont)));
+    console.log('[web] font: ' + path.basename(cjkFont) + '  (from ' + path.relative(UI, cjkFont) + ', Latin + CJK)');
+    return;
+  }
+  console.error('[web] WARNING: no CJK face to ship -- every non-Latin glyph in this page will be blank.'
+    + '\n             run: node tools/web-font.cjs');
+
+  // 3b) the system-font fallback, used only when the subset is missing entirely (a
+  //     fresh clone without python/fontTools). It cannot render Chinese, hence 3a.
+  if (stagedFonts.length > 0) return; // already staged
   const candidates = [
     path.join(process.env.WINDIR || 'C:\\Windows', 'Fonts', 'arial.ttf'),
     '/System/Library/Fonts/Supplemental/Arial.ttf',

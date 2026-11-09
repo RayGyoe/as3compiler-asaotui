@@ -21,7 +21,7 @@ package asaot.ui
     {
         var n:ImageNode = new ImageNode();
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "image";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.image.label");
         if (opts != null)
         {
             if (opts.bitmapData != null) n.bitmapData = BitmapData(opts.bitmapData);

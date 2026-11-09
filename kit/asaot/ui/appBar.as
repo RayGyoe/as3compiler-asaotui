@@ -95,7 +95,7 @@ package asaot.ui
             flexDirection: "column", background: t2.surface
         });
         n.style = n.style == null ? base : base.withPatch(n.style);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "toolbar";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.appbar.label");
 
         // The two title sizes. A String title becomes TWO text nodes (compact and
         // large) because a node cannot be in two places; only one is ever mounted.

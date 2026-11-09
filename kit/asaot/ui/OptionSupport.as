@@ -31,6 +31,11 @@ package asaot.ui
             if (opts.keyContext != null) n.keyContext = String(opts.keyContext);
             if (opts.role != null) n.role = String(opts.role);
             if (opts.ariaName != null) n.ariaName = String(opts.ariaName);
+            // ABSENT BECOMES "", NOT null. That is why a factory's default-name guard
+            // must test BOTH (`n.ariaName == null || n.ariaName == ""`): the `== null`
+            // half can never fire once this line has run, which is how seven factories
+            // (select, combobox, datePicker, menu, popover, overlay, toastHost) shipped
+            // an accessibility name that was always the empty string.
             if (n.ariaName == null) n.ariaName = "";
             if (opts.visible != null) n.visible = Boolean(opts.visible);
             // `disabled` is an Element property, so EVERY factory gets it through

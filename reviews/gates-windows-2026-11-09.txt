@@ -1,0 +1,137 @@
+[air] reference runtime: D:\Adobe\Flex_Sdk\AIRSDK_51.5.1  (via PATH)
+[probes] 40 probe(s), parallel x6
+   ... widgets/display pass 17.0s  [1/40]
+   ... widgets/form pass 17.0s  [2/40]
+   ... widgets/chip pass 17.0s  [3/40]
+   ... widgets/nav pass 17.2s  [4/40]
+   ... widgets/media pass 17.9s  [5/40]
+   ... widgets/data pass 20.9s  [6/40]
+   ... widgets/flip pass 16.2s  [7/40]
+   ... redraw pass 15.3s  [8/40]
+   ... widgets/vlist pass 19.2s  [9/40]
+   ... widgets/interact pass 20.2s  [10/40]
+   ... widgets/overlay pass 20.3s  [11/40]
+   ... widgets/choice pass 19.9s  [12/40]
+   ... widgets/popup pass 16.7s  [13/40]
+   ... widgets/textfx pass 15.5s  [14/40]
+   ... lifecycle pass 16.5s  [15/40]
+   ... widgets/scrollbar pass 17.7s  [16/40]
+   ... widgets/callback pass 17.6s  [17/40]
+   ... widgets/typing pass 19.9s  [18/40]
+   ... widgets/pointer pass 18.3s  [19/40]
+   ... widgets/imaging pass 16.1s  [20/40]
+   ... widgets/gutter pass 15.4s  [21/40]
+   ... widgets/stick pass 17.1s  [22/40]
+   ... widgets/table2 pass 17.5s  [23/40]
+   ... widgets/select-scroll pass 17.7s  [24/40]
+   ... widgets/pointer-touch pass 18.1s  [25/40]
+   ... widgets/text-align pass 15.0s  [26/40]
+   ... widgets/navstack pass 17.5s  [27/40]
+   ... widgets/appbar pass 18.5s  [28/40]
+   ... widgets/tabbar pass 17.7s  [29/40]
+   ... widgets/icon pass 15.2s  [30/40]
+   ... widgets/accordion pass 15.8s  [31/40]
+   ... widgets/clip pass 15.3s  [32/40]
+   ... widgets/theme pass 16.6s  [33/40]
+   ... widgets/keys pass 19.1s  [34/40]
+   ... widgets/actions pass 17.1s  [35/40]
+   ... widgets/inputs pass 19.0s  [36/40]
+   ... widgets/static-layer pass 15.3s  [37/40]
+   ... widgets/env pass 17.9s  [38/40]
+   ... widgets/i18n pass 17.2s  [39/40]
+   ... widgets/fps pass 17.4s  [40/40]
+[PASS] probe widgets/display (48 checks, 0 failures)  (exit 0)   17.0s
+[PASS] probe widgets/form (41 checks, 0 failures)  (exit 0)   17.0s
+[PASS] probe widgets/chip (19 checks, 0 failures)  (exit 0)   17.0s
+[PASS] probe widgets/nav (41 checks, 0 failures)  (exit 0)   17.2s
+[PASS] probe widgets/media (43 checks, 0 failures)  (exit 0)   17.9s
+[PASS] probe widgets/data (77 checks, 0 failures)  (exit 0)   20.9s
+[PASS] probe widgets/flip (54 checks, 0 failures)  (exit 0)   16.2s
+[PASS] probe redraw (14 checks, 0 failures)  (exit 0)   15.3s
+[PASS] probe widgets/vlist (26 checks, 0 failures)  (exit 0)   19.2s
+[PASS] probe widgets/interact (25 checks, 0 failures)  (exit 0)   20.2s
+[PASS] probe widgets/overlay (65 checks, 0 failures)  (exit 0)   20.3s
+[PASS] probe widgets/choice (44 checks, 0 failures)  (exit 0)   19.9s
+[PASS] probe widgets/popup (26 checks, 0 failures)  (exit 0)   16.7s
+[PASS] probe widgets/textfx (18 checks, 0 failures)  (exit 0)   15.5s
+[PASS] probe lifecycle (9 checks, 0 failures)  (exit 0)   16.5s
+[PASS] probe widgets/scrollbar (44 checks, 0 failures)  (exit 0)   17.7s
+[PASS] probe widgets/callback (24 checks, 0 failures)  (exit 0)   17.6s
+[PASS] probe widgets/typing (18 checks, 0 failures)  (exit 0)   19.9s
+[PASS] probe widgets/pointer (23 checks, 0 failures)  (exit 0)   18.3s
+[PASS] probe widgets/imaging (31 checks, 0 failures)  (exit 0)   16.1s
+[PASS] probe widgets/gutter (37 checks, 0 failures)  (exit 0)   15.4s
+[PASS] probe widgets/stick (15 checks, 0 failures)  (exit 0)   17.1s
+[PASS] probe widgets/table2 (22 checks, 0 failures)  (exit 0)   17.5s
+[PASS] probe widgets/select-scroll (19 checks, 0 failures)  (exit 0)   17.7s
+[PASS] probe widgets/pointer-touch (30 checks, 0 failures)  (exit 0)   18.1s
+[PASS] probe widgets/text-align (22 checks, 0 failures)  (exit 0)   15.0s
+[PASS] probe widgets/navstack (16 checks, 0 failures)  (exit 0)   17.5s
+[PASS] probe widgets/appbar (22 checks, 0 failures)  (exit 0)   18.5s
+[PASS] probe widgets/tabbar (13 checks, 0 failures)  (exit 0)   17.7s
+[PASS] probe widgets/icon (66 checks, 0 failures)  (exit 0)   15.2s
+[PASS] probe widgets/accordion (18 checks, 0 failures)  (exit 0)   15.8s
+[PASS] probe widgets/clip (33 checks, 0 failures)  (exit 0)   15.3s
+[PASS] probe widgets/theme (75 checks, 0 failures)  (exit 0)   16.6s
+[PASS] probe widgets/keys (36 checks, 0 failures)  (exit 0)   19.1s
+[PASS] probe widgets/actions (73 checks, 0 failures)  (exit 0)   17.1s
+[PASS] probe widgets/inputs (50 checks, 0 failures)  (exit 0)   19.0s
+[PASS] probe widgets/static-layer (27 checks, 0 failures)  (exit 0)   15.3s
+[PASS] probe widgets/env (43 checks, 0 failures)  (exit 0)   17.9s
+[PASS] probe widgets/i18n (5 checks, 0 failures)  (exit 0)   17.2s
+[PASS] probe widgets/fps (12 checks, 0 failures)  (exit 0)   17.4s
+[probes] 5 probe(s), solo -- stopwatch probes: nothing else may be building
+   ... widgets/anim pass 15.6s  [1/5]
+   ... widgets/feedback pass 15.3s  [2/5]
+   ... widgets/motion pass 16.6s  [3/5]
+   ... widgets/touch-scroll pass 23.4s  [4/5]
+   ... perf pass 14.8s  [5/5]
+[PASS] probe widgets/anim (14 checks, 0 failures)  (exit 0)   15.6s
+[PASS] probe widgets/feedback (43 checks, 0 failures)  (exit 0)   15.3s
+[PASS] probe widgets/motion (23 checks, 0 failures)  (exit 0)   16.6s
+[PASS] probe widgets/touch-scroll (26 checks, 0 failures)  (exit 0)   23.4s
+[PASS] probe perf (1 checks, 0 failures)  (exit 0)   14.8s
+[probes] 45 probe(s) in 208.6s
+[PASS] i18n catalog (55 + 55 keys)  (exit 0)   0.3s
+[PASS] layout-check text half (133 checks, 0 failures)  (exit 0)   7.6s
+[PASS] ui-demo CheckUi (37 checks, 0 failures)  (exit 0)   13.0s
+[PASS] layout-check visual half (12 checks, 0 failures)  (exit 0)   10.0s
+[PASS] gallery tour: 60 component pages (incl. the overlay tree), hand-computed rects (PASS)  (exit 0)   20.8s
+[PASS] gallery kind coverage: all registered widgets are shown (45/45)  (exit 0)   0.4s
+[PASS] docs demos pass only options the factories read (0 unknown)  (exit 0)   0.4s
+[PASS] author callbacks carry their documented argument (24 calls / 260 handlers) (0 violations)  (exit 0)   0.3s
+[PASS] AIR arm (build.sh default) compiles under mxmlc (183792 B SWF)  (exit 0)   1.7s
+[PASS] build.sh --gpu selects renderMode + backend, app.xml untouched (32 checks, 0 failures)  (exit 0)   4.2s
+[PASS] build.sh web: toolchain spawned, argv pinned, refusals, staged dir untracked (26 checks, 0 failures)  (exit 0)   2.2s
+[PASS] docs app on AIR (adl): every page, popups open, pointer drill, no runtime error (60/60 pages, 17/17 popups, 0 errors, 1730/7922 destroyed)  (exit 0)   42.3s
+[PASS] kit listeners are all releasable (UiNode.listen + destroySubtree) (45 wired, 0 raw)  (exit 0)   0.3s
+[PASS] G13 air-app reach: closure keeps 5/5, both faces build+run (PASS)  (exit 0)   10.5s
+[PASS] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (PASS)  (exit 0)   41.1s
+[PASS] style scan: no Object-typed local is used as a condition (0 found)  (exit 0)   0.3s
+[PASS] G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (1 distinct hash for 5 builds)  (exit 0)   70.0s
+[PASS] G14 array-in-Object-slot identity (26 cases, AOT vs AIR) -- deviations none  (exit 0)   8.2s
+[PASS] G16 ternary-null (20 cases, AOT vs AIR) -- AOT deviations: none  (exit 0)   13.9s
+[PASS] G19 drawRoundRect, AOT vs AIR -- 302 byte-identical, 18 within the AA tolerance, 0 disagreeing, 40 known (negative radius)  (exit 0)   12.5s
+[PASS] G20 setTextFormat replaces the range (AOT vs AIR) (PASS (12 relational cases; both arms treat a repeated range format as a replacement))  (exit 0)   7.0s
+[PASS] G21 getTextFormat reads the run table (AOT vs AIR) (PASS (30 cases; both arms agree and the emitted getTextFormat is range-aware))  (exit 0)   8.4s
+[PASS] G22 closure statics initialise (AOT vs AIR, emitted C audited) (PASS (10 cases; both arms agree and every static read carries its _cinit() guard))  (exit 0)   7.8s
+[PASS] Vector vs Array throughput, both runtimes (AOT ratio 0.18x)  (exit 0)   8.6s
+[PASS] style fromAny is total: 19 cases, AOT vs AIR (PASS (19 cases; both arms agree with the hand-derived answers))  (exit 0)   13.9s
+[FAIL] Array(x) wraps on both runtimes (8 cases, AOT vs AIR)  (exit 2)   6.8s
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+   - flash.text: no text in this program -- text engine NOT linked (~12.9 MB smaller)
+[4/4] compile     clang -c --target=x86_64-pc-windows-msvc -fms-runtime-lib=static -O2 -ffp-contract=off -D ASC_USE_SKIA=1 -D ASC_USE_WINDOW=1 -D ASC_USE_FILE_DIALOG=1 -D ASC_USE_NATIVE_DRAG=1 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\skia -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\sdl2\include\windows-x64 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\curl\include -w C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\array-coerce\AotMain.exe.c -o C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\fd343c4cb5ce-AotMain.exe.o
+[4/4] compile     clang++ -c -std=c++17 --target=x86_64-pc-windows-msvc -fms-runtime-lib=static -O2 -ffp-contract=off -D ASC_USE_SKIA=1 -D ASC_USE_WINDOW=1 -D ASC_USE_FILE_DIALOG=1 -D ASC_USE_NATIVE_DRAG=1 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\skia -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\sdl2\include\windows-x64 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\curl\include -w C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\skia_glue.cc -o C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\5eb8539502e8-skia_glue.o
+[4/4] compile     clang++ -c -std=c++17 --target=x86_64-pc-windows-msvc -fms-runtime-lib=static -O2 -ffp-contract=off -D ASC_USE_SKIA=1 -D ASC_USE_WINDOW=1 -D ASC_USE_FILE_DIALOG=1 -D ASC_USE_NATIVE_DRAG=1 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\skia -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\sdl2\include\windows-x64 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\curl\include -w C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\window_glue.cc -o C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\5d1da37fde86-window_glue.o
+[4/4] compile     clang++ -c -std=c++17 --target=x86_64-pc-windows-msvc -fms-runtime-lib=static -O2 -ffp-contract=off -D ASC_USE_SKIA=1 -D ASC_USE_WINDOW=1 -D ASC_USE_FILE_DIALOG=1 -D ASC_USE_NATIVE_DRAG=1 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\skia -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\sdl2\include\windows-x64 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\curl\include -w C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\file_dialog_win.cc -o C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\00c01f48234d-file_dialog_win.o
+[4/4] compile     clang++ -c -std=c++17 --target=x86_64-pc-windows-msvc -fms-runtime-lib=static -O2 -ffp-contract=off -D ASC_USE_SKIA=1 -D ASC_USE_WINDOW=1 -D ASC_USE_FILE_DIALOG=1 -D ASC_USE_NATIVE_DRAG=1 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\skia -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\sdl2\include\windows-x64 -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\curl\include -w C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\native_drag_win.cc -o C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\26d72546570e-native_drag_win.o
+[4/4] compile     clang++ --target=x86_64-pc-windows-msvc -fms-runtime-lib=static -O2 -ffp-contract=off -o C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\array-coerce\AotMain.exe -w C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\fd343c4cb5ce-AotMain.exe.o C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\5eb8539502e8-skia_glue.o C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\5d1da37fde86-window_glue.o C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\00c01f48234d-file_dialog_win.o C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\26d72546570e-native_drag_win.o -L C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\skia\lib\windows-x64 -L C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\sdl2\lib\windows-x64 -L C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\curl\lib\windows-x64 -l skia -l skparagraph -l skshaper -l skunicode -l skottie -l sksg -l svg -l skresources -l bentleyottmann -l skcms -l wuffs -l libpng -l libjpeg -l libwebp -l libwebp_sse41 -l dng_sdk -l piex -l expat -l freetype2 -l harfbuzz -l icu -l zlib -l z -l SDL2 -l usp10 -l user32 -l gdi32 -l ole32 -l advapi32 -l winmm -l imm32 -l oleaut32 -l version -l uuid -l setupapi -l shell32 -l dinput8 -l d3d12 -l dxgi -l d3dcompiler -l shell32
+lld-link: error: undefined symbol: as_upload_pre_events
+>>> referenced by C:\Users\rayle\AppData\Local\Temp\as-aot-obj\582975c4dae7ca73-42600\fd343c4cb5ce-AotMain.exe.o:(as_net_pre_events)
+clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+[PASS] AIR SDK resolution: env -> PATH -> install locations, verified per host (PASS (11/11 cases))  (exit 0)   0.7s
+[PASS] fingerprint porcelain parsing: no dropped records (PASS)  (exit 0)   0.3s
+
+==== 72/73 gates PASS  in 522.2s ====
+FAILED: Array(x) wraps on both runtimes (8 cases, AOT vs AIR)

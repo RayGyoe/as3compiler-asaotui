@@ -24,7 +24,7 @@ package asaot.ui
         n.items = items;
         n.builder = builder;
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "list";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.list.label");
         if (opts != null)
         {
             if (opts.selectedIndex is Binding)

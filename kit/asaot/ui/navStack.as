@@ -28,7 +28,7 @@ package asaot.ui
         var n:NavStackNode = new NavStackNode();
         n.pages = pages == null ? [] : pages;
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "navigation";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.navstack.label");
         if (opts != null)
         {
             if (opts.activeIndex != null) n.activeIndex = int(Number(opts.activeIndex));

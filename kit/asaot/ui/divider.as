@@ -10,7 +10,7 @@ package asaot.ui
         var n:DividerNode = new DividerNode();
         OptionSupport.applyOpts(n, opts);
         if (opts != null && opts.orientation != null) n.orientation = String(opts.orientation);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "separator";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.divider.label");
         return n;
     }
 }

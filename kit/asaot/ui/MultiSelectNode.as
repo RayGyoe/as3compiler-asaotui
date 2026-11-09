@@ -38,7 +38,7 @@ package asaot.ui
             this.tabEnabled = true;
             this.open = false;
             this.values = [];
-            this.placeholder = "Select";
+            this.placeholder = I18n.t("kit.multiselect.placeholder");
             this.options = [];
             this.onToggle = null;
             this.onOpenChange = null;

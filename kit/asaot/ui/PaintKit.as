@@ -299,6 +299,20 @@ package asaot.ui
             return a == b;
         }
 
+        // Snap a cut point off the middle of a character. String indices are UTF-16
+        // code units (compiler-gaps.md G38), so an arbitrary index is ALWAYS a valid
+        // character boundary -- except between the two halves of an astral character,
+        // where cutting paints half a glyph before the ellipsis. An ASCII or BMP
+        // index is returned unchanged.
+        private static function atCodepoint(s:String, i:int):int
+        {
+            if (i <= 0 || i >= s.length) return i;
+            var hi:int = s.charCodeAt(i - 1);
+            var lo:int = s.charCodeAt(i);
+            if (hi >= 0xD800 && hi <= 0xDBFF && lo >= 0xDC00 && lo <= 0xDFFF) return i - 1;
+            return i;
+        }
+
         // Largest prefix of `content` whose rendered width (plus the ellipsis) fits
         // `maxW`. The field is used as the ruler, so this measures with exactly the
         // font and run table that will be drawn -- a second width model would drift.
@@ -317,12 +331,14 @@ package asaot.ui
             var hi:int = full.length;
             while (lo < hi)
             {
-                var mid:int = Math.floor((lo + hi + 1) / 2);
+                var mid:int = atCodepoint(full, int(Math.floor((lo + hi + 1) / 2)));
+                if (mid <= lo) break;   // no codepoint boundary left to move to
                 field.text = full.substring(0, mid) + tail;
                 if (field.textWidth <= maxW) lo = mid;
                 else hi = mid - 1;
             }
-            var out:String = (lo > 0) ? (full.substring(0, lo) + tail) : tail;
+            var cut:int = atCodepoint(full, lo);
+            var out:String = (cut > 0) ? (full.substring(0, cut) + tail) : tail;
             field.text = out;
             return out;
         }

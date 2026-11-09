@@ -22,10 +22,13 @@
 //
 //   combo dropdown: top = 162+34 = 196, its own 4pt padding -> row i at
 //                   200 + 26*i (MENU_ITEM height 26)
-//   dp panel:       top = 208+34 = 242, width 7*28 + 8 = 232
-//                   head row 246..272, week w at 272 + 26*w, day cell x = 24 + 28*col
-//                   2026-10-01 is a THURSDAY (weekday 4), so day 1 is at col 4:
-//                   day 15 is week 2, col 4 -> x 136..164, y 324..350
+//   dp panel:       top = 208+34 = 242, width 7*28 + 8 (padding) + 2 (border) = 206
+//                   head row 247..273, WEEKDAY header row 273..299 (added with i18n:
+//                   seven cells whose text is `kit.date.weekday.<wd>`), then
+//                   week w at 299 + 26*w, day cell x = 25 + 28*col
+//                   2026-10-01 is a THURSDAY (weekday 4); en's firstDay is 0, so
+//                   lead = (4 - 0 + 7) % 7 = 4 -> day 1 is at col 4:
+//                   day 15 is week 2, col 4 -> x 137..165, y 351..377
 //
 // Protocol (tools/probe.cjs): dir name == output prefix; write <OUT>.rects.txt,
 // <OUT>.bmp, <OUT>.done (PASS | FAIL <reason>).
@@ -478,24 +481,27 @@ function afterDateOpen():void
         fail("the date panel is at " + panel.absX + "," + panel.absY + " w " + panel.absW + " not 20,242 w 206 (7 x 28 cells + 8 padding + 2 border)");
     var title:UiNode = app.findByKey("dp:title");
     if (title == null) { fail("the month title is missing"); finish(); return; }
-    if (title.tf.text != "2026-10")
-        fail("the month title is '" + title.tf.text + "' not '2026-10'");
+    // The title is a message template now (`kit.date.title`), not an ISO stamp: en
+    // renders "{month} {year}" with the localized month name.
+    if (title.tf.text != "October 2026")
+        fail("the month title is '" + title.tf.text + "' not 'October 2026'");
     // 2026-10-01 is a Thursday (weekday 4) -> day 1 is week 0, column 4. The grid
-    // starts at 20 (panel) + 1 (border) + 4 (padding) = 25, so column 4 is x 137..165,
-    // and the head row (26) starts at 242+5 = 247, so week 0 is y 273..299.
+    // starts at 20 (panel) + 1 (border) + 4 (padding) = 25, so column 4 is x 137..165.
+    // The head row (26) starts at 242+5 = 247, the WEEKDAY header row (26) sits under
+    // it, so week 0 is y 299..325.
     var d1:UiNode = app.findByKey("dp:d01");
     if (d1 == null) { fail("day 1 has no cell"); finish(); return; }
-    if (d1.absX != 137 || d1.absY != 273 || d1.absW != 28 || d1.absH != 26)
-        fail("the day-1 cell is " + d1.absX + "," + d1.absY + "," + d1.absW + "," + d1.absH + " not 137,273,28,26 (Thursday column)");
+    if (d1.absX != 137 || d1.absY != 299 || d1.absW != 28 || d1.absH != 26)
+        fail("the day-1 cell is " + d1.absX + "," + d1.absY + "," + d1.absW + "," + d1.absH + " not 137,299,28,26 (Thursday column)");
     var d31:UiNode = app.findByKey("dp:d31");
     if (d31 == null) fail("October has no day 31");
-    else if (d31.absY != 377 || d31.absX != 193)
-        fail("day 31 is at " + d31.absX + "," + d31.absY + " not 193,377 (week 4, column 6)");
+    else if (d31.absY != 403 || d31.absX != 193)
+        fail("day 31 is at " + d31.absX + "," + d31.absY + " not 193,403 (week 4, column 6)");
     say("afterDateOpen: panel " + panel.absX + "," + panel.absY + " w " + panel.absW
         + " title " + title.tf.text + " d1 " + d1.absX + "," + d1.absY);
 
-    // Click day 15: week 2, column 4 -> x 137..165, y 325..351.
-    clickAbs("dp", 150, 338);
+    // Click day 15: week 2, column 4 -> x 137..165, y 351..377.
+    clickAbs("dp", 150, 364);
     setTimeout(afterDatePick, 320);
 }
 
@@ -517,8 +523,8 @@ function afterPrev():void
     if (model.year != 2026 || model.month != 9)
         fail("the previous-month arrow reported " + model.year + "-" + model.month + " not 2026-9");
     var title:UiNode = app.findByKey("dp:title");
-    if (title == null || title.tf.text != "2026-09")
-        fail("after paging the title is '" + (title == null ? "missing" : title.tf.text) + "' not '2026-09'");
+    if (title == null || title.tf.text != "September 2026")
+        fail("after paging the title is '" + (title == null ? "missing" : title.tf.text) + "' not 'September 2026'");
     // 2026-09-01 is a Tuesday (weekday 2) -> day 1 moves to column 2: x = 25 + 56 = 81.
     var d1:UiNode = app.findByKey("dp:d01");
     if (d1 == null) fail("September has no day 1");

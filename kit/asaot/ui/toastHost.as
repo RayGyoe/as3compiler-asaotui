@@ -19,7 +19,7 @@ package asaot.ui
         OptionSupport.applyOpts(n, opts);
         n.style = (n.style == null ? new StyleRefinement() : n.style)
             .withPatch(OverlayChrome.TOAST_LAYER);
-        if (n.ariaName == null) n.ariaName = "notifications";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.toasthost.label");
         OptionSupport.addChildren(n, children);
         return n;
     }

@@ -10,7 +10,8 @@
 //   dp node       style SELECT_TRIGGER (row, 34 high, padding [10,0]), width `width`
 //     ├─ [0] label text    the value, or the placeholder (SELECT_LABEL: flexGrow 1)
 //     └─ [1] panel  absolute, MENU_PANEL, width = 7 cells + the panel's own padding
-//              ├─ head   row of DAY_H:  "<" | "2026-10" | ">"
+//              ├─ head   row of DAY_H:  "<" | the month title | ">"
+//              ├─ weekday row of DAY_H: seven labels, in the locale's week order
 //              └─ 6 weeks row of DAY_H: seven DAY_W cells each
 //
 // THE GRID IS ALWAYS SIX WEEKS, even when a month would fit in five. A fixed row count
@@ -43,7 +44,7 @@ package asaot.ui
         if (opts.onSelect != null) n.onSelect = (opts.onSelect as Function);
         if (opts.onMonthChange != null) n.onMonthChange = (opts.onMonthChange as Function);
         if (opts.onOpenChange != null) n.onOpenChange = (opts.onOpenChange as Function);
-        if (n.ariaName == null) n.ariaName = "date picker";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.date.label");
 
         // A month with no year/month given still has to show SOMETHING: fall back to the
         // selected value's own month, then to the epoch. (The author is expected to keep
@@ -79,6 +80,13 @@ package asaot.ui
                                ariaName: "", visible: n.open });
 
         // ---- the month header ---------------------------------------------
+        // RUNS OF 3 ARGUMENTS ARE DELIBERATE: the month name and the day the week
+        // starts on are LOCALE data, so nothing here may hardcode an English name or
+        // a Sunday-first column. A locale that cannot be resolved still renders: the
+        // title falls back to [[key]] (loud in the probe) and the grid to Sunday.
+        var firstDay:int = int(I18n.t("kit.date.firstDay"));
+        if (firstDay < 0 || firstDay > 6) firstDay = 0;
+
         // row(), not box(): box() honours the style's flexDirection, but row() also
         // PINS the axis, so nothing merged in later can stack the month header.
         var head:Node = row({ key: base + ":head", ariaName: "",
@@ -86,14 +94,47 @@ package asaot.ui
                                   alignItems: "center", height: OverlayChrome.DAY_H
                               }) });
         head.addChild(DatePickerParts.nav(base + ":prev", "\u2039"));
-        head.addChild(text(DateMath.iso(n.year, n.month, 1).substring(0, 7),
+        // THREE PARAMETERS, because "October 2026" and "2026年10月" need different
+        // pieces: the name for the first, the number for the second.
+        var title:String = I18n.t("kit.date.title", {
+            year: n.year,
+            month: I18n.t("kit.date.month." + n.month),
+            monthNumber: n.month
+        });
+        head.addChild(text(title,
                            { key: base + ":title", style: OverlayChrome.DP_TITLE, ariaName: "" }));
         head.addChild(DatePickerParts.nav(base + ":next", "\u203A"));
         panel.addChild(head);
 
+        // ---- the weekday row ----------------------------------------------
+        // Without it the grid's column order is unmarked, and a Monday-first locale
+        // (zh-CN) would silently reorder the month under a Sunday-first header. Same
+        // DAY_W/DAY_H cells as the days, so the columns LINE UP; the cells take no
+        // clicks (no onClick), and they are not focusable.
+        var wdRow:Node = row({ key: base + ":wh", ariaName: "",
+                               style: StyleRefinement.from({ height: OverlayChrome.DAY_H }) });
+        for (var wdCol:int = 0; wdCol < 7; wdCol++)
+        {
+            var wd:int = (firstDay + wdCol) % 7;
+            var wdStyle:StyleRefinement = StyleRefinement.from({
+                width: OverlayChrome.DAY_W, height: OverlayChrome.DAY_H,
+                alignItems: "center", justifyContent: "center"
+            });
+            var wdCell:Node = box({ key: base + ":wd" + wdCol, style: wdStyle, ariaName: "" });
+            wdCell.addChild(text(I18n.t("kit.date.weekday." + wd), {
+                key: base + ":wd" + wdCol + ":t",
+                style: OverlayChrome.DAY_NAV_TEXT, ariaName: "" }));
+            wdRow.addChild(wdCell);
+        }
+        panel.addChild(wdRow);
+
         // ---- the six week rows --------------------------------------------
         var days:Array = [];
-        var first:int = DateMath.weekday(n.year, n.month, 1);   // 0..6, Sunday-first
+        var first:int = DateMath.weekday(n.year, n.month, 1);   // 0..6, Sunday-based
+        // Columns before day 1: `first` rotated so that column 0 is the locale's
+        // first day of the week. Under the default (Sunday-first, `firstDay == 0`)
+        // this is exactly `first`, which is why the English layout is unchanged.
+        var lead:int = (first - firstDay + 7) % 7;
         var total:int = DateMath.daysInMonth(n.year, n.month);
         var cell:int = 0;
         for (var w:int = 0; w < 6; w++)
@@ -104,7 +145,7 @@ package asaot.ui
             var week:Node = row({ key: base + ":w" + w, style: weekStyle, ariaName: "" });
             for (var c:int = 0; c < 7; c++)
             {
-                var dayNo:int = cell - first + 1;
+                var dayNo:int = cell - lead + 1;
                 var muted:Boolean = dayNo < 1 || dayNo > total;
                 var cellKey:String = muted
                     ? base + ":x" + cell

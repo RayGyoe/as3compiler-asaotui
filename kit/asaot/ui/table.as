@@ -45,7 +45,7 @@ package asaot.ui
         n.columns = columns == null ? [] : columns;
         n.rows = rows == null ? [] : rows;
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "table";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.table.label");
         {
             if (opts.selectedIndex is Binding)
             {

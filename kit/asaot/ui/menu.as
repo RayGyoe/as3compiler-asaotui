@@ -52,7 +52,7 @@ package asaot.ui
         w.position = "absolute";
         n.style = (n.style == null ? new StyleRefinement() : n.style)
             .withPatch(OverlayChrome.MENU_PANEL.withPatch(w));
-        if (n.ariaName == null) n.ariaName = "menu";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.menu.label");
 
         var base:String = n.key == null ? "menu" : String(n.key);
         var items:Array = n.items == null ? [] : n.items;

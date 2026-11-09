@@ -39,7 +39,7 @@ package asaot.ui
     {
         var n:ScrollViewNode = new ScrollViewNode();
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "scrollable region";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.scrollview.label");
         if (opts != null)
         {
             if (opts.offset != null)

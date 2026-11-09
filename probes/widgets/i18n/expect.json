@@ -1,0 +1,13 @@
+{
+  "_comment": "HAND-COMPUTED expectations for probes/widgets/i18n/Main.as. Never regenerate these by running the probe.",
+  "_derivation": {
+    "root": "Window 400x420; the root column is `size: [400, 420]` with padding 8, so its border box fills the window exactly. Everything else moves with the locale (the date grid's row heights and the mirrored row), so the probe asserts those relatively -- against the row's own solved rect and against the weekday cells' own x/width -- instead of pinning numbers that only hold for one language.",
+    "points": "No pixel is pinned on purpose: this probe is about TEXT and DIRECTION, and the pixels that would prove them are glyph antialiasing. The BMP is still written for a human to look at (and settle() writes the rects for the same reason)."
+  },
+  "w": 400,
+  "h": 420,
+  "rects": {
+    "root": [0, 0, 400, 420]
+  },
+  "points": []
+}

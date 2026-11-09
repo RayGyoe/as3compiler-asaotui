@@ -38,6 +38,15 @@
 //                makes both arms render 1.5x and the assertions fire (2 failures).
 //   fp parse  -- tools/mutation-parse.cjs: restoring the old per-record trim() makes 4
 //                assertions go red (the path is sliced into `rc/reach.ts`).
+//   repaint 20 -- ui-demo/mutation-repaint.cjs: the incremental-vs-full REPAINT
+//                differential. The oracle is `BitmapData.draw(stage)`, i.e. the
+//                retained display list, so a stale list cannot hide behind a
+//                correct description. Three mutations, each restoring its file by
+//                sha256: drop `opacity` from `Style.diffFlags` (the change stops
+//                repainting at all) -> 18/20; `paintDirty` stops descending into
+//                children -> 14/20 (scenario 1 survives: its change lands on the
+//                root); the decoration-only branch paints NOTHING (the original
+//                bug, verbatim) -> 12/20, all four pictures
 //   G11       -- probes/g11-nondeterminism/mutation.cjs: six mutation groups (inject the
 //                naming break into the HEALTHY artifact / point a props entry at a
 //                field that does not exist / change one string literal in the source
@@ -722,6 +731,16 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
                  // mutation.cjs 4/4 -- including "the rate is a constant 60", which the
                  // band and the 1000/fps arithmetic both let through at 60Hz.
                  'widgets/fps',
+                 // `i18n` is the message catalog (I18n) and the three things that make
+                 // a locale switch actually reach the screen: UiApp notices the epoch
+                 // at a frame boundary (the probe never calls invalidate itself), the
+                 // memo slot is dropped with it, and the layout direction follows
+                 // isRTL. It also pins that the kit's OWN strings (12 factories, the
+                 // date grid included) are translated, and that a locale with no
+                 // catalog falls back to the default ONE KEY AT A TIME rather than
+                 // rendering markers. Teeth: probes/widgets/i18n/mutation.cjs -- 
+                 // ignore the epoch, stop the chain at the exact tag, keep a memo hit.
+                 'widgets/i18n',
                  // probes/perf is not a pixel probe but a stopwatch: 300 keyed buttons,
                  // timed idle / describe / one-node-change / solve / paint phases.
                  // Its one assertion is a 15ms ceiling on a NO-CHANGE describe
@@ -729,6 +748,33 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
                  'perf'];
 
 runProbes(PROBES);
+
+// ---- 3c: the message catalog, at the SOURCE level ---------------------------
+// probes/widgets/i18n proves the MACHINERY runs (epoch -> re-describe, memo,
+// direction); this proves the CATALOG is complete, which a rendered probe cannot:
+// a key nobody's page happens to show, a translation that silently dropped `{n}`,
+// a renamed key still asked for by a factory, a key declared twice. Four source
+// facts, one command, no window.
+{
+  const r = sh(process.execPath, ['tools/i18n-check.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /catalog: en (\d+) keys, zh-CN (\d+) keys/.exec(out);
+  record('i18n catalog' + (m ? ' (' + m[1] + ' + ' + m[2] + ' keys)' : ''), r.status, out);
+}
+
+// ---- 3d: the web page's font still covers the text it has to paint -----------
+// The wasm sandbox has no system fonts and its font manager does NOT cascade
+// between faces (G40), so the page ships ONE subset face and every glyph it must
+// draw has to be in it. A translation that introduces a codepoint the subset lacks
+// would publish a page that renders .notdef boxes -- silently, and only in the
+// browser. This derives the required codepoint set from the CURRENT sources and
+// checks the committed font against it (pure Node; regenerating needs fontTools).
+{
+  const r = sh(process.execPath, ['tools/web-font.cjs', '--check'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /(\d+) required codepoint/.exec(out);
+  record('web font covers the page' + (m ? ' (' + m[1] + ' codepoints)' : ''), r.status, out);
+}
 
 // ---- 3b: the animator and the paint-sweep regression ------------------------
 // `widgets/anim` is the animator's acceptance; `redraw` is the pin for the
@@ -1046,6 +1092,35 @@ runProbes(PROBES);
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /RESULT: (\S+)/.exec(out);
   record('descriptor DPI A/B: standard 1x vs high >1x, same logical rects' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
+}
+
+// ---- 6e: incremental vs full repaint is the SAME picture --------------------
+// The decoration-only frame is the one that can go silently stale: `reflow`
+// paints it with `paintDirty` instead of `paintAll` (UiApp.as:1251 vs :1263), and
+// the historical failure there was "the M_PAINT bits were never consumed, and the
+// change silently never reached the screen". A mutation only proves the breakage
+// we THOUGHT of is caught; this gate asserts the property itself.
+//
+// The oracle is the SCREEN, not the tree: `BitmapData.draw(stage)` reads back the
+// retained display list, so a stale display list cannot hide behind a correct
+// description. Four paint-only scenarios (background / border+background /
+// opacity / cornerRadii -- the properties `Style.diffFlags` buckets as decor),
+// each asserting (a) the frame really took the incremental path, (b) the change
+// really is visible in a full repaint, (c) the two pictures are byte-identical,
+// (d) no M_PAINT bit was left unconsumed.
+//
+// Teeth (hand-run, `node ui-demo/mutation-repaint.cjs <m1|m2|m3>`, each restoring
+// its file by sha256):
+//   m1  drop `opacity` from `Style.diffFlags`            => 18/20, scenarios 3+4
+//   m2  `paintDirty` stops descending into children      => 14/20, 2/3/4 pictures
+//       (scenario 1 still passes: its change lands on the ROOT node)
+//   m3  the decoration-only branch paints nothing at all
+//       (the original bug, verbatim)                      => 12/20, all 4 pictures
+{
+  const r = sh(process.execPath, ['run-repaint-diff.cjs'], path.join(UI, 'ui-demo'));
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = /REPAINT-DIFF: (\S+)/.exec(out);
+  record('incremental repaint == full repaint (4 paint-only scenarios)' + (m ? ' (' + m[1] + ')' : ''), r.status, out);
 }
 
 // ---- 7: style scan -- a value read from a binding / dynamic source must not be

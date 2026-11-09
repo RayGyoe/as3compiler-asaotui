@@ -1,0 +1,21 @@
+baseline (unmutated): RESULT: PASS
+
+M1  CAUGHT  UIAPP IGNORES THE LOCALE EPOCH: setLocale() moves the catalog but no frame notices, so the window keeps the old language until an unrelated resize or click happens to dirty the tree
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the select hint is still 'Select...'; the month title is 'October 2026'; the prev chip is still named 'previous page'; the page-3 chip is named 'page 3'; the skeleton is still named 'loading placeholder'; the table is still named 'table'; zh-CN's first weekday is 'Su'; zh-CN's last weekday is 'Sa'; with a Monday-first week day 1 sits in column 4, want 3; the memoized text kept 'table' after the switch; zh-CN left 0 unresolved key(s): ; under RTL b1 is at 8, want 8+160 (the right edge); under RTL b2 is at 48, want 8+120; under RTL day 1 sits in column 4, want 2 (the mirror of the LTR column 4);
+     restore: byte-identical (d98590f9e3a37a63)
+M2  CAUGHT  THE FALLBACK CHAIN STOPS AT THE EXACT TAG: "zh-Hant-TW" no longer reaches "zh-Hant" or "zh", so every regional sub-tag silently renders the default language while looking configured
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a sub-tag did not fall back to its parent ('[[app.zhh]]'); a sub-tag did not fall back two levels ('[[app.zh]]');
+     restore: byte-identical (1c11ef30eb74d319)
+M3  CAUGHT  VIEW.MEMO IGNORES THE EPOCH: the version string is unchanged across a locale switch, so the cached subtree is served in the language it was built in -- the cache is silently WRONG, not merely stale
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the memoized text kept 'table' after the switch;
+     restore: byte-identical (90296eb8f585fdc3)
+M4  CAUGHT  THE LAYOUT DIRECTION IS A CONSTANT: the locale may be RTL, but every solve still passes DIR_LTR, so the text flips and the layout does not
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL under RTL b1 is at 8, want 8+160 (the right edge); under RTL b2 is at 48, want 8+120; under RTL day 1 sits in column 4, want 2 (the mirror of the LTR column 4);
+     restore: byte-identical (d98590f9e3a37a63)
+
+MUTATION i18n: 4/4 caught, 0 problem(s)
+RESULT: PASS

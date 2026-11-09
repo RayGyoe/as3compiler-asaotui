@@ -720,6 +720,111 @@
 
 ---
 
+### G37 —— 闭包捕获**接口类型**的变量时，生成的 C 把结构体当指针（编译失败），env 分配器的局部量还会撞捕获名 —— ✅ **已修（编译器阶段三百八十九，v0.4.360）**
+
+| 项 | 内容 |
+|---|---|
+| 现象（2026-11-09 报） | 给 `I18n.followEnv(env:Env)` 写回调：`return env.subscribe(function (d:int):void { var tag:String = env.locale; … });` ⇒ `as-aot` 的 C 能生成，但 `clang` 编译失败 |
+| 报错原文 | `Main.c:48382:22: error: operand of type 'asaot_ui_Env' (aka 'struct asaot_ui_Env') where arithmetic or pointer type is required`，行内容为 `gc_mark_ptr((void*)e->env);` |
+| 最小复现（与库无关，13 行） | [`reviews/g37-closure-iface/Repro3.as`](reviews/g37-closure-iface/Repro3.as)：`function follow(e:IEnv):void { e.subscribe(function (d:int):void { trace(e.locale + d); }); }`，配一行接口与一行实现类。`node src/index.ts … ` ⇒ **7 条 clang 错误**（`operand of type 'IEnv' …`、`redefinition of 'e' with a different type: '_fn0_env *' vs 'IEnv'`、`no member named 'mark' in 'struct IEnv'`） |
+| 触发条件（**原判断已修正**） | 原记「必须是把闭包当实参交给捕获对象自己的方法」。**不成立**：`Repro.as`/`Repro2.as` 能编过，是因为那里的 `t:IThing` 是**顶层变量**（模块级、非捕获），不是「接口型局部量被捕获」。只要**闭包捕获的是接口型的局部量或形参**就会踩中（`temp/g37/T1.as`：13 行、只读一次 `v.locale`，同样 2 条 clang 错误）。两个独立缺陷叠加才让 Repro3 报 7 条 |
+| 生成的 C 哪里错了 | ① 闭包 env 结构体里该捕获字段的类型是 **`struct IEnv` 值**（接口在 C 侧是 `{ void* obj; <Iface>_vtable* vt; }` 结构体），但 `gc_mark_ptr` 按**指针**发成 `gc_mark_ptr((void*)e->f)`；② `_fnN_env_make` 的形参表就是捕获名本身，而 env 指针局部裸写 `e`，`function follow(e:IEnv)` 于是让 `IEnv e` 与 `_fn0_env* e` 同域，后续 `e->field` 全写进形参结构体 |
+| 修法 | ① `captureMarkKind` 为 `interface` 单独返回 `'iface'`，统一走新助手 `emitCaptureMark()` 发 `gc_mark_ptr((void*)(e->f).obj)`（类字段与 Vector 接口元素早就是这么标的）；② env 局部改名为保留拼写 `_envp` 并登进 `isGeneratedLocalName`，**形参名不动**（它同时是 env 字段名来源） |
+| AIR 对照（硬判据） | **`adl`/`mxmlc` 接受同一形状**：`D:/Adobe/Flex_Sdk/AIRSDK_51.4.1/bin/mxmlc.bat -output=Repro3Air.swf Repro3Air.as` ⇒ **成功，661 字节 SWF**（`reviews/g37-closure-iface/Repro3Air.as`，日志 `mxmlc3.log` 同目录）。按 AGENTS.md §1.5，`mxmlc` 能编而我们编不过 = **遗留缺陷**，不是「增强」 |
+| 修后对照 | 同一份程序（`reviews/g37-closure-iface/AotRun.as` vs `AirRun.as`，后者用 `File` 落盘取证因为 `adl` 的 `trace` 不进 stdout）两臂输出**逐行相同**：`start` / `cb zh-CN1` / `end`（见同目录 `air-result.txt`） |
+| 验收 | `examples/closure-iface-capture.as`（参数 / 局部 / 嵌套 / GC 存活 / cell 五形状）+ `unit: emit/ClosureIfaceCapture`（14 钉）；全量 `node test.ts` **660 / 638 / 19 / 3**，失败集与基线（`temp/node-test-388b.log`）**逐条相同** |
+| 库侧现状（可撤回的绕路） | `I18n.followEnv` 当前是**静态字段 + 静态回调**（`_env` + `onEnvChanged`）。那不是绕路了：订阅时不分配闭包对象，本来就该这么写。**要不要改回闭包由库侧自己决定**，编译器这边已不再限制 |
+| 状态 | ✅ **已修（编译器阶段三百八十九，v0.4.360，提交 `f83b586`）**；口径全文 `as3compiler/docs/{zh-cn,en}/gc.md` §6.21 + `c-naming.md` §7 |
+
+### G38 —— `String.length` / `charCodeAt` / `charAt` / `indexOf` / `substr` 对**非 ASCII** 是 **UTF-8 字节偏移**（AS3 是 UTF-16 码元）—— ✅ **上游已修（阶段三百九十，v0.4.361）：索引改按 UTF-16 码元，存储仍 UTF-8；库侧字节游标已迁回自然写法**
+
+| 项 | 内容 |
+|---|---|
+| 现象（2026-11-09 报） | `"行令由应用自身…"`（60 个汉字）的 `.length` 是 **180**；`charCodeAt(0)` 回的是首字节 **0xE8**，不是 `0x884C`。于是任何 `charCodeAt(i) >= 0x2E80` 式的 CJK 判断**永远为假**，任何 `substr(i, 1)` 取字符会切在 UTF-8 序列中间 |
+| 根因位置（上游源码） | `runtime.ts` 的 `as_str_charCodeAt` 为 `return (unsigned char)s[i];`，`as_str_charAt` 只分配 2 字节并拷贝 1 字节，`length`/`indexOf` 直接是 `strlen`/`strstr` 指针差。上游自己已把这条登记在 `emit.ts` 的 `displayAsPassword` 注释里（"this runtime models strings as UTF-8 BYTES (String.length/charCodeAt/indexOf are byte offsets …) registered limitation"） |
+| 在库里造成的真实缺陷 | `ui-demo` 的中文折行第一版按 `charCodeAt(i)` 判 CJK、按字符切片：**一个汉字都没认出来**，每个中文段落变成一整条「词」，`DocsMain` 的 zh 扫描报 `61 页 / 71 个块` 的行画得比盒子宽（实测最宽 `1432pt` 画在 `678pt` 盒子里，`b2:p1 paints 757.22pt` 等）|
+| 库侧绕法（已落地，不是修复） | `ui-demo/demo/DocsWrap.as` 全部改为 **UTF-8 字节游标**：`leadLen(byte)` 定码点字节数、`head()/tail()` 取首尾码点、`segment()` 一个多字节码点一个 token、`hasCJK()` 判 `byte >= 0x80`。`tools/demo-i18n.cjs` 与 `tools/i18n-check.cjs` 在 Node 侧跑，不受影响 |
+| 其它受影响面 | 任何对**已翻译文本**做截断/省略号的功能都会切坏：`textOverflow: "ellipsis"`、`maxLines`、`displayAsPassword`（上游已按字节发星号）。库内现有 demo 没有对中文做省略号截断，故本轮未见视觉缺陷；但新增这类功能前必须先按字节游标处理 |
+| AIR 对照（硬判据） | AS3 规范与 `adl` 都是 **UTF-16 码元**（`"中文".length == 2`）。所以这是**遗留缺陷**而非「增强」；正确修法在上游（`as_str_*` 改成按码点走，或内部改存 UTF-16），不适合在库里逐点打补丁 |
+| 处置 | **已修**（2026-11-09，上游阶段三百九十）：索引空间按 UTF-16 码元，存储不动；`DocsWrap`/`PaintKit`/`AvatarWidget` 的字节游标已迁回自然写法。下面的实测评估记录的是「换存储」这笔账，修复用的是设计 **B2**（码元索引层 + ASCII 快路），并额外加了**长度记忆**与两槽游标 —— 见本节末「修复」小节 |
+
+#### G38 评估：内部改存 UTF-16 会提升还是降低性能？（2026-11-09 实测）
+
+**结论先说：换成 UTF-16 存储，端到端是"降"，不是"升"。** 它赢下的两项（`length`/`charCodeAt`）今天已经是 1–5ns 的绝对小量；它输掉的是**每根字符串每次跨 C 边界**的转码，而那才是热路径（Skia 量/画文本、`printf`/`trace`、路径、HTTP、JSON/XML、正则）。
+
+计量方法：`as3compiler/temp/g38/bench.c`（`clang -O2`，同一份逻辑字符串 60 个码元、两种内容：纯 ASCII 与纯 CJK，各 200000 次，索引走 `volatile` 以阻止 `clang` 把调用当循环不变量外提）。四种设计：**A** = 今天（UTF-8 字节 + `s[i]`）、**B** = 仍存 UTF-8 但 API 按 UTF-16 码元索引、**C** = 改存 UTF-16。单位 ns/次：
+
+| 操作（60 码元） | A 今天 | B 码元索引层 | C UTF-16 |
+|---|---|---|---|
+| `.length` | **3.0**（ASCII）/ **5.5**（CJK） | 17 / 94 | **1.5 / 1.5** |
+| `charCodeAt(末位)` | **1.5 / 1.0** | 24.5 / 48.5 | **1.0 / 1.5** |
+| `is_ascii()` 探测（B 的快路前提） | — | 2.0 / 1.0 | — |
+| `indexOf`（针在末尾） | **2.0 / 2.0** | 3.0 / 2.0 | 4.0 / 2.5 |
+| 跨 C 边界转码（u16↔u8） | **0** | **0** | 24+34 / 36+58 |
+| 内存 | 1 B/ASCII、3 B/CJK | 同 A | **2 B/码元**（ASCII ×2、CJK ×0.67） |
+
+怎么读这张表：
+
+- **C 的唯一优势是把 O(1) 从"对字节"变成"对码元"**。而 A 的 `length` 虽为 O(n)（`strlen`，SIMD 加速），60 码元的串只要 3–5.5ns；`charCodeAt` 本来就是 1ns 级。所以 C 买到的是**把 1–5ns 变成 1–1.5ns**。
+- **C 的代价落在调用频次最高的一侧**。一根字符串每进入一次 Skia（量文本/画文本）、一次 `printf`、一次 HTTP/JSON，都要付出 24–58ns 的单向转码；一个 60 汉字段落来回一趟约 **94ns**。一帧里几十根字符串就是几十微秒，而 `.length` 一帧通常只被调几次。
+- **C 还会把 ASCII 字符串的内存翻倍**。UI 里绝大多数字符串是 ASCII（属性名、`for-in` key、数字、英文标签），而 G36 刚刚把"每个对象/字符串的固定开销"立成了帧成本问题——翻倍和那条正好逆向。反过来 CJK 从 3 B 降到 2 B（×0.67），但 CJK 文本在 GC 量里的占比远低于 ASCII 标识符/键。
+- **爆炸半径不可控**。`runtime.ts` 里 `char*` 出现 **1074** 处（`strcmp` 153、`sprintf` 140、`strlen` 83、`memcpy` 70、`snprintf` 62、`strcpy` 25、`strncmp` 23、`strstr` 5），`emit.ts` 里 **1746** 处，`as_str_*` 助手 43 个。更关键的是**反射 ABI**：`as_prop.name` / `as_method.name` / `as_vtable_header.name` 全是 `const char*`，而 `for-in`、`describeType`、JSON key、`Dictionary` key 全按字节比——它们要么跟着换成 UTF-16（整个 SWC/embed/反射管线重写），要么每次动态访问都转码（`obj[key]` 是热路径）。
+
+**该修的话怎么修**：用 **B + ASCII 快路**（设计 B2），不动存储。ASCII 串先过一次 `is_ascii()`（实测 2ns）→ 码元下标 == 字节下标，`charCodeAt` 保持 O(1)，**与今天相比只多 1–2ns**；只有非 ASCII 串才付 O(i) 的码元游标（60 汉字末位 48.5ns）。语义全对，内存不动，边界不动。代价是"非 ASCII 的 `charCodeAt` 从 O(1) 变 O(i)"，所以库内现有的 UTF-8 字节游标（`DocsWrap`、`PaintKit` 截断）**依然是最快写法，不动**。
+
+**什么情况下该重新算这笔账**：① 真需要 `String` 长度参与每帧热路径（例如每帧拿 `.length` 做布局循环上界）；② 需要在每帧里对大量中文字符串做逐字符运算（此时 O(i) 会真的变成 O(n²)）；③ 把 Win32 路径层从"UTF-8 转 UTF-16 再调 W 版"反向收编——这一项 C 反而**省**一次转码（`as_p_wide` 今天就在做 `MultiByteToWideChar(CP_UTF8)`），但那是薄薄一层，撑不起全量改造。
+
+#### G38 修复（2026-11-09，上游阶段三百九十 / v0.4.361）
+
+**做法 = 设计 B2，但补了两处让"B 很慢"这个结论不再成立的东西。** 上表 B 一列量的是**逐字符调用的朴素码元层**（ASCII 17ns、CJK `.length` 94ns），照那个实现，`.length` 写进 `for` 条件就会把 O(n) 变 O(n²)。实际落地的三件套：
+
+1. **长度按指针记忆**（`as_str_len` 的两项 memo，命中即 1–2 次比较）。这是把 `.length` 拉回 1.25ns 的关键，也是**取代「emit 侧做循环不变量外提」**的更好办法：`while` 循环、第三方代码、动态接收者全都自动受益，且不必动 codegen 的结构。
+2. **两槽游标**（`as_u16_locate`）：顺序扫描（词法、折行、逐字符处理）从 O(n²) 回到 O(n)——游标命中时只走新增的那一段；只有**下标回退**才重扫。
+3. **ASCII 快路**：`as_str_len` 先用字级 `0x8080…` 探测，纯 ASCII 直接回 `strlen` 的答案。
+
+**实测（`as3compiler/temp/g38/bench2.c`，200 码元，`clang -O2`，`volatile` 下标）**：
+
+| 操作 | 旧（字节域） | 新（码元域） |
+|---|---|---|
+| `.length` ASCII | 1.50 ns | **1.30 ns** |
+| `.length` CJK | 1.28 ns —— 但**答案是错的**（报 600 字节，应为 200） | **1.25 ns**（答案对） |
+| 整串扫描 CJK | 808 ns | **591 ns** |
+| 分词 CJK | 316 ns | **328 ns**（同一量级） |
+
+即：**没有一个操作变慢**，两处变快，且答案从错变对。
+
+**行为契约**（`adl 51.4.1` 同源双端 44 条断言，`as3compiler/temp/g38u16/air/AirT2.as`，两臂逐行相同）：BMP 中文 `length/charCodeAt/charAt/substr/substring/slice/indexOf/lastIndexOf/split("")` 全部按码元；astral 字符算 **2 个码元**，`charAt` 取到其中一半时得到 **1 码元**的串（C 侧 CESU-8），`charAt(half).charCodeAt(0)` 原样读回那个代理值 —— `length`/`charAt`/`charCodeAt` 因此是同一个索引空间。
+
+**库侧改动（必须同批提交，否则旧编译器 + 新写法会错）**：
+
+| 文件 | 改法 |
+|---|---|
+| `ui-demo/demo/DocsWrap.as` | 删掉 `leadLen`/字节版 `head`/`tail`；`head`→`charAt(0)`、`tail`→`charAt(len-1)`、`segment` 一个码元一个 token。折行不变量复测：`zh sweep: pages=61 badPages=0 overflowingBlocks=0`（与修复前同数） |
+| `kit/asaot/ui/PaintKit.as` | `ellipsize` 的 `atCodepoint` 从"回退 UTF-8 续字节"改成"跨代理对时回退 1" |
+| `kit/asaot/ui/kind/AvatarWidget.as` | `initialsOf` 取首字母不再按 lead byte 扩到 2/3/4 字节（旧逻辑在新语义下会**一次吃两个汉字**），改为跨代理对时取 2 码元 |
+
+**残留（未做，已登记上游）**：
+
+- `TextField` 的**编辑索引**（`caretIndex`/选区/行表）仍是 UTF-8 字节域 —— 那是另一处索引域，`getLineText` 走字节切片 `as_str_substring_b` 保持自洽。⇒ 对非 ASCII，`tf.text.length`（码元）与 `tf.caretIndex`（字节）现在**不同域**，做「光标按字符移动」一类逻辑前必须自己换算。
+- `charCodeAt` 越界：AIR 给 **NaN**，我们给 **0**（上游已记为 G39 级小项，本轮不混改）。
+- 折行对 **astral** 文本偏保守：一个 emoji 现在贡献 2 个 token（各取一个 em），修复前是 1 个 —— 只会更早折行，不会溢出（`overflowingBlocks=0` 已复测）。
+### G40 —— wasm/web 的字体管理器**没有逐字符回退**：混合脚本的页面只能装**一个**覆盖全脚本的字体，否则缺失字形画成 `.notdef` —— ⚠️ **上游后端缺口；库侧已用「单字体子集」绕开（代价已如实写明）**
+
+> 编号说明：**G39** 是 §G38 末「残留」里那条上游小项（`charCodeAt` 越界 AIR 给 NaN、我们给 0），本节顺延为 **G40**。
+
+| 项 | 内容 |
+|---|---|
+| 现象（2026-11-09 报） | gh-pages 的 web 页面切到 `中文` 后，**每一段中文都画成空心方框**（侧栏组名、正文、连切换器自己的「中文」二字都是），而**同一个 app 的 native 臂完全正常**。两者只差「字体从哪来」：native 走宿主系统字体栈，web 走沙箱内注入的字体字节流 |
+| 根因（上游源码） | `vendor/skia_glue.cc` 的 web 后端用 `SkFontMgr_New_Custom_Data(...)`（`sk_fontmgr_register_data` 由宿主 JS 注入字节流）。`TextField` 的 family 默认 `"Arial"`（`kit/asaot/ui/PaintKit.as:192`）。Arial **没有汉字**（实测该 ttf 的 cmap：U+6C49/U+4E2D/U+6587/U+7EC4/U+4EF6 全映射到 **gid 0**），于是 SkParagraph 请求**逐字符回退**，而这个 font manager 不提供 cascade ⇒ 画 `.notdef` |
+| 实测三格（同一份构建、只改注入的字体集合） | ① 只装 `arial.ttf` ⇒ 中文全为方框（`temp/shot-zh.png`）；② `arial.ttf` + MiSans 子集 ⇒ **仍然全为方框**（family 命中 Arial 后回退到不了第二个面，`temp/shot-zh-misans-only.png` 之前的那次）；③ 只装一个**覆盖 Latin + CJK** 的 MiSans 子集 ⇒ 中文与英文**都正常**（`temp/shot-zh2.png`，1536×2317 整页） |
+| 库侧处置（已落地，不是修复） | `tools/web-font.cjs`：用本机 fontTools 从 `../as3compiler/examples/air-native/fonts/MiSans-Regular.ttf` 切出**覆盖「源码里出现过的全部字符 + ASCII + Latin-1 + 少量标点」**的子集（**0.24 MB**，全字体 7.56 MB），入库为 `ui-demo/fonts/MiSans-DemoSubset.ttf`；`ui-demo/web-gallery.cjs` 暂存时**只装这一个面并删掉任何别的面**；`node tools/web-font.cjs --check` 用纯 Node 读 cmap 复核「源码字符 ⊆ 字体」——加了一条新译文而字体没有对应字形时门会红，而不是页面静默变方框 |
+| 代价（如实写，不隐藏） | web 端英文从此是 **MiSans**，不是 Arial（字形与字宽略有差别）；native 臂不受影响（仍用宿主字体栈）。这一条是**已知且已写进文档**的取舍，不是意外 |
+| 正确修法在上游 | 给 `SkFontMgr_New_Custom_Data` 包一层实现 `onMatchFamilyStyleCharacter`（或改用带 cascade 的 data fontmgr），让「同一 family 缺码点」能落到已注册的其它面。修好后 `web-gallery.cjs` 的 3a 可以直接回到「系统 Latin 面 + CJK 面」两件套，英文也就回到 Arial |
+| AIR 对照 | 无 `adl` 对照可言：AIR 桌面端用系统字体栈，天然回退。这是**后端能力缺口**（web/wasm），按 §1.5 归「增强/后端缺口」而非 AS3 语义缺陷 |
+
+
+---
+
 ## 2 不是缺口：已澄清 / 已关闭
 
 | 事项 | 结论 | 证据 |

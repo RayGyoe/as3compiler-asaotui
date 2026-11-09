@@ -30,7 +30,7 @@ package asaot.ui
         n.style = (n.style == null ? new StyleRefinement() : n.style).withPatch(OverlayChrome.HOST);
         n.direction = "column";
         if (n.key == null) n.key = "overlay";
-        if (n.ariaName == null) n.ariaName = "overlay";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.overlay.label");
         OptionSupport.addChildren(n, children);
         return n;
     }

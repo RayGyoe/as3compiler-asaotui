@@ -24,6 +24,7 @@ package demo
     import asaot.ui.Dirty;
     import asaot.ui.Env;
     import asaot.ui.EnvBase;
+    import asaot.ui.I18n;
     import asaot.ui.Node;
     import asaot.ui.OverlayChrome;
     import asaot.ui.UiApp;
@@ -255,6 +256,10 @@ package demo
         // ---- the whole window -------------------------------------------------
         override public function render():Node
         {
+            // The shell's own strings are localized too, and one of them (the meta
+            // line) goes through I18n's PLURAL path -- so the demo's chrome
+            // messages have to be registered before the first one is read. Idempotent.
+            DemoText.ensure();
             var p:DocPage = DocsCatalog.page(this.model.doc);
             if (p == null) p = DocPage(DocsCatalog.pages()[0]);
             var secs:Array = DocsCatalog.sections(this, p.id);
@@ -262,21 +267,34 @@ package demo
             // rather than crashing: the tour walks EVERY page, so a missing
             // builder must be a visible empty page, not a null dereference.
             if (secs == null) secs = [];
-            var group:String = String(DocsCatalog.GROUPS[p.group]);
-            var meta:String = "kind \"" + p.id + "\"  -  " + group.toLowerCase()
-                + "  -  " + secs.length + " example" + (secs.length == 1 ? "" : "s");
+            // THE GROUP NAME IS DATA in DocsCatalog (it is the sidebar's heading and
+            // half of this line), so it is translated at the point of use rather than
+            // stored localized -- the catalog is built once, per process.
+            var group:String = DemoText.t(String(DocsCatalog.GROUPS[p.group]));
+            // `tn` for the count: English has two forms ("1 example" / "3 examples")
+            // and this line used to glue the suffix on in code. Chinese has one, and
+            // the `#other` row is what it lands on.
+            var meta:String = I18n.tn("demo.meta", secs.length,
+                { kind: p.id, group: group.toLowerCase() });
 
             // row(), not column(): box() honours the style's flexDirection, but row()
             // also PINS the axis, so the two panes cannot be stacked by a later patch.
             // The navigation subtree depends only on the selected page. Do not build
             // its rows and click closures again for every live quote / window resize.
             var self:DocsView = this;
-            return row({ key: "root", style: DocsStyle.ROOT, ariaName: "asaot.ui documentation" }, [
+            return row({ key: "root", style: DocsStyle.ROOT,
+                         ariaName: DemoText.t("asaot.ui documentation") }, [
                 this.memo("sidebar", p.id, function ():Node { return self.sidebar(p); }),
-                column({ key: "main", style: DocsStyle.MAIN, ariaName: "Component page" }, [
-                    text(p.title, { key: "docTitle", style: DocsStyle.DOC_TITLE, ariaName: "Component" }),
-                    text(p.blurb, { key: "docBlurb", style: DocsStyle.DOC_BLURB, ariaName: "Summary" }),
-                    text(meta, { key: "docMeta", style: DocsStyle.DOC_META, ariaName: "Details" }),
+                column({ key: "main", style: DocsStyle.MAIN,
+                         ariaName: DemoText.t("Component page") }, [
+                    // THE API NAME IS NOT TRANSLATED: `textField` is the factory's own
+                    // spelling, and the page's whole job is to say what it looks like.
+                    text(p.title, { key: "docTitle", style: DocsStyle.DOC_TITLE,
+                                    ariaName: DemoText.t("Component") }),
+                    text(DemoText.t(p.blurb), { key: "docBlurb", style: DocsStyle.DOC_BLURB,
+                                                ariaName: DemoText.t("Summary") }),
+                    text(meta, { key: "docMeta", style: DocsStyle.DOC_META,
+                                 ariaName: DemoText.t("Details") }),
                     // `scrollbarGutter: "stable"` -- the page's cards are `pct(1)`, so the
                     // bar gets its own 10px lane and never sits on a code block's last
                     // column. See ScrollViewNode's header for why this is a switch.
@@ -306,7 +324,7 @@ package demo
                 if (p.group != group)
                 {
                     group = p.group;
-                    rows.push(text(String(DocsCatalog.GROUPS[group]),
+                    rows.push(text(DemoText.t(String(DocsCatalog.GROUPS[group])),
                         { key: "navg" + group, style: DocsStyle.NAV_GROUP, ariaName: "" }));
                     h = h + DocsStyle.NAV_H_GROUP;
                 }
@@ -317,18 +335,49 @@ package demo
             var colStyle:StyleRefinement = DocsStyle.NAV_COL.withPatch(
                 StyleRefinement.from({ size: [Length.pct(1), Length.px(h)] }));
 
-            return column({ key: "side", style: DocsStyle.SIDE, ariaName: "Index" }, [
-                text("asaot.ui", { key: "brand", style: DocsStyle.BRAND, ariaName: "Product" }),
-                text("pure-AS3 UI toolkit", { key: "tag", style: DocsStyle.TAG, ariaName: "Tagline" }),
+            return column({ key: "side", style: DocsStyle.SIDE,
+                            ariaName: DemoText.t("Index") }, [
+                // THE PRODUCT NAME IS NOT TRANSLATED ("asaot.ui" is a name), but the
+                // tagline, the group headings, the footer and the accessible names
+                // around them are.
+                text("asaot.ui", { key: "brand", style: DocsStyle.BRAND,
+                                   ariaName: DemoText.t("Product") }),
+                text(DemoText.t("pure-AS3 UI toolkit"), { key: "tag", style: DocsStyle.TAG,
+                                                           ariaName: DemoText.t("Tagline") }),
                 scrollView({ key: "nav", style: DocsStyle.NAV,
                              scrollbarGutter: "stable",
                              barThickness: DocsStyle.DOC_GUTTER,
                              scrollbarX: "never", wheelStep: 26 }, [
                     column({ key: "navCol", style: colStyle }, rows)
                 ]),
-                text(pages.length + " components  -  one page each",
+                // THE LANGUAGE SWITCHER, always in the same place: the app's own text
+                // is what it switches, so a reader who cannot read the current
+                // language must not have to find a page first. Each entry says the
+                // language in ITS OWN language -- translating "中文" would defeat it.
+                row({ key: "langs", style: DocsStyle.LANGS,
+                      ariaName: DemoText.t("Language") }, [
+                    this.langBtn("en", "EN"),
+                    this.langBtn("zh-CN", "中文"),
+                    this.langBtn("ar", "AR")
+                ]),
+                text(I18n.t("demo.foot", { n: pages.length }),
                     { key: "foot", style: DocsStyle.FOOT, ariaName: "" })
             ]);
+        }
+
+        // One language button. `I18n.setLocale` is the whole body: it bumps the
+        // epoch, UiApp turns the epoch into one describe at the next frame boundary,
+        // and DemoText rebuilds its table on the first lookup of that describe. No
+        // model write, no invalidate call -- a locale is not this app's data.
+        private function langBtn(tag:String, label:String):Node
+        {
+            var on:Boolean = I18n.locale().toLowerCase() == tag.toLowerCase();
+            return button({
+                key: "lang:" + tag, label: label,
+                style: on ? DocsStyle.LANG_ITEM_ON : DocsStyle.LANG_ITEM,
+                ariaName: DemoText.t("Language") + ": " + label,
+                onClick: function ():void { I18n.setLocale(tag); }
+            });
         }
 
         // One sidebar row. Built by a METHOD, not inline in the loop: an AS3
@@ -437,7 +486,7 @@ package demo
             var demoStyle:StyleRefinement = (sec.wide ? DocsStyle.DEMO_BLEED : DocsStyle.DEMO).withPatch(
                 StyleRefinement.from({ size: [Length.pct(1), Length.px(sec.demoH)] }));
             var demoNode:Node = sec.build();
-            kids.push(box({ key: pre + ":demo", style: demoStyle, ariaName: "Example" },
+            kids.push(box({ key: pre + ":demo", style: demoStyle, ariaName: DemoText.t("Example") },
                 demoNode == null ? [] : [demoNode]));
 
             // DocSection.code is static source text (see DocSection's data-only
@@ -452,7 +501,7 @@ package demo
                 }
                 var codeStyle:StyleRefinement = DocsStyle.CODE.withPatch(
                     StyleRefinement.from({ size: [Length.pct(1), Length.px(sec.codeHeight())] }));
-                return box({ key: pre + ":code", style: codeStyle, ariaName: "Source" }, code);
+                return box({ key: pre + ":code", style: codeStyle, ariaName: DemoText.t("Source") }, code);
             }));
 
             var blockStyle:StyleRefinement = DocsStyle.SEC.withPatch(

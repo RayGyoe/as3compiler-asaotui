@@ -40,7 +40,7 @@ package asaot.ui
         w.position = "absolute";
         n.style = (n.style == null ? new StyleRefinement() : n.style)
             .withPatch(OverlayChrome.POPOVER_PANEL.withPatch(w));
-        if (n.ariaName == null) n.ariaName = "popover";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.popover.label");
 
         if (children != null)
         {

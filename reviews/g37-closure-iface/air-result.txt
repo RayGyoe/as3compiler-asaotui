@@ -1,0 +1,4 @@
+adl 51.4.1 output of AirRun.as (trace does not reach adl stdout, so the probe writes to applicationStorageDirectory/g37.out):
+start
+cb zh-CN1
+end

@@ -16,7 +16,7 @@ package asaot.ui
         var n:TabsNode = new TabsNode();
         n.labels = labels == null ? [] : labels;
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "tabs";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.tabs.label");
         if (opts != null)
         {
             if (opts.selectedIndex is Binding)

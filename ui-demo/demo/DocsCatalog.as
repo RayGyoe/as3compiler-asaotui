@@ -128,7 +128,15 @@ package demo
                 new DocPage("keyboard", "keyboard", 11,
                     "The focus ring, Tab, Enter/Space, the per-kind key map, and the keymap."),
                 new DocPage("env", "env", 11,
-                    "The platform's answers -- hasHover, safeArea, pixelRatio -- and who reads them.")
+                    "The platform's answers -- hasHover, safeArea, pixelRatio -- and who reads them."),
+
+                // THE SEVENTH FRAMEWORK PAGE, and the only one whose subject is the
+                // TEXT rather than the layout: `I18n` plus this app's own prose table.
+                // It is here (not in its own group) because it answers the same kind
+                // of question the other six do -- "which field do I write" -- and
+                // because the switcher at the bottom of the index is its live demo.
+                new DocPage("i18n", "i18n", 11,
+                    "Message catalogs, one locale per window, and text that mirrors with it.")
             ];
         }
 
@@ -173,6 +181,8 @@ package demo
             s = DocsFeedback.sections(view, id);
             if (s != null) return s;
             s = DocsSystem.sections(view, id);
+            if (s != null) return s;
+            s = DocsI18n.sections(view, id);
             if (s != null) return s;
             s = DocsMotion.sections(view, id);
             if (s != null) return s;

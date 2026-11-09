@@ -127,7 +127,18 @@ package asaot.ui.kind
             {
                 var c:String = name.charAt(i);
                 if (c == " " || c == "\t" || c == "\n" || c == "\r") { i = i + 1; continue; }
-                out = out + name.substr(i, 1).toUpperCase();
+                // One CHARACTER: String indices are UTF-16 code units (compiler-gaps.md
+                // G38), so charAt already hands a Chinese name's whole glyph. An astral
+                // character is TWO units though, and half a surrogate pair is not a
+                // glyph, so the pair is taken together.
+                var first:String = c;
+                var u0:int = name.charCodeAt(i);
+                if (u0 >= 0xD800 && u0 <= 0xDBFF && i + 1 < len)
+                {
+                    var u1:int = name.charCodeAt(i + 1);
+                    if (u1 >= 0xDC00 && u1 <= 0xDFFF) first = name.substr(i, 2);
+                }
+                out = out + first.toUpperCase();
                 count = count + 1;
                 while (i < len)
                 {

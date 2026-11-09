@@ -18,7 +18,7 @@ package asaot.ui
     {
         var n:SparklineNode = new SparklineNode();
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "sparkline";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.sparkline.label");
         if (opts != null)
         {
             if (opts.values != null)

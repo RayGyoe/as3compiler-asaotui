@@ -1,0 +1,12 @@
+M1 CAUGHT -- a key exists in en but not in zh-CN (parity) (restored byte-identical)
+M2 CAUGHT -- the translation drops the {n} interpolation (silent wrong sentence) (restored byte-identical)
+M3 CAUGHT -- the same key is declared twice in one locale (the second silently wins) (restored byte-identical)
+M4 CAUGHT -- a factory asks for a kit key that no catalog has (renamed key) (restored byte-identical)
+baseline: PASS
+
+MUTATION i18n-check: 4/4 caught, 0 problem(s)
+M1 CAUGHT  a key exists in en but not in zh-CN (parity)  [KitMessages.as]
+M2 CAUGHT  the translation drops the {n} interpolation (silent wrong sentence)  [KitMessages.as]
+M3 CAUGHT  the same key is declared twice in one locale (the second silently wins)  [KitMessages.as]
+M4 CAUGHT  a factory asks for a kit key that no catalog has (renamed key)  [select.as]
+RESULT: PASS

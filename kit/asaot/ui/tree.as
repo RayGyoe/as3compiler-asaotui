@@ -25,7 +25,7 @@ package asaot.ui
         var n:TreeNode = new TreeNode();
         n.items = items == null ? [] : items;
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "tree";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.tree.label");
         if (opts != null)
         {
             if (opts.expanded != null) n.expanded = OptionSupport.list(opts.expanded);

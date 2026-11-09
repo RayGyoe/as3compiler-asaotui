@@ -58,7 +58,7 @@ package asaot.ui
             flexDirection: "column", background: t.surface
         });
         n.style = n.style == null ? base : base.withPatch(n.style);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "tabs";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.tabs.label");
 
         // The tint is the SELECTED STATE: a text-style patch on the cell, inherited by
         // the label. It is applied to the cell rather than to the label so that

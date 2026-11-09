@@ -75,6 +75,32 @@ to measure) and it has its own runner, `web-gallery.cjs`, which stages
 with `--target wasm --package web`, and then serves that directory over HTTP — a
 `.wasm` cannot be loaded from `file://`, and the server sends `application/wasm`.
 
+#### The web font (one face, and why not two)
+
+A wasm sandbox enumerates no system fonts, so the page fetches the TTF byte streams its
+`FONT_URLS` names and registers them with Skia before `main()`. That font is
+`fonts/MiSans-DemoSubset.ttf`: a **subset cut from the `MiSans-Regular.ttf` the compiler
+repo already ships**, covering every codepoint the demo + kit sources can print (Latin,
+Latin-1, the punctuation a UI formats, and all 1047 non-ASCII characters the translations
+use) — **0.24 MB against the whole font's 7.56 MB**, so it does not become the page's
+largest download.
+
+It ships as **one** face on purpose. Registering a Latin face *and* a CJK face looks like
+the obvious split and does not work: `PaintKit.formatFor` asks for the family `Arial`, the
+Arial face answers, and when a Han codepoint is missing from it, the paragraph asks the
+font manager for a per-character fallback — which the web font manager
+(`SkFontMgr_New_Custom_Data`, `vendor/skia_glue.cc`) does not provide. Measured on the
+built page: Arial alone → every Chinese paragraph is `.notdef` boxes; Arial **plus** MiSans
+→ still boxes (the fallback never reaches the second face); MiSans alone → Chinese **and**
+English render. So `web-gallery.cjs` stages exactly one face and deletes any other, and
+the honest cost is that English pages render in MiSans rather than Arial. The upstream
+fix (a cascading font manager) is registered as **G40** in `../compiler-gaps.md`.
+
+`node ../tools/web-font.cjs` regenerates the subset (needs python + `fontTools`);
+`node ../tools/web-font.cjs --check` — a gate — re-derives the required codepoints from
+the current sources and verifies the committed font covers them, so a new translation
+with a glyph the font lacks goes red instead of publishing tofu.
+
 ```sh
 ./build.sh web                 # build, then open it (Ctrl-C stops the server)
 ./build.sh web --no-serve      # build only
@@ -130,7 +156,8 @@ node ../tools/publish-pages.cjs --check  # fetch the live site, compare bytes wi
 ```
 
 The branch holds 8 files and nothing else: `index.html` (`GalleryApp.html`, renamed),
-`GalleryApp.{js,wasm,data}`, `fonts/arial.ttf`, `app.xml`, `.nojekyll`, `README.md`.
+`GalleryApp.{js,wasm,data}`, `fonts/MiSans-DemoSubset.ttf`, `app.xml`, `.nojekyll`,
+`README.md`. The font name is read out of the page's own `FONT_URLS`, not typed here.
 It deliberately does **not** publish `../air-gallery-web/` as it stands, because that
 directory also holds `GalleryApp.c` (5.6 MB), `src/` (19 staged copies of `demo/*.as`)
 and `GalleryApp.build.json`.
@@ -201,6 +228,8 @@ and `probes/widgets/*` + this demo are the end-to-end half.
 | `run-gallery.cjs` | Report the compiler tree state, then stage + build (`--air-app`) + launch + wait for `gallery.done` + print the tour + measure the screenshots. **No retry** (G11 is closed: a differing build means the compiler tree itself moved — see the state line it prints). `ASC_AIR_DIR=<dir>` points it at another app dir (that is how `check-dpi.cjs` runs its twin). `ASC_NO_OPEN=1` closes the window as soon as the evidence is in. |
 | `build-and-run.cjs` | The login demo, same pipeline. Writes its evidence into `air-uidemo/`. |
 | `check-dpi.cjs` | The **descriptor A/B**: builds the same gallery from `air-gallery/app.xml` (`high`) and `air-gallery-standard/app.xml` (`standard`), and requires 1.5× vs exactly 1× with byte-identical tour text. `mutation-dpi.cjs` shows it has teeth. |
+| `run-repaint-diff.cjs` | The **incremental vs full repaint differential**: builds + runs `RepaintDiff.as` and propagates its verdict. The oracle is `BitmapData.draw(stage)` (the retained display list, not a re-render of the description), so a stale list cannot hide behind a correct tree. Four paint-only scenarios — background, border+background, opacity, cornerRadii, i.e. exactly the properties `Style.diffFlags` buckets as decor — each asserting: the frame took the INCREMENTAL path (`layoutSolves` unchanged), the change is visible in a full repaint, the incremental picture is byte-identical to a full repaint of the same state, and no `M_PAINT` bit was left unconsumed. `mutation-repaint.cjs` shows it has teeth. |
+| `mutation-repaint.cjs` | Re-runs the repaint gate against three mutants of the kit, each restored by sha256: `opacity` dropped from `Style.diffFlags` (18/20), `paintDirty` not descending into children (14/20), and the decoration-only branch painting nothing at all — the original bug, verbatim (12/20). |
 | `stage-air.cjs` | Materializes `<appDir>/src` from `demo/` **only** (the toolkit is compiled in place via `--as-class-path`, see above), byte-verifies every copy, prints a content hash and the two shared roots the build must name. Refuses to run without a reviewed `app.xml`. |
 | `air-run.cjs` | Shared plumbing for the two runners: descriptor reader (comment-aware), window killer, result-file poller, screenshot measurement. |
 | `air-gallery/app.xml` | The docs descriptor (`high`, 1000×700, `renderMode cpu`) — read by ALL THREE arms. `--gpu` never rewrites it; it derives `app.<mode>.xml` instead. |
@@ -230,6 +259,10 @@ cd air-gallery && ./build.sh             # mxmlc -> adl (window stays open)
 # (a3) prove the descriptor causes the high-resolution pixels (2 builds, ~2.5 min)
 node check-dpi.cjs                       # -> standard 700x560 (1x) vs high 750x563+ ... here 1050x840 (1.5x)
 node mutation-dpi.cjs                    # the same, with the control arm flipped: MUST go red
+
+# (a4) a decoration-only frame must paint what a full repaint would (~15s cached)
+node run-repaint-diff.cjs                # -> REPAINT-DIFF: PASS 20/20
+node mutation-repaint.cjs                # 3 mutants, each MUST go red (~4 min)
 ```
 
 The gallery writes its evidence **into its own app dir** (`air-gallery/`, or

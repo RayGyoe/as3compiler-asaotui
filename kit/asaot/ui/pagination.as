@@ -24,7 +24,7 @@ package asaot.ui
         n.pageCount = pageCount < 1 ? 1 : pageCount;
         if (n.page > n.pageCount) n.page = n.pageCount;
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "pagination";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.pagination.label");
         if (opts != null)
         {
             if (opts.windowSize != null) n.windowSize = Number(opts.windowSize);
@@ -63,7 +63,7 @@ package asaot.ui
 
         var navRef:StyleRefinement = StyleRefinement.from({ padding: [8, 10] });
         var kids:Array = [];
-        kids.push(chip("<", { key: "prev", role: "button", ariaName: "previous page", style: navRef }));
+        kids.push(chip("<", { key: "prev", role: "button", ariaName: I18n.t("kit.pagination.prev"), style: navRef }));
 
         var slots:int = list.length;
         for (var i:int = 0; i < slots; i++)
@@ -76,13 +76,13 @@ package asaot.ui
             }
             else
             {
-                kids.push(chip(String(p), { key: "pg" + p, role: "button", ariaName: "page " + p,
+                kids.push(chip(String(p), { key: "pg" + p, role: "button", ariaName: I18n.t("kit.pagination.page", { n: p }),
                                             tone: (p == cur ? "info" : "neutral"),
                                             style: navRef }));
             }
         }
 
-        kids.push(chip(">", { key: "next", role: "button", ariaName: "next page", style: navRef }));
+        kids.push(chip(">", { key: "next", role: "button", ariaName: I18n.t("kit.pagination.next"), style: navRef }));
         OptionSupport.addChildren(n, kids);
         return n;
     }

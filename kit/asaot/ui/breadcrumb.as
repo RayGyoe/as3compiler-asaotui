@@ -20,7 +20,7 @@ package asaot.ui
         var n:BreadcrumbNode = new BreadcrumbNode();
         n.items = items == null ? [] : items;
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "breadcrumb";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.breadcrumb.label");
         if (opts != null)
         {
             if (opts.separator != null) n.separator = String(opts.separator);

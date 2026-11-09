@@ -39,7 +39,7 @@ package asaot.ui
             this.tabEnabled = true;
             this.open = false;
             this.value = null;
-            this.placeholder = "Pick a date";
+            this.placeholder = I18n.t("kit.date.placeholder");
             this.year = 1970;
             this.month = 1;
             this.days = [];

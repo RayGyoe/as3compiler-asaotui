@@ -127,6 +127,10 @@ package asaot.ui
         // changes when `Theme.setTheme()` swaps the palette; the difference is the whole
         // signal that a theme switch happened, and it is checked once per frame.
         private var _themeEpoch:int;
+        // The same latch for `I18n.epoch()`. Kept SEPARATE from `_themeEpoch` because
+        // the two events ask for different work: a palette swap must re-resolve every
+        // node's style, a language swap only changes the strings a factory read.
+        private var _i18nEpoch:int;
 
         // ---- opt-in phase profiling -------------------------------------
         // The `perf` probe times whole operations (one reflow of a describe),
@@ -167,6 +171,7 @@ package asaot.ui
             this._solvedH = -1;
             this._running = false;
             this._themeEpoch = Theme.themeEpoch();
+            this._i18nEpoch = I18n.epoch();
             this.describeCalls = 0;
             this.reconcileVisits = 0;
             this.layoutSolves = 0;
@@ -913,6 +918,34 @@ package asaot.ui
                 if (this.overlayRoot != null) this.markThemeDirty(this.overlayRoot);
                 this.invalidate(Dirty.THEME);
             }
+            // A LOCALE SWITCH IS THE SECOND FRAME-BOUNDARY EVENT, and it is NOT a
+            // theme switch: no style pointer moved, so no node is marked stale and
+            // `markThemeDirty` would only cost a pointless re-resolve. What has to
+            // happen is:
+            //   * a DESCRIBE (`Dirty.VALUE`), because the factories call I18n.t() and
+            //     only a re-describe hands the new strings to the nodes. `VALUE` is the
+            //     honest bit -- the app-level input these strings are computed from
+            //     changed -- and a bit of its own would renumber the pin set the
+            //     probes assert on for nothing.
+            //   * a LAYOUT re-solve, because `isRTL` is a layout input no style carries
+            //     and the layout gate only re-runs when a root has M_MEASURE|M_ARRANGE.
+            // The text nodes themselves need no help: a changed payload makes
+            // TextWidget.payload raise measure/arrange/paint (UiNode.applyPayload).
+            if (I18n.epoch() != this._i18nEpoch)
+            {
+                this._i18nEpoch = I18n.epoch();
+                this.invalidate(Dirty.VALUE);
+                if (this.root != null)
+                {
+                    this.root.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE;
+                    this.root.markLayoutDirty();
+                }
+                if (this.overlayRoot != null)
+                {
+                    this.overlayRoot.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE;
+                    this.overlayRoot.markLayoutDirty();
+                }
+            }
             // The author tick runs FIRST, for the same reason the reflow runs in
             // ENTER_FRAME at all: an invalidation raised here must be visible in
             // THIS frame's present. The clock is getTimer() (monotonic ms since
@@ -1182,7 +1215,14 @@ package asaot.ui
             measurePass(r);
             if (profile) { var dM:Number = getTimer() - tPhase; this.profMeasureMs = this.profMeasureMs + dM; if (dM > this.profMeasureMax) this.profMeasureMax = dM; tPhase = getTimer(); }
             this.layoutSolves = this.layoutSolves + 1;
-            this.engine.calculate(r.engineNode, availW, availH, LayoutConstants.DIR_LTR);
+            // THE DIRECTION IS THE LOCALE'S, not a constant: `isRTL()` mirrors every
+            // row/reverse and swaps START/END padding, and the engine has resolved it
+            // per solve since the layout port (seam/asaot/ui/as3/As3LayoutEngine.as
+            // resolveDirection). It is read HERE, per solve, so a locale switch is
+            // picked up by the frame that re-solves -- never passed in by a caller that
+            // could disagree with the text the nodes were described with.
+            this.engine.calculate(r.engineNode, availW, availH,
+                I18n.isRTL() ? LayoutConstants.DIR_RTL : LayoutConstants.DIR_LTR);
             if (profile) { this.profSolveMs = this.profSolveMs + (getTimer() - tPhase); tPhase = getTimer(); }
             this.arrangePasses = this.arrangePasses + 1;
             arrangePass(r, 0, 0);

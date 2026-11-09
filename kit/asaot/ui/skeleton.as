@@ -14,7 +14,7 @@ package asaot.ui
     {
         var n:SkeletonNode = new SkeletonNode();
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "loading placeholder";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.skeleton.label");
         if (opts != null)
         {
             if (opts.variant != null) n.variant = String(opts.variant);

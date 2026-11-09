@@ -1373,3 +1373,131 @@ package
     [`rust-text-backend.md`](../as3compiler/docs/zh-cn/rust-text-backend.md)。
   - `TODO.md`：`as_disp_key` ~39 KB/s 先例 `:1238`/`:1242`/`:1249`；「UI 工具链待定项（未排期）」`:14086`。
   - `as3compiler/AGENTS.md` §0 / §1.5 / §2.4 / §2.6 / §2.7（红线，本文未改）。
+
+---
+
+## §13 国际化（`I18n`）
+
+### 13.1 三条约束（决定了下面的形状）
+
+1. **翻译发生在 describe 期，`t()` 返回 `String`**。本库的文本是**字符串负载**
+   （`TextNode.content` → `TextWidget.payload` 按值比较），每个文本入口都是普通 `String`。
+   因此 `text(I18n.t("app.welcome"))` 本来就可用，**不需要**在 Node 上加 `msgKey` 字段：
+   那会把 i18n 知识塞进每个 widget kind、塞进 measure（固有宽度）和 paint（实际绘制串）。
+2. **locale 变化是帧边界事件**，与 `Theme.themeEpoch()` 同构。区别在于工作量：换主题要给
+   每个节点重新 resolve 样式（`markThemeDirty`），换语言**只**换字符串，文本负载一变
+   `TextWidget.payload` 自己就会抬 measure/arrange/paint（`UiNode.applyPayload`）。
+   所以消费位是 `Dirty.VALUE`（"app 级输入变了"），**不新增语义位**——`Dirty.ALL` 是 15，
+   16/32/64 已被三趟 pass 位占满，重编号会碰到全库每一处 `Dirty` 组合。
+3. **缺 key 绝不静默**：`t()` 返回可见标记 `[[key]]`，同时记进 `missingKeys()`；
+   `setStrict(true)` 时直接抛错。探针在每个本地化界面渲染完之后断言这份清单只剩"故意留空"的那一条。
+
+### 13.2 API（`kit/asaot/ui/I18n.as`，静态类，与 `Theme` 同构）
+
+| 成员 | 说明 |
+|---|---|
+| `addMessages(tag, table)` | 合并一份 `key → String`；**后注册覆盖同 locale 的同 key**（app 可以只覆盖一条内建串） |
+| `setDefault(tag)` / `defaultLocale()` | 回退链的终点；默认 `"en"` |
+| `setLocale(tag)` / `locale()` | 生效 UI 语言。**不重画**：只推进 epoch |
+| `followEnv(env)` | 跟随平台语言（立即读一次 + 订阅），返回可 `cancel()` 的 `Subscription`；**显式调用**，不自动跟随 |
+| `t(key, params?)` | `{name}` 单遍插值（不用正则）；**无 params 时返回目录里的同一个 String 实例**（稳态零分配） |
+| `tn(key, n, params?)` | 复数：先 `key#one` / `#few` / `#many` / `#other`，再退 `key`；`{n}` 由计数填入 |
+| `number(v, decimals?, grouping?)` | 千分位/定点；分隔符取自目录 `kit.number.group` / `kit.number.decimal`；指数/NaN/Infinity 不分组 |
+| `has / missingKeys / clearMissing / setStrict / epoch / isRTL` | 诊断与接线用 |
+
+回退链 `zh-Hant-TW → zh-Hant → zh → defaultLocale → [[key]]`，在 `setLocale/setDefault` 时
+**预构建**（每次查表现拼 Array 会变成每串每帧一次分配）。catalog 以 **lowercase tag** 存库
+（`zh-CN` / `zh-cn` 归一），显示保留原大小写。`kit.*` 是保留命名空间。
+
+### 13.3 接线点（三处，缺一就会出现"切了没反应"）
+
+| 位置 | 动作 |
+|---|---|
+| `UiApp.onEnterFrame` | 比较 `I18n.epoch()` 与 `_i18nEpoch` → `invalidate(Dirty.VALUE)` + 给两个根抬 `M_MEASURE\|M_ARRANGE` + `markLayoutDirty()`（方向是布局输入，没有样式指针能表达它） |
+| `View.memo` | 缓存槽变 `[version, epoch, node]`：**语言是作者没有传进来的输入**，不折进 epoch 的话缓存子树会一直留在旧语言里 |
+| `UiApp.solveRoot` | 方向取 `I18n.isRTL()`（原先硬编码 `LayoutConstants.DIR_LTR`，而 `As3LayoutEngine.resolveDirection` 早就支持 RTL） |
+
+### 13.4 库自带文案（否则"翻译了 app，仍写着 Pick a date"）
+
+`KitMessages.as` = 一组 `en` + 一组 `zh-CN`（55 键），覆盖：三处空值提示
+（`select` / `multiSelect` / `datePicker`）、分页四串、`table` / `skeleton`、以及**每个控件 kind 的
+默认无障碍名**（27 个工厂的 `ariaName` 字面量）。英文值与替换前**逐字节相同**，所以不调 i18n 的
+app 看到的文本一字不差。
+
+日期网格顺带补齐：标题走模板（en `"{month} {year}"` → `October 2026`；zh-CN
+`"{year}年{monthNumber}月"` → `2026年10月`）、新增**星期表头行**、周起始日取
+`kit.date.firstDay`（zh-CN 为周一）。三者列宽仍是 `DAY_W`，单元格网格不变。
+
+> 顺带发现并修掉一个既有 a11y bug：`OptionSupport.applyOpts` 把"没给 `ariaName`"归一成 `""`，
+> 而 7 个工厂的默认名守卫只判 `== null` ⇒ 它们的默认无障碍名**从来没生效过**（一直是空串）。
+> 现统一为 `== null || == ""`，与其余工厂一致。
+
+### 13.5 RTL：只做布局镜像
+
+`isRTL()` 用静态语言表（ar/he/fa/ur/ps/sd/ug/yi/dv/ckb），未知语言按 LTR。生效后每一趟 solve 都
+按 RTL 解算：`row` 镜像成 `row-reverse`、`START/END` 的 padding/margin 换边、日期网格随之镜像
+（探针断言：同一 torch 日期 LTR 在第 4 列、RTL 在第 2 列）。
+
+**明确不做**：文本 bidi 整形（运行时没有 `TextField.direction`）、`localeCompare` 排序、字体回退、
+CLDR 复数规则全量、`Env.locale` 自动生效。跨端差异与后续方向见 `MOBILE.md` E6。
+
+### 13.6 验证
+
+- **`probes/widgets/i18n`**（门禁内）：目录语义（回退链/插值/缺 key/strict/epoch 单调/`tn`/`number`）
+  + 真实窗口里 `setLocale` 后**不手动 invalidate**，由 `onEnterFrame` 的 epoch 比较把新语言送上屏
+  （select 提示、分页无障碍名、月标题、星期表头、`memo` 子树、RTL 镜像）。
+- **`probes/widgets/i18n/mutation.cjs` 4/4 CAUGHT**：忽略 epoch / 回退链停在精确 tag /
+  `View.memo` 不折 epoch / 方向写死 `DIR_LTR`。每轮逐字节还原并校验 sha256。
+- **`tools/i18n-check.cjs`**（门禁内，源级）：两份目录**键集合对等**、翻译没有**丢掉插值**、
+  kit 源码里每个 `I18n.t("kit.…")` 在两种语言里都能解析、同 locale 无重复键。
+- 全库回归 `node tools/gates.cjs`：见 `README.md` 的当轮结论。
+
+### 13.7 已知限制
+
+- 闭包捕获"静态类型为接口"的形参、再把这个闭包交回**同一接口变量**的方法 ⇒ 生成的 C 编不过
+  （`compiler-gaps.md` G37；`mxmlc` 接受同形代码）。库内已改用静态字段 + 静态回调。
+- 无 `localeCompare`（表的排序仍是码位序）；无 `TextField.direction`，故 RTL 只有布局镜像、没有 bidi。
+- **`String.length` / `charCodeAt` / `charAt` / `indexOf` / `substring` 对非 ASCII 是 UTF-8 字节偏移**
+  （`compiler-gaps.md` G38）：一个汉字算 3。所以任何"按字符切"的逻辑都必须是字节游标——
+  `DocsWrap` 的 CJK 分段与 `PaintKit.ellipsize` 的截断点、`AvatarWidget` 的首字母都已改成
+  按码点边界走。新写任何截断/省略号/单字符处理前，先读 G38。
+
+### 13.8 文档站怎么用它（`ui-demo`，本轮落地）
+
+文档站自己首先要能翻译，否则 `I18n` 只是"别人家的功能"。落地形状（与库侧刻意分层）：
+
+| 层 | 位置 | 职责 |
+|---|---|---|
+| 正文 | `DemoMessages.zh()`：**722 行**扁平表（英文原文即 key） | 273 个标题 + 368 个段落 + 61 个页面摘要 + 27 个标签 |
+| 查表 | `DemoText.t(s)` | 一个字典读；**source 字面量本身就是 key 实例**，稳态零分配；无表/无行时返回原文 |
+| chrome | 真正的 `I18n` key（`demo.meta` / `demo.foot` / `demo.items` 带 `{n}` 与复数） | 侧栏元信息、脚注计数、示例框标题 |
+| 切换器 | `DocsStyle.LANG_*` + `DocsView` 的 `langBtn("en"/"zh-CN"/"ar")` | 侧栏底部**常驻**三个 pill（固定宽 `68`，百分比宽曾把 label 挤出父容器） |
+
+- **翻译点只有一个**：标题在 `DocSection` 构造器、正文在 `DocsWrap.lines()`（wrap 时）。构造器里翻
+  `prose` 会每次 describe 重建 267 个数组。
+- **不翻的东西**：`title`（`text()` 这类工厂拼写）、`asaot.ui` 品牌名、demo 里的示例数据字面量
+  （`text("Hello")`、`button({label:"Save"})`）——那些是**被演示的内容**，翻了就不像代码示例了。
+- **`ar` 故意不带正文表**：它来证明**镜像**（每趟 solve 读一次 `I18n.isRTL()`），正文回退英文。
+  把"镜像"与"翻译"拆开验，比"阿拉伯文也翻了"更能定位问题。
+- **CJK 折行**：`DocsWrap` 先按 UTF-8 码点切（汉字逐字成 token，ASCII 按空格切词），再按
+  **em 求和**填行（全宽字形一个 em，拉丁词实测、失败则向上估）。纯 ASCII 段落走**原来的**
+  "量整个候选串"路径，行数逐字节不变——文档站 61 页的既有几何断言因此全部保值。
+- **判据分三层**（都是本轮实测踩出来的）：
+  1. `tools/demo-i18n.cjs`（构建期，源级）：抽取 **729 个展示串 / 722 个 distinct**，断言
+     `722/722 covered, 0 stale`——一个漏翻或一句白写都会红。
+  2. gallery tour 的 **stage 8**：点 `中文` → **`ENTER_FRAME` → `reflow()`**（语言是帧边界事件，
+     不许 test-only 捷径），并断言"**click 本身不改文案**"、标题含非 ASCII、侧栏组标题随新 epoch
+     重描述、`title`/品牌名不变。
+  3. **stage 8a 全站中文扫描**（61 页）：零矩形/无引擎节点/文字画得比盒子宽 三项均为 0 —— 这一条
+     抓到的是"行数与 `DocSection.height()` 不一致"这类只在中文化后才出现的偏差。
+- **stage 8b/8c**：`ar` 断言 `I18n.isRTL()` 且侧栏 `absX == winW - NAV_W`、正文矩形逐值不变；
+  再切回 `en` 断言文案与四个矩形**逐值复原**（证明切换没有累积副作用）。
+- **web 臂的字体（`G40`）**：wasm 沙箱里没有系统字体，页面只能注入自带的 TTF。而 web 的字体管理器
+  （`SkFontMgr_New_Custom_Data`）**不做逐字符回退**：`PaintKit.formatFor` 要的 family 是 `Arial`，
+  Arial 命中后缺汉字就没有第二个面可去 ⇒ 页面上每个汉字都是 `.notdef` 方框（真机三格实测：只
+  `arial.ttf` 全方框 / `arial.ttf` + MiSans 子集**也**全方框 / 只 MiSans 子集中英文都正常）。
+  所以 `ui-demo` 的 web 臂**只装一个面**：`ui-demo/fonts/MiSans-DemoSubset.ttf`（`tools/web-font.cjs`
+  从编译器仓库已有的 `MiSans-Regular.ttf` 切出 Latin + Latin-1 + 源码全部字符，**0.24 MB / 1239 码点**，
+  原字体 7.56 MB）。代价如实说：web 端英文改成 MiSans（native 仍用宿主字体栈）；上游 cascade
+  缺失记 [`compiler-gaps.md`](compiler-gaps.md) **G40**。`node tools/web-font.cjs --check` 是门，
+  加一条新译文而字体缺字形时会红，而不是静默发布豆腐块。

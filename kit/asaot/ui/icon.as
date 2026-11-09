@@ -18,7 +18,7 @@ package asaot.ui
     {
         var n:IconNode = new IconNode();
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "icon";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.icon.label");
         if (path == null || path == "") throw new Error("asaot.ui.icon: needs path data (SVG 'd' syntax, e.g. \"M4 12 H20\")");
         n.path = path;
         if (opts != null)

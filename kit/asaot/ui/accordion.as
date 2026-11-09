@@ -28,7 +28,7 @@ package asaot.ui
         var n:AccordionNode = new AccordionNode();
         n.sections = sections == null ? [] : sections;
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "accordion";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.accordion.label");
         if (opts != null)
         {
             if (opts.mode != null)

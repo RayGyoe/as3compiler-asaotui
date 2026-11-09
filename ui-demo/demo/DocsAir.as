@@ -451,7 +451,7 @@ package demo
             }
         }
 
-        // Append one line. Open/close per line: 42 pages plus a handful of errors is
+        // Append one line. Open/close per line: 61 pages plus a handful of errors is
         // nothing next to a process launch, and a crash cannot lose output that was
         // never flushed.
         private function selfLog(line:String):void

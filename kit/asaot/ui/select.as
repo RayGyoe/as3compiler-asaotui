@@ -41,7 +41,7 @@ package asaot.ui
         w.size = Size.of(Length.px(n.width), null);
         n.style = (n.style == null ? new StyleRefinement() : n.style)
             .withPatch(OverlayChrome.SELECT_TRIGGER.withPatch(w));
-        if (n.ariaName == null) n.ariaName = "select";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.select.label");
 
         var base:String = n.key == null ? "select" : String(n.key);
         var options:Array = n.options == null ? [] : n.options;

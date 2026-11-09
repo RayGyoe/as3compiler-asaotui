@@ -112,6 +112,44 @@ package demo
             text: { fontSize: 10, color: 0x94A3B8 }
         });
 
+        // ---- the language switcher --------------------------------------------
+        // THREE FIXED-WIDTH BUTTONS under the index and above the footer. The numbers
+        // are constants because the sidebar's leftover height -- and therefore the
+        // index viewport's height, which the tour asserts as a rect -- is derived from
+        // them: LANG_H is the row's height, the 4pt gaps above and below are SIDE's own
+        // `gap`, and `navHeight()` is the one place that adds the column up.
+        //
+        // Fixed widths, not percentages: a percentage inside a row whose cross-axis
+        // width the engine solves in a second pass is the shape that used to send a
+        // label out of its parent. 68*3 + 2*4 = 212 fits the 219pt index column.
+        public static const LANG_H:Number = 22;
+        public static const LANG_W:Number = 68;
+        public static const LANGS:StyleRefinement = StyleRefinement.from({
+            flexDirection: "row", size: [Length.pct(1), Length.px(LANG_H)], gap: 4
+        });
+        public static const LANG_ITEM:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(LANG_W), Length.px(LANG_H)], padding: 0, cornerRadii: 6,
+            borderWidths: 1, borderColor: 0xE2E8F0, background: 0xFFFFFF,
+            text: { fontSize: 11, color: 0x475569 }
+        });
+        public static const LANG_ITEM_ON:StyleRefinement = StyleRefinement.from({
+            size: [Length.px(LANG_W), Length.px(LANG_H)], padding: 0, cornerRadii: 6,
+            borderWidths: 1, borderColor: 0x1D4ED8, background: 0xEFF6FF,
+            text: { fontSize: 11, fontWeight: "bold", color: 0x1D4ED8 }
+        });
+
+        // THE INDEX VIEWPORT'S HEIGHT in a window `winH` tall: the sidebar's padding,
+        // brand, tag, the language row and the footer come off, and what is left is
+        // the scrolling index. Derived from the SAME constants the styles above use,
+        // so the tour can assert the rect without copying a magic number.
+        public static function navHeight(winH:Number):Number
+        {
+            var chrome:Number = 16 + 28 + 4 + 16 + 4      // top pad, brand, gap, tag, gap
+                + 4 + LANG_H + 4                            // gap, languages, gap
+                + 16 + 16;                                  // foot, bottom pad
+            return winH - chrome;
+        }
+
         public static const MAIN:StyleRefinement = StyleRefinement.from({
             flexDirection: "column", flexGrow: 1, size: [null, null], padding: [HEAD_Y, PAD_X, 16, PAD_X], gap: 4
         });

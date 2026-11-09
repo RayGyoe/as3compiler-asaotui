@@ -13,7 +13,7 @@ package asaot.ui
     {
         var n:SpinnerNode = new SpinnerNode();
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "loading";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.spinner.label");
         if (opts != null)
         {
             if (opts.diameter != null) n.diameter = Number(opts.diameter);

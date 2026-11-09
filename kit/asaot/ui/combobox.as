@@ -41,7 +41,7 @@ package asaot.ui
         if (opts.onSelect != null) n.onSelect = (opts.onSelect as Function);
         if (opts.onQuery != null) n.onQuery = (opts.onQuery as Function);
         if (opts.onOpenChange != null) n.onOpenChange = (opts.onOpenChange as Function);
-        if (n.ariaName == null) n.ariaName = "combobox";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.combobox.label");
 
         // The trigger: still select's geometry, so the caret and the dropdown insets
         // below are the same numbers as a select's.

@@ -26,7 +26,7 @@ package asaot.ui
     {
         var n:MultiSelectNode = new MultiSelectNode();
         OptionSupport.applyOpts(n, opts);
-        if (n.ariaName == null || n.ariaName == "") n.ariaName = "multi select";
+        if (n.ariaName == null || n.ariaName == "") n.ariaName = I18n.t("kit.multiselect.label");
         if (opts != null)
         {
             if (opts.open != null) n.open = Boolean(opts.open);

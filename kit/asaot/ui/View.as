@@ -33,16 +33,28 @@ package asaot.ui
         // The returned Node and its descendants must never be mutated after the
         // factory returns. Reconciliation still applies theme/inherited changes to
         // the retained tree, so a palette switch does not need a cache-version bump.
+        //
+        // THE LOCALE IS THE ONE INPUT THE AUTHOR DOES NOT PASS IN. A factory that
+        // calls I18n.t() reads global state, so a locale switch would otherwise
+        // keep serving nodes built in the old language forever -- the cache would
+        // be silently wrong rather than merely stale. The stored epoch is therefore
+        // part of the entry and a change misses (the same reason the theme epoch
+        // reaches the retained tree, just at a different layer: a theme swap only
+        // needs re-resolution, a language swap needs new STRINGS).
         protected function memo(key:String, version:*, build:Function):Node
         {
+            var epoch:int = I18n.epoch();
             var entry:Array = this._memo[key] as Array;
-            if (entry != null && entry[0] === version) return entry[1] as Node;
+            if (entry != null && entry[0] === version && entry[1] === epoch)
+            {
+                return entry[2] as Node;
+            }
             var n:Node = build();
             // Only this explicit immutable-cache contract licenses Reconciler's
             // same-object subtree skip. Legacy views may retain and mutate an
             // ordinary Node, which must continue to reconcile on every render.
             n.memoRoot = true;
-            this._memo[key] = [version, n];
+            this._memo[key] = [version, epoch, n];
             return n;
         }
 

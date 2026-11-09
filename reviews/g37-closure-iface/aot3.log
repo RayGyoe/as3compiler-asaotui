@@ -1,0 +1,32 @@
+== as-aot: AS3 subset -> C -> native ==
+[1/4] read        ../asaotui/temp/g37/Repro3.as
+[2/4] parse       tokenize + AST
+[3/4] codegen     emit C source
+[4/4] compile     clang -O2 -ffp-contract=off -l shell32 -o ../asaotui/temp/g37/Repro3.exe ../asaotui/temp/g37/Repro3.c -I C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\curl\include -L C:\Users\rayle\Desktop\as3compiler-aot\as3compiler\vendor\curl\lib\windows-x64 -l z
+../asaotui/temp/g37/Repro3.c:34024:22: error: operand of type 'IEnv' (aka 'struct IEnv') where arithmetic or pointer type is required
+ 34024 |   gc_mark_ptr((void*)e->e);
+       |                      ^~~~
+../asaotui/temp/g37/Repro3.c:34027:13: error: redefinition of 'e' with a different type: '_fn0_env *' vs 'IEnv' (aka 'struct IEnv')
+ 34027 |   _fn0_env* e = (_fn0_env*)gc_alloc(GCT_CUSTOM, sizeof(_fn0_env));
+       |             ^
+../asaotui/temp/g37/Repro3.c:34026:37: note: previous definition is here
+ 34026 | static _fn0_env* _fn0_env_make(IEnv e) {
+       |                                     ^
+../asaotui/temp/g37/Repro3.c:34028:4: error: member reference type 'IEnv' (aka 'struct IEnv') is not a pointer; did you mean to use '.'?
+ 34028 |   e->mark = _fn0_env_mark;
+       |   ~^~
+       |    .
+../asaotui/temp/g37/Repro3.c:34028:6: error: no member named 'mark' in 'struct IEnv'
+ 34028 |   e->mark = _fn0_env_mark;
+       |   ~  ^
+../asaotui/temp/g37/Repro3.c:34029:4: error: member reference type 'IEnv' (aka 'struct IEnv') is not a pointer; did you mean to use '.'?
+ 34029 |   e->e = e;
+       |   ~^~
+       |    .
+../asaotui/temp/g37/Repro3.c:34029:6: error: no member named 'e' in 'struct IEnv'
+ 34029 |   e->e = e;
+       |   ~  ^
+../asaotui/temp/g37/Repro3.c:34030:10: error: returning 'IEnv' (aka 'struct IEnv') from a function with incompatible result type '_fn0_env *'
+ 34030 |   return e;
+       |          ^
+7 errors generated.
