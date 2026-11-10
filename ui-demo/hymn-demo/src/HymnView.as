@@ -13,10 +13,12 @@
 //     definite height BEFORE layout solves: lyrics are wrapped by hand (HymnWrap) and
 //     every row is given an explicit height, with the total handed to the column.
 //
-// THE PLAYER IS SILENT, AND THE UI SAYS SO. Upstream synthesises every tune through
-// rustysynth; this port has the tune metadata but no synthesiser yet (see
-// hymn/README.md), so the transport drives a real clock over the real section map and
-// marks the window "SILENT" where the instrument would be. Nothing pretends to sound.
+// THE PLAYER SOUNDS, AND THE BAR SAYS WHAT IS SOUNDING. Upstream renders each tune
+// through rustysynth and a GM SoundFont; this port synthesises the same note data
+// itself (HymnSynth) into PCM for flash.media, so the melody and the four parts are
+// the tune's own and only the timbre is ours. When a build has no audio backend the
+// bar says so in the same slot instead of showing a transport that cannot sound --
+// flash.media reports that honestly (play() returns null, areSoundsInaccessible true).
 package hymn
 {
     import asaot.ui.Dirty;
@@ -839,11 +841,16 @@ package hymn
                     })(parts[v]),
                     ariaName: "Mute " + parts[v] }));
             }
-            var playBtn:Node = box({ key: "play", style: this.tile(44, 999, t.accent),
-                onClick: function (e:Object):void { self.model.togglePlay(); },
+            // Upstream greys the transport when there is nothing to hear (no tune for
+            // this hymn): a filled accent circle that does nothing is a lie, a flat one
+            // is not.
+            var playable:Boolean = model.tuneOf(model.current()) != null;
+            var playBtn:Node = box({ key: "play", style: this.tile(44, 999,
+                    playable ? t.accent : t.raised),
+                onClick: function (e:Object):void { if (playable) self.model.togglePlay(); },
                 ariaName: model.playing ? "Pause" : "Play" }, [
                 icon(model.playing ? I_PAUSE : I_PLAY, { key: "pli",
-                    size: [Length.px(17), Length.px(17)], color: t.onAccent,
+                    size: [Length.px(17), Length.px(17)], color: playable ? t.onAccent : t.text3,
                     stroke: false, fill: true })
             ]);
             var inst:Array = [];
@@ -927,7 +934,7 @@ package hymn
                     style: this.txt(MONO, 11, false, t.text3, 40, 14, "right"), ariaName: "Remaining" })
             ];
 
-            // ---- right: pause-after and the silent-build disclosure ----
+            // ---- right: pause-after and the status chip ----
             var right:Array = [];
             var dotColor:uint = model.stopEach ? t.accent : t.text3;
             // MEASURED, not guessed: a 160pt box around a 130pt run leaves 30pt of dead
@@ -947,10 +954,13 @@ package hymn
                 cornerRadii: 999, background: model.stopEach ? t.accentSoft : t.raised }),
                 onClick: function (e:Object):void { self.model.setStopEach(!model.stopEach); },
                 ariaName: "Pause after each verse" }, toggleKids));
-            var expLabel:String = "SILENT: no audio in this build";
+            // Upstream prints a dot + "Experimental tune" here. The slot is kept and the
+            // text says what THIS build's audio is doing, which is the one thing a reader
+            // of the screen cannot hear for themselves.
+            var expLabel:String = model.audio.ready ? "Experimental tune" : "No audio device";
             var expW:Number = Math.ceil(HymnWrap.width(expLabel, SANS, 11)) + 1;
             var expKids:Array = [
-                box({ key: "expDot", style: this.dot(6, t.accent) }),
+                box({ key: "expDot", style: this.dot(6, model.audio.ready ? t.accent : t.text3) }),
                 text(expLabel, { key: "expT",
                     style: this.txt(SANS, 11, false, t.text3, expW, 14, "left") })
             ];

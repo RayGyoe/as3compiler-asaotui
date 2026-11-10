@@ -888,6 +888,21 @@
 **本轮附带发现（不属 G44，已知未处理）**：并发会话正在把 `ui-demo/air-gallery/app.xml` 的 `renderMode` 从 `cpu` 改成 `direct`。web 构建会把这个描述符字段变成 `ASC_RENDER_GPU=1`（wasm 9.04 → 9.93 MB、渲染路径改成 WebGL 合成器）。本次发布**刻意用 cpu 臂**（与上一版同一种渲染路径，只多滚轮修复），该字段临时换回 cpu 构建后再按 sha256 原字节还原；GPU 臂是否上 web 是另一个决定，没在这里顺手做。
 
 
+### G46 —— `loadPCMFromByteArray` 的 PCM 注册表**固定 64 槽、程序生命周期不可回收**，第 65 次抛 `#2068`
+
+| 项 | 内容 |
+|---|---|
+| 现象 | 长会话里反复 `Sound.loadPCMFromByteArray`（换个音色或声部就要重新渲染一次）到第 65 次，程序抛 `ArgumentError` 退出，且**没有任何 API 能回收旧映像** |
+| 实测（temp/hymn-audio/CapProbe.as） | 0.1 s / 22.05 kHz 的小映像连续注册：`registered=64 firstFailAt=64 msg=ArgumentError 2068: Error #2068: Invalid sound.`，第 64 个 `Sound.length=100.0` 正常。**探针必须把 `vendor/audio_glue.c` 一起链上**——不链后端时 `as_snd_accept_undecoded` 会接管（`length=0`、不抛），同一份源码两种结论 |
+| 契约（AIR） | AIR 没有槽数上限：`Sound` 在可及期间持有解码数据，超限的是内存而不是一个计数表；AIR 也不提供显式释放（`Sound.close()` 只对流式 `load()` 有意义） |
+| 我们怎么做 | `vendor/audio_glue.c:102` 的 `static as_pcm_buf g_bufs[64]`；`as_audio_register_pcm` 在 `g_buf_count >= 64` 时返回 `-1`，成功时 `memcpy` 一份 `malloc` 的副本**永不 free**；`as_audio_voice_reap` 只回收**声道**，不碰缓冲区 |
+| 失败形态 | `src/emit.ts:16239` 的 `o->_snd_buf = as_audio_register_pcm(...)`：注册失败且 `as_snd_accept_undecoded` 不接管（**有**后端时）⇒ `#2068 "Error #2068: Invalid sound."`。这是 `throw`，不是可处理的返回值 |
+| 实测代价（hymn-demo） | 一趟 37 s / 22.05 kHz / 单声道 float32 = **3.29 MB**；64 槽 = 最坏 **211 MB** 常驻 + 一次必崩。`HymnAudio.regs` 在 beacon 里可见（`play`=1、`muteS`=2、`flute`=3） |
+| 现在的规避 | `hymn-demo` 自己封顶 `IMAGE_CAP = 56`（离 64 留余量）：到顶后不再渲染，`status` 变成 `audio images full (56)`、播放停下并**明说**，不抛异常。另外 `pick()` 采纳上游「`load()` replaces the tune and **stops playback**」的语义，于是「边放边翻列表」不会一次一个映像 |
+| 建议的上游修法 | ① 表按需增长；② 给出可回收路径（`Sound` 不可达时回收其 `buf`，或让 `close()` 对 PCM 映像生效）；③ 至少让注册失败返回可处理状态而不是 `throw` |
+| 为何不算本仓 bug | 「一个 `Sound` 的生命周期内不能丢数据」是对的；不对的是**上限被写死成 64 且不可回收**——这是 `g_bufs` 的实现选择，不是 AIR 的契约。登记在此，等上游决定 |
+
+
 ---
 
 ## 2 不是缺口：已澄清 / 已关闭

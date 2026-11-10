@@ -4,9 +4,9 @@
 // Regenerate: node ui-demo/hymn-data.cjs --src <hymnbook checkout>
 //
 // One literal per tune: "<number>\t<length of one pass, s>\t<chorus start, s or -1>\t<voices>".
-// `length`/`chorusAt` are what the ARRANGEMENT needs (verse, chorus, verse, chorus...);
-// the notes themselves live in the MIDI files, which this demo does not compile in
-// because it does not synthesise audio yet (see hymn/README.md).
+// Length raised to the MIDI's own end for: 631 (17.45s -> 28.35s)
+// `length`/`chorusAt` are what the ARRANGEMENT needs (verse, chorus, verse, chorus...).
+// The notes are in HymnNotes.as, generated from the same tunes' MIDI files.
 package hymn
 {
     public final class HymnTunes
@@ -171,7 +171,7 @@ package hymn
             "618\t35.556\t17.778\tSoprano,Alto,Tenor,Bass",
             "621\t38.4\t19.2\tSoprano,Alto,Tenor,Bass",
             "624\t33.103\t-1\tSoprano,Alto,Tenor,Bass",
-            "631\t17.455\t-1\tSoprano,Alto,Tenor,Bass",
+            "631\t28.35\t-1\tSoprano,Alto,Tenor,Bass",
             "643\t28.8\t14.4\tSoprano,Alto,Tenor,Bass",
             "646\t30.968\t-1\tSoprano,Alto,Tenor,Bass",
             "650\t34.636\t16.636\tSoprano,Alto,Tenor,Bass",

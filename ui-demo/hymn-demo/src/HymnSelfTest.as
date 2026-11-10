@@ -14,6 +14,10 @@ package hymn
     public final class HymnSelfTest
     {
         private static var fails:Array;
+        // Reported by HymnMain's selftest file: how much was actually checked, not just
+        // that something was.
+        public static var notes:int = 0;
+        public static var tunes:int = 0;
 
         // Returns "" when every case passes, else "label: got/got vs want" lines.
         public static function run(hymns:Array):String
@@ -39,6 +43,76 @@ package hymn
                 }
                 if (empty) fails.push("every hymn parses to at least one block");
             }
+
+            // ---- the note corpus ---------------------------------------------
+            // HymnTunes and HymnNotes are generated from the same MIDI files by two
+            // different passes of hymn-data.cjs (metadata in one, note events in the
+            // other). The failure this catches is the one a silent build hides: a clock
+            // running over notes that are not the tune it says it is playing. So the two
+            // halves are joined here -- every tuned hymn has a note row, every note row
+            // belongs to a tuned hymn, and no note rings past the tune's own length.
+            var tuneLen:Object = {};
+            var tuneRows:Array = HymnTunes.RAW;
+            for (var tr:int = 0; tr < tuneRows.length; tr++)
+            {
+                var tf:Array = String(tuneRows[tr]).split("\t");
+                if (tf.length >= 4) tuneLen[parseInt(tf[0], 10)] = Number(tf[1]);
+            }
+            tunes = 0;
+            for (var key:String in tuneLen) tunes++;
+
+            var rows:Array = HymnNotes.RAW;
+            eqInt(rows.length, tunes, "notes: one row per tune");
+            notes = 0;
+            var joined:int = 0;
+            for (var nr:int = 0; nr < rows.length; nr++)
+            {
+                var nf:Array = String(rows[nr]).split("\t");
+                if (nf.length != 5)
+                {
+                    fails.push("notes: row " + String(nr) + " has " + String(nf.length) + " fields, want 5");
+                    continue;
+                }
+                var num:int = parseInt(nf[0], 10);
+                if (tuneLen[num] == null)
+                {
+                    fails.push("notes: hymn " + String(num) + " has notes but no tune");
+                    continue;
+                }
+                joined++;
+                var last:Number = 0;
+                for (var v:int = 1; v < 5; v++)
+                {
+                    var spans:String = String(nf[v]);
+                    if (spans == "") continue;
+                    var list:Array = spans.split(";");
+                    for (var k:int = 0; k < list.length; k++)
+                    {
+                        var q:Array = String(list[k]).split(",");
+                        if (q.length != 3)
+                        {
+                            fails.push("notes: hymn " + String(num) + " has a malformed span");
+                            break;
+                        }
+                        var at:Number = Number(q[0]) / 100;
+                        var dur:Number = Number(q[1]) / 100;
+                        if (!(dur > 0)) fails.push("notes: hymn " + String(num) + " has a non-positive duration");
+                        if (!(at >= 0)) fails.push("notes: hymn " + String(num) + " has a negative onset");
+                        if (at + dur > last) last = at + dur;
+                        notes++;
+                    }
+                }
+                // The arrangement cuts every note at the section boundary, so nothing
+                // can outlast the tune; a second and a half of slack covers the tail
+                // rounding in the two generators.
+                if (last > tuneLen[num] + 1.5)
+                {
+                    fails.push("notes: hymn " + String(num) + " sounds to " + last.toFixed(2)
+                        + "s but the tune is " + tuneLen[num].toFixed(2) + "s");
+                }
+            }
+            if (joined != rows.length) fails.push("notes: only " + String(joined) + " of "
+                + String(rows.length) + " note rows join to a tune");
 
             // ---- title casing -------------------------------------------------
             eq(titleCase("ALL HAIL, IMMANUEL!"), "All Hail, Immanuel!", "title: small words");

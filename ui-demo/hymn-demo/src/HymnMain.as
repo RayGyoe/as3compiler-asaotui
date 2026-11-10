@@ -50,6 +50,11 @@ package hymn
         private var phaseAt:int = 0;
         private var playAt:Number = 0;
         private var loadMs:int = 0;
+        // Phase 4's beats (see onFrame) and the one-line record they append.
+        private var aSub:int = 0;
+        private var aSubAt:int = 0;
+        private var aTrace:String = "";
+        private var selfFail:String = "";
         // Which palette the KIT was last given, so a theme toggle installs the other one
         // exactly once instead of on every notifying call.
         private var kitName:String = "";
@@ -122,6 +127,16 @@ package hymn
                 var t0:int = getTimer();
                 this.model.load();
                 this.loadMs = getTimer() - t0;
+                // hymnbook's own fourteen tests, run here rather than left as a comment:
+                // a port whose only check is "the screen looks right" drifts exactly
+                // where those tests bite. Plus the one join those tests cannot see --
+                // the generated note corpus against the generated tune metadata.
+                this.selfFail = HymnSelfTest.run(this.model.hymns);
+                this.out(OUT + "-selftest.txt", this.selfFail == ""
+                    ? "PASS " + String(this.model.hymns.length) + " hymns, "
+                        + String(HymnSelfTest.notes) + " notes over " + String(HymnSelfTest.tunes)
+                        + " tunes\n"
+                    : this.selfFail);
                 trace("HymnMain: " + this.model.hymns.length + " hymns in " + this.loadMs + " ms");
                 return;
             }
@@ -181,18 +196,49 @@ package hymn
                     }
                     break;
                 case 4:
-                    if (frames >= phaseAt)
+                    // THE TRANSPORT IS EXERCISED, NOT JUST STARTED. Four beats, each
+                    // through the verb the UI itself calls, each recording both clocks:
+                    //   0  play (any part/instrument)        -> device is pulling
+                    //   1  mute Soprano                      -> re-render, position kept
+                    //   2  switch to Flute                   -> re-render, position kept
+                    //   3  seek to the second VERSE block    -> device jumps to that second
+                    // A silent transport would still advance the model clock, so the
+                    // device's own `positionSec` is the number that has to move with it.
+                    var el:int = frames - phaseAt;
+                    if (aSub == 0 && el >= 30)
                     {
-                        // The transport ran for ~80 frames: the follow animation had
-                        // every chance to move the reader, and this number says whether
-                        // it did (a resize re-describe must not have thrown it back).
+                        this.note("play");
+                        this.model.toggleVoice("Soprano");
+                        aSub = 1; aSubAt = frames;
+                    }
+                    else if (aSub == 1 && frames - aSubAt >= 12)
+                    {
+                        this.note("muteS");
+                        this.model.setInstrument("Flute");
+                        aSub = 2; aSubAt = frames;
+                    }
+                    else if (aSub == 2 && frames - aSubAt >= 12)
+                    {
+                        this.note("flute");
+                        this.model.seekBlock(2);
+                        aSub = 3; aSubAt = frames;
+                    }
+                    else if (aSub == 3 && frames - aSubAt >= 12)
+                    {
+                        this.note("seek3");
+                        var a:HymnAudio = this.model.audio;
                         this.out(OUT + ".done", "PASS " + this.model.hymns.length + " hymns, load "
                             + this.loadMs + " ms, " + w + "x" + h + ", splash gone at frame "
                             + String(SHOT_FRAME) + ", tuned=" + String(this.model.hasTuneSelected())
                             + ", followFrom=" + String(Math.round(this.playAt))
                             + " followTo=" + String(Math.round(this.model.scrollY))
-                            + ", verse=" + String(this.model.blockIndex + 1) + "\n");
+                            + ", verse=" + String(this.model.blockIndex + 1)
+                            + ", audio=" + a.status + " ready=" + String(a.ready)
+                            + " samples=" + String(a.samples) + " render=" + String(a.renderMs) + "ms"
+                            + " peak=" + a.peak.toFixed(3) + " regs=" + String(a.regs)
+                            + ", trace=" + aTrace + "\n");
                         trace("HymnMain: done");
+                        aSub = 4;
                         this.next(5);
                     }
                     break;
@@ -204,7 +250,21 @@ package hymn
             this.phase = p;
             this.phaseAt = frames + 20;
             if (p == 3) this.phaseAt = frames + 30;   // let the drawer finish sliding
-            if (p == 4) this.phaseAt = frames + 80;   // 1.3s of transport
+            if (p == 4) this.phaseAt = frames;       // phase 4 counts its own beats
+        }
+
+        // One beat of the audio trace: the device clock and the model clock side by
+        // side. They are two different numbers on purpose -- the model's is derived
+        // from a frame count, the device's comes back from the mixer -- so "they track"
+        // is a measurement, and a mute or a seek that only moved one of them shows up.
+        private function note(tag:String):void
+        {
+            var a:HymnAudio = this.model.audio;
+            aTrace += (aTrace == "" ? "" : "; ") + tag
+                + " dev=" + String(Math.round(a.positionSec() * 100) / 100)
+                + " model=" + String(Math.round(this.model.nowSec() * 100) / 100)
+                + " regs=" + String(a.regs)
+                + " stat=" + a.status;
         }
 
         // Pick the first hymn that has a tune, through the same two calls the UI makes:

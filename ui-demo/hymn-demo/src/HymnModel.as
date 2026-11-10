@@ -5,12 +5,16 @@
 // kit/asaot/ui/View.as) and it is what makes the app's behaviour readable: "what
 // happens when you press play" is answered here, not in a widget.
 //
-// THE PLAYER IS A CLOCK, NOT A SOUND. The upstream app synthesises a 4-part
-// arrangement from <tt>assets/tunes/*.mid</tt> through rustysynth. This port has the
-// tune METADATA (length, chorus offset, voices -- generated into HymnTunes.as) but no
-// synthesiser, and it says so in the UI instead of pretending: pressing play advances
-// the section map and the lyric highlight at the tune's own tempo, silently. When the
-// audio backend lands, this clock becomes the transport it already models.
+// THE PLAYER RUNS A CLOCK AND A SOUND CARD. The upstream app arranges a 4-part tune
+// from <tt>assets/tunes/*.mid</tt> and renders it through rustysynth + a GM SoundFont.
+// This port has the same note data compiled in (HymnNotes.as) and synthesises the pass
+// itself (HymnSynth) into PCM for flash.media (HymnAudio) -- so the melody, the parts
+// and the timing are the tune's own, and only the timbre is ours.
+//
+// THE CLOCK STAYS THE MODEL'S. The device owns the samples; this file owns the
+// timeline the section map, the lyric highlight and the follow animation read. That
+// separation is deliberate: seeking, "pause after each verse" and the SIDEBAR all
+// move on the frame clock, and the sound is told where to start, not asked where it is.
 package hymn
 {
     import asaot.ui.Dirty;
@@ -53,6 +57,10 @@ package hymn
         public var blockDur:Number = 6;
         public var muted:Object = { Soprano: false, Alto: false, Tenor: false, Bass: false };
         public var instrument:String = "Organ";
+        // The sound card. Owned by the model because "is it playing" is model state;
+        // the view only reads `audio.status` to print what the bar is doing.
+        public var audio:HymnAudio = new HymnAudio();
+        private var noteRows:Object = {};   // hymn number -> its HymnNotes row
         // Pause at the end of a verse instead of running into the next one. Upstream's
         // "Pause after each verse" (src/app.rs `stop_each`): the transport stops at the
         // block boundary, the reader keeps its place.
@@ -128,6 +136,17 @@ package hymn
                 };
             }
             this.tunes = out;
+            // The notes are kept as their raw row and parsed on selection: only the
+            // hymn being played needs them, and 52k notes parsed at start-up would be
+            // work done for nothing.
+            var noteList:Array = HymnNotes.RAW;
+            for (i = 0; i < noteList.length; i++)
+            {
+                var row:String = String(noteList[i]);
+                var tab:int = row.indexOf("\t");
+                if (tab < 0) continue;
+                this.noteRows[parseInt(row.substring(0, tab), 10)] = row;
+            }
         }
 
         // ---- derived --------------------------------------------------
@@ -203,7 +222,64 @@ package hymn
             this.blockIndex = 0;
             this.blockT = 0;
             this.blockDur = durationOf(hymns[hymnIndex], 0);
+            // Upstream's `load_tune` is documented "Replace the current tune (stops
+            // playback)", and `select()` goes through it: picking another hymn ends the
+            // old one rather than cross-fading into it. It also keeps the sound card from
+            // rendering a new PCM image per keystroke while the list is walked.
+            this.playing = false;
+            this.openTune();
             this.notify(Dirty.ALL);
+        }
+
+        // Hand the newly selected hymn's notes to the sound card. No render yet: the
+        // PCM image is built on play, with the parts and instrument in force then.
+        private function openTune():void
+        {
+            var h:Object = current();
+            var t:Object = tuneOf(h);
+            if (t == null)
+            {
+                this.audio.close();
+                return;
+            }
+            this.audio.open(String(this.noteRows[h.number]), t.length);
+        }
+
+        // Where the timeline is, in seconds -- the number the device is given when it
+        // has to (re)start, so a seek or an unmute lands exactly where the map shows.
+        public function nowSec():Number
+        {
+            var h:Object = current();
+            if (h == null) return 0;
+            var acc:Number = blockT;
+            for (var i:int = 0; i < blockIndex && i < h.blocks.length; i++) acc += durationOf(h, i);
+            return acc;
+        }
+
+        // S/A/T/B as the synthesiser wants them, in track order.
+        public function partMask():Array
+        {
+            var t:Object = tuneOf(current());
+            var names:Array = t == null ? [] : String(t.voices).split(",");
+            var out:Array = [];
+            for (var i:int = 0; i < 4; i++)
+            {
+                var name:String = i < names.length ? names[i] : "";
+                out.push(name != "" && muted[name] != true);
+            }
+            return out;
+        }
+
+        // Re-render and keep going from where the clock is. Used by the part and
+        // instrument toggles: the mix changes, the song must not.
+        private function restartAudio():void
+        {
+            if (!playing) return;
+            if (!this.audio.play(this.nowSec(), this.partMask(), this.instrument))
+            {
+                this.playing = false;
+                this.notify(Dirty.ALL);
+            }
         }
 
         // `recompute` is the ONLY place `visible` is written. It is called from the
@@ -266,12 +342,28 @@ package hymn
         // ---- transport -------------------------------------------------
         public function togglePlay():void
         {
-            if (current() == null) return;
+            var h:Object = current();
+            if (h == null) return;
+            var tune:Object = tuneOf(h);
+            if (!this.playing && tune == null)
+            {
+                // No tune: nothing to play. The bar already says so; do not start a
+                // clock that would look like playback.
+                return;
+            }
             this.playing = !this.playing;
             if (this.playing)
             {
-                this.blockDur = durationOf(current(), blockIndex);
+                this.blockDur = durationOf(h, blockIndex);
                 this.lastMs = getTimer();
+                if (!this.audio.play(this.nowSec(), this.partMask(), this.instrument))
+                {
+                    this.playing = false;
+                }
+            }
+            else
+            {
+                this.audio.stop();
             }
             this.notify(Dirty.ALL);
         }
@@ -281,6 +373,7 @@ package hymn
             this.playing = false;
             this.blockIndex = 0;
             this.blockT = 0;
+            this.audio.stop();
             this.notify(Dirty.ALL);
         }
 
@@ -293,6 +386,7 @@ package hymn
             this.blockIndex = (this.blockIndex + dir + n) % n;
             this.blockT = 0;
             this.blockDur = durationOf(h, blockIndex);
+            this.restartAudio();
             this.notify(Dirty.ALL);
         }
 
@@ -305,6 +399,7 @@ package hymn
             this.blockIndex = ix;
             this.blockT = 0;
             this.blockDur = durationOf(h, ix);
+            this.restartAudio();
             this.notify(Dirty.ALL);
         }
 
@@ -312,6 +407,7 @@ package hymn
         {
             if (this.instrument == name) return;
             this.instrument = name;
+            this.restartAudio();
             this.notify(Dirty.ALL);
         }
 
@@ -319,6 +415,7 @@ package hymn
         {
             if (muted[part] == null) return;
             muted[part] = !muted[part];
+            this.restartAudio();
             this.notify(Dirty.ALL);
         }
 
@@ -404,6 +501,7 @@ package hymn
                 if (h == null)
                 {
                     playing = false;
+                    this.audio.stop();
                     dirty = Dirty.ALL;
                 }
                 else
@@ -416,9 +514,19 @@ package hymn
                         blockIndex++;
                         if (blockIndex >= n)
                         {
-                            blockIndex = n - 1;
+                            // Upstream's engine resets `pos = 0` when the tune runs out
+                            // (`synth.rs` completion branch: pos 0, next 0, halt), so the
+                            // map and the follow animation go back to the first verse and
+                            // the next play starts from the top. Holding the last block
+                            // would leave a play button that replays only verse N.
+                            blockIndex = 0;
                             blockT = 0;
+                            blockDur = durationOf(h, 0);
                             playing = false;
+                            // The device would run out of samples on its own; stopping
+                            // it here is what keeps the sound and the map agreeing at
+                            // the end of the last verse.
+                            this.audio.stop();
                             dirty = Dirty.ALL;
                             break;
                         }
@@ -428,6 +536,7 @@ package hymn
                             // play resumes from it.
                             blockT = 0;
                             playing = false;
+                            this.audio.stop();
                             dirty = Dirty.ALL;
                             break;
                         }

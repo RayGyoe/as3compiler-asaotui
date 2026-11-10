@@ -37,6 +37,10 @@ const SHOTS = ['hymn-splash.png', 'hymn-page.png', 'hymn-tuned.png', 'hymn-light
   .map((f) => path.join(appDir, f));
 const RECTS = ['hymn-rects-page.txt', 'hymn-rects-tuned.txt', 'hymn-rects-light.txt']
   .map((f) => path.join(appDir, f));
+// hymnbook's ported unit tests plus the tune/note join, written at load. It is a
+// gate, not a note: a corpus that stops joining is exactly what the silent build used
+// to hide.
+const SELFTEST = path.join(appDir, 'hymn-selftest.txt');
 const SHOT = SHOTS[1];
 const RUN_LOG = path.join(appDir, 'hymn.run.log');
 
@@ -61,7 +65,7 @@ function killWindow() {
 let launchedPid = 0;
 
 killWindow();
-for (const f of [DONE, SHOT, RUN_LOG]) {
+for (const f of [DONE, SHOT, RUN_LOG, SELFTEST]) {
   if (fs.existsSync(f)) fs.unlinkSync(f);
 }
 
@@ -143,7 +147,7 @@ if (fs.existsSync(RUN_LOG)) {
   const log = fs.readFileSync(RUN_LOG, 'utf8').trim();
   if (log) console.log('---- hymn.run.log ----\n' + log);
 }
-for (const p of SHOTS.concat(RECTS)) {
+for (const p of SHOTS.concat(RECTS, [SELFTEST])) {
   if (!fs.existsSync(p)) {
     console.error('[hymn] MISSING capture: ' + path.basename(p));
     if (!keep) killWindow();
@@ -152,6 +156,15 @@ for (const p of SHOTS.concat(RECTS)) {
 }
 console.log('[hymn] captures ' + SHOTS.map((p) => path.basename(p) + ' '
   + fs.statSync(p).size + ' B').join(', '));
+{
+  const st = fs.readFileSync(SELFTEST, 'utf8').trim();
+  if (!st.startsWith('PASS')) {
+    console.error('[hymn] SELFTEST FAILED:\n' + st);
+    if (!keep) killWindow();
+    process.exit(1);
+  }
+  console.log('[hymn] selftest ' + st);
+}
 if (keep) {
   console.log('[hymn] window left up (--keep)');
 } else {
