@@ -824,7 +824,7 @@
 
 ---
 
-### G41 —— live 场景的 paint 相位 89% 是 **TextField 整形**，不是光栅化 ⇒ 「增量光栅化」不是下一步的正确杠杆 —— ⚠️ **已定位，未立项（运行时整形/缓存策略，非语义缺口）**
+### G41 —— live 场景的 paint 相位 89% 是 **TextField 整形**，不是光栅化 ⇒ 「增量光栅化」不是下一步的正确杠杆 —— ✅ **已实现（HarfBuzz 快路径 9324353；残留回归见 G42）**
 
 | 项 | 内容 |
 |---|---|
@@ -834,11 +834,11 @@
 | 已否掉的微优化 | reshape 时跳过 `setTextFormat`（依赖 `field.defaultTextFormat` 已应用）：paint 11.63 vs 11.61ms，**无收益** ⇒ `field.text=` + `textWidth` 读才是主导，不是二次 run table 重建 |
 | runtime 侧现状（`ASC_PASS_TRACE` 的 `live`/`cached`） | baseline `live=444 cached=23723`——运行时**已有** cacheAsBitmap 增量 re-bake（G30），`live` 是真正变化的对象、`cached` 是缓存命中。没有「没变却重画」的浪费可省 |
 | 结论 | **增量光栅化（Skia tile hash-diff）对这个 live 场景收益有限**：sparkline 命令记录 10% + paintbox 3% = 最多 ~14% 的 paint 相位，且 Graphics 是累积的（增量需 clear + 全重录，无法真正 tile）。瓶颈是文本整形，优化它在**编译器 runtime 侧**（run table 复用 / 布局缓存 / 短数字串的轻量 shape 路径），或**库侧虚拟化**（gallery 已虚拟化，`probes/live/Main.as` 刻意不虚拟化以量上界） |
-| 状态 | ⚠️ **已定位，未立项**。库侧子树级 measure（§1 L1 与 `cui-borrow-map.md` §3.8）是正确且收益大的一步；本条的剩余成本是「必须重整形」，留给编译器仓库的运行时整形/缓存策略（与 G36 的分配开销同属「已定量、待上游」） |
+| 状态 | ✅ **已实现**（v0.4.366 / `9324353`，`perf(text): G41 HarfBuzz fast path for short pure-ASCII single-line fields`）：短纯 ASCII 单行单样式无 wrap 字段走 HarfBuzz glyph id + `SkFont::getWidths`，跳过 SkParagraph（~25x）。⚠️ 快路径 advance 与 SkParagraph 的 subpixel 度量不一致、且编辑中字段丢 `selectionIndex` —— 两个回归登记在 **G42**，修好后本仓 `typing`/`tabbar` 两道门应自绿 |
 
 ---
 
-### G42 —— 上游 `9324353`（G41 HarfBuzz 快路径）落地后，本仓两个门变红：**文本宽度从分数变整数**（+5.3pt）与**可编辑字段光标复位** —— ⚠️ **已定位（A/B 证明在上游），未修**
+### G42 —— 上游 `9324353`（G41 HarfBuzz 快路径）落地后，本仓两个门变红：**文本宽度从分数变整数**（+5.3pt）与**可编辑字段光标复位** —— ✅ **已修（v0.4.367）**
 
 | 项 | 内容 |
 |---|---|
@@ -849,7 +849,24 @@
 | 与本仓子树级 measure 无关 | 上述红在 `kit/` 回滚到 Git HEAD 后**原样复现**；子树级 measure（`cui-borrow-map.md` §3.8）在 9324353 上是 73/75，红的就是这两道（本轮实测） |
 | 证据 | [`reviews/compiler-9324353-asaotui-ab.txt`](reviews/compiler-9324353-asaotui-ab.txt)（两臂命令与逐条输出、`g20` 数字对照、截图重写清单） |
 | 上游要改什么 | ① 快路径的 advance 必须与 SkParagraph **同口径**（未 hint 的分数 advance，或一律走 SkParagraph 的度量结果），否则任何依赖 `textWidth` 的居中/截断/行数都会漂移；② 编辑中的字段不得被任何「paint 期重整形」路径碰到（`tf.text=` 会丢 `selectionIndex`）。修好后本仓两道门应自绿，无需改库 |
-| 状态 | ⚠️ **已定位，未修**（属上游）。本仓在此期间的记录：全量 **73/75**，红项 = `typing`、`tabbar`；不粉饰、不改数 |
+| 状态 | ✅ **已修**（v0.4.367）：① 快路径 advance 改用 `SkFont::getWidths` 桥接 HarfBuzz（skhb funcs）+ sub font `scale=size×65536`，从 `hb_buffer_get_glyph_positions` 读含 GPOS kern 的 advance（不再裸 getWidths 累加）；② paint 的 SkFont 对齐 `kAntiAlias+kSlight+subpixel`（与度量同口径，否则默认 hinting 把 advance 取整、label 居中漂 3.33pt）；③ fast guard 排除 `input` 字段（`!as_tf_is_input`）。修后本仓 `typing`/`tabbar` 两门自绿，`g20` 关系式双 runtime 全绿、`tw1` 回 `46.65625`；上游全量 669/647/19/3 与 baseline 逐项一致 |
+| 本仓独立核实（2026-11-10） | ① `probes/widgets/typing` **18/0 PASS**、`probes/widgets/tabbar` **13/0 PASS**（单跑）；② 全量 **75/75 PASS, 561.3 s** → [`reviews/gates-windows-2026-11-10.txt`](reviews/gates-windows-2026-11-10.txt)（e 轮 73/75，唯一变化就是这两道转绿）；③ `g20` 原始度量：`tw1/2/3 = 46.65625`（修前 52）、`ink1/3 = 45`（修前 50）、`plain = 39.546875  formatted = 46.65625`；④ 宽度值从入库的 `46.65999984741211` 微移到 `46.65625`（−0.0037pt）：与 SkParagraph 当前值同口径、`ink` 一字未变，属可接受 |
+
+---
+
+### G43 —— 快路径的**纵向**仍与 SkParagraph 差 ~1.2pt：纯 ASCII 单行定宽文本整行下移（字形位图逐位相同，仅平移） —— ⚠️ **已定位，未直接 A/B（可能有上游）**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | G42 修后重建画廊：16 张已入库截图仍与当前构建有像素差，但**差异带很少**——页 1..7 只有一处：品牌字 `asaot.ui`（1500×1050 轴上 `x 22..132`，`y 23..47 → 25..47`），**整行下移 2 设备像素**（即 1500-wide 的 150% DPI 下 ~1.33pt；1000-wide 臂为 **1px**）。行墨迹计数逐行相同 ⇒ 字形位图完全相同，只是被放下去了 |
+| 页 0 多两处 | `y307..329 x553..1307`（页面标题行）与右列 `x1350..1417` 上 10 个小块（`~50×16`，列表文字）：这两处不是纯平移（行墨迹计数对不上任何 dy）⇒ 抗锯齿级差异，同一根因 |
+| 与库无关 | 把 `kit/` 退到 `08a23d4`（子树级 measure 之前）重建画廊：差异**带与逐带样本数完全相同**（页 1：`25 rows / 1 band / 1071 samples`）⇒ 不是 `TextWidget`/`Style` 引起的 |
+| 时间窗收窄 | 已入库截图由 `60e678c`（2026-11-09）采，当时编译器是 `4d657aa`（**快路径尚未存在**）。`4d657aa → 9324353` 之间的两个提交（`8b411e5` 密码星号按码元、`bf30a16` 媒体 #2068）都不可能挪动一行字的基线 ⇒ 指向快路径的**纵向定位/行度量**（`sk_air_line_metrics` 与 SkParagraph 的 ascent 不同口径） |
+| 为何没直接证 | 直接 A/B 需要把编译器回退到 `bf30a16` 重建画廊，而编译器树当前有**未提交**的 G42 修复，我没动它（不把别人的工作树当实验台）。上一条是「时间窗 + kit 排除」的推导，不是 A/B |
+| 为什么门没抓到 | 所有文本类的门都比 **rect / 墨迹中心 / 关系式**（并且有 ±1.5..2pt 容差），整行下移 1.2pt 落在容差内；只有**逐像素比图**能看见，而本仓从不把「画廊截图逐字节相同」当门（截图是展示图，不是断言） |
+| 影响 | 纯 ASCII、单行、定宽的文本框（品牌、按钮标签、表格单元格）在快路径下整体低 ~1pt；非快路径（wrap/多 run/非 ASCII/可编辑）不受影响。对 61 页文档站与组件画廊属可见但很难自测的级差 |
+| 建议 | 要么让快路径的 `y` 与 SkParagraph 的 `layoutY` 同源（取 SkParagraph 算好的行度量/首行基线，而不是另一份 `sk_air_line_metrics`），要么在快路径里把首行基线**量**出来而不是**算**出来；修完应能以「画廊 16 张截图逐字节回到 `60e678c` 的版本」作为验收（本仓现成可比） |
+| 状态 | ⚠️ **已定位，未修**。登记在此，不粉饰：当前 75/75 是**门全绿**，不包含「与基线图逐像素一致」这一条 |
 
 
 ---

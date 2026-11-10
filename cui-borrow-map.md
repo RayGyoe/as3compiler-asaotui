@@ -173,10 +173,13 @@ paint（200 行 paint 从 0.35→11.59ms）。这一步只消除了「不该 mea
 **门**：`redraw`（14）、`typing`（18）、`textfx`（18）、`display`（48）、`choice`（44）、
 `anim`（14）、`feedback`（43）、`layout-check`（133+12）全部 PASS。全量跑在编译器 `bf30a16` 上是
 **74/75**（唯一 `interact` 是并发池的时序问题，单跑即绿 25/0）；把编译器换成 `9324353`
-（上游 G41 HarfBuzz 快路径）后变 **73/75**，新增的两道红 `typing` / `tabbar` 是**上游**的
-（`kit/` 回滚到 Git HEAD 也原样红，A/B 已证），登记 
+（上游 G41 HarfBuzz 快路径）后一度 **73/75**，新增的两道红 `typing` / `tabbar` 是**上游**的
+（`kit/` 回滚到 Git HEAD 也原样红，A/B 已证），登记
 [`compiler-gaps.md`](compiler-gaps.md) **G42**，证据在
 [`reviews/compiler-9324353-asaotui-ab.txt`](reviews/compiler-9324353-asaotui-ab.txt)。
+**G42 修好（v0.4.367）后复跑 75/75 PASS（561.3 s）** →
+[`reviews/gates-windows-2026-11-10.txt`](reviews/gates-windows-2026-11-10.txt)；剩下的
+纵向 ~1.2pt 位移登记为 **G43**（不在门里）。
 
 ---
 
