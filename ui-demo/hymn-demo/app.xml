@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  AIR application descriptor for the hymn book demo (a port of
+  ugochukwu-850/hymnbook's window -- see ui-demo/hymn-demo/README.md).
+
+  This file is the SOURCE OF TRUTH for how the window is created: `as-aot --air-app`
+  reads <width>/<height>/<title>/<resizable> here and its generated bootstrap shows
+  the window after the document class is added, so HymnMain never calls showWindow.
+
+    * <requestedDisplayResolution>high</requestedDisplayResolution> -> ASC_DISPLAY_HIGH=1:
+      the Skia surface is allocated in PHYSICAL pixels (this box is 150%, so a
+      1280x820 logical window owns 1920x1230 pixels). The upstream app draws vectors
+      and glyphs at device scale; "standard" would stretch a 1x raster and the serif
+      lyrics would be visibly soft.
+    * <systemChrome>none</systemChrome>: NO OS title bar. Upstream's window is a
+      client-drawn one (gpui's client-side decorations), so its own 56pt title bar is
+      the ONLY bar; leaving the standard frame on would stack two bars and shift every
+      offset in HymnTheme by the caption height. Dropping the frame makes the client
+      area exactly 1280x820 -- the size the upstream screenshot is 1:1 against.
+      The frame's jobs move to us: run-hymn's HymnMain forwards the title bar area to
+      NativeWindow.startMove() and wires the min/max/close icons it already draws.
+    * <renderMode>cpu</renderMode>: software raster + blit. Deliberate -- this app is
+      text and flat fills, and the cpu arm needs no D3D import libraries on Windows
+      (a GPU window does: `--cflag -ld3d12 --cflag -ld3dcompiler`, see
+      run-gallery.cjs). Flipping this to `direct` is a one-line experiment, and
+      run-hymn.cjs reports which one the manifest actually carries.
+
+  The generated manifest lands beside this file as HymnApp.build.json and is rewritten
+  on every build; change THIS file, not that one.
+-->
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+  <id>asaotui.hymnbook</id>
+  <versionNumber>0.1.0</versionNumber>
+  <filename>HymnApp</filename>
+  <architecture>64</architecture>
+  <initialWindow>
+    <content>HymnApp.swf</content>
+    <title>Hymn Book</title>
+    <visible>true</visible>
+    <width>1280</width>
+    <height>820</height>
+    <resizable>true</resizable>
+    <systemChrome>none</systemChrome>
+    <renderMode>cpu</renderMode>
+    <requestedDisplayResolution>high</requestedDisplayResolution>
+  </initialWindow>
+</application>

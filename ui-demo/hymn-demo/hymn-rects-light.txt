@@ -1,0 +1,54 @@
+stage 1280x820
+advAll=41 advTuned=73
+root: 0,0 1280x820
+titlebar: 12,0 1256x52
+logo: 32,11 30x30
+brand: 32,9 172x34
+brandName: 74,9 130x19
+brandSub: 74,28 130x15
+theme: 1080,8 36x36
+min: 1132,8 36x36
+max: 1172,8 36x36
+close: 1212,8 36x36
+winbtns: 1080,8 168x36
+band: 12,64 1256x632
+slot: 12,64 12x632
+library: MISSING
+libHead: MISSING
+libTitle: MISSING
+libCount: MISSING
+search: MISSING
+searchField: MISSING
+filters: MISSING
+segAll: MISSING
+segTuned: MISSING
+libList: MISSING
+r0: MISSING
+ri0: MISSING
+reader: 24,64 1244x632
+rToolbar: 25,65 1242x64
+hymnBadge: 103,83 66x28
+minus: 1152,81 40x32
+plus: 1192,81 40x32
+rScroll: 25,129 1242x566
+rDoc: 25,129 1234x1070
+titleBlock: 252,169 780x122
+title0: 252,169 780x46
+chips: 252,229 780x26
+chipVerses: 252,229 65x26
+bk0: 238,291 780x130
+bk1: 238,421 780x132
+player: 12,708 1256x100
+plLeft: 29,709 287x98
+plTile: 29,732 52x52
+plCenter: 340,718 600x80
+plRight: 964,709 287x98
+voices: 414,725 188x30
+play: 618,718 44x44
+instr: 678,726 188x28
+map: 390,772 500x26
+tEl: 340,778 40x14
+tRem: 900,778 40x14
+pauseAfter: 1084,727 167x30
+exp: 1063,765 188x24
+escaped 3: [rDoc:box 25,129 1234x1070] [rMeasure:box 252,169 780x1030] [gap10x260:box 252,811 10x260] 

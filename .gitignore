@@ -79,6 +79,10 @@ aot-icudtl.dat
 # ui-demo/air-gallery*/（§5 里作为证据入库）。根下那批是残骸，每跑一次 gate 都可能复活。
 /ui-demo/gallery-page*.png
 /ui-demo/gallery.txt
+# hymn-demo 是自成一个目录的应用（见该目录 README）：`/ui-demo/*.c` 只盖住根下那一层，
+# 它的生成 C 落在自己目录里。四张截图（splash / page / tuned / light）与三份
+# `hymn-rects-*.txt` 是**证据**，正常入库（它们不被任何规则命中）。
+/ui-demo/hymn-demo/*.c
 # 例外：G11 的三份历史产物是**证据**且被 G11 门当输入读（`sha16()` / `readFileSync`）
 !probes/g11-nondeterminism/artifact-*.c
 #
