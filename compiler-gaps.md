@@ -868,6 +868,25 @@
 | 建议 | 要么让快路径的 `y` 与 SkParagraph 的 `layoutY` 同源（取 SkParagraph 算好的行度量/首行基线，而不是另一份 `sk_air_line_metrics`），要么在快路径里把首行基线**量**出来而不是**算**出来；修完应能以「画廊 16 张截图逐字节回到 `60e678c` 的版本」作为验收（本仓现成可比） |
 | 状态 | ⚠️ **已定位，未修**。登记在此，不粉饰：当前 75/75 是**门全绿**，不包含「与基线图逐像素一致」这一条 |
 
+---
+
+### G44 —— web 后端的滚轮 delta 是**浏览器像素**而不是「格」：一格就把页面顶到底（或顶到顶） —— ✅ **已修（上游 `abe60a1`）**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | 线上文档站用滚轮：**向下拨一格直接到底，向上拨一格直接到顶**；native（AIR/adl/AOT）正常，一格就是 `wheelStep` px |
+| 契约是什么 | `Stage_dispatchWheel` 的 delta 单位是**一格**：对 TextField 是 `scrollV - (int)delta`（emit.ts:28896，注释写的「one delta unit moves exactly one line」，adl 实测口径）；对 kit 的滚动视图是 `-e.delta * wheelStep`（`ScrollViewWidget.onWheel`），文档也写着「one wheel notch is `wheelStep` px」 |
+| native 为何对 | `window_glue.cc:2101` 转发 SDL 的 `e.wheel.y`，SDL 已把 WM_MOUSEWHEEL 的 120 归一成 **1**
+| web 为何错 | `vendor/web_glue.cc` 直接把 DOM 的 `WheelEvent.deltaY` 透传（只取反了方向）。DOM 的 delta 按 `deltaMode` 给：Chrome/Edge 是像素模式、一格 **100**；Firefox 是行模式、一格 **3**；page 模式一条 **1** ⇒ 一格 = `100 × 40 = 4000px`，必然 clamp 到 max |
+| 实测（probe，修复前 → 修复后） | `deltaY=100 pixel → delta -100 → -1`；`-100 pixel → +100 → +1`；`300 pixel → -300 → -3`；`3 line → -3 → -1`；`1 page → -1 → -1`；`40 pixel → -40 → -0.4`（触控板保留小数） |
+| probe 怎么做的 | temp 一次性探针：白底 sheet + `stage.addEventListener(MouseEvent.MOUSE_WHEEL)` 把 `e.delta` trace 出来（wasm 页面没 stdout，但页面把 `print` 收进 `window.__ascStdout`），再用合成 `WheelEvent` 派发不同的 `deltaY`/`deltaMode`。与 `--package web` 同一套构建参数，只是 `--air-app`/`--main-class`/`-o` 不同 |
+| 修法 | `web_glue.cc` 新增 `wheel_notches()`：`DOM_DELTA_LINE → /3`、`DOM_DELTA_PAGE → 原值`、其余（像素）`→ /100`，**保留小数**（触控板是一串小 delta，逐个四舍五入会把滑动变成一抽一抽）。`EmscriptenWheelEvent` 自带 `deltaMode`（`emscripten/html5.h` 有 `DOM_DELTA_*`），所以只改这一处：AS3 侧、kit、native 三面一字未动 |
+| 为何门没抓到 | 所有滚动类门都是 AS3 侧`stage.dispatchWheel(x,y,delta)`（已经是「格」，两态都对）；唯一能区分的是**真浏览器的真滚轮事件**，而本仓门禁是纯 Node。合成事件的 `targetX/targetY` 在 emscripten 里落成 `0,0`（探针实测 `stage=0,0`），能拿到 delta 但**拿不到命中点**，所以只能验单位、不能验位移——这就是为什么这条按「具体单位探针」验，而不是按「页面滚了多少」测 |
+| 发布 | web 重编（同一编译器源码，wasm 只多 **59 B**）→ gh-pages `55cf9b7 → 807c3ec`，`publish-pages --check` 六个文件逐字节一致 |
+| 以后怎么防 | 改动 `web_glue.cc` 的输入路径后，重跑上面那个探针的三行（`100/-100/3/1/40`）；跨后端契约写在这里：**`MouseEvent.delta` 的单位是「格」，不是像素、也不是行** |
+
+**本轮附带发现（不属 G44，已知未处理）**：并发会话正在把 `ui-demo/air-gallery/app.xml` 的 `renderMode` 从 `cpu` 改成 `direct`。web 构建会把这个描述符字段变成 `ASC_RENDER_GPU=1`（wasm 9.04 → 9.93 MB、渲染路径改成 WebGL 合成器）。本次发布**刻意用 cpu 臂**（与上一版同一种渲染路径，只多滚轮修复），该字段临时换回 cpu 构建后再按 sha256 原字节还原；GPU 臂是否上 web 是另一个决定，没在这里顺手做。
+
 
 ---
 

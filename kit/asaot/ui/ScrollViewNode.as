@@ -130,7 +130,10 @@ package asaot.ui
         // in the factory opts). A description that names none leaves the live position
         // alone forever; see the header for why the flag exists at all.
         public var offsetDeclared:Boolean;
-        public var wheelStep:Number;    // px per wheel delta unit
+        public var wheelStep:Number;    // px per wheel delta unit -- and a delta unit is ONE NOTCH on every
+                                        // backend: the web glue turns the DOM's pixel/line/page deltaY into
+                                        // notches by deltaMode (compiler-gaps.md G44), so 40 means 40px per notch
+                                        // whether this runs natively or in a browser.
         public var contentW:Number;     // out: the content's extent
         public var contentH:Number;
         public var maxOffsetX:Number;   // out: content - viewport, floored at 0
