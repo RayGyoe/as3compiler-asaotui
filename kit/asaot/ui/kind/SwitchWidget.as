@@ -118,7 +118,7 @@ package asaot.ui.kind
                 g2.drawCircle(kx, ty + 10, 8);
                 g2.endFill();
             }
-            if (n.tf != null && s.text.color >= 0) n.tf.textColor = uint(s.text.color);
+            if (n.tf != null && s.text.color >= 0) PaintKit.applyInk(n, n.tf, uint(s.text.color));
             PaintKit.decorate(n);
         }
 

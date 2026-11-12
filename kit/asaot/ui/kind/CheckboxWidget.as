@@ -117,7 +117,7 @@ package asaot.ui.kind
                     g2.lineTo(13, cy + 4);
                 }
             }
-            if (n.tf != null && s.text.color >= 0) n.tf.textColor = uint(s.text.color);
+            if (n.tf != null && s.text.color >= 0) PaintKit.applyInk(n, n.tf, uint(s.text.color));
             PaintKit.decorate(n);
         }
 

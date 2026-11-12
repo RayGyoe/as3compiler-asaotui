@@ -200,6 +200,33 @@ package asaot.ui
             return f;
         }
 
+        // APPLY THE COLOUR A FIELD WILL BE DRAWN WITH — to BOTH colour channels.
+        //
+        // A field that went through `measureField` carries a RUN format (the
+        // `setTextFormat(f)` there is what forces the format onto text that was already
+        // assigned; `defaultTextFormat` only affects text assigned after it). A run
+        // OUTRANKS `TextField.textColor`: the paint pass reports the run's colour, and
+        // `textColor` is only consulted when the field has no runs at all. So writing
+        // `field.textColor` alone is invisible on every measured field.
+        //
+        // Measured (2026-11-13, hymn-demo light->dark theme switch): all 86 text runs
+        // kept the previous palette's ink while `resolved.text.color` AND
+        // `tf.textColor` both read the new one -- the reader body was dark on dark, and
+        // only a re-measure (which re-ran setTextFormat) ever fixed a run. The kit's own
+        // run-free widgets (Input/TextArea) never showed it, which is what pointed here.
+        //
+        // Steady state costs ONE uint compare: the whole-format re-apply only runs when
+        // the colour actually changed.
+        public static function applyInk(n:UiNode, field:TextField, color:uint):void
+        {
+            if (field == null) return;
+            if (field.textColor == color) return;
+            field.textColor = color;
+            var f:TextFormat = formatFor(n.resolved);
+            f.color = color;
+            field.setTextFormat(f);
+        }
+
         // Writes n.state.measuredW/H (the intrinsic size of `content`).
         //
         // `wrapW` is the CONTENT width to wrap at; NaN/Omitted means "one line",

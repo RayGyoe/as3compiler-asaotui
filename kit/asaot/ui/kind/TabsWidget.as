@@ -231,7 +231,7 @@ package asaot.ui.kind
                 var tf:TextField = TextField(tfs[i]);
                 if (tf != null)
                 {
-                    tf.textColor = on ? pal.onAccent : pal.textBody;
+                    PaintKit.applyInk(n, tf, on ? pal.onAccent : pal.textBody);
                     tf.x = segX + (segW - tf.textWidth) / 2;
                     tf.y = y0 + (ch - tf.textHeight) / 2;
                 }

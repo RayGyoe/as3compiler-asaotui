@@ -100,7 +100,7 @@ package asaot.ui.kind
             if (n.tf != null)
             {
                 PaintKit.centerText(n, 0, 0, w, h);
-                n.tf.textColor = pal.onAccent;
+                PaintKit.applyInk(n, n.tf, pal.onAccent);
             }
             PaintKit.decorate(n);
         }

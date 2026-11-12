@@ -142,6 +142,14 @@ package hymn
         public var LINE:StyleRefinement;
         public var CHORUS:StyleRefinement;
         public var CHORUS_ON:StyleRefinement;
+        // The same two boxes and the verse row, faded: while a tune is playing the
+        // sounding block stays at full opacity and the rest drop to DIM (upstream
+        // reader.rs `Focus::Dim => view.opacity(DIMMED)`, DIMMED 0.42). A PATCHED COPY
+        // rather than a second hand-written list of fields -- the dim state must differ
+        // from its lit twin in opacity and in NOTHING else, or the block would jump as
+        // the transport crosses it.
+        public var VERSE_DIM:StyleRefinement;
+        public var CHORUS_DIM:StyleRefinement;
         public var PLAYER:StyleRefinement;
         public var PL_LEFT:StyleRefinement;
         public var PL_CENTER:StyleRefinement;
@@ -270,6 +278,19 @@ package hymn
         public function tint(base:uint, a:Number):uint
         {
             return this.mix(accent, base, a);
+        }
+
+        // The LINES column at an EXPLICIT measure. The wrap (`HymnWrap.lines`) and the
+        // box must be the same number, and a flex-derived width is not that number: it
+        // is whatever the row's free space happens to be after the solver distributes
+        // it, so the boxes and the wrap can disagree (measured: block 1 of one hymn
+        // came out 628 wide and 10pt right of the rest while resolving an identical
+        // style). Width here is border-box, so it is the wrap measure verbatim.
+        public function lines(w:Number):StyleRefinement
+        {
+            return StyleRefinement.from({
+                flexDirection: "column", size: [Length.px(w), null], gap: 2
+            });
         }
 
         // Every structural style in one pass. Read it top to bottom and you have the
@@ -452,6 +473,13 @@ package hymn
                 padding: [22, 22, 22, 22], cornerRadii: 20,
                 background: accentSoft, borderWidths: 1, borderColor: accent
             });
+            // The faded twins. `withPatch` copies the parent's refined values and lays the
+            // patch on top, so identity changes (the reconciler needs that: a new pointer
+            // is what tells it to re-resolve a block when the song moves) while geometry
+            // stays bit-identical.
+            var dimOnly:StyleRefinement = StyleRefinement.from({ opacity: DIM });
+            VERSE_DIM = VERSE.withPatch(dimOnly);
+            CHORUS_DIM = CHORUS.withPatch(dimOnly);
 
             PLAYER = StyleRefinement.from({
                 flexDirection: "row", alignItems: "center", gap: 24,
@@ -497,7 +525,10 @@ package hymn
             });
             SEG = StyleRefinement.from({
                 flexDirection: "row", alignItems: "center", justifyContent: "center",
-                cornerRadii: 999
+                // A real radius, never 999: the painter asks Flash for an ELLIPSE of
+                // r*2 inside the box, so an oversized r becomes an oval (see the note
+                // at the top of this file). Half the 30pt segment is the capsule.
+                cornerRadii: SEG_H / 2
             });
             MAPSEG = StyleRefinement.from({
                 flexDirection: "row", position: "relative", size: [null, Length.px(MAP_H)],

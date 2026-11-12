@@ -42,6 +42,10 @@ package hymn
         // asks the author to keep this -- it is a MODEL field, not widget state, so a
         // re-render after a click cannot silently jump the list back to the top.
         public var libOffset:Number = 0;
+        // The row a keyboard step asked to reveal, -1 for "no request". The virtual
+        // list honours `scrollToIndex` itself (it is the only side that knows its
+        // window), so the model never has to do the row arithmetic.
+        public var libReveal:int = -1;
 
         // ---- appearance ---------------------------------------------------
         public var dark:Boolean = true;
@@ -222,6 +226,9 @@ package hymn
             this.blockIndex = 0;
             this.blockT = 0;
             this.blockDur = durationOf(hymns[hymnIndex], 0);
+            // Upstream's `select()` -> `load_tune()` resets `follow_paused`: opening
+            // another hymn gives the follow a clean slate.
+            this.follow = true;
             // Upstream's `load_tune` is documented "Replace the current tune (stops
             // playback)", and `select()` goes through it: picking another hymn ends the
             // old one rather than cross-fading into it. It also keeps the sound card from
@@ -377,17 +384,24 @@ package hymn
             this.notify(Dirty.ALL);
         }
 
-        public function step(dir:int):void
+        // Upstream's `step(delta)` walks the SELECTION through the filtered list (a
+        // keyboard shortcut), not the verses -- the reader has no keyboard verse step.
+        // CLAMPED, not wrapped: a list is a sequence and its ends are walls.
+        public function stepHymn(delta:int):void
         {
-            var h:Object = current();
-            if (h == null) return;
-            var n:int = h.blocks.length;
-            if (n == 0) return;
-            this.blockIndex = (this.blockIndex + dir + n) % n;
-            this.blockT = 0;
-            this.blockDur = durationOf(h, blockIndex);
-            this.restartAudio();
-            this.notify(Dirty.ALL);
+            if (visible.length == 0) return;
+            var pos:int = -1;
+            for (var i:int = 0; i < visible.length; i++)
+            {
+                if (visible[i] == sel) { pos = i; break; }
+            }
+            var next:int = pos < 0 ? 0 : pos + delta;
+            if (next < 0) next = 0;
+            if (next > visible.length - 1) next = visible.length - 1;
+            // Reveal BEFORE pick: the list is asked to scroll on the same render that
+            // changes the selection, so the new row is never moved out of sight.
+            this.libReveal = next;
+            this.pick(visible[next]);
         }
 
         // Jump to a section: the transport's own verb, so the map is not poking at
@@ -399,6 +413,8 @@ package hymn
             this.blockIndex = ix;
             this.blockT = 0;
             this.blockDur = durationOf(h, ix);
+            // Upstream's `jump_to_section` clears `follow_paused`.
+            this.follow = true;
             this.restartAudio();
             this.notify(Dirty.ALL);
         }
@@ -495,6 +511,7 @@ package hymn
             }
 
             // ---- transport -------------------------------------------------
+            var blockWas:int = blockIndex;
             if (playing)
             {
                 var h:Object = current();
@@ -546,6 +563,12 @@ package hymn
                     if (dirty == 0) dirty = Dirty.VALUE;
                 }
             }
+            // A NEW SECTION IS WHEN THE FOLLOW COMES BACK. Upstream compares the engine's
+            // section with the one it last drew and clears `follow_paused` on a change
+            // (src/app.rs `tick`), so a reader who scrolled away during verse 1 is pulled
+            // to verse 2 when it starts. Without this line `setScrollY`'s opt-out was
+            // PERMANENT: one manual scroll and the reader never followed again.
+            if (blockIndex != blockWas) follow = true;
 
             // ---- follow the sounding verse --------------------------------
             if (playing && follow && viewH > 0)

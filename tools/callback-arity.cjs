@@ -197,7 +197,12 @@ for (const file of asFiles('kit')) {
 }
 
 // ---- 2: declarations in the demo and the probes ----------------------------
-for (const root of ['ui-demo/demo', 'probes']) {
+// `ui-demo/hymn-demo` was added after it shipped 16 `onClick: function (e:Object)`
+// handlers: the kit calls `onClick()` with no arguments, AVM2 threw `#1063` on every
+// click, the frame guard swallowed it, and the demo's own capture plan (which called
+// model verbs directly) stayed green. A gate that watches only the gallery cannot
+// see a real app, and a real app is where the clicks happen.
+for (const root of ['ui-demo/demo', 'ui-demo/hymn-demo', 'probes']) {
   let files;
   try { files = asFiles(root); } catch (e) { continue; }
   for (const file of files) {
@@ -230,7 +235,7 @@ for (const root of ['ui-demo/demo', 'probes']) {
 
 // ---- report ----------------------------------------------------------------
 console.log('[callback-arity] ' + invocations + ' invocation(s) in kit/, '
-  + declarations + ' handler declaration(s) in ui-demo + probes/');
+  + declarations + ' handler declaration(s) in the demos + probes/');
 if (violations.length === 0) {
   console.log('[callback-arity] callbacks and invocations agree: 0 violations');
   process.exit(0);

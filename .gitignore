@@ -83,6 +83,9 @@ aot-icudtl.dat
 # 它的生成 C 落在自己目录里。四张截图（splash / page / tuned / light）与三份
 # `hymn-rects-*.txt` 是**证据**，正常入库（它们不被任何规则命中）。
 /ui-demo/hymn-demo/*.c
+# `auto-tour` 是 `run-hymn.cjs` 在运行期创建、进程退出时自己删掉的临时标记；
+# 进程被强杀时会残留，那不代表任何意图，不该进库（HymnMain 以它决定跑不跑采样计划）。
+/ui-demo/hymn-demo/auto-tour
 # 例外：G11 的三份历史产物是**证据**且被 G11 门当输入读（`sha16()` / `readFileSync`）
 !probes/g11-nondeterminism/artifact-*.c
 #

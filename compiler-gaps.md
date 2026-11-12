@@ -903,6 +903,32 @@
 | 为何不算本仓 bug | 「一个 `Sound` 的生命周期内不能丢数据」是对的；不对的是**上限被写死成 64 且不可回收**——这是 `g_bufs` 的实现选择，不是 AIR 的契约。登记在此，等上游决定 |
 
 
+### G47 —— 文本框持焦时 `focusNode(null)` 抛 `Error #1009`：`stage.focus = null` 这条路径在本运行时崩
+
+| 项 | 内容 |
+|---|---|
+| 现象 | kit 的 `UiApp.focusNode(null)`（「把焦点交还给舞台」）在**某个 TextField 刚持有过焦点**之后调用，立刻抛 `TypeError: Error #1009: Cannot access a property or method of a null object reference`；同一行在「从未聚焦过任何输入框」的会话里不抛 |
+| 复现（hymn-demo，最省事的一条） | 抽屉里的 `searchField` 先 `focusNode(field)`（键盘输入正常），再 `focusNode(null)` 清焦点 ⇒ `hymn.done` 里落 `BLUR-THROW Error #1009`，后续相位全部不执行（截图与 beacon 都停在那一帧） |
+| 出在哪儿 | `UiApp.focusNode(n)` → `applyStageFocus()`：`want is TextField` 才赋 `stage.focus = want`，否则走 `if (this.stage.focus != null) this.stage.focus = null;`。**可确证的只有这一处是唯一差异**（聚焦时 want 是 TextField、不聚焦时走清空分支）；崩在运行时侧的哪一行**没有逐行插桩取证**，推测是清空时触发的失焦派发对内部对象取了属性。别把推测当结论 |
+| 与 G45 的区别 | G45 是 GC 在分配流里跑全量采集（`HymnBook.load()` 位置），G47 是**焦点交接**路径；两者都只在「真窗口 + 长生命周期」里出现，都不会被示例级回归抓到 |
+| hymn-demo 现在的规避 | **失焦对象改成另一个节点**而不是 `null`：`focusNode(this.app.findByKey("reader"))`。语义反而更贴合上游（「失焦即提交」走 `InputWidget.onFieldBlur` 的 `FOCUS_OUT`），beacon 里 `fieldGuard 3->3` 就是这条路径的实测 |
+| 建议的上游修法 | `applyStageFocus()` 的清空分支加空守卫并区分「TextField 会话」与「kit 节点焦点」两个状态；或让 `focusNode(null)` 显式对 `stage.focus` 做 `is TextField` 判断后再赋 `null` |
+| 状态 | ⚠️ **已定位、未修**（本仓不擅改核心 `UiApp`）。登记在此，规避写在 `hymn-demo` 里 |
+
+### G48 —— `TextField.textColor` 不覆盖**全段 run 格式**：只改颜色的重绘在屏幕上看不见（主题切换后整套文字停在旧调色板）
+
+| 项 | 内容 |
+|---|---|
+| 现象 | 切主题后底/边框都换了，**文字却还是上一个调色板的颜色**（例：亮→暗后正文 `#14161C` 画在 `#121419` 上，整页「消失」） |
+| 复现（hymn-demo） | 跑起来后用真实点按点一次标题栏右上角的太阳图标（亮→暗）。`hymn-rects-dark2.txt` 的 `ink` 行逐个节点三个值并列：`brandName=eeeff2/eeeff2/14161c`（= resolved / `tf.textColor` / `tf.getTextFormat().color`） |
+| 出在哪儿 | 渲染侧取色优先级：生成代码的排版入口把 `textColor` 只在**字段没有 run 时**才当颜色用（`fcol = (tf->textColor != 0u && frn == 0) ? tf->textColor : run->color`），而 `setTextFormat` 装的就是 run。`PaintKit.measureField` 必须调 `setTextFormat`（`defaultTextFormat` 只对**之后**赋的文本生效），于是每个被测过的字段都有一个全段 run，`textColor` 永久失效 |
+| 量化 | 亮→暗后 **86/86 个文字节点** `resolved` 与 `textColor` 都是新值、`getTextFormat().color` 全是旧值；同一帧的 `Fill` 全部正确。反方向（暗→亮）不发作，因为那一帧的 measure 顺带重贴了格式 |
+| 库侧规避（已做） | 新增 `PaintKit.applyInk(n, field, color)`：**双通道写** —— 写 `textColor`，并在颜色真的变了时补一次全段 `setTextFormat`（稳态只花一次 uint 比较）。13 个画文字标签的 widget 全部改走它（`Text`/`Card`/`Checkbox`/`Radio`/`Switch`/`Slider`/`RangeSlider`/`Progress`/`Badge`/`Chip`/`Avatar`/`Tabs`/`Tooltip`）。窗口实测：亮→暗点一次，正文与品牌标题立即正常 |
+| 闸门 | `run-hymn.cjs` 的像素色板闸门新增第三态（亮→暗快照 `hymn-dark2.png`）与**品牌带墨色亮度**扫描。修前该闸门红：`back to dark: brand ink peaks at luma 22, want > 200`；修后 `palette canary OK` |
+| 是否为运行时缺陷 | **待 `adl` 校验**：`textColor` 在 AIR 里是否覆盖已有 run，本机无 AIR SDK（`AIRSDK_HOME` 未设）无法跑 `flash-text.md` §5.2 的网格图对照。若 AIR 覆盖 ⇒ 上游应让全段 run 也吃 `textColor`，库侧双通道仍无害但可简化；若 AIR 也不覆盖 ⇒ 库侧这条就是正解，本文可转到「不是缺口」表 |
+| 状态 | ✅ **库侧已修**（`PaintKit.applyInk` + 13 个 widget），运行时语义待 `adl` 定论 |
+
+
 ---
 
 ## 2 不是缺口：已澄清 / 已关闭

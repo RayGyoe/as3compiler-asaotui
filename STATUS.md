@@ -1449,6 +1449,28 @@ kit 侧不再动；本节的数据就是那一轮的基线。
 node tools/gates.cjs          # 69/69 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-11-06.txt）
 ```
 
+> 第五十一轮（2026-11-13）**切主题后整套文字停在旧调色板**（用户报「右上角切暗色，暗色有问题」）。
+> ① **根因在颜色的第二通道**：`PaintKit.measureField` 末尾必须 `field.setTextFormat(f)`（`defaultTextFormat`
+> 只作用于**之后**赋的文本），而渲染侧**run 优先于 `TextField.textColor`**（无 run 时才看 `textColor`）⇒
+> 所有「只改颜色」的重绘写 `textColor` 在屏幕上一个像素都不动。实测：亮→暗后 **86/86 个文字节点**
+> `resolved.text.color` 与 `tf.textColor` 都是新值、`tf.getTextFormat().color` 全是旧值（正文 `#14161C`
+> 画在 `#121419` 上）。反方向不发作，因为那一帧的 measure 顺带重贴了格式——这就是「为什么只有暗色坏」。
+> ② **修法**：新增 `PaintKit.applyInk(n, field, color)`，**双通道写**（`textColor` + 颜色真变时补一次全段
+> `setTextFormat`，稳态只花一次 uint 比较）；13 个画标签的 widget 全改走它（`Text`/`Card`/`Checkbox`/
+> `Radio`/`Switch`/`Slider`/`RangeSlider`/`Progress`/`Badge`/`Chip`/`Avatar`/`Tabs`/`Tooltip`）。
+> ③ **闸门**：`run-hymn.cjs` 的像素色板闸门新增第三态（亮→暗快照 `hymn-dark2.png`，由**真实点按**标题栏
+> 太阳图标得到）与**品牌带墨色亮度**扫描——修前 `back to dark: brand ink peaks at luma 22, want > 200`
+> 直接红，修后 `palette canary OK`。回归：`run-check` 37/37、`run-repaint-diff` 20/20、`run-gallery` PASS。
+> ④ 缺口登记 **G48**（`compiler-gaps.md`）：`textColor` 是否该覆盖已有 run **待 `adl` 定论**（本机无 SDK）。
+> ⑤ **采样计划改为 opt-in by file**（用户要求：双击 exe 应当是普通应用，不应自己跑一遍）：
+> `HymnMain` 启动时读 `File.applicationDirectory/auto-tour`，**只有它存在**才走相位机，
+> 否则只做两件必做的事（第一帧 `load()` 守 G45、`model.tick()`）然后 `return`；`hymn-selftest.txt`
+> 也归 tour（普通打开不该在 exe 旁写文件）。`run-hymn.cjs` 在启动前创建该标记、`process.on('exit')`
+> 删掉（含所有失败退出路径），并把 `auto-tour` 加进 `.gitignore`（强杀会残留）。
+> 为什么不环境变量：AS3 无 `getenv`；为什么不第二个 exe：那会让「你看的东西」与「门测的东西」
+> 成两个会漂的二进制。实测：双击 exe → 首帧态（第 1 首 / 暗色 / 抽屉开 / 无声 / 零输出）；
+> 带标记 → 六张图 + beacon + canary 全绿。
+
 > 第五十轮（2026-11-06）**把编译器侧的 `cacheAsBitmap` 增量重烘焙接成 asaotui 的作者视角 opt-in `staticLayer`**。
 > ① **前置（G30）**：编译器阶段三百七十八（`465dbc3`）修复 `Graphics_clear` 用旧 bounds 精确脏矩形后，`bake_patch`
 > 真正触发——此前 `clear()` 的 `as_mark_dirty` 先标 `_dirty_full`，后续 `drawRect` 的精确标记被 `as_dirty_merge`

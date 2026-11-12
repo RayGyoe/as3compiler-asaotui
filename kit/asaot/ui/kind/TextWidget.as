@@ -191,7 +191,7 @@ package asaot.ui.kind
             }
             // The field was configured during measure (it had to be, to get an
             // intrinsic size); update the format for a decor-only change.
-            if (n.tf != null && s.text.color >= 0) n.tf.textColor = uint(s.text.color);
+            if (n.tf != null && s.text.color >= 0) PaintKit.applyInk(n, n.tf, uint(s.text.color));
             // Ellipsis, if asked for and if the final box is narrower than the run.
             // A WRAPPED node is skipped: truncating it would collapse the lines the
             // measure pass just laid out.

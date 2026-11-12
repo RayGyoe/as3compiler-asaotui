@@ -64,6 +64,9 @@ package hymn
         // U+2212 MINUS SIGN, not a hyphen: the pair reads as an operation, and a hyphen
         // at this size sits high and looks like a dash.
         private static const MINUS:String = "−";
+        // Upstream's placeholder for "no tune loaded": `"–:––"` (en dash, colon, two
+        // en dashes), not 0:00 -- there is nothing to count.
+        private static const DUR_NONE:String = "–:––";
         private static const VOICE_SEP:String = " · ";
 
         private static const I_LIB:String = "M4 5 H9 V19 H4 Z M11 5 H16 V19 H11 Z M18 5 H20 V19 H18 Z";
@@ -105,14 +108,14 @@ package hymn
             var self:HymnView = this;
             var controls:Array = [
                 this.iconBtn(t, "theme", I_GEAR, 16, t.text2, t.bg, t.raised,
-                    function (e:Object):void { self.model.toggleTheme(); }, "Toggle theme"),
+                    function ():void { self.model.toggleTheme(); }, "Toggle theme"),
                 this.fixed(8, 8),
                 this.iconBtn(t, "min", I_MIN, 16, t.text2, t.bg, t.raised,
-                    function (e:Object):void { self.winDo("minimize"); }, "Minimize"),
+                    function ():void { self.winDo("minimize"); }, "Minimize"),
                 this.iconBtn(t, "max", I_MAX, 14, t.text2, t.bg, t.raised,
-                    function (e:Object):void { self.winDo("maximize"); }, "Maximize"),
+                    function ():void { self.winDo("maximize"); }, "Maximize"),
                 this.iconBtn(t, "close", I_CLOSE, 14, t.text2, t.bg, t.raised,
-                    function (e:Object):void { self.winDo("close"); }, "Close")
+                    function ():void { self.winDo("close"); }, "Close")
             ];
             var brand:Array = [
                 this.logo(30),
@@ -210,6 +213,12 @@ package hymn
         // A text run with BOTH axes explicit. A null height solves to zero (measured:
         // pills came out 45x2) and a null width inside a row is a flex-basis of zero,
         // so every label in this app states its box.
+        //
+        // THE BOX IS NOT THE LINE. The caller states a design box (19 for a 14pt run);
+        // the painter draws the line at the TOP of that box, so the slack all landed
+        // below and every label in the app read ~4pt high. `padTop` splits the
+        // difference with the measured line box (HymnWrap.lineHeight), which is the
+        // only vertical control a text node has here -- see the note there.
         private function txt(family:String, size:Number, bold:Boolean, color:uint,
                              w:Number, h:Number, align:String):StyleRefinement
         {
@@ -221,6 +230,7 @@ package hymn
             {
                 s = StyleRefinement.from({
                     size: [Length.px(w), Length.px(h)],
+                    padding: [labelPadTop(family, size, bold, h), 0, 0, 0],
                     text: { fontFamily: family, fontSize: size,
                             fontWeight: bold ? "bold" : "normal", color: color,
                             textAlign: align, whiteSpace: "nowrap", textOverflow: "clip" }
@@ -228,6 +238,19 @@ package hymn
                 this.texts[ck] = s;
             }
             return s;
+        }
+
+        // Half the slack of a one-line run inside its stated box. Clamped at 0: a box
+        // SHORTER than its line keeps the run at the ceiling rather than pushing it out
+        // of a pill -- the ellipsis path measures upward from `size.height`, so a
+        // negative inset would move the glyph out of the clip it is drawn inside.
+        private function labelPadTop(family:String, size:Number, bold:Boolean, h:Number):Number
+        {
+            var lh:Number = HymnWrap.lineHeight(family, size, bold);
+            var top:Number = (h - lh) / 2;
+            if (!(top > 0)) return 0;
+            // Sub-pixel insets are invisible and cost a distinct style cache key.
+            return Math.round(top * 2) / 2;
         }
 
         // ---- plate(): a measured pill -----------------------------------
@@ -278,11 +301,16 @@ package hymn
                     borderWidths: borderW, borderColor: borderC,
                     margin: [mt, 0, 0, 0]
                 });
-                // Both axes for the label: a null height solves to zero, and a null width
-                // in a row is a flex-basis of zero.
-                var lineBox:Number = Math.round(h * 0.9);
+                // THE LABEL IS CENTRED IN THE PILL BY SPLITTING THE SLACK, not by
+                // handing the text a box the size of the pill: a text node here draws
+                // its line at the TOP of its content box (TextWidget.placeRun sets
+                // `tf.y = insetY`), so `Length.px(round(h * 0.9))` -- 25pt of box around
+                // a 12pt run on the badge -- parked the glyphs 7pt high (measured:
+                // 4 device px above, 26 below at DPR 1.5). HymnWrap.lineHeight is the
+                // painter's own line box, so the inset is arithmetic, not a guess.
                 var textStyle:StyleRefinement = StyleRefinement.from({
-                    size: [Length.px(w - padX * 2), Length.px(lineBox)],
+                    size: [Length.px(w - padX * 2), Length.px(h)],
+                    padding: [this.labelPadTop(family, fs, bold, h), 0, 0, 0],
                     text: { fontFamily: family, fontSize: fs,
                             fontWeight: bold ? "bold" : "normal", color: fg,
                             textAlign: "center", whiteSpace: "nowrap", textOverflow: "clip" }
@@ -370,12 +398,12 @@ package hymn
                 this.plate("All " + String(total), { key: "segAll", w: segW, h: HymnTheme.SEG_H,
                     radius: 999, bg: allOn ? t.accentSoft : t.raised,
                     fg: allOn ? t.accent : t.text3, bold: true, size: 12.5,
-                    onClick: function (e:Object):void { self.model.setFilter(HymnModel.ALL_ROWS); },
+                    onClick: function ():void { self.model.setFilter(HymnModel.ALL_ROWS); },
                     ariaName: "All hymns" }),
                 this.plate("With tune " + String(tuned), { key: "segTuned", w: segW, h: HymnTheme.SEG_H,
                     radius: 999, bg: tunedOn ? t.accentSoft : t.raised,
                     fg: tunedOn ? t.accent : t.text3, bold: true, size: 12.5,
-                    onClick: function (e:Object):void { self.model.setFilter(HymnModel.TUNED_ROWS); },
+                    onClick: function ():void { self.model.setFilter(HymnModel.TUNED_ROWS); },
                     ariaName: "Hymns with a tune" })
             ];
             var titleRow:Array = [
@@ -386,7 +414,7 @@ package hymn
                         style: this.txt(SANS, 12, false, t.text3,
                             Math.ceil(HymnWrap.width(count, SANS, 12)) + 4, 16, "left") }),
                     this.iconBtn(t, "collapse", I_CHEV, 16, t.text3, t.panel, t.raised,
-                        function (e:Object):void { self.model.toggleSidebar(); }, "Collapse library")
+                        function ():void { self.model.toggleSidebar(); }, "Collapse library")
                 ])
             ];
             var body:Array = [];
@@ -427,6 +455,9 @@ package hymn
                 count: model.visible.length,
                 offsetY: model.libOffset,
                 overscan: 2,
+                // A keyboard step asks the list to reveal the row it moved to; the
+                // widget owns the window arithmetic (upstream: `scroll_to_item(Center)`).
+                scrollToIndex: model.libReveal,
                 onScroll: function (y:Number):void { self.model.setLibOffset(y); },
                 renderRow: function (i:int):Node { return self.rowAt(t, i); }
             });
@@ -459,17 +490,17 @@ package hymn
             var parts:Array = [tileNode, column({ key: "c" + String(i), style: t.ROW_COL }, col)];
             if (tune != null)
             {
-                // The tune badge is upstream's "$length s" chip in the accent tone: this
-                // hymn HAS a melody, and the badge is how the list says so without a
-                // second column of text.
-                parts.push(this.plate(String(Math.round(tune.length)) + "s", {
+                // Upstream's library badge says TUNE, not the tune's length: the row is
+                // answering "is this one singable", and a duration is a different
+                // question the reader never asked of a 1000-row list.
+                parts.push(this.plate("TUNE", {
                     key: "b" + String(i), family: MONO, size: 9.5, bold: true, padX: 8,
-                    h: 20, radius: 999, bg: t.accentSoft, fg: t.accent, ariaName: "Tune length" }));
+                    h: 20, radius: 999, bg: t.accentSoft, fg: t.accent, ariaName: "Has a tune" }));
             }
             return box({ key: "r" + String(i), style: t.ROW, ariaName: "Hymn " + String(h.number) }, [
                 row({ key: "ri" + String(i),
                       style: on ? t.ROW_IN_ON : t.ROW_IN,
-                      onClick: function (e:Object):void { self.model.pick(hymnIndex); },
+                      onClick: function ():void { self.model.pick(hymnIndex); },
                       ariaName: String(h.number) + " " + String(h.title) }, parts)
             ]);
         }
@@ -498,15 +529,14 @@ package hymn
             // column (measured: title0 782 inside a 774 box).
             var innerW:Number = this.stageW() - HymnTheme.PAD * 2
                 - Math.round(model.sideW) - 2 - 8;
-            if (innerW < 240) innerW = 240;
-            // ONE number for the wrap AND the boxes, capped at the 780pt measure
-            // upstream keeps: with the drawer closed the reader is 1200pt wide and a
-            // full-width lyric column would run the eye across the whole window. The
-            // column is CENTRED inside the card, so the cap costs nothing but margin
-            // (measured before the fix: the widened card left 855 physical px of dead
-            // space on the right, i.e. the text hugged the left edge).
+            // ONE number for the wrap AND the boxes. The cap is upstream's COLUMN, not
+            // its text box: `ui/reader.rs` writes `.max_w(px(780.0)).px(px(40.0))`, so the
+            // two 40pt gutters live INSIDE the 780 and the lyric measure is 700. Capping
+            // the text box at 780 instead widened every line by 80pt and rewrapped the
+            // hymns differently from the original -- a bigger divergence than it sounds,
+            // because the wrap points decide where each verse breaks.
+            if (innerW > HymnTheme.CONTENT_MAX) innerW = HymnTheme.CONTENT_MAX;
             var docW:Number = innerW - HymnTheme.CONTENT_PAD * 2;
-            if (docW > HymnTheme.CONTENT_MAX) docW = HymnTheme.CONTENT_MAX;
 
             var size:Number = model.lyricSize;
             var lineH:Number = Math.round(size * HymnTheme.LINE_RATIO);
@@ -603,7 +633,7 @@ package hymn
             if (!model.sidebarOpen)
             {
                 left.push(this.iconBtn(t, "openLib", I_LIB, 16, t.text2, t.raised, t.bg,
-                    function (e:Object):void { self.model.toggleSidebar(); }, "Show library"));
+                    function ():void { self.model.toggleSidebar(); }, "Show library"));
             }
             left.push(this.plate("HYMN " + String(h.number), {
                 key: "hymnBadge", family: MONO, size: 12, bold: true, padX: 12,
@@ -613,11 +643,11 @@ package hymn
             var steps:Array = [
                 this.plate("A" + MINUS, { key: "minus", family: SANS, size: 13, bold: true, padX: 0,
                     w: 40, h: 32, radius: 999, bg: t.raised, fg: t.text2,
-                    onClick: function (e:Object):void { self.model.setLyricSize(model.lyricSize - 1); },
+                    onClick: function ():void { self.model.setLyricSize(model.lyricSize - 2); },
                     ariaName: "Smaller lyrics" }),
                 this.plate("A+", { key: "plus", family: SANS, size: 13, bold: true, padX: 0,
                     w: 40, h: 32, radius: 999, bg: t.raised, fg: t.text2,
-                    onClick: function (e:Object):void { self.model.setLyricSize(model.lyricSize + 1); },
+                    onClick: function ():void { self.model.setLyricSize(model.lyricSize + 2); },
                     ariaName: "Larger lyrics" })
             ];
             return row({ key: "rToolbar", style: t.TOOLBAR }, [
@@ -662,7 +692,7 @@ package hymn
             var tune:Object = model.tuneOf(h);
             if (tune != null)
             {
-                chips.push(this.plate("Parts: " + String(tune.voices).split(",").join(", "), { key: "chipParts",
+                chips.push(this.plate("Parts: " + String(tune.voices).split(",").join(VOICE_SEP), { key: "chipParts",
                     h: HymnTheme.CHIP_H, padX: 12, radius: 999, bg: t.raised, fg: t.text2, size: 12 }));
             }
             kids.push(row({ key: "chips", style: t.CHIPS }, chips));
@@ -714,11 +744,21 @@ package hymn
             var cur:Boolean = bi == model.blockIndex;
             var active:Boolean = cur || !model.playing;
             var rows:Array = lay.rows;
+            var colsW:Number = lay.chorus == true ? docW - 44 : docW - 12 - HymnTheme.GUTTER_W;
+            // A block's identity includes its KIND. A verse and a chorus are different
+            // boxes in every measurable way (chorus: border 1 + gap 10 + padding 22;
+            // verse: padding-left 12 only), and reuse is keyed on identity: with one
+            // shared key the reconciler hands hymn B's verse the node hymn A built as a
+            // chorus, and the fields hymn B's style does NOT mention (border, gap) stay
+            // at the previous occupant's values. Measured on hymn 4: block 1 came out
+            // 132 tall with a 10pt hole between the gutter and the lines -- exactly
+            // CHORUS's border 1 + gap 10 -- while the resolved style read null for both.
+            var ks:String = lay.chorus == true ? "c" : "v";
             var lines:Array = [];
             for (var i:int = 0; i < rows.length; i++)
             {
                 var r:Object = rows[i];
-                var kk:String = "ln" + String(bi) + "_" + String(i);
+                var kk:String = "ln" + String(bi) + "_" + String(i) + ks;
                 var kids:Array = [];
                 if (r.voice != null)
                 {
@@ -741,11 +781,16 @@ package hymn
             var colKids:Array = [];
             if (lay.chorus == true)
             {
-                colKids.push(text("CHORUS", { key: "cl" + String(bi),
+                colKids.push(text("CHORUS", { key: "cl" + String(bi) + ks,
                     style: this.txt(SANS, 11, true, t.accent, docW - 44, 14, "left") }));
-                colKids.push(column({ key: "cls" + String(bi), style: t.LINES }, lines));
-                return box({ key: "bk" + String(bi),
-                             style: cur ? t.CHORUS_ON : t.CHORUS, minSize: [null, Length.px(lay.h)] },
+                colKids.push(column({ key: "cls" + String(bi) + ks, style: t.lines(colsW) }, lines));
+                // THE FADE IS ON THE WHOLE BLOCK, exactly like upstream's
+                // `view.opacity(DIMMED)`: the marker, the gutter disc and the lines fade
+                // together, so the sounding verse is the only one at full contrast.
+                var chorusStyle:StyleRefinement = !active ? t.CHORUS_DIM
+                    : (cur ? t.CHORUS_ON : t.CHORUS);
+                return box({ key: "bk" + String(bi) + ks,
+                             style: chorusStyle, minSize: [null, Length.px(lay.h)] },
                            colKids);
             }
             // Verse: the number sits in a 48pt gutter, offset so the disc is centred on
@@ -754,7 +799,7 @@ package hymn
             var disc:Array = [];
             if (b.verse > 0)
             {
-                disc.push(this.plate(String(b.verse), { key: "d" + String(bi),
+                disc.push(this.plate(String(b.verse), { key: "d" + String(bi) + ks,
                     family: MONO, size: 12, bold: true, padX: 0, w: 28, h: 28, radius: 999,
                     mt: Math.round((lineH - 28) / 2),
                     bg: cur && model.playing ? t.accent : t.raised,
@@ -762,11 +807,11 @@ package hymn
                     ariaName: "Verse " + String(b.verse) }));
             }
             var body:Array = [
-                box({ key: "rule" + String(bi), style: cur ? t.VERSE_RULE : t.VERSE_RULE_OFF }),
-                column({ key: "g" + String(bi), style: t.GUTTER }, disc),
-                column({ key: "ls" + String(bi), style: t.LINES }, lines)
+                box({ key: "rule" + String(bi) + ks, style: cur ? t.VERSE_RULE : t.VERSE_RULE_OFF }),
+                column({ key: "g" + String(bi) + ks, style: t.GUTTER }, disc),
+                column({ key: "ls" + String(bi) + ks, style: t.lines(colsW) }, lines)
             ];
-            return box({ key: "bk" + String(bi), style: t.VERSE }, body);
+            return box({ key: "bk" + String(bi) + ks, style: active ? t.VERSE : t.VERSE_DIM }, body);
         }
 
         private function stageW():Number
@@ -808,8 +853,7 @@ package hymn
 
             // ---- left: what is playing ----
             var nowTitle:String = h == null ? "Hymn Book" : String(h.title);
-            var nowSub:String = h == null ? "" : "Hymn " + String(h.number) + VOICE_SEP
-                + (tune != null ? "with tune" : "no tune");
+            var nowSub:String = this.playerSub(h, tune);
             var left:Array = [
                 this.plate(h == null ? "0" : String(h.number), {
                     key: "plTile", family: MONO, size: 14, bold: true, padX: 0,
@@ -837,7 +881,7 @@ package hymn
                     w: 30, h: 30, radius: 999,
                     bg: muted ? t.raised : t.accentSoft, fg: muted ? t.text3 : t.accent,
                     onClick: (function (p:String):Function {
-                        return function (e:Object):void { self.model.toggleVoice(p); };
+                        return function ():void { self.model.toggleVoice(p); };
                     })(parts[v]),
                     ariaName: "Mute " + parts[v] }));
             }
@@ -847,7 +891,7 @@ package hymn
             var playable:Boolean = model.tuneOf(model.current()) != null;
             var playBtn:Node = box({ key: "play", style: this.tile(44, 999,
                     playable ? t.accent : t.raised),
-                onClick: function (e:Object):void { if (playable) self.model.togglePlay(); },
+                onClick: function ():void { if (playable) self.model.togglePlay(); },
                 ariaName: model.playing ? "Pause" : "Play" }, [
                 icon(model.playing ? I_PAUSE : I_PLAY, { key: "pli",
                     size: [Length.px(17), Length.px(17)], color: playable ? t.onAccent : t.text3,
@@ -863,7 +907,7 @@ package hymn
                     h: 28, radius: 999, bg: on ? t.accentSoft : t.raised,
                     fg: on ? t.accent : t.text3,
                     onClick: (function (nm:String):Function {
-                        return function (e:Object):void { self.model.setInstrument(nm); };
+                        return function ():void { self.model.setInstrument(nm); };
                     })(names[n2]),
                     ariaName: "Instrument " + names[n2] }));
             }
@@ -919,7 +963,7 @@ package hymn
                             w2, 14, "center") }));
                     mapKids.push(box({ key: "ms" + String(s2), style: segStyle,
                         onClick: (function (ix:int):Function {
-                            return function (e:Object):void {
+                            return function ():void {
                                 self.model.seekBlock(ix);
                             };
                         })(s2),
@@ -927,11 +971,14 @@ package hymn
                 }
             }
             var mapRow:Array = [
-                text(this.clock(elapsed), { key: "tEl",
+                text(this.clock(tune == null ? 0 : elapsed), { key: "tEl",
                     style: this.txt(MONO, 11, false, t.text3, 40, 14, "left"), ariaName: "Elapsed" }),
                 row({ key: "map", style: t.PL_MAP, ariaName: "Song map" }, mapKids),
-                text("-" + this.clock(total - elapsed), { key: "tRem",
-                    style: this.txt(MONO, 11, false, t.text3, 40, 14, "right"), ariaName: "Remaining" })
+                // The RIGHT clock is the tune's TOTAL, not the time remaining (upstream:
+                // `clock(st.duration)`); with no tune it is the em-dash placeholder the
+                // original prints instead of a fake 0:00.
+                text(tune == null ? DUR_NONE : this.clock(total), { key: "tRem",
+                    style: this.txt(MONO, 11, false, t.text3, 40, 14, "right"), ariaName: "Duration" })
             ];
 
             // ---- right: pause-after and the status chip ----
@@ -952,7 +999,7 @@ package hymn
                 flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 8,
                 padding: [0, 12, 0, 12], size: [null, Length.px(30)],
                 cornerRadii: 999, background: model.stopEach ? t.accentSoft : t.raised }),
-                onClick: function (e:Object):void { self.model.setStopEach(!model.stopEach); },
+                onClick: function ():void { self.model.setStopEach(!model.stopEach); },
                 ariaName: "Pause after each verse" }, toggleKids));
             // Upstream prints a dot + "Experimental tune" here. The slot is kept and the
             // text says what THIS build's audio is doing, which is the one thing a reader
@@ -977,6 +1024,36 @@ package hymn
                 column({ key: "plCenter", style: t.PL_CENTER }, center),
                 column({ key: "plRight", style: t.PL_RIGHT }, right)
             ]);
+        }
+
+        // The sub-line under the title in the player bar. Upstream's `player_bar`
+        // (src/ui/player.rs) says what the TRANSPORT is doing, not what the hymn is:
+        // "Playing · Verse 2", "Paused · Chorus", "Up next · Verse 3", "Ready to play".
+        // A build whose device never answered says that instead of pretending.
+        private function playerSub(h:Object, tune:Object):String
+        {
+            if (h == null) return "";
+            if (tune == null) return "No tune yet";
+            if (!model.audio.ready) return "Audio unavailable: no device";
+            var start:Number = 0;
+            for (var i:int = 0; i < model.blockIndex && i < h.blocks.length; i++)
+            {
+                start += model.durationOf(h, i);
+            }
+            var pos:Number = model.nowSec();
+            var name:String = this.sectionName(h, model.blockIndex);
+            if (model.playing) return "Playing" + VOICE_SEP + name;
+            if (pos < 0.01) return "Ready to play";
+            if (Math.abs(pos - start) < 0.05) return "Up next" + VOICE_SEP + name;
+            return "Paused" + VOICE_SEP + name;
+        }
+
+        private function sectionName(h:Object, ix:int):String
+        {
+            if (h == null || ix < 0 || ix >= h.blocks.length) return "";
+            var b:Object = h.blocks[ix];
+            if (b.kind == 1) return "Chorus";
+            return "Verse " + String(b.verse > 0 ? b.verse : ix + 1);
         }
 
         private function dot(size:Number, color:uint):StyleRefinement

@@ -26,6 +26,7 @@ package hymn
         // wholesale when it grows (a window drag mints a key per width).
         private static var cache:Object;
         private static var cacheSize:int = 0;
+        private static var lineCache:Object;
 
         private static function widthOf(s:String, family:String, size:Number, bold:Boolean = false):Number
         {
@@ -58,6 +59,47 @@ package hymn
         public static function width(s:String, family:String, size:Number, bold:Boolean = false):Number
         {
             return widthOf(s, family, size, bold);
+        }
+
+        // THE LINE BOX OF ONE RUN, from the same scratch field the advance comes from.
+        //
+        // WHY IT IS NEEDED: a text node in this kit draws its first line at the TOP of
+        // its content box (TextWidget.placeRun sets `tf.y = insetY`), so the box height
+        // is the ONLY vertical control an author has. Give a label a 19pt box for a 14pt
+        // run and the glyphs hang from the ceiling with the slack all below -- measured
+        // on the HYMN badge: 4 device px above, 26 below (DPR 1.5), i.e. 7pt high. Every
+        // label in this app states its box (a null height solves to 0), so the fix is to
+        // ask the painter how tall one line actually is and split the slack evenly.
+        //
+        // `Agyj|` covers ascender, descender and the pipe's full height, so `textHeight`
+        // is the font's own line box and not a lucky sample.
+        public static function lineHeight(family:String, size:Number, bold:Boolean = false):Number
+        {
+            var key:String = family + "|" + String(size) + "|" + String(bold);
+            var hit:Object = lineCache == null ? null : lineCache[key];
+            if (hit != null) return Number(hit);
+            if (scratch == null)
+            {
+                scratch = new TextField();
+                scratch.autoSize = "left";
+                scratch.multiline = false;
+                scratch.wordWrap = false;
+            }
+            var f:TextFormat = new TextFormat();
+            f.font = family;
+            f.size = size;
+            f.bold = bold;
+            // Text first, format second -- same trap as widthOf (a format applied before
+            // `text = ...` is dropped by the re-flow).
+            scratch.text = "Agyj|";
+            scratch.setTextFormat(f);
+            // widthOf left its own format on the field; this probe owns the next one.
+            fmtKey = "";
+            var lh:Number = scratch.textHeight;
+            if (!(lh > 0)) lh = size * 1.2;
+            if (lineCache == null) lineCache = {};
+            lineCache[key] = lh;
+            return lh;
         }
 
         // The longest prefix of "s" that fits "maxW", with an ellipsis when it had to be

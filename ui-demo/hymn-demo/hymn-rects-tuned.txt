@@ -31,13 +31,37 @@ hymnBadge: 437,83 66x28
 minus: 1152,81 40x32
 plus: 1192,81 40x32
 rScroll: 405,129 862x566
-rDoc: 405,129 854x1070
-titleBlock: 445,169 774x122
-title0: 445,169 774x46
-chips: 445,229 774x26
-chipVerses: 445,229 65x26
-bk0: 431,291 774x130
-bk1: 431,421 774x132
+rDoc: 405,129 854x1103
+titleBlock: 482,169 700x122
+title0: 482,169 700x46
+chips: 482,229 700x26
+chipVerses: 482,229 65x26
+bk0v: 468,291 700x130
+bk1v: 468,421 700x130
+bk2v: 468,551 700x130
+bk3v: 468,681 700x130
+bk1c: MISSING
+rule0v: 468,291 2x130
+g0v: 480,291 48x130
+ls0v: 528,291 640x130
+ls1v: 528,421 640x130
+ln0_0v: 528,291 640x31
+ln0_1v: 528,324 640x31
+ln1_0v: 528,421 640x31
+ln1_1v: 528,454 640x31
+ln1_2v: 528,487 640x31
+rule1v: 468,421 2x130
+g1v: 480,421 48x130
+d0v: 480,293 28x28
+d1v: 480,423 28x28
+d2v: 480,553 28x28
+cls1c: MISSING
+ln1_0c: MISSING
+ln1_0cv: MISSING
+ln1_0ct: MISSING
+ln0_0vt: 528,291 640x31
+ln1_0vt: 528,421 640x31
+ln1_2vt: 528,487 640x31
 player: 12,708 1256x100
 plLeft: 29,709 287x98
 plTile: 29,732 52x52
@@ -51,4 +75,6 @@ tEl: 340,778 40x14
 tRem: 900,778 40x14
 pauseAfter: 1084,727 167x30
 exp: 1121,765 130x24
-escaped 3: [rDoc:box 405,129 854x1070] [rMeasure:box 445,169 774x1030] [gap10x260:box 445,811 10x260] 
+palette root=526604/same reader=1184793/same title0=-/new chipVerses=1777190/same d0v=1777190/same ln0_0v=-/new tEl=-/new player=1184793/same
+ink brandName=eeeff2/eeeff2/eeeff2 brandSub=6c7180/6c7180/6c7180 libTitle=eeeff2/eeeff2/eeeff2 libCount=6c7180/6c7180/6c7180 searchField=eeeff2/eeeff2/- segAll:t=6c7180/6c7180/6c7180 segTuned:t=f0b35a/f0b35a/f0b35a n0:t=1a1204/1a1204/1a1204 t0=eeeff2/eeeff2/eeeff2 s0=a6aab6/a6aab6/a6aab6 b0:t=f0b35a/f0b35a/f0b35a n1:t=a6aab6/a6aab6/a6aab6 t1=eeeff2/eeeff2/eeeff2 s1=6c7180/6c7180/6c7180 b1:t=f0b35a/f0b35a/f0b35a n2:t=a6aab6/a6aab6/a6aab6 t2=eeeff2/eeeff2/eeeff2 s2=6c7180/6c7180/6c7180 b2:t=f0b35a/f0b35a/f0b35a n3:t=a6aab6/a6aab6/a6aab6 t3=eeeff2/eeeff2/eeeff2 s3=6c7180/6c7180/6c7180 b3:t=f0b35a/f0b35a/f0b35a n4:t=a6aab6/a6aab6/a6aab6 t4=eeeff2/eeeff2/eeeff2 s4=6c7180/6c7180/6c7180 b4:t=f0b35a/f0b35a/f0b35a n5:t=a6aab6/a6aab6/a6aab6 t5=eeeff2/eeeff2/eeeff2 s5=6c7180/6c7180/6c7180 b5:t=f0b35a/f0b35a/f0b35a n6:t=a6aab6/a6aab6/a6aab6 t6=eeeff2/eeeff2/eeeff2 s6=6c7180/6c7180/6c7180 b6:t=f0b35a/f0b35a/f0b35a n7:t=a6aab6/a6aab6/a6aab6 t7=eeeff2/eeeff2/eeeff2 s7=6c7180/6c7180/6c7180 b7:t=f0b35a/f0b35a/f0b35a hymnBadge:t=f0b35a/f0b35a/f0b35a minus:t=a6aab6/a6aab6/a6aab6 plus:t=a6aab6/a6aab6/a6aab6 title0=eeeff2/eeeff2/eeeff2 chipVerses:t=a6aab6/a6aab6/a6aab6 chipParts:t=a6aab6/a6aab6/a6aab6 d0v:t=a6aab6/a6aab6/a6aab6 ln0_0vt=eeeff2/eeeff2/eeeff2 ln0_1vt=eeeff2/eeeff2/eeeff2 ln0_2vt=eeeff2/eeeff2/eeeff2 ln0_3vt=eeeff2/eeeff2/eeeff2 d1v:t=a6aab6/a6aab6/a6aab6 ln1_0vt=eeeff2/eeeff2/eeeff2 ln1_1vt=eeeff2/eeeff2/eeeff2 ln1_2vt=eeeff2/eeeff2/eeeff2 ln1_3vt=eeeff2/eeeff2/eeeff2 d2v:t=a6aab6/a6aab6/a6aab6 ln2_0vt=eeeff2/eeeff2/eeeff2 ln2_1vt=eeeff2/eeeff2/eeeff2 ln2_2vt=eeeff2/eeeff2/eeeff2 ln2_3vt=eeeff2/eeeff2/eeeff2 d3v:t=a6aab6/a6aab6/a6aab6 ln3_0vt=eeeff2/eeeff2/eeeff2 ln3_1vt=eeeff2/eeeff2/eeeff2 ln3_2vt=eeeff2/eeeff2/eeeff2 ln3_3vt=eeeff2/eeeff2/eeeff2 ln4_0vt=eeeff2/eeeff2/eeeff2 plTile:t=f0b35a/f0b35a/f0b35a plTitle=eeeff2/eeeff2/eeeff2 plSub=6c7180/6c7180/6c7180 vm0:t=f0b35a/f0b35a/f0b35a vm1:t=f0b35a/f0b35a/f0b35a vm2:t=f0b35a/f0b35a/f0b35a vm3:t=f0b35a/f0b35a/f0b35a in0:t=f0b35a/f0b35a/f0b35a in1:t=6c7180/6c7180/6c7180 tEl=6c7180/6c7180/6c7180 ml0=1a1204/1a1204/1a1204 ml1=b88b49/b88b49/b88b49 ml2=b88b49/b88b49/b88b49 ml3=b88b49/b88b49/b88b49 ml4=b88b49/b88b49/b88b49 tRem=6c7180/6c7180/6c7180 pauseT=a6aab6/a6aab6/a6aab6 expT=6c7180/6c7180/6c7180
+escaped 9: [rDoc:box 405,129 854x1103] [rMeasure:box 482,169 700x1063] [bk4v:box 468,811 700x31] [rule4v:box 468,811 2x31] [g4v:box 480,811 48x31] [ls4v:box 528,811 640x31] [ln4_0v:box 528,811 640x31] [ln4_0vt:text 528,811 640x31] 
