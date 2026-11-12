@@ -15,11 +15,11 @@ id  case                                                rule   AIR 51.4.1  our A
 
 absolute metrics (INFORMATIONAL -- AIR and this build use different text engines):
   AOT: file C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\g20-settextformat\g20-settextformat-aot.txt
-  AOT: tw1=46.65999984741211 tw2=46.65999984741211 tw3=46.65999984741211 ink1=45 ink3=45
+  AOT: tw1=46.65625 tw2=46.65625 tw3=46.65625 ink1=45 ink3=45
   AOT: sub tw1=44.734375 tw3=44.734375
-  AOT: override=39.54999923706055 fresh=39.54999923706055
+  AOT: override=39.546875 fresh=39.546875
   AOT: ab=46.65999984741211 ba=46.65999984741211
-  AOT: plain=39.54999923706055 formatted=46.65999984741211
+  AOT: plain=39.546875 formatted=46.65625
   AOT: splitTail=37.33000183105469 fresh=37.33000183105469
   AOT: splitMid=39.11000061035156 fresh=39.11000061035156
   AOT: color=255 size=30

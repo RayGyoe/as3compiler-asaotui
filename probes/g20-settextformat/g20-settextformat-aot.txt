@@ -1,5 +1,5 @@
 raw file C:\Users\rayle\Desktop\as3compiler-aot\asaotui\probes\g20-settextformat\g20-settextformat-aot.txt
-raw tw1=46.65999984741211 tw2=46.65999984741211 tw3=46.65999984741211 ink1=45 ink3=45
+raw tw1=46.65625 tw2=46.65625 tw3=46.65625 ink1=45 ink3=45
 id=1 true
 id=2 true
 id=3 true
@@ -8,11 +8,11 @@ id=5 true
 id=6 true
 raw sub tw1=44.734375 tw3=44.734375
 id=7 true
-raw override=39.54999923706055 fresh=39.54999923706055
+raw override=39.546875 fresh=39.546875
 id=8 true
 raw ab=46.65999984741211 ba=46.65999984741211
 id=9 true
-raw plain=39.54999923706055 formatted=46.65999984741211
+raw plain=39.546875 formatted=46.65625
 id=14 true
 raw splitTail=37.33000183105469 fresh=37.33000183105469
 id=12 true
