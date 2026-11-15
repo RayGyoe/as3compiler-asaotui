@@ -1129,9 +1129,14 @@ package demo
                             box({ key: "envFollowSwatch", style: StyleRefinement.from({
                                 size: [64, 32], cornerRadii: 6, background: pal.controlSurface,
                                 borderWidths: 1, borderColor: pal.border }) }, []),
-                            chip("theme " + (dark ? "dark" : "light"), { key: "envFollowTheme" }),
+                            // FIXED WIDTH on purpose: this column is centred by the DEMO
+                            // box (alignItems:center on a column = horizontal), so a chip
+                            // sized to its text ("theme dark" vs "theme light", "...true" vs
+                            // "...false") would slide the whole row mid-swap. Each slot is
+                            // pinned to its longest label (measured 85 / 190 px) + a hair.
+                            chip("theme " + (dark ? "dark" : "light"), { key: "envFollowTheme", size: [88, 20] }),
                             chip("Motion.reducedMotion " + Motion.reducedMotion,
-                                { key: "envFollowRM", tone: Motion.reducedMotion ? "danger" : "neutral" })
+                                { key: "envFollowRM", tone: Motion.reducedMotion ? "danger" : "neutral", size: [192, 20] })
                         ])
                     ]);
                 })

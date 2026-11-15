@@ -1446,9 +1446,17 @@ kit 侧不再动；本节的数据就是那一轮的基线。
 一条命令跑全部 **68** 道门：
 
 ```sh
-node tools/gates.cjs          # 84/84 PASS 才叫绿（最新本机全量 temp/gates-blurfix.log，457 s，含 theme 转绿）
+node tools/gates.cjs          # 85/85 PASS 才叫绿（最新本机全量 temp/gates-jitter.log，212 s）
 ```
 
+> 第五十五轮（2026-11-15）**换肤「水平抖动」根因修复（用户报告：切换时画面往右再回左）**。与上一轮的揭示边缘无关，是**布局抖动**：
+>    文档站 demo 框是 `flexDirection:column + alignItems:center`（列上 alignItems 居中即**水平轴**），把 demo 行水平居中；
+>    animation 页「Theme swap」行末读数 `light · running`↔`dark · idle` 随换肤/运行态**变宽**，居中行随之左右滑＝用户所见抖动。
+>    修法：给读数**固定宽**（MONO Courier New 11，最长串 15 字符≈99px，pin 110×14），行宽恒定→居中行不再移。
+>    env 页「Follow the system」同类：两个 chip `theme dark/light`、`Motion.reducedMotion true/false` 变宽，pin 到实测最长标签宽（85/190→88/192×20）。
+>    新增回归探针 `widgets/center-stable`（**变宽读数→按钮位移**证明敏感、**固定宽→按钮恒定**证明修复，22/22，BMP 确认最长串无裁剪）；gates +1。
+>    三臂重验：mxmlc 232245 B + air-sweep 61/18/0 错 + run-gallery 9 截图 1.5x + web-font 1239。**全量 85/85 PASS，212 s**（`temp/gates-jitter.log`）。
+>
 > 第五十四轮（2026-11-15）**对照 Flutter 皮肤特效汇总补 A1/A2**（用户选定）。两项均 **opt-in / 默认行为不变**，
 > 只走核心 Flash API（BitmapData.draw + mask + alpha），不碰编译器、不打穿现有像素钉：
 > 1. **A1 换肤过渡 `UiApp.setThemeAnimated(tokens, opts)`**：新增 `ThemeTransition`（快照旧/新两帧位图，

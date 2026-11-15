@@ -213,8 +213,15 @@ package demo
                                  onClick: function ():void { swapTheme(view, "circle"); } }),
                         button({ key: "animTTSweep", label: "Sweep", style: DocsDemo.QUIET,
                                  onClick: function ():void { swapTheme(view, "sweep"); } }),
+                        // FIXED WIDTH on purpose: the demo box centres this row on the
+                        // horizontal axis (DEMO is a column with alignItems:center), so a
+                        // readout whose width changes with the label ("light · running" vs
+                        // "dark · idle") would slide the whole row -- and the Fade/Circle/
+                        // Sweep buttons -- left/right mid-swap (the "jitter"). Pinning the
+                        // slot to the longest label keeps the row width constant.
                         text((dark ? "dark" : "light") + (live ? " · running" : " · idle"),
-                             { style: DocsDemo.MONO, ariaName: "" })
+                             { style: DocsDemo.MONO.withPatch(StyleRefinement.from({
+                                 size: [Length.px(110), Length.px(14)] })), ariaName: "" })
                     ]);
                 })
             ];

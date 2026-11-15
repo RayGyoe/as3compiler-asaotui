@@ -724,13 +724,18 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
     // auto-focuses the first stop, Tab/Shift+Tab stay inside, close restores the
     // pre-open focus. Teeth: tools/mutation-widget-focus-trap.cjs (5/5).
     'widgets/focus-trap',
-    // A1: opt-in animated theme swap (fade/circle/sweep snapshot+mask), progressive
-    // reveal pinned by themeTransitionProgress, reduced-motion collapses to instant.
-    // Teeth: tools/mutation-widget-theme-transition.cjs (5/5).
+    // A1: opt-in animated theme swap (fade alpha; circle/sweep per-pixel vector
+    // composite, no display-list mask), progressive reveal pinned by
+    // themeTransitionProgress, reduced-motion collapses to instant.
+    // Teeth: tools/mutation-widget-theme-transition.cjs (6/6).
     'widgets/theme-transition',
     // A2: followSystem wires Env.isDark -> Theme and Env.reduceMotion -> Motion;
     // default off leaves the author in control. Teeth: tools/mutation-widget-system-env.cjs (4/4).
     'widgets/system-env',
+    // A centred demo row must not slide when its readout label changes width: a
+    // text-sized readout moves the button (sensitive), a fixed-width slot keeps it
+    // put (the fix for the reported theme-swap "jitter"). Layout deltas, no timing.
+    'widgets/center-stable',
                  'widgets/actions',
                  // `clip` is the pin for compiler-gaps G29, which the library closed by
                  // finally CONSUMING a style field nothing read: three 120x28 boxes with

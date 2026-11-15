@@ -1,0 +1,31 @@
+{
+  "w": 400,
+  "h": 200,
+  "_why": [
+    "HAND-COMPUTED. The root is a 400x200 column at padding 12 with alignItems:center,",
+    "so it centres the row HORIZONTALLY. The row is swatch(96) + gap(12) + button(128)",
+    "+ gap(12) + readout(110 fixed) = 358 wide; inner width 376, so the row left edge is",
+    "12 + (376-358)/2 = 21. Row height = tallest child = 44, placed at the top padding 12.",
+    "  sw      = (21, 12, 96, 44)",
+    "  btn     = (21+96+12, 12+(44-36)/2, 128, 36) = (129, 16, 128, 36)",
+    "  readout = (129+128+12, 12+(44-14)/2, 110, 14) = (269, 27, 110, 14)",
+    "The settled scene is the FIXED-width slot carrying the longest label 'light · running'",
+    "(15 monospace chars ~ 99px < 110px, so it must not clip). (5,5) is the white root",
+    "outside the row; (60,30) is the swatch interior; (180,30) is the button interior.",
+    "",
+    "The behavioural assertions (text-sized readout MOVES the button; fixed-width slot",
+    "keeps it put across every label) are in the program -- they are about layout deltas",
+    "across re-describes, which a single static frame cannot show."
+  ],
+  "rects": {
+    "root": [0, 0, 400, 200],
+    "sw": [21, 12, 96, 44],
+    "btn": [129, 16, 128, 36],
+    "readout": [269, 27, 110, 14]
+  },
+  "points": [
+    { "x": 5, "y": 5, "rgb": "#FFFFFF" },
+    { "x": 60, "y": 30, "rgb": "#F1F3F5" },
+    { "x": 180, "y": 30, "rgb": "#2563EB" }
+  ]
+}
