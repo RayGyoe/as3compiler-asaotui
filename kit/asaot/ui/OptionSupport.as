@@ -62,6 +62,11 @@ package asaot.ui
             // it through this one line (a rarely-changing card or pane is the
             // natural opt-in target -- same one-line plumbing as safeArea).
             if (opts.staticLayer != null) n.staticLayer = Boolean(opts.staticLayer);
+            // `theme` is an Element property too, so EVERY factory accepts a palette for
+            // its whole subtree (`box({ theme: DARK, ... })`), not just themeScope().
+            // From an opts bag only -- there is no shorthand spelling for a palette, and
+            // StyleRefinement.from ignores the key.
+            if (opts.theme != null) n.theme = ThemeTokens(opts.theme);
             // `tabIndex` only exists on Control. Anything else ignores it silently
             // today (a box is not a tab stop at all), which is why it is read here
             // rather than added to every factory signature.

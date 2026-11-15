@@ -217,7 +217,7 @@ package asaot.ui.kind
             var gap:Number = Number(n.extra[GAP_KEY]);
             var segW:Number = (cw - gap * (count - 1)) / count;
             var sel:int = int(Number(n.extra[SEL_KEY]));
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
             var g:Object = n.shapeA.graphics;
             for (var i:int = 0; i < count; i++)
             {
@@ -261,7 +261,7 @@ package asaot.ui.kind
             }
             var g:Object = sh.graphics;
             g.clear();
-            var color:uint = PaintKit.textColorOf(s);
+            var color:uint = PaintKit.textColorOf(s, n.pal());
             for (var i:int = 0; i < tfs.length; i++)
             {
                 var tf:TextField = TextField(tfs[i]);

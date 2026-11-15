@@ -1,0 +1,22 @@
+baseline probes/widgets/reduced-motion: RESULT: PASS  (13 checks)
+
+M1  CAUGHT  Anim.retarget drops the reduced-motion snap -> a fresh style change under the switch arms a 200ms tween, so the "reduced" user still sees travel
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL reduced: a fresh retarget armed a tween (travel not removed); reduced: fresh retarget left bg=4282404960, want 4285563024 (final state must be preserved);
+     FAIL  pixel (100,60) want #708090 got #405060
+     restore: byte-identical (6f37c99a4ed0123c)
+M2  CAUGHT  Anim.advance drops the reduced-motion land -> toggling the switch mid-flight leaves the tween interpolating instead of snapping to its target
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL reduced: a live tween survived advance (did not land); reduced: mid-flight snap left bg=4280036412, want 4282404960; reduced: a fresh retarget armed a tween (travel not removed);
+     restore: byte-identical (6f37c99a4ed0123c)
+M3  CAUGHT  OverlayMotion.start ignores the switch -> an opening surface still fades/slides in for a reduced-motion user
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL reduced: overlay entrance armed (should appear at final pose);
+     restore: byte-identical (d636ce6b54fc167b)
+M4  CAUGHT  OverlayMotion.startExit ignores the switch -> a closing surface holds the screen for the exit tween instead of hiding immediately
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL reduced: startExit should return false (hide immediately);
+     restore: byte-identical (d636ce6b54fc167b)
+
+MUTATION reduced-motion: 4/4 caught, 0 problem(s)
+RESULT: PASS

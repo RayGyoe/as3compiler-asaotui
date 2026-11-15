@@ -81,6 +81,17 @@ package asaot.ui.kind
             var ch:Number = n.absH - PaintKit.borderV(s.borderWidths) - PaintKit.padV(s.padding);
             n.tf.x = PaintKit.insetX(n) + (cw - tw) / 2;
             n.tf.y = PaintKit.insetY(n) + (ch - th) / 2;
+            // THE LABEL'S INK IS A SECOND COLOUR CHANNEL, AND `measure` ALONE CANNOT
+            // KEEP IT. `measureField` writes the colour into the RUN format, and a
+            // run outranks `TextField.textColor` (compiler-gaps.md G48). A colour-only
+            // change raises M_PAINT and NOT M_MEASURE (Style.diffFlags splits the text
+            // fields for exactly that reason), so a palette swap reached this paint
+            // with the new `resolved.text.color`, re-formatted nothing, and left the
+            // button reading the previous theme's ink. This was the last widget that
+            // measured its own field without applyInk; probes/widgets/theme now pins
+            // the run colour of all four ("dark: btn ink is #202020 not #e5e7eb" was
+            // the failure that found it).
+            PaintKit.applyInk(n, n.tf, PaintKit.inkOf(n));
             PaintKit.decorate(n);
         }
 

@@ -185,13 +185,19 @@ package asaot.ui
             g.beginFill(f.rgb(), f.alpha());
         }
 
-        public static function formatFor(s:Style):TextFormat
+        // `pal` is the palette this field belongs to (UiNode.pal()). It is used ONLY for
+        // the unset-colour fallback: a scope's `textDefault` is not the global one, so a
+        // scoped subtree whose text colour is unset must not borrow the global default.
+        // Callers with no node (the overlay chrome rebuild) pass null and get the
+        // global palette, which is right for host chrome.
+        public static function formatFor(s:Style, pal:ThemeTokens = null):TextFormat
         {
             var t:TextStyle = s.text;
             var f:TextFormat = new TextFormat();
             f.font = t.fontFamily != null ? t.fontFamily : "Arial";
             f.size = isNaN(t.fontSize) ? 14 : t.fontSize;
-            f.color = isNaN(t.color) ? Theme.tokens().textDefault : uint(t.color);
+            f.color = isNaN(t.color) ? (pal != null ? pal.textDefault : Theme.tokens().textDefault)
+                : uint(t.color);
             f.bold = t.fontWeight == "bold";
             f.italic = t.fontStyle == "italic";
             if (!isNaN(t.leading)) f.leading = t.leading;
@@ -222,9 +228,28 @@ package asaot.ui
             if (field == null) return;
             if (field.textColor == color) return;
             field.textColor = color;
-            var f:TextFormat = formatFor(n.resolved);
+            var f:TextFormat = formatFor(n.resolved, n.pal());
             f.color = color;
             field.setTextFormat(f);
+        }
+
+        // THE COLOUR A TEXT NODE'S GLYPHS ARE DRAWN WITH: the authored `text.color`
+        // when it is set, else the palette's `textDefault` (the same substitution
+        // `formatFor` makes).
+        //
+        // WHY THIS IS A FUNCTION AND NOT A GUARD: the previous shape at eight call
+        // sites was `if (s.text.color >= 0) applyInk(...)`, i.e. "when the author set
+        // no colour, leave the field alone" -- which silently handed the ink to
+        // `measureField`'s run format. Ink written once by measure never refreshes on
+        // a palette swap (a colour-only change raises M_PAINT, never M_MEASURE), so
+        // the switch label kept light-theme #000000 on the dark #1F2937 track
+        // (measured: probes/widgets/theme, "sw ink is #000000 not #e5e7eb").
+        // PAINT MUST NOT DEPEND ON WHETHER A MEASURE HAPPENED: every field the kit
+        // owns gets a concrete ink on every paint.
+        public static function inkOf(n:UiNode):uint
+        {
+            var c:Number = n.resolved.text.color;
+            return isNaN(c) ? n.pal().textDefault : uint(c);
         }
 
         // Writes n.state.measuredW/H (the intrinsic size of `content`).
@@ -261,6 +286,15 @@ package asaot.ui
             // saving (a colour change re-formats but does not re-shape) and
             // restores the behaviour.
             var t:TextStyle = s.text;
+            // THE EFFECTIVE INK, NOT THE AUTHORED ONE. A node whose text colour is
+            // unset resolves to NaN, and `formatFor` then substitutes the palette's
+            // `textDefault`. Keying the cache on the authored NaN made that
+            // substitution INVISIBLE to the cache: NaN == NaN on every frame, so a
+            // theme swap that moved `textDefault` (light #000000 -> dark #E5E7EB)
+            // neither re-formatted nor re-measured, and every NaN-coloured label kept
+            // the previous palette's ink. Measured by probes/widgets/theme ("sw ink is
+            // #000000 not #e5e7eb").
+            var ink:Number = isNaN(t.color) ? n.pal().textDefault : t.color;
             var text:String = content == null ? "" : content;
             var wrapFlag:Boolean = !isNaN(wrapW) && wrapW > 0;
             // SCALAR COMPARE, NOT A BUILT KEY. See UiNode.mkText for the numbers.
@@ -278,8 +312,8 @@ package asaot.ui
                 && n.mkAlign == t.textAlign
                 && n.mkWrapFlag == (wrapFlag ? 1 : 0);
             var reshape:Boolean = !same || n.state.measureValid != 3;
-            if (!reshape && n.mkFmtValid && sameNum(n.mkColor, t.color)) return;
-            var f:TextFormat = formatFor(s);
+            if (!reshape && n.mkFmtValid && sameNum(n.mkColor, ink)) return;
+            var f:TextFormat = formatFor(s, n.pal());
             field.defaultTextFormat = f;
             if (reshape)
             {
@@ -305,7 +339,7 @@ package asaot.ui
             // setTextFormat REBUILD the run table instead of appending a run per
             // call, so re-measuring the same field cannot accumulate runs.
             field.setTextFormat(f);
-            n.mkColor = t.color;
+            n.mkColor = ink;
             n.mkFmtValid = true;
             if (reshape)
             {
@@ -418,7 +452,7 @@ package asaot.ui
             // mean it: a focused-able control (tabEnabled) or a node some widget
             // handed a click handler to (chips, cards).
             var live:Boolean = (n.tabEnabled || n.onClick != null) && n.state.disabled == 0;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
             var hoveredLift:int = (live && n.state.hover != 0) ? pal.hoverPct : 0;
             var pressedSink:int = (live && n.state.pressed != 0) ? pal.pressPct : 0;
 
@@ -500,7 +534,7 @@ package asaot.ui
         {
             if (n.state.disabled != 0) return c;
             if (n.tabEnabled == false && n.onClick == null) return c;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
             if (n.state.pressed != 0) return mixRGB(c, pal.pressTint, pal.pressPct);
             if (n.state.hover != 0) return mixRGB(c, pal.hoverTint, pal.hoverPct);
             return c;
@@ -606,10 +640,10 @@ package asaot.ui
         // The colour the decoration is drawn in: the run's own text colour, and the
         // palette's text fallback when the style left it unset (the same fallback
         // formatFor uses for the fill).
-        public static function textColorOf(s:Style):uint
+        public static function textColorOf(s:Style, pal:ThemeTokens = null):uint
         {
             if (s == null || s.text == null || isNaN(s.text.color) || s.text.color < 0)
-                return Theme.tokens().textDefault;
+                return pal != null ? pal.textDefault : Theme.tokens().textDefault;
             return uint(s.text.color);
         }
     }

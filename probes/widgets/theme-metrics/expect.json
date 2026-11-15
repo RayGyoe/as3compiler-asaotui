@@ -1,0 +1,39 @@
+{
+  "w": 480,
+  "h": 300,
+  "_why": [
+    "HAND-COMPUTED. The last frame is phase 3 (square corners, no hairline, base padding),",
+    "so the corner pixel at (12,12) is the button's FILL while phases 1-2 assert in the",
+    "program that it was the panel background.",
+    "",
+    "Rects: the root is a column at padding 12, so row1 starts at (12,12). row1 is an",
+    "explicit 456x40 row with a 10px gap: the button is 160 wide at x=12, the input 200",
+    "wide at x = 12+160+10 = 182. Both are pinned heights (40), so nothing about them",
+    "depends on the font.",
+    "",
+    "That is the point of pinning THESE four: the type scale is proven in the program, not",
+    "here. Two slots are read off the input, which is left- and top-aligned (`tf.x` =",
+    "borderWidth + padLeft, `tf.y` = borderWidth + padTop), and the button's padding is",
+    "proven through the auto-height box instead -- a button's label is CENTRED, so its",
+    "field origin is (boxW - textW)/2 and moves with the font. The remaining rects in the",
+    "report (autoBtn / below / autoW / scoped / sbtn) are deliberately NOT pinned: their",
+    "sizes follow the glyphs, and the relations that matter about them (the shrink, the",
+    "sibling's slide, the 2px the hairline costs) are exact arithmetic asserted in the",
+    "program.",
+    "",
+    "Points: the panel is the light `surface` (#FFFFFF) and the button's fill the light",
+    "`controlSurface` (#F1F3F5). (30,32) is inside the button clear of the 'Run' glyphs;",
+    "(12,12) is the exact top-left pixel, where a 6px radius rounds the fill away."
+  ],
+  "rects": {
+    "root": [0, 0, 480, 300],
+    "row1": [12, 12, 456, 40],
+    "btn": [12, 12, 160, 40],
+    "ti": [182, 12, 200, 40]
+  },
+  "points": [
+    { "x": 470, "y": 290, "rgb": "#FFFFFF" },
+    { "x": 12, "y": 12, "rgb": "#F1F3F5" },
+    { "x": 30, "y": 32, "rgb": "#F1F3F5" }
+  ]
+}

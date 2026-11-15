@@ -29,6 +29,7 @@ package asaot.ui
         public var scrim:Boolean;
         public var closeOnScrim:Boolean;
         public var onClose:Function;
+        public var focusTrap:Boolean;     // opt-in: auto-focus + Tab trap + restore
 
         private static var registered:Boolean = false;
 
@@ -44,6 +45,7 @@ package asaot.ui
             this.scrim = true;
             this.closeOnScrim = true;
             this.onClose = null;
+            this.focusTrap = false;
         }
     }
 }

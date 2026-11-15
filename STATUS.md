@@ -1446,8 +1446,96 @@ kit 侧不再动；本节的数据就是那一轮的基线。
 一条命令跑全部 **68** 道门：
 
 ```sh
-node tools/gates.cjs          # 69/69 PASS 才叫绿（最新落盘 reviews/gates-macos-2026-11-06.txt）
+node tools/gates.cjs          # 84/84 PASS 才叫绿（最新本机全量 temp/gates-blurfix.log，457 s，含 theme 转绿）
 ```
+
+> 第五十四轮（2026-11-15）**对照 Flutter 皮肤特效汇总补 A1/A2**（用户选定）。两项均 **opt-in / 默认行为不变**，
+> 只走核心 Flash API（BitmapData.draw + mask + alpha），不碰编译器、不打穿现有像素钉：
+> 1. **A1 换肤过渡 `UiApp.setThemeAnimated(tokens, opts)`**：新增 `ThemeTransition`（快照旧/新两帧位图，
+>    `fade`=旧帧 alpha 1→0、`circle`=新帧被从点击点扩张的圆 mask 揭示、`sweep`=矩形左→右扫光；缓动 outCubic，
+>    默认 240ms）。`opts.type/ms/originX/originY`；`Motion.reducedMotion` 或 `ms<=0`/`type:"none"` 时退化为即时换肤
+>    （同步 reflow，立即可见）。诊断 getter `themeTransitionActive/themeTransitionProgress`。普通 `Theme.setTheme` 永不 arm 过渡。
+>    探针 `widgets/theme-transition` 13/13（begin/mid/end 三采样 + 进度可观测 + fade 中途像素必为混合色）；变异 5/5。
+> 2. **A2 系统联动 `UiApp.setFollowSystem(v)`**（默认 false）：开启后 `Env.isDark`→`Theme`（light/dark）、
+>    `Env.reduceMotion`→`Motion.reducedMotion`，在帧边界折叠（`envChanged` 置 `_sysDirty`，`onEnterFrame` 先于主题 epoch 消费）；
+>    关闭即把控制权交还作者。`Env.isDark/reduceMotion` 此前**已交付但无人消费**，本轮接上。探针 `widgets/system-env` 13/13；变异 4/4。
+> 3. **并发会话合并**：本轮 UiApp 与另一并发会话的 `onEnterFrame` 重构（`enterFrameTicks`/`_running`/`e:Event`）合并，
+>    A1 tick / A2 fold 均保留，两探针合并后重测仍 13/13。
+> 4. **overlay 负载抖动归因（A/B）**：全量并行下 `widgets/overlay` 的「落地后 250ms 内 paintPasses 不变」脆断言偶发 45→46；
+>    单独跑 3/3 绿、负载下概率红。**临时禁用本轮 A1/A2 每帧代码后负载下仍 3 绿 1 红** ⇒ 与本轮改动无因果（预存脆断言/并发重构所致），
+>    未削弱该断言。
+> 5. **文档站 live demo**：`animation` 页新增「Theme swap, animated」节（Fade/Circle/Sweep 三个触发器调 `setThemeAnimated` + 调色板 swatch + active/progress 读数）；
+>    `env` 页新增「Follow the system」节（Follow 开关 + 驱动真实 `EnvBase.setDark/setReduceMotion` + theme/Motion 读数），
+>    并把旧「reduceMotion is carried, not obeyed yet」节改写为「已遵守（follow 开启时）」——正文不再过时。两页均不在 tour 9 取景点内，已发布截图不动。
+>    三臂同验：AIR mxmlc 231662 B + air-sweep 61 页 / 18 弹层 / 0 错；AOT run-gallery 61 页 / 14486 节点 / 0 溢出，HIGH 臂 page0..7 字节不变（page8 仍 246620 B）。
+>    demo 文本初稿用了 `→`/`↔` 超出 web 字体子集（`web font` 门红）——改 ASCII（“1 to 0”/“left-to-right”/“light/dark”）后该门绿（1239 码位），不动字体二进制。
+> 6. **本轮门态与并发归因**：含 demo 的全量为 **83/84**（`temp/gates-demo3.log`），唯一红是 `widgets/theme`（作者色 #ff2d55 期望 vs #ff3e63 实测）。
+>    归因：`PaintKit.as`/`UiNode.as`/`probes/widgets/theme/Main.as` 均被**另一并发会话**改动（+166 行，其在途 G48 颜色工作），期望值未变、是他们的 paint 路径现产出不同色；
+>    与本轮 demo/A1/A2 无因果（本轮未触 paint 色路径，A1/A2 探针在当前 kit 下仍 13/13×2）。**不替并发会话修其在途工作**，待其收尾。
+> 7. **换肤过渡「模糊/抖动」排查与重写（用户报告）**：用户指 follow-system + `setDark/setReduceMotion` 切换模糊抖动。逐像素实证：
+>    旧/新快照**干净、对齐、不透明、同尺寸**；静态叠位图完全对齐；`cv[i]=inside?new:old` 数学上不可能产生偏移重影——
+>    先前所见「重影」实为**圆边界穿过文字**（旧深字/白底 vs 新浅字/深底）的误读。但隔离中确认两条**真实运行时限制**：
+>    对位图内容施 `Shape` mask（屏上合成与 `BitmapData.draw` 离屏两条路径、矢量与 cacheAsBitmap 像素两档）**观察到边缘伪影**（G50，视觉判读·未逐像素证实，不凭此立案）；
+>    `copyPixels` 的 alpha 遮罩参数被 `(void)` 忽略（G51，代码实证）。故把 `ThemeTransition` 的 circle/sweep 重写为**无 mask 逐像素向量合成**
+>    （`getVector` 预取旧/新、每帧按圆/矩形判定 + ~1.5px 边缘 AA、`setVector` 写回单 Bitmap）：**120000 像素逐像素判定 0 异常**、
+>    1500×1050 下 **2.5ms/帧**（无抖动）。修一个真 bug：p=0 时 `rIn=r-aa<0` 但平方>0 使中心误判为新（探针「begin 点击点须为旧」抓出）。
+>    探针 13/13、变异门更新锚点并加 M6（揭示方向）后 **6/6**；G50/G51 登记 `compiler-gaps.md`。三臂重验：mxmlc 232164 B + air-sweep 61/18/0 错 + run-gallery 61 页/14486 节点/0 溢出。
+>
+> 待办（B 档，撞运行时硬边界，仅登记上游不假装有）：backdrop blur / BoxShadow spread·inset / radial·focal 渐变 / fragment shader 通道；G50（位图 mask 疑似双影·未逐像素证实）/G51（copyPixels alpha 遮罩·代码实证）已登记、A1 已绕路。
+
+> 第五十三轮（2026-11-15）**交互可达性 + 动效纪律 + 设计系统纪律**（用户四选全要）。全部 **opt-in / 默认零像素变化**：
+> 1. **reduced-motion**：`anim/Motion.reducedMotion`（默认 false）。true 时 `Anim.retarget/advance` 直接落终值、
+>    `OverlayMotion.start/startExit` 不 arm 计时（入场直接终态、退场立即隐藏），**保留最终状态与反馈**（theme-tokens-vs-cui §2.4）。
+>    探针 `widgets/reduced-motion` 13/13；变异 `tools/mutation-widget-reduced-motion.cjs` 4/4。
+> 2. **设计系统纪律**：`Motion` 集中时长表（OVERLAY_ENTER/EXIT、STATE、HOVER、EXPAND、ROW，逐值等于现校准值），
+>    `OverlayMotion.enterMs()/exitMs()` 读表（widget 不再自带时长）；`ThemeMetrics.innerRadius(outer,gap)` 同心圆角规则
+>    （clamp ≥0）；`ThemeMetrics.grid4()` opt-in 4pt 皮肤（base/compact 不动）。探针 `widgets/design` 21/21；变异 4/4。
+> 3. **模态焦点管理**：dialog/drawer 新增 `focusTrap`（默认 false，**不偷焦**的出厂行为逐字保留）。true 时打开记住当前焦点并
+>    `UiApp.focusFirstWithin(shell)` 自动聚焦第一个 tab 停点（同时激活既有 Tab trap），Tab/Shift+Tab 只圈内循环，关闭还原打开前焦点。
+>    探针 `widgets/focus-trap` 17/17；变异 `tools/mutation-widget-focus-trap.cjs` 5/5。
+> 4. **overflow 裁剪**核实**早已关闭**（`UiNode.applyOverflowClip` + `widgets/clip` 33/33 + 既有变异钉），本轮不重做。
+> 5. **文档站 live demo**：`animation` 页新增「Reduced motion」交互节（`Motion.reducedMotion` 开关 + 同一 swatch 有/无动画对照），
+>    `keyboard` 页新增「focusTrap」交互节（with/without trap 两个触发器 + 焦点指针读数），弹层本体在 `DocsView.renderOverlay` 的 `ftDlg`。
+>    三臂同验：AIR mxmlc 229342 B + air-sweep 61 页 / 18 弹层（含 ftDlg）/ 0 错；AOT run-gallery 61 页 / 0 溢出 / 9 截图（stops 未动，theme 页字节不变）。
+>
+> **全量 82/82 PASS，404 s**（`temp/gates-r53.log`）。AIR mxmlc / air-sweep 同轮全绿（kit 改动未破坏三端）。
+
+> 第五十二轮（2026-11-15）**「能换色，不能换皮肤」——三个缺口一次补齐**（用户三选全要：作用域主题 /
+> 第 5 条颜色通路的护栏 / 几何·密度 token）。前提是一句实测结论：上一轮的 `setTheme` 换的只有**一张调色板**，
+> 而「皮肤」是调色板 **+ 密度/圆角/字号**，且调色板本身也**只能全局一张**。
+> ① **作用域主题（`themeScope`）**：`ScopedTheme`（按调色板 **VALUE** 缓存，`copy` 而非 alias）+ `Theme._describe`
+> 栈 + `UiNode.scope`/`pal()` + `Element.theme`。五个通道缺一不可：**kind 基线**（`scope.controlDefault`）、
+> **继承**（子节点无自己调色板时取父的）、**describe 栈**（builder 里工厂烘死的颜色）、**paint-time**
+> （22 个自绘控件 28 处 `Theme.tokens()` → `n.pal()`）、**ink**（G48 那条 run 通道）。
+> 硬约束：`themeScope(pal, build, opts)` 的 children **必须是 Function** —— 工厂在 describe 期就把颜色
+> **烘成值**了，数组实参会先求值，拿到的永远是全局调色板。判据 `probes/widgets/theme-scope`（**55 checks**：
+> 左栏 light、右栏 SEPIA、右栏里再嵌一层 dark，**同时上屏**——断言的是同时性而不是某个颜色），
+> 变异 **5/5**（每个只拆一条通道，且都仍能编译）。
+> ② **第 5 条颜色通路的护栏**：`PaintKit.formatFor/inkOf` + 8 处 `text.color >= 0` 手写守卫全改成
+> `applyInk(n, n.tf, PaintKit.inkOf(n))`（`>= 0` 挡不住 NaN，未设色的 `NaN` 会一路走到 measure 的 run）；
+> 新增**静态门** `tools/ink-guard.cjs`（205 个 kit 文件 / 14 个自己量字段 / 14 个 applyInk 调用点，
+> 三条规则 R1 非 PaintKit 的 `setTextFormat`、R3 `text.color >= 0`、R6 `uint(s.text.color)`），变异 **8/8**。
+> ③ **几何 token（`ThemeMetrics`）——这才是「换皮肤」**：`font/fontSm/fontLg`、`buttonPadX/Y`、`inputPadX/Y`、
+> `chipPadX/Y`、`badgePadX/Y`、`radiusMd/radiusSm`、`borderWidth`，`base()` **逐值复现** kit 原来的字面量
+> （所以上线不改变任何现有像素——整套 47 个探针就是回归），另有 `compact()` 预设。全部 `Theme.make*` 从
+> 「硬编码数字」改成**消费 slot**，注释里那句「数字保持字面量、刻意如此」随之删掉（`theme-tokens-vs-cui.md`
+> 的 gap #1 就此关闭）。**两个独立 epoch 是安全的前提**：`themeEpoch` 只重绘，`metricsEpoch` 必须**重解**
+> （几何是布局输入）；`setMetrics` 是 no-op 时不 bump（否则每帧一次全树布局）。**密度不作用域化**——
+> 它会进 measure，同一节点两次 pass 可能给出不同答案。判据 `probes/widgets/theme-metrics`（**22 道门 /
+> 26 条 in-program 断言**，三个相位 base → compact → square）钉三件**手算得到、字体推不出来**的事：
+> 输入框 `tf.x == border + padLeft`（左对齐，1+10=11 / 1+7=8）、自高按钮变矮且兄弟**上移同量**、
+> 自宽按钮在 square 相位**正好窄 2px**（只有 border 变了）。变异 **5/5**。
+> ④ 顺带修掉**只有参考编译器看得见**的两个缺陷：`UiNode.as` 用了 `BoxShadow` 却没 import、且写成
+> `BoxShadow(x)` 这种**函数式强转**（mxmlc：「所调用的方法 BoxShadow 可能未定义」）⇒ 整个 AIR 臂
+> 编译失败；改成 `import` + `BoxShadow.fromAny()`。**AIR 臂由红转绿**：mxmlc 226182 B、
+> `air-sweep` 61/61 页 / 17/17 弹层 / 0 运行时错误——即作用域主题与密度 token 在**真 AIR** 上也成立。
+> ⑤ **证据可归因**：`tools/probe.cjs` 新增 `ASC_COMPILER`（默认不变）——本轮期间**另一个会话**正在改
+> `../as3compiler/src/runtime.ts`（Microphone/WASAPI），生成的 C 直接编不过；用
+> `git worktree add --detach ../temp/asc-head f3edb3a` 钉住整合基线，跑出来的红绿只属于本库的改动。
+> ⑥ 另修两处**别人留下的红**（都不是本轮的语义）：`air-gallery-standard/app.xml` 的 `renderMode` 没跟着
+> 主描述符从 cpu 翻到 direct ⇒ DPI A/B 不再是单变量；`air-gallery-web/app.xml` 是**上一轮构建的陈旧产物**
+> （源改了、已暂存的那份没重抄）⇒ 按 stage 的规则重抄一次。
+> **全量 79/79 PASS，395 s**（`reviews/gates-macos-2026-11-15.txt`）。
 
 > 第五十一轮（2026-11-13）**切主题后整套文字停在旧调色板**（用户报「右上角切暗色，暗色有问题」）。
 > ① **根因在颜色的第二通道**：`PaintKit.measureField` 末尾必须 `field.setTextFormat(f)`（`defaultTextFormat`

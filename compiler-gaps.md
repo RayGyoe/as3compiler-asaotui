@@ -925,8 +925,47 @@
 | 量化 | 亮→暗后 **86/86 个文字节点** `resolved` 与 `textColor` 都是新值、`getTextFormat().color` 全是旧值；同一帧的 `Fill` 全部正确。反方向（暗→亮）不发作，因为那一帧的 measure 顺带重贴了格式 |
 | 库侧规避（已做） | 新增 `PaintKit.applyInk(n, field, color)`：**双通道写** —— 写 `textColor`，并在颜色真的变了时补一次全段 `setTextFormat`（稳态只花一次 uint 比较）。13 个画文字标签的 widget 全部改走它（`Text`/`Card`/`Checkbox`/`Radio`/`Switch`/`Slider`/`RangeSlider`/`Progress`/`Badge`/`Chip`/`Avatar`/`Tabs`/`Tooltip`）。窗口实测：亮→暗点一次，正文与品牌标题立即正常 |
 | 闸门 | `run-hymn.cjs` 的像素色板闸门新增第三态（亮→暗快照 `hymn-dark2.png`）与**品牌带墨色亮度**扫描。修前该闸门红：`back to dark: brand ink peaks at luma 22, want > 200`；修后 `palette canary OK` |
-| 是否为运行时缺陷 | **待 `adl` 校验**：`textColor` 在 AIR 里是否覆盖已有 run，本机无 AIR SDK（`AIRSDK_HOME` 未设）无法跑 `flash-text.md` §5.2 的网格图对照。若 AIR 覆盖 ⇒ 上游应让全段 run 也吃 `textColor`，库侧双通道仍无害但可简化；若 AIR 也不覆盖 ⇒ 库侧这条就是正解，本文可转到「不是缺口」表 |
+| 是否为运行时缺陷 | **待 `adl` 校验**：`textColor` 在 AIR 里是否覆盖已有 run。**注意：**“本机无 AIR SDK”这句旧结论已推翻（见 §2）——现在 `mxmlc`/`adl` 均能在本机跑（本轮实测 `air-sweep` 61/61 页），所以这一条从“没法验”变成了“还没验”：要做的是在 AIR 上布一张“先 `setTextFormat` 再 `textColor`”的图，看像素跟 run 还是跟 `textColor`。若跟 run ⇒ 我们的运行时与 AIR 一致，G48 直接关闭为「非缺口」；若 AIR 覆盖 ⇒ 上游应让全段 run 也吃 `textColor`，库侧双通道仍无害但可简化 |
 | 状态 | ✅ **库侧已修**（`PaintKit.applyInk` + 13 个 widget），运行时语义待 `adl` 定论 |
+
+### G49 —— 数组/对象字面量**缺逗号**时我们不报错（mxmlc 报 `BRACKET_CLOSE`）—— ⚠️ **已实测，待定行为**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | `[ a` 换行 `b ]`（中间没逗号）在我们这里**当两个元素**接受、照常编译运行；`mxmlc` 直接语法错误 |
+| 现场 | 第五十二轮给文档站 `theme` 页加两节 `DocSection` 时，插入处漏了一个逗号：我们的 AOT 臂**照常构建、61 页 tour 全绿**，而 `tools/mxmlc-check.cjs` 一跑就红在 `ui-demo/demo/DocsSystem.as:594 语法错误: 应为 BRACKET_CLOSE，而实际为"new"` |
+| 为什么危险 | 这是**单向**的：我们宽、它严 ⇒ 违反「同一输入 `adl` 能跑对而我们跑不出」的反面（我们能跑而它跑不了）看起来无害，但它让**作者调用的参考编译器口径失效**——`mxmlc` 是本仓唯一能校准 AIR 语义的工具，一行漏逗号会把十几道 AIR 门全部变红，而根因被我们自己的宽容性埋着 |
+| 复现 | `temp/gapcheck/nocomma.as`（`var a:Array = [1` 换行 `2];`）→ `node src/index.ts` 接受并行 codegen |
+| 是否为运行时缺陷 | **是解析器宽容性**（不是 AIR 差异）：`parser.ts` 的数组字面量循环应当 `expect(',')`，或者在缺逗号时抛错而不是继续收一个元素 |
+| 状态 | ⚠️ **已实测**；行为该不该留（"宽松注释"），归编译器项目自己定（本文档纪律：不在本仓改上游） |
+
+---
+
+### G50 —— 用 `Shape` 遮罩**位图内容**（`Bitmap` 或含 `Bitmap` 的容器）疑似**双影**：揭示边缘出现偏移的浅色副本，读作模糊+抖动 —— ⚠️ **视觉观察到，未逐像素证实；库侧已绕路**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | 第五十四轮 A1 换肤过渡（circle/sweep）最初用「旧快照位图 + 新快照位图 + `Shape` 圆/矩形 mask」做揭示。中途帧在揭示边缘出现**偏移约 2px 的浅色重影**（标题/色块双重），用户读作「模糊、抖动」。1x 与 1.5x HiDPI 下都出现 |
+| 隔离实证 | ① 旧/新快照本身**干净、对齐、不透明、同尺寸**（逐像素 dump 比对）；② 静态把快照位图 alpha=1 叠在活树上**完全对齐干净**；③ 去掉 mask 赋值重影消失；④ `cacheAsBitmap=true`（像素 mask DstIn 路径）**无效**；⑤ 把 mask 施于 `Sprite` 包裹层**仍双影**；⑥ `BitmapData.draw` **离屏栅格化**带 mask 的包裹层**也双影** ⇒ 缺陷在 mask 对**位图内容**的栅格化本身，屏上/离屏两条路径都中招 |
+| 对照 | kit 的 overflow 裁剪用 mask 作用于**矢量容器**（`probes/widgets/clip` 33/33）正常 ⇒ 缺陷**专属于位图内容**，不是 mask 普遍坏 |
+| 影响 | 任何「位图快照 + 形状 mask 揭示」的动效（换肤圆形揭示、扫光、GIF 遮罩切换）都会边缘双影 |
+| 库侧绕路 | `ThemeTransition` 改为**无 mask 的逐像素向量合成**：`getVector` 预取旧/新快照，每帧按圆/矩形判定 `cv[i]=inside?new:old`（仅 ~1.5px 边缘带做 AA 混合），`setVector` 写回单张 `Bitmap` 显示。**逐像素验证 120000 像素 0 异常**（每像素恰为 old[i]/new[i]/同坐标混合）；1500×1050 下 **2.5ms/帧**，无抖动。探针 `probes/widgets/theme-transition` 13/13、变异门 6/6 |
+| 证据强度（诚实声明） | 上述①～⑥均为**视觉判读**。而「圆边界穿过文字」本身就会呈现旧深字/白底 vs 新浅字/深底的分裂，极易被误读为「偏移重影」——**向量合成版**曾被同样误读，后经逐像素判定（comp[i] 恰为 old[i]/new[i]/同坐标混合，120000 像素 0 异常）证明是**正确揭示**。mask 版**未做**该逐像素判定，故「双影」是**疑似**、不是已证实的缺陷。要立案须把 mask 版中途帧与向量参考逐像素比对（偏移坐标匹配才算真重影） |
+| 建议（上游） | 若逐像素证实 mask 对位图内容有栅格化偏移（屏上合成与 `BitmapData.draw` 离屏两条路径同源）再修；验收＝「带 mask 的位图揭示中途帧与无 mask 向量参考逐像素一致」 |
+| 状态 | ⚠️ **疑似，未逐像素证实**；库侧已用**逐像素证明正确**的向量合成绕开 mask 路径（不依赖它），登记在此不粉饰、不凭视觉立案 |
+
+---
+
+### G51 —— `BitmapData.copyPixels` 的 **alpha 遮罩参数被忽略**（`alphaBitmapData`/`alphaPoint`/`mergeAlpha` 全 `(void)`）—— ⚠️ **已定位，库侧已绕路**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | `copyPixels(src, srcRect, dest, alphaBmp, alphaPt, mergeAlpha)` 应当用 `alphaBmp` 的 alpha 通道调制源像素（做软遮罩合成），实际**整块矩形直 blit**，alpha 遮罩完全不起作用 |
+| 实证 | `temp/asc-head/src/emit.ts` `BitmapData_copyPixels`（约 24409 行）开头即 `(void)alphaBmp; (void)alphaPt; (void)mergeAlpha;`，循环体只做 `bd->pixels[..] = src->pixels[..]` ⇒ 三个参数从未参与 |
+| 影响 | 想用 `copyPixels` 的 alpha 遮罩做逐帧揭示合成（G50 的第一版绕路方案）会**整块覆盖**而非按遮罩揭示 |
+| 库侧绕路 | 同 G50：改用 `getVector`/`setVector`（两者**已实现**，row-major ARGB）做逐像素合成 |
+| 建议（上游） | 实现 `copyPixels` 的 alpha 遮罩与 `mergeAlpha` 语义（AIR 有）；属遗留欠账，立项须先补 `adl` 实测 |
+| 状态 | ⚠️ **已定位，未修上游**；库侧已绕路 |
 
 
 ---

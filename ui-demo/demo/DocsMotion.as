@@ -26,7 +26,10 @@ package demo
     import asaot.ui.Dirty;
     import asaot.ui.Env;
     import asaot.ui.Node;
+    import asaot.ui.Theme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.anim.Ease;
+    import asaot.ui.anim.Motion;
     import asaot.ui.box;
     import asaot.ui.button;
     import asaot.ui.column;
@@ -149,8 +152,83 @@ package demo
                 ], 96, function ():Node
                 {
                     return curveTable();
+                }),
+
+                // The accessibility opt-in, live: the SAME swatch and the SAME flip,
+                // with and without travel. Motion.reducedMotion is global, so the
+                // switch here is the production knob, not a mock of it.
+                new DocSection("Reduced motion: one switch, every tween lands at once", [
+                    "`Motion.reducedMotion` (default false) is the accessibility opt-in. With it on, every style tween lands on its final value immediately and overlays open/close without a fade -- the final state and the feedback stay, only the travel is removed.",
+                    "Flip the swatch with the switch OFF, then ON: same target, same colour change, no animation the second time. The switch is global, so it also calms every other page until you turn it back off."
+                ], [
+                    "Motion.reducedMotion = true;   // Anim + OverlayMotion become instant",
+                    "box({ style: { background: on ? 0x2563EB : 0xE2E8F0,",
+                    "              transitionMs: 260, transitionEase: \"outCubic\" } })"
+                ], 96, function ():Node
+                {
+                    var rm:Boolean = m.bool("anim.rm", false);
+                    var on:Boolean = m.bool("anim.rmFlip", false);
+                    return row({ gap: 14, alignItems: "center" }, [
+                        box({ key: "animRM", style: StyleRefinement.from({
+                            size: [Length.px(96), Length.px(44)], cornerRadii: 8,
+                            background: on ? 0x2563EB : 0xE2E8F0,
+                            transitionMs: 260, transitionEase: "outCubic" }) }, []),
+                        button({ key: "animRMFlip", label: on ? "Back" : "Flip", style: DocsDemo.QUIET,
+                                 onClick: function ():void { m.put("anim.rmFlip", !on); } }),
+                        button({ key: "animRMToggle", label: rm ? "Reduced: ON" : "Reduced: OFF",
+                                 style: DocsDemo.QUIET,
+                                 onClick: function ():void {
+                                     var v:Boolean = !m.bool("anim.rm", false);
+                                     m.put("anim.rm", v);
+                                     Motion.reducedMotion = v;
+                                 } }),
+                        text(rm ? "instant" : "eased 260ms", { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                // A1 (round 54): the animated theme swap, live. setThemeAnimated is
+                // the production knob -- it snapshots both frames and reveals the new
+                // skin over the WHOLE window, so the effect is visible everywhere, not
+                // just in this box. The swatch reads pal() at describe time and flips
+                // with the palette; the readout reports the live transition state.
+                new DocSection("Theme swap, animated: fade / circle / sweep", [
+                    "`UiApp.setThemeAnimated(tokens, opts)` snapshots the old and new frames, then reveals the new skin: `fade` (the old frame's alpha 1 to 0), `circle` (a mask growing from the click point), `sweep` (a left-to-right wipe). outCubic, 240ms by default -- and the whole window swaps, not just this box.",
+                    "Each button flips to the other palette with its own reveal. Turn on Reduced motion above and the same call lands instantly -- the accessibility path. Plain `Theme.setTheme` never animates."
+                ], [
+                    "app.setThemeAnimated(ThemeTokens.dark(), { type: \"circle\", ms: 600 });",
+                    "app.setThemeAnimated(ThemeTokens.light(), { type: \"fade\" });",
+                    "app.themeTransitionActive;  app.themeTransitionProgress;  // 0..1"
+                ], 96, function ():Node
+                {
+                    var pal:ThemeTokens = Theme.tokens();
+                    var dark:Boolean = Theme.isTheme(ThemeTokens.dark());
+                    var live:Boolean = view.app != null && view.app.themeTransitionActive;
+                    return row({ gap: 12, alignItems: "center" }, [
+                        box({ key: "animTT", style: StyleRefinement.from({
+                            size: [Length.px(96), Length.px(44)], cornerRadii: 8,
+                            background: pal.controlSurface, borderWidths: 1, borderColor: pal.border }) }, []),
+                        button({ key: "animTTFade", label: "Fade", style: DocsDemo.QUIET,
+                                 onClick: function ():void { swapTheme(view, "fade"); } }),
+                        button({ key: "animTTCircle", label: "Circle", style: DocsDemo.QUIET,
+                                 onClick: function ():void { swapTheme(view, "circle"); } }),
+                        button({ key: "animTTSweep", label: "Sweep", style: DocsDemo.QUIET,
+                                 onClick: function ():void { swapTheme(view, "sweep"); } }),
+                        text((dark ? "dark" : "light") + (live ? " · running" : " · idle"),
+                             { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
                 })
             ];
+        }
+
+        // Flip to the OTHER palette with the named reveal. The swap is global and
+        // synchronous (setThemeAnimated reflows), so the describe that follows reads
+        // the new palette; notify just makes the readout refresh in the same pass.
+        private static function swapTheme(view:DocsView, type:String):void
+        {
+            if (view.app == null) return;
+            var next:ThemeTokens = Theme.isTheme(ThemeTokens.dark()) ? ThemeTokens.light() : ThemeTokens.dark();
+            view.app.setThemeAnimated(next, { type: type, ms: 600 });
+            view.model.notify(Dirty.THEME);
         }
 
         // One swatch, optionally eased. A method, so the two swatches in the first

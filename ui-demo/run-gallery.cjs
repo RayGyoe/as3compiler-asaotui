@@ -55,10 +55,10 @@ const OUT = 'gallery';
 // tour. (Same class of defect as tools/probe.cjs's `.exe`-only discovery.)
 const EXE = process.platform === 'win32' ? 'GalleryApp.exe' : 'GalleryApp';
 // The tour's screenshot count: demo/DocsMain.as renders one PNG per entry in its
-// `stops` list (live / box / button / image / select / table / tabs / dialog).
+// `stops` list (live / box / button / image / select / table / tabs / dialog / theme).
 // Kept here as a number as well, so a page that silently stops being rendered is a
 // red gate rather than a folder with one file fewer in it.
-const PAGES = 8;
+const PAGES = 9;
 const appDirName = process.env.ASC_AIR_DIR || 'air-gallery';
 const appDir = path.join(here, appDirName);
 // EVERYTHING the app writes (gallery.txt, gallery.done, the page PNGs) is a
@@ -275,7 +275,7 @@ launchedPid = child.pid;
 child.unref();
 
 const donePath = path.join(outDir, OUT + '.done');
-// 60s, because the tour is 8 stops of real clicks on a real window; anything longer is
+// 60s, because the tour is 9 stops of real clicks on a real window; anything longer is
 // a hang, not slowness. `ASC_TOUR_TIMEOUT_MS` shortens it when only the STARTUP is
 // being checked (a smoke run: does the window come up and paint at all?).
 const done = waitForFile(donePath, Number(process.env.ASC_TOUR_TIMEOUT_MS || 60000));

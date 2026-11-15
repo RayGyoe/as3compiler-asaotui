@@ -682,12 +682,55 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
                  // two toothless assertions in it were found: a minSize clamp no drag can
                  // reach, and a shift-modifier vector that also held meta.
                  //
-                 //  is the runtime theme switch: one tree painted twice (light,
-                 // then dark), all 12 sample points asserted in BOTH passes, all 15 rects
-                 // compared across the swap, plus the contract checks. Every style pointer
-                 // in it is a const so the ONLY way a swap can reach a node is
+                 // `widgets/theme` is the runtime theme switch: one tree painted twice
+                 // (light, then dark), all 12 sample points asserted in BOTH passes, all 15
+                 // rects compared across the swap, plus the contract checks. Every style
+                 // pointer in it is a const so the ONLY way a swap can reach a node is
                  // markThemeDirty -- its teeth are tools/mutation-widget-theme.cjs (8/8).
                  'widgets/theme',
+                 // `theme-scope` is the SCOPED palette (2026-11-15): two palettes on screen
+                 // at once, so SIMULTANEITY is the assertion, not a colour. It pins the five
+                 // channels a scope has to reach -- the kind baseline, the ink (G48),
+                 // paint-time reads, factory-baked refinements (the describe stack) and
+                 // inheritance -- plus the two things that must NOT happen: a global swap
+                 // repainting a scope, and a new scope object on every describe (the cache
+                 // is keyed by palette VALUE). Teeth: tools/mutation-widget-theme-scope.cjs
+                 // 5/5, each removing exactly one channel.
+                 'widgets/theme-scope',
+                 // `theme-metrics` is the OTHER half of a skin (2026-11-15): a scope changes
+                 // colours, this changes GEOMETRY -- font size, control padding, radii, border
+                 // width -- through `Theme.setMetrics`. Two epochs are what make it safe: a palette
+                 // swap repaints, a metrics swap RE-SOLVES. The probe proves the slots are
+                 // consumed, that the re-solve really ran (an auto-height box shrinks and its
+                 // sibling slides by the same amount; an auto-width box loses exactly the 2px the
+                 // hairline costs), that a scoped subtree takes its density from the app, and that
+                 // the no-ops stay no-ops. Teeth: tools/mutation-widget-theme-metrics.cjs 5/5.
+                 'widgets/theme-metrics',
+                 // `reduced-motion` is the global motion switch (2026-11-15): with
+                 // Motion.reducedMotion=true every travel animation lands on its FINAL
+                 // state immediately (feedback kept, interpolation removed) -- Anim's
+                 // retarget/advance and OverlayMotion's entrance/exit all honour it, and
+                 // the default (false) is byte-for-byte unchanged. Teeth:
+                 // tools/mutation-widget-reduced-motion.cjs 4/4, one per seam.
+                 'widgets/reduced-motion',
+                 // `design` is the design-system DISCIPLINE (2026-11-15): the Motion
+                 // duration table is the single source (OverlayMotion reads it through
+                 // enterMs/exitMs), concentric corners are a rule (innerRadius =
+                 // max(0, outer-gap)), and the 4pt grid is an opt-in skin (grid4) that
+                 // re-solves while base() stays the default. Teeth:
+                 // tools/mutation-widget-design.cjs 4/4.
+                 'widgets/design',
+    // Opt-in modal focus management: default dialog steals nothing; focusTrap:true
+    // auto-focuses the first stop, Tab/Shift+Tab stay inside, close restores the
+    // pre-open focus. Teeth: tools/mutation-widget-focus-trap.cjs (5/5).
+    'widgets/focus-trap',
+    // A1: opt-in animated theme swap (fade/circle/sweep snapshot+mask), progressive
+    // reveal pinned by themeTransitionProgress, reduced-motion collapses to instant.
+    // Teeth: tools/mutation-widget-theme-transition.cjs (5/5).
+    'widgets/theme-transition',
+    // A2: followSystem wires Env.isDark -> Theme and Env.reduceMotion -> Motion;
+    // default off leaves the author in control. Teeth: tools/mutation-widget-system-env.cjs (4/4).
+    'widgets/system-env',
                  'widgets/actions',
                  // `clip` is the pin for compiler-gaps G29, which the library closed by
                  // finally CONSUMING a style field nothing read: three 120x28 boxes with
@@ -1148,6 +1191,34 @@ runProbes(PROBES);
   const code = (r.status !== 0 || hits > 0) ? 1 : 0;
   record('style scan: no Object-typed local is used as a condition (' + hits + ' found)', code,
     out + (code ? '\nDeclare the local `*` instead of `Object`: no boxing allocation per read,\nand no Array-identity hazard (compiler-gaps.md G14).' : ''));
+}
+
+// ---- 8a: the FIFTH colour channel -- the ink inside a TextField --------------
+// The four channels this kit has always documented (paint-time read / factory-baked /
+// per-kind baseline / overlay chrome) all reach a pixel through a fill or a stroke, and
+// probes/widgets/theme samples exactly those. Text is not one of them: a TextField's
+// glyph colour is a RUN FORMAT written when the string was measured, and a run
+// OUTRANKS `TextField.textColor` (compiler-gaps.md G48). Because a colour-only style
+// change raises M_PAINT and NOT M_MEASURE, ink written by `measureField` is never
+// refreshed by a palette swap -- the hymn demo shipped with 86/86 text nodes stale, and
+// this gate's first run found two more in the kit (ButtonWidget never called applyInk;
+// eight widgets let an unset `text.color` fall through to measure's run, leaving the
+// switch label #000000 on the dark #1F2937 track).
+//   mutation: tools/mutation-ink-guard.cjs (3/3 -- measure-only ink / the NaN guard /
+//   a second ink writer, each planted in a temporary copy, the real files verified
+//   byte-identical afterwards, and the unmutated baseline required to be green first).
+{
+  const r = sh(process.execPath, ['tools/ink-guard.cjs'], UI);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const risks = out.split(/\r?\n/).filter((l) => /INK-RISK/.test(l)).length;
+  const code = (r.status !== 0 || risks > 0) ? 1 : 0;
+  record('ink guard: every measured field writes its ink on every paint (' + risks + ' risk)', code, out);
+
+  const m = sh(process.execPath, ['tools/mutation-ink-guard.cjs'], UI);
+  const mout = (m.stdout || '') + (m.stderr || '');
+  const mm = /MUTATION: (\S+.*)/.exec(mout);
+  record('ink guard can go red (3 planted defects)' + (mm ? ' (' + mm[1].trim() + ')' : ''),
+    m.status, mout);
 }
 
 // ---- 8b: G11 is closed -- the generator IS deterministic, and here is why it

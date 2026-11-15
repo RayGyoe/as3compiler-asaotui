@@ -138,7 +138,7 @@ package asaot.ui.kind
             var ty:Number = n.absH - 12;
             var lx:Number = w * lo;
             var hx:Number = w * hi;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
 
             if (n.shapeA != null)
             {
@@ -167,7 +167,7 @@ package asaot.ui.kind
                 g2.drawCircle(hx, ty + TRACK_H / 2, THUMB_R);
                 g2.endFill();
             }
-            if (n.tf != null && s.text.color >= 0) PaintKit.applyInk(n, n.tf, uint(s.text.color));
+            PaintKit.applyInk(n, n.tf, PaintKit.inkOf(n));
             PaintKit.decorate(n);
         }
 

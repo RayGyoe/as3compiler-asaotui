@@ -88,7 +88,7 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             var s:Style = n.resolved;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
             var bg:uint = pal.surfaceSoft;
             var fg:uint = pal.textBody;
             var tone:String = String(n.extra[TONE_KEY]);

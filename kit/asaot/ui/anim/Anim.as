@@ -151,8 +151,9 @@ package asaot.ui.anim
             }
 
             // Duration unset/zero: the documented default SNAP. Byte-for-byte
-            // today's behaviour.
-            if (isNaN(ms) || ms <= 0)
+            // today's behaviour. reduced-motion takes the SAME path: land on the
+            // final value now, keep the feedback, drop the travel (Motion).
+            if (Motion.reducedMotion || isNaN(ms) || ms <= 0)
             {
                 if (tw != null)
                 {
@@ -215,7 +216,7 @@ package asaot.ui.anim
                     removeAt(i);
                     continue;
                 }
-                var t:Number = (nowMs - tw.startMs) / tw.durMs;
+                var t:Number = Motion.reducedMotion ? 1 : (nowMs - tw.startMs) / tw.durMs;
                 if (t < 0) t = 0;
                 if (t >= 1)
                 {

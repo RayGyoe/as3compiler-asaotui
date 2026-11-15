@@ -103,6 +103,15 @@ package asaot.ui
             n.keyId = desc.key != null ? this.internKey(desc.key) : -1;
             n.keyContext = desc.keyContext;
 
+            // THE PALETTE SCOPE IS SETTLED BEFORE THE RESOLVE, not after it: the scope
+            // picks which per-kind baseline `Theme.resolve` starts from, so a scope
+            // applied afterwards would need a second resolve (and would have already
+            // written the wrong colours into `previous`, which is the animator's
+            // "from" value). Parents are reconciled before children, so inheritance
+            // is already correct when this runs. Setting it may stale the subtree; the
+            // resolve below is the first half of that refresh.
+            n.syncScopedTheme(desc);
+
             var st:StyleRefinement = desc.style;
             if (n.lastStyle !== st || n.lastStyleStale)
             {

@@ -22,10 +22,12 @@
 package asaot.ui
 {
     import asaot.ui.anim.Anim;
+    import asaot.ui.anim.Motion;
     import asaot.ui.anim.Tween;
     import asaot.ui.as3.As3LayoutEngine;
     import asaot.ui.style.Edges;
 
+    import flash.display.BitmapData;
     import flash.display.DisplayObject;
     import flash.display.DisplayObjectContainer;
     import flash.display.InteractiveObject;
@@ -35,6 +37,7 @@ package asaot.ui
     import flash.events.KeyboardEvent;
     import flash.events.MouseEvent;
     import flash.events.TouchEvent;
+    import flash.geom.Matrix;
     import flash.text.TextField;
     import flash.ui.Mouse;
     import flash.ui.MouseCursor;
@@ -131,6 +134,16 @@ package asaot.ui
         // the two events ask for different work: a palette swap must re-resolve every
         // node's style, a language swap only changes the strings a factory read.
         private var _i18nEpoch:int;
+        // ... and a THIRD latch for `Theme.metricsEpoch()`. A geometry swap is the one
+        // event that needs BOTH the palette swap's work and a re-solve, which is
+        // exactly why it gets its own epoch instead of reusing `_themeEpoch` (that
+        // would push every palette swap through a layout pass for nothing).
+        private var _metricsEpoch:int;
+        // A1: the opt-in animated theme swap (null until first used).
+        private var _themeTrans:ThemeTransition;
+        // A2: follow the system appearance / reduced-motion (default off).
+        private var _followSystem:Boolean;
+        private var _sysDirty:Boolean;
 
         // ---- opt-in phase profiling -------------------------------------
         // The `perf` probe times whole operations (one reflow of a describe),
@@ -172,6 +185,10 @@ package asaot.ui
             this._running = false;
             this._themeEpoch = Theme.themeEpoch();
             this._i18nEpoch = I18n.epoch();
+            this._metricsEpoch = Theme.metricsEpoch();
+            this._themeTrans = null;
+            this._followSystem = false;
+            this._sysDirty = false;
             this.describeCalls = 0;
             this.reconcileVisits = 0;
             this.layoutSolves = 0;
@@ -741,11 +758,117 @@ package asaot.ui
             if (this.env == null) return;
             this.setHasHover(this.env.hasHover);
             this._safeDirty = true;
+            // A2: a system appearance / reduced-motion change is folded at the next
+            // frame boundary (syncSystemEnv), never inside the platform callback.
+            this._sysDirty = true;
             // A reflow has to RUN for the latch to be consumed. `_needsPaint` is the
             // cheapest honest wake-up: it asks for a frame boundary without asking
             // for a re-describe (the description did not change -- the platform
             // did), and the layout gate then sees the bits the fold raises.
             if (this.root != null) this._needsPaint = true;
+        }
+
+        // ---- A2: follow the system (MOBILE.md E5 / E8) ----------------------
+        // OPT-IN. Default off: the author owns Theme and Motion.reducedMotion exactly
+        // as before. With it on, the OS drives BOTH -- Env.isDark picks the palette and
+        // Env.reduceMotion drives the accessibility switch -- and a change to either is
+        // honoured without the app calling back. The fold is latched (_sysDirty) and
+        // runs at a frame boundary, like every other engine write.
+        public function get followSystem():Boolean { return this._followSystem; }
+
+        public function setFollowSystem(v:Boolean):void
+        {
+            this._followSystem = v;
+            if (v)
+            {
+                this._sysDirty = true;
+                this.syncSystemEnv();
+                this._needsPaint = true;
+            }
+        }
+
+        private function syncSystemEnv():void
+        {
+            if (!this._followSystem || this.env == null) return;
+            Motion.reducedMotion = this.env.reduceMotion;
+            var want:ThemeTokens = this.env.isDark ? ThemeTokens.dark() : ThemeTokens.light();
+            if (!Theme.isTheme(want)) Theme.setTheme(want);
+            this._sysDirty = false;
+        }
+
+        // ---- A1: the animated theme swap (opt-in) ---------------------------
+        // `setTheme` stays the instant default. This is the same swap plus a snapshot
+        // reveal (fade / circle / sweep). Reduced motion, ms <= 0, type "none", or an
+        // unmounted stage all collapse to the plain instant swap -- never a silent
+        // animation behind the accessibility switch's back.
+        public function setThemeAnimated(t:ThemeTokens, opts:Object = null):void
+        {
+            var type:String = "fade";
+            var ms:Number = 240;
+            var ox:Number = NaN;
+            var oy:Number = NaN;
+            if (opts != null)
+            {
+                if (opts.type != null) type = String(opts.type);
+                if (opts.ms != null) ms = Number(opts.ms);
+                if (opts.originX != null) ox = Number(opts.originX);
+                if (opts.originY != null) oy = Number(opts.originY);
+            }
+            if (type != "fade" && type != "circle" && type != "sweep" && type != "none")
+            {
+                throw new Error('asaot.ui: setThemeAnimated type must be fade|circle|sweep|none (got "'
+                    + type + '")');
+            }
+            if (Motion.reducedMotion || ms <= 0 || type == "none" || this.stage == null)
+            {
+                Theme.setTheme(t);
+                if (this.root != null) this.markThemeDirty(this.root);
+                if (this.overlayRoot != null) this.markThemeDirty(this.overlayRoot);
+                this.invalidate(Dirty.THEME);
+                this.reflow();
+                this._themeEpoch = Theme.themeEpoch();
+                return;
+            }
+            var w:Number = this.stage.stageWidth > 0 ? this.stage.stageWidth : this._solvedW;
+            var h:Number = this.stage.stageHeight > 0 ? this.stage.stageHeight : this._solvedH;
+            if (isNaN(ox)) ox = w / 2;
+            if (isNaN(oy)) oy = h / 2;
+            if (this._themeTrans == null) this._themeTrans = new ThemeTransition();
+            this._themeTrans.cancel();
+            // OLD appearance, then the swap reflowed synchronously, then NEW.
+            // SNAPSHOTS ARE CAPTURED AT DEVICE RESOLUTION, not logical: on a HiDPI
+            // backing (contentsScaleFactor > 1) a logical-size bitmap would be
+            // upscaled when displayed, blurring the reveal and misaligning it with
+            // the sharp live tree (the shimmer/jitter at the mask edge). draw() with
+            // a scale matrix re-rasterizes the display list at full device pixels;
+            // ThemeTransition scales the Bitmap back to logical so it lands 1:1.
+            var scale:Number = this.stage.contentsScaleFactor;
+            if (!(scale > 0)) scale = 1;
+            var dw:int = Math.round(w * scale);
+            var dh:int = Math.round(h * scale);
+            var snapM:Matrix = new Matrix(scale, 0, 0, scale);
+            var oldBd:BitmapData = new BitmapData(dw, dh, true, 0x00000000);
+            oldBd.draw(this.stage, snapM);
+            Theme.setTheme(t);
+            if (this.root != null) this.markThemeDirty(this.root);
+            if (this.overlayRoot != null) this.markThemeDirty(this.overlayRoot);
+            this.invalidate(Dirty.THEME);
+            this.reflow();
+            this._themeEpoch = Theme.themeEpoch();
+            var newBd:BitmapData = new BitmapData(dw, dh, true, 0x00000000);
+            newBd.draw(this.stage, snapM);
+            this._themeTrans.begin(this.stageContainer, oldBd, newBd, type, ms, ox, oy, w, h);
+            this._needsPaint = true;
+        }
+
+        public function get themeTransitionActive():Boolean
+        {
+            return this._themeTrans != null && this._themeTrans.active;
+        }
+
+        public function get themeTransitionProgress():Number
+        {
+            return this._themeTrans == null ? 1 : this._themeTrans.progress;
         }
 
         // Push the platform's insets onto every node that claims them. ONE walk, on
@@ -895,11 +1018,25 @@ package asaot.ui
             for (var i:int = 0; i < n.children.length; i++) this.markThemeDirty(n.children[i]);
         }
 
+        // The metrics twin of markThemeDirty. The ONLY difference is the missing half of
+        // the sentence above: a geometry swap DOES change numbers, so every node has to
+        // be measured again. The root's layout gate is raised by the caller (one bit on
+        // each node would be a re-solve per node through the slow door).
+        private function markMetricsDirty(n:UiNode):void
+        {
+            n.lastStyleStale = true;
+            n.dirty |= Dirty.M_PAINT;
+            for (var i:int = 0; i < n.children.length; i++) this.markMetricsDirty(n.children[i]);
+        }
+
         // ---- frame boundary ---------------------------------------------
         private function onEnterFrame(e:Event):void
         {
             this.enterFrameTicks = this.enterFrameTicks + 1;
             if (!this._running) return;
+            // A2: fold a system appearance / reduced-motion change FIRST, so the theme
+            // epoch check below sees the palette the OS just asked for in THIS frame.
+            if (this._sysDirty) this.syncSystemEnv();
             // A THEME SWITCH IS A FRAME BOUNDARY EVENT, and it runs FIRST: everything
             // below (the author's tick, the reconcile, the paint) must already see the
             // new palette. Two things have to happen, and they are different things:
@@ -917,6 +1054,28 @@ package asaot.ui
                 if (this.root != null) this.markThemeDirty(this.root);
                 if (this.overlayRoot != null) this.markThemeDirty(this.overlayRoot);
                 this.invalidate(Dirty.THEME);
+            }
+            // A METRICS SWITCH IS THE SAME EVENT PLUS A SOLVE, and it is checked
+            // separately because a palette swap must stay cheap (markThemeDirty's whole
+            // justification). Everything the palette path does happens here too -- the
+            // describe, because `ThemeMetrics` reaches colours as well as numbers via
+            // the same baseline table -- and then the numbers are re-solved.
+            if (Theme.metricsEpoch() != this._metricsEpoch)
+            {
+                this._metricsEpoch = Theme.metricsEpoch();
+                if (this.root != null) this.markMetricsDirty(this.root);
+                if (this.overlayRoot != null) this.markMetricsDirty(this.overlayRoot);
+                this.invalidate(Dirty.THEME);
+                if (this.root != null)
+                {
+                    this.root.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE;
+                    this.root.markLayoutDirty();
+                }
+                if (this.overlayRoot != null)
+                {
+                    this.overlayRoot.dirty |= Dirty.M_MEASURE | Dirty.M_ARRANGE;
+                    this.overlayRoot.markLayoutDirty();
+                }
             }
             // A LOCALE SWITCH IS THE SECOND FRAME-BOUNDARY EVENT, and it is NOT a
             // theme switch: no style pointer moved, so no node is marked stale and
@@ -971,6 +1130,10 @@ package asaot.ui
                     if (tw.active && tw.node != null) this.markPaint(tw.node);
                 }
             }
+            // A1: advance the snapshot reveal. While it runs it keeps asking for frames
+            // (the overlay is display-list, not a retained node, so markPaint alone would
+            // not present it).
+            if (this._themeTrans != null && this._themeTrans.tick(now)) this._needsPaint = true;
             // A window resize arrives as an Event too, but some backends report a
             // changed drawable size without one, so compare the stage size as a
             // cheap safety net (this is the section 3.3 "window size changed" row).
@@ -1299,6 +1462,21 @@ package asaot.ui
         public function dropFocus(n:UiNode):void
         {
             if (this._focus == n) this.focusNode(null);
+        }
+
+        // Focus the first tab stop inside `root` (document / tabIndex order). Returns
+        // false when the subtree has no stop. This is the opt-in modal auto-focus:
+        // moving focus INSIDE the floating layer is also what engages the existing
+        // Tab trap (focusNext), so a dialog that calls this on open gets both
+        // auto-focus and trapping from the one ring rule.
+        public function focusFirstWithin(root:UiNode):Boolean
+        {
+            var ring:Vector.<UiNode> = new Vector.<UiNode>();
+            collectFocus(root, ring);
+            ring = this.orderRing(ring);
+            if (ring.length == 0) return false;
+            this.focusNode(ring[0]);
+            return true;
         }
 
         // Put the runtime's `stage.focus` where the focused node wants it. Only an

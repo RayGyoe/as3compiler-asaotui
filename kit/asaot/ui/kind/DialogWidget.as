@@ -22,5 +22,10 @@ package asaot.ui.kind
         {
             return DialogNode(desc).onClose;
         }
+
+        override protected function focusTrapOf(desc:Node):Boolean
+        {
+            return DialogNode(desc).focusTrap;
+        }
     }
 }

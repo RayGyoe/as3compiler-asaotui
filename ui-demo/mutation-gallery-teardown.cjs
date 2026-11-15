@@ -21,7 +21,7 @@
 // gallery go red with the SPECIFIC message, not merely exit non-zero (a broken
 // build also exits non-zero, which proves nothing).
 //
-// The mutated run rewrites the seven tracked `air-gallery/gallery-page{0..6}.png`
+// The mutated run rewrites the nine tracked `air-gallery/gallery-page{0..8}.png`
 // screenshots, so they are snapshotted first and restored byte-for-byte, verified
 // by hash -- same discipline as the source file.
 //
@@ -36,7 +36,7 @@ const { spawnSync } = require('child_process');
 const HERE = __dirname;
 const UINODE = path.join(HERE, '..', 'kit', 'asaot', 'ui', 'UiNode.as');
 const RECON = path.join(HERE, '..', 'kit', 'asaot', 'ui', 'Reconciler.as');
-const SHOTS = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => path.join(HERE, 'air-gallery', 'gallery-page' + i + '.png'));
+const SHOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => path.join(HERE, 'air-gallery', 'gallery-page' + i + '.png'));
 
 const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 

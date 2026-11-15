@@ -33,6 +33,7 @@ package asaot.ui
         public var scrim:Boolean;         // dim + block what is behind
         public var closeOnScrim:Boolean;  // a scrim click calls onClose
         public var onClose:Function;
+        public var focusTrap:Boolean;     // opt-in: auto-focus + Tab trap + restore
 
         private static var registered:Boolean = false;
 
@@ -47,6 +48,7 @@ package asaot.ui
             this.scrim = true;
             this.closeOnScrim = true;
             this.onClose = null;
+            this.focusTrap = false;
         }
     }
 }

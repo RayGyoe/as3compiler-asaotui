@@ -23,7 +23,7 @@
 //   4. a real sidebar click, asserting it is the WIDGET that switches the page;
 //   5. the floating layer: a documented dialog opens in the overlay tree, and
 //      closing it tears the tree down;
-//   6. eight screenshots, one per kind of page (the landing board included).
+//   6. nine screenshots, one per kind of page (the landing board included).
 package demo
 {
     import asaot.ui.Dirty;
@@ -860,10 +860,12 @@ package demo
 
             // ---- 7. screenshots ----------------------------------------------
             // One per KIND of page: the landing app, a container, a control, a leaf, a
-            // picker, a data view, a nav strip and a floating surface. Eight, because
-            // that is what run-gallery.cjs measures -- page0 IS the landing board now,
-            // since that is what a reader of the published demo sees first.
-            var stops:Array = ["live", "box", "button", "image", "select", "table", "tabs", "dialog"];
+            // picker, a data view, a nav strip, a floating surface and the theme/skin
+            // page. Nine, because that is what run-gallery.cjs measures -- page0 IS the
+            // landing board now, since that is what a reader of the published demo sees
+            // first. The theme stop is scrolled to the bottom so the two skin demos
+            // (themeScope / setMetrics) are the ones in the frame.
+            var stops:Array = ["live", "box", "button", "image", "select", "table", "tabs", "dialog", "theme"];
             for (var k:int = 0; k < stops.length; k++)
             {
                 this.mark("7 shot " + String(stops[k]));
@@ -887,6 +889,25 @@ package demo
                     if (ob != null)
                     {
                         this.click(ob);
+                        this.app.reflow();
+                    }
+                }
+                if (String(stops[k]) == "theme")
+                {
+                    // The two skin demos (themeScope / setMetrics) are the LAST sections
+                    // of the theme page, below the fold. Scroll the content pane to its
+                    // bottom so the published screenshot actually shows them, not the
+                    // palette-swap header. A changed desc.offsetY is a scroll request
+                    // even when the author never declared an offset (STATUS #48).
+                    var tsv:UiNode = this.app.findByKey("docScroll");
+                    if (tsv != null)
+                    {
+                        var tsn:ScrollViewNode = ScrollViewNode(tsv.desc);
+                        // A wheel notch is wheelStep px; enough notches to pass the end
+                        // clamp to maxOffsetY. dispatchWheel moves the LIVE offset and
+                        // marks paint dirty, which a bare desc.offsetY write would not.
+                        var notches:int = int(tsn.maxOffsetY / tsn.wheelStep) + 4;
+                        this.stage.dispatchWheel(600, 300, -notches);
                         this.app.reflow();
                     }
                 }

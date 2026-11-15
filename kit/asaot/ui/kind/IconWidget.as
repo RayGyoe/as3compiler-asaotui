@@ -123,7 +123,7 @@ package asaot.ui.kind
                 n.extra[SIG_KEY] = sig;
             }
 
-            var col:uint = Theme.tokens().textStrong;
+            var col:uint = n.pal().textStrong;
             if (!isNaN(s.text.color)) col = uint(s.text.color) & 0xFFFFFF;
             var own:Number = n.extra["icol"] == null ? NaN : Number(n.extra["icol"]);
             if (!isNaN(own)) col = uint(own) & 0xFFFFFF;

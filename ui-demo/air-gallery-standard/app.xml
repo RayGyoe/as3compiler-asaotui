@@ -34,7 +34,7 @@
     <width>1000</width>
     <height>700</height>
     <resizable>true</resizable>
-    <renderMode>cpu</renderMode>
+    <renderMode>direct</renderMode>
     <requestedDisplayResolution>standard</requestedDisplayResolution>
   </initialWindow>
 </application>

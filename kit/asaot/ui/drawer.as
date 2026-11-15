@@ -29,6 +29,7 @@ package asaot.ui
             if (opts.scrim != null) n.scrim = Boolean(opts.scrim);
             if (opts.closeOnScrim != null) n.closeOnScrim = Boolean(opts.closeOnScrim);
             if (opts.onClose != null) n.onClose = (opts.onClose as Function);
+            if (opts.focusTrap != null) n.focusTrap = Boolean(opts.focusTrap);
         }
         n.visible = n.open;
 

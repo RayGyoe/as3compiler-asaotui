@@ -180,7 +180,7 @@ package asaot.ui.kind
             var lw:Number = 0;
             if (name.length > 0)
             {
-                var lf:TextFormat = PaintKit.formatFor(s);
+                var lf:TextFormat = PaintKit.formatFor(s, n.pal());
                 lbl.defaultTextFormat = lf;
                 if (lbl.text != name) lbl.text = name;
                 lw = lbl.textWidth + 2;
@@ -214,18 +214,18 @@ package asaot.ui.kind
             PaintKit.paintBox(n, s, w, h);
             if (n.tf == null) return;
 
-            var color:Number = isNaN(s.text.color) ? Theme.tokens().textControl : s.text.color;
-            var f:TextFormat = PaintKit.formatFor(s);
+            var color:Number = isNaN(s.text.color) ? n.pal().textControl : s.text.color;
+            var f:TextFormat = PaintKit.formatFor(s, n.pal());
 
             var lbl:TextField = TextField(n.extra[LABEL_TF]);
-            var lf:TextFormat = PaintKit.formatFor(s);
-            lf.color = Theme.tokens().textMuted;
+            var lf:TextFormat = PaintKit.formatFor(s, n.pal());
+            lf.color = n.pal().textMuted;
             lbl.defaultTextFormat = lf;
-            lbl.textColor = Theme.tokens().textMuted;
+            lbl.textColor = n.pal().textMuted;
 
             // Right-aligned: a numeric column reads by its last digit, and a
             // left-aligned number jitters the ones place as the digits grow.
-            var ff:TextFormat = PaintKit.formatFor(s);
+            var ff:TextFormat = PaintKit.formatFor(s, n.pal());
             ff.color = uint(color);
             ff.align = "right";
             n.tf.defaultTextFormat = ff;
@@ -270,7 +270,7 @@ package asaot.ui.kind
             var g:Object = n.shapeB.graphics;
             g.clear();
             var x0:Number = w - STEP_W;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
             // The whole column is a pointer target, not just the +/- strokes.
             // An alpha-0 fill still participates in this backend's path hit test;
             // without it a press between the strokes falls through to the field.

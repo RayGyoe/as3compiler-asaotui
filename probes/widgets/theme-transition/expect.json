@@ -1,0 +1,25 @@
+{
+  "w": 240,
+  "h": 160,
+  "_why": [
+    "HAND-COMPUTED. The last frame is the settled LIGHT scene (the reduced-motion phase",
+    "ends on an instant swap back to light). Root column padding 20 puts the 200x60 button",
+    "at (20,20); both heights are pinned, font-independent.",
+    "",
+    "The behavioural claims (circle/fade/sweep are progressive, reduced-motion is instant,",
+    "plain setTheme never arms) are about TIME and the composited overlay, which a static",
+    "frame cannot show; they live in the program, pinned by themeTransitionProgress and by",
+    "sampling the stage at begin/mid/end.",
+    "",
+    "Points: (35,40) inside the button fill left of the centred label = light controlSurface",
+    "#F1F3F5; (220,140) on the root surface below the button = light surface #FFFFFF."
+  ],
+  "rects": {
+    "root": [0, 0, 240, 160],
+    "btn": [20, 20, 200, 60]
+  },
+  "points": [
+    { "x": 35, "y": 40, "rgb": "#F1F3F5" },
+    { "x": 220, "y": 140, "rgb": "#FFFFFF" }
+  ]
+}

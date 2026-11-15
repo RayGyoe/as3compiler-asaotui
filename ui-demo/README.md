@@ -246,9 +246,9 @@ the dev box it is `C:\Program Files\LLVM\bin`.
 # (a) correctness self-check -- the CI-gateable one
 node run-check.cjs                       # -> CHECKUI: 23 checks, 0 failures, exit 0
 
-# (a2) the component-docs tour (50 pages, widget-driven switch, 8 screenshots)
+# (a2) the component-docs tour (50 pages, widget-driven switch, 9 screenshots)
 ASC_NO_OPEN=1 node run-gallery.cjs       # -> [gallery] RESULT: PASS
-                                         #    air-gallery/gallery{,.done,-page0..7}.{txt,png}
+                                         #    air-gallery/gallery{,.done,-page0..8}.{txt,png}
 
 # (a2b) the SAME app on AIR -- one command, both directions
 cd air-gallery && ./build.sh             # mxmlc -> adl (window stays open)
@@ -296,13 +296,13 @@ attached) into **failures**, not log lines: `mutation-gallery-zerorect.cjs` resi
 catalog image to 0×0 and requires the tour to go red naming `page 4` (baseline green,
 restore byte-identical).
 
-`air-gallery/gallery-page{0..7}.png` are the tour's eight page stops; the tour's
+`air-gallery/gallery-page{0..8}.png` are the tour's nine page stops; the tour's
 hand-computed columns (`colA 24,132,320,374` / `colB 356,132,320,374`) are derived from
 700 − 2×24 = 652 content width, two `flexGrow:1` columns and a 12 gap. The runner owns
 that numbering: a `gallery-page<N>.png` at or beyond `PAGES` in the output dir is deleted
 and named on the console. That sweep is not housekeeping — this count dropped from 12 to
-8 and the four leftovers (`gallery-page8..11.png`, still 1.5× frames from the twelve-stop
-layout) sat in git for a week looking like current evidence.
+8 (now 9 with the theme page) and the four leftovers (`gallery-page8..11.png`, still 1.5×
+frames from the twelve-stop layout) sat in git for a week looking like current evidence.
 
 The **Advanced page** used to be the one page holding the last seven widgets that had
 none: `select`, `combobox`, `datePicker`, a `scrollView` of colour bands, a
@@ -311,7 +311,7 @@ the two floating surfaces those widgets open — a `popover` (opened by the tour
 at the body pixel) and a `drawer` anchored to the bottom edge, **open on arrival**. It
 has since been split: each of those widgets owns a page in the `Pickers` / `Data` /
 `Overlay` groups (43 → 50 pages, 9 → 10 groups with `System`), and the widget gallery
-keeps only the eight tour stops `gallery-page0..7.png`. The old page stopped at y = 470
+keeps only the nine tour stops `gallery-page0..8.png`. The old page stopped at y = 470
 because the drawer started there: an edge drawer covered the tab strip and there was no
 way back out of the page — that lesson is why `drawer` now has its own page with the
 side/axis choice on it.

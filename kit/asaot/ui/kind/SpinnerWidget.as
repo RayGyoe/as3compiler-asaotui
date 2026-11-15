@@ -146,13 +146,13 @@ package asaot.ui.kind
                 : Number(n.extra[PH_KEY]);
 
             var g:Object = n.shapeA.graphics;
-            g.beginFill(Theme.tokens().track, 1.0);
+            g.beginFill(n.pal().track, 1.0);
             band(g, cx, cy, rOut, rIn, 0, TAU);
             g.endFill();
 
             // 12 o'clock, clockwise.
             var a0:Number = ph * TAU - QUARTER;
-            g.beginFill(toneOf(String(n.extra[TONE_KEY])), 1.0);
+            g.beginFill(toneOf(String(n.extra[TONE_KEY]), n.pal()), 1.0);
             band(g, cx, cy, rOut, rIn, a0, a0 + ARC_FRAC * TAU);
             g.endFill();
 
@@ -180,9 +180,8 @@ package asaot.ui.kind
             g.lineTo(cx + Math.cos(a0) * rOut, cy + Math.sin(a0) * rOut);
         }
 
-        private function toneOf(tone:String):uint
+        private function toneOf(tone:String, pal:ThemeTokens):uint
         {
-            var pal:ThemeTokens = Theme.tokens();
             if (tone == "neutral") return pal.neutralStrong;
             if (tone == "danger") return pal.danger;
             return pal.accent;

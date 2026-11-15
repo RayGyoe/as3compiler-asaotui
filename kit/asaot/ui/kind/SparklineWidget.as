@@ -158,7 +158,7 @@ package asaot.ui.kind
             var x0:Number = pad;
             var dx:Number = (w - pad * 2) / (vals.length - 1);
 
-            var col:uint = Theme.tokens().textStrong;
+            var col:uint = n.pal().textStrong;
             var tc:Number = s.text.color;
             if (!isNaN(tc)) col = uint(tc) & 0xFFFFFF;
             var own:Number = n.extra[COL] == null ? NaN : Number(n.extra[COL]);

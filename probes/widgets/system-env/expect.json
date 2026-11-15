@@ -1,0 +1,23 @@
+{
+  "w": 240,
+  "h": 160,
+  "_why": [
+    "HAND-COMPUTED. The last frame is the settled LIGHT scene with followSystem turned back",
+    "off. Root column padding 20 puts the 200x60 button at (20,20); pinned heights.",
+    "",
+    "The behavioural claims (follow off = author owns theme/motion; follow on = Env.isDark",
+    "drives the palette and Env.reduceMotion drives Motion; follow off again hands control",
+    "back) are about the Env->UiApp wiring over real frames; they live in the program.",
+    "",
+    "Points: (35,40) button fill left of the label = light controlSurface #F1F3F5;",
+    "(220,140) root surface below the button = light surface #FFFFFF."
+  ],
+  "rects": {
+    "root": [0, 0, 240, 160],
+    "btn": [20, 20, 200, 60]
+  },
+  "points": [
+    { "x": 35, "y": 40, "rgb": "#F1F3F5" },
+    { "x": 220, "y": 140, "rgb": "#FFFFFF" }
+  ]
+}

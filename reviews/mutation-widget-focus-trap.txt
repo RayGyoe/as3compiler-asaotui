@@ -1,0 +1,22 @@
+# mutation-widget-focus-trap -- teeth for the opt-in modal focus gate
+
+baseline probes/widgets/focus-trap: RESULT: PASS  (17 checks)
+
+M1  CAUGHT  the open path never calls focusFirstWithin -> a trapping dialog does not auto-focus its first stop
+     FAIL  program verdict: FAIL focusTrap:true did not auto-focus the first stop (now bg); Tab left the dialog or did not advance (now bgField);
+     verdict: RESULT: FAIL
+M2  CAUGHT  releaseFocus is a no-op -> closing a trapping dialog never restores the pre-open focus
+     FAIL  program verdict: FAIL closing did not restore the pre-open focus (now d2);
+     verdict: RESULT: FAIL
+M3  CAUGHT  releaseFocus clears to null instead of the remembered node -> restore lands on (none), not bg
+     verdict: RESULT: ?
+M4  CAUGHT  the Tab trap condition is disabled -> Tab escapes the dialog to the page behind
+     FAIL  program verdict: FAIL Tab did not wrap within the dialog (now bg);
+     verdict: RESULT: FAIL
+M5  CAUGHT  DialogWidget traps regardless of the author opt-in -> a focusTrap:false dialog steals focus
+     FAIL  program verdict: FAIL a focusTrap:false dialog stole focus on open (now p1);
+     verdict: RESULT: FAIL
+
+MUTATION focus-trap: 5/5 caught, 0 problem(s)
+all sources restored byte-identical (sha256 verified)
+RESULT: PASS

@@ -1,0 +1,26 @@
+# mutation-widget-theme-transition -- teeth for the opt-in animated theme swap
+
+baseline probes/widgets/theme-transition: RESULT: PASS  (13 checks)
+
+M1  CAUGHT  tick forces t=1 -> the reveal snaps to the end on the first frame instead of progressing
+     FAIL  program verdict: FAIL circle: ended too early (mid still active); circle: mid progress not strictly between 0 and 1 (p=1); fade: ended too early; fade: mi
+     verdict: RESULT: FAIL
+M2  CAUGHT  the circle reveal radius is pinned to 0 -> the new skin is never revealed at the click point
+     FAIL  program verdict: FAIL circle: click point not revealed mid-flight (got 0xf1f3f5);
+     verdict: RESULT: FAIL
+M3  CAUGHT  setThemeAnimated ignores Motion.reducedMotion -> it animates behind the accessibility switch
+     FAIL  program verdict: FAIL reduced: setThemeAnimated still animated (must be instant); reduced: not light immediately after the instant swap;
+     verdict: RESULT: FAIL
+M4  CAUGHT  the fade overlay alpha stays 1 -> the old skin never clears to reveal the new
+     FAIL  program verdict: FAIL fade: mid pixel is not a blend (got 0x1f2937; alpha never fell);
+     verdict: RESULT: FAIL
+M5  CAUGHT  the instant (reduced-motion) path forgets to reflow -> the swap is not visible immediately
+     FAIL  program verdict: FAIL reduced: not light immediately after the instant swap;
+     verdict: RESULT: FAIL
+M6  CAUGHT  the circle composite selects NEW outside the disc -> the reveal direction is inverted
+     FAIL  program verdict: FAIL circle: click point already new at begin (radius must be 0);
+     verdict: RESULT: FAIL
+
+MUTATION theme-transition: 6/6 caught, 0 problem(s)
+all sources restored byte-identical (sha256 verified)
+RESULT: PASS

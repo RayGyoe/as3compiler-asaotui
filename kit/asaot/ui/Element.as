@@ -71,6 +71,21 @@ package asaot.ui
         // before the feature existed.
         public var staticLayer:Boolean;
 
+        // THE PALETTE THIS SUBTREE USES (2026-11-15). null = inherit: the node keeps
+        // whatever its parent's scope is, and a tree with no scopes anywhere runs on
+        // `Theme.setTheme`'s global palette exactly as before. Setting it starts a
+        // scope that every descendant inherits until another node overrides it --
+        // this is a real theme (its own per-kind baselines, its own paint-time slots),
+        // not a bag of authored colours; see ThemeScope for what it deliberately does
+        // not reach (host overlays, author overrides).
+        //
+        // HOIST THE PALETTE. `ThemeTokens.dark()` builds a fresh instance, and
+        // `Theme.scopeFor` caches scopes by palette VALUE -- so a `theme:` expression
+        // that rebuilds the same colours every frame still finds the same scope (it
+        // does not churn the tree), but it does allocate 45 slots per describe. Put
+        // the palette in a module-level var or a static const.
+        public var theme:ThemeTokens;
+
         public function Element(kind:String):void
         {
             super(kind);
@@ -78,6 +93,7 @@ package asaot.ui
             this.ariaName = null;
             this.ariaValue = null;
             this.visible = true;
+            this.theme = null;
             this.disabled = false;
             this.onClick = null;
             this.onRightClick = null;

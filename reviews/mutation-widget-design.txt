@@ -1,0 +1,21 @@
+baseline probes/widgets/design: RESULT: PASS  (21 checks)
+
+M1  CAUGHT  innerRadius ignores the gap -> an inner control can out-round its container (the concentric rule is gone)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL innerRadius(14,8) != 6; innerRadius must clamp at 0 when gap >= outer; the concentric rule inner <= outer-gap is violated;
+     restore: byte-identical (efd930f73f7a3a64)
+M2  CAUGHT  grid4 drifts off the 4pt grid -> the "grid" skin is no longer on the grid
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL grid4 padding off the grid;
+     restore: byte-identical (efd930f73f7a3a64)
+M3  CAUGHT  OverlayMotion.enterMs hardcodes 250 instead of reading the Motion table -> a widget invents its own duration
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL OverlayMotion.enterMs()=250 does not read the Motion table;
+     restore: byte-identical (1b0eee9b864756c4)
+M4  CAUGHT  the Motion table entrance value is retuned to 250 -> the shipped, calibrated 140 is lost
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the shipped entrance duration is not 140 in the Motion table;
+     restore: byte-identical (78b6c47b2b78322a)
+
+MUTATION design: 4/4 caught, 0 problem(s)
+RESULT: PASS

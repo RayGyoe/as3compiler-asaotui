@@ -131,7 +131,7 @@ package asaot.ui.kind
             var multi:Boolean = Number(n.extra[MULTI_KEY]) != 0;
             var openSet:Array = n.extra[OPEN_KEY] as Array;
             var g:Object = n.shapeA.graphics;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
 
             // A header background AND a hairline under it, both drawn as FILLS: a filled
             // rect rasterises exactly, so the hairline is the 1px that was asked for and

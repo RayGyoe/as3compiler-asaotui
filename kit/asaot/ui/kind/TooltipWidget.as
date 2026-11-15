@@ -170,7 +170,7 @@ package asaot.ui.kind
                 var padV:Number = nzPad(s, false, PAD_V);
                 n.tf.x = bx + padH;
                 n.tf.y = by + padV;
-                PaintKit.applyInk(n, n.tf, Theme.tokens().onInverse);
+                PaintKit.applyInk(n, n.tf, n.pal().onInverse);
             }
             PaintKit.decorate(n);
         }

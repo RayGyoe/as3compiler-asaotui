@@ -30,10 +30,15 @@
 
 | 用途 | CUI | 我们（`Theme.as`） | 结论 |
 |---|---|---|---|
-| 按钮 / 控件 | `radius_control` = **10** | `makeButton()` = `Corners.all(6)` | 不一致（6 vs 10） |
+| 按钮 / 控件 | `radius_control` = **10** | `ThemeMetrics.radiusMd` = 6（`makeButton()` 取槽位） | 数值不一致（6 vs 10），但**已可换**：改 `setMetrics` 的一张表就换掉 |
 | 面板 / 菜单 | `radius_panel` = **14**（菜单项 8，即 14 − 6 的内距） | 无（未细到面板级） | 缺 |
 | 卡片 / 对话框 | `radius_surface` = **18** | 无 | 缺 |
-| 输入框 | 归入 control（10） | `makeTextInput()` = `Corners.all(4)` | **我们不满足同心**：按钮 6、输入 4，两者嵌套时内圆角大于外圆角会让四角"顶"出来 |
+| 输入框 | 归入 control（10） | `ThemeMetrics.radiusSm` = 4 | 仍是**同心**问题：按钮 6、输入 4，两者嵌套时内圆角大于外圆角会让四角"顶"出来（要修它，改的也是这张表） |
+
+> **第五十二轮更新**：上面两个数字（6 / 4）从「`makeButton()` 里的字面量」变成了
+> `ThemeMetrics.radiusMd` / `radiusSm` 两个槽位，`base()` 逐值复现旧字面量（所以默认像素零变化），
+> `setMetrics(ThemeMetrics.compact())` 会真的把它们换掉并被 `probes/widgets/theme-metrics` 钉住。
+> 本文其余「缺」项（面板/卡片级圆角）仍然缺：槽位只覆盖已存在的那些等级。
 
 **可采纳的规则（不改数值）**：**同心圆角**——内半径 = 外半径 − 两者之间的 padding。
 我们下一步加面板/卡片容器时，先把这条写成断言（一个容器 + 一个内层控件，检查
@@ -43,11 +48,12 @@
 
 | | CUI | 我们 |
 |---|---|---|
-| 栅格 | **4 pt**；组内 16、区间 24、区段 32–48 | 无栅格：`Edges.of(9,14,9,14)`（按钮）、`(7,10,7,10)`（输入）、`(2,8,2,8)`（chip）、`(0,6,0,6)`（badge）——9/7/2 都落在 4 的栅格外 |
+| 栅格 | **4 pt**；组内 16、区间 24、区段 32–48 | 无栅格：`ThemeMetrics.base()` 的按钮 `9/14`、输入 `7/10`、chip `2/8`、badge `0/6`——9/7/2 都落在 4 的栅格外 |
 | 控件高 | 30 / 36 / 44 三档 | 无三档，高度由 padding + 行高推出来 |
 
 **判断**：这是**真实差距**，但改它 = 每个控件的高度、每个像素钉、每次 tour 截图全部重测。
-**记录，不动。** 如果将来做一次真正的视觉重做，4pt 栅格应当是那次的第一件事。
+**记录，不动默认值。** 但第五十二轮之后它与改动的距离变了：这些数字都在 `ThemeMetrics` 的一张表里，
+**作为一张皮肤**（`setMetrics`，opt-in）上 4pt 栅格已经不需要改任何 `make*`；要它成为默认才需要重测像素钉。
 
 ### 2.3 颜色
 
@@ -98,12 +104,34 @@
 
 ---
 
-## 4. 结论（可直接执行的只有三条）
+## 4. 结论（可直接执行的三条，第五十三轮已落地前两条 + reduced-motion）
 
-1. **同心圆角断言** —— 加约束不加数值，下次新增面板容器时生效。
-2. **时长集中成一张表** —— 现有 140/120 不动，新增值必须进表。
-3. **负面清单进审查流程** —— 用于 demo 与 52 页文档站的视觉评审，不改 token。
+1. **同心圆角断言** —— ✅ 已落地：`ThemeMetrics.innerRadius(outer, gap) = max(0, outer-gap)`，加约束不加默认数值。
+2. **时长集中成一张表** —— ✅ 已落地：`anim/Motion` 的 OVERLAY_ENTER/EXIT、STATE、HOVER、EXPAND、ROW（逐值等于现校准值），
+   `OverlayMotion.enterMs()/exitMs()` 读表；新增值必须进表。
+3. **负面清单进审查流程** —— 用于 demo 与文档站的视觉评审，不改 token（仍为流程项）。
 
-**明确不做的**：换圆角半径、上 4pt 栅格、改 OKLab 边框、扩到多 accent。
-四条全部会打穿现有像素钉与 tour 截图，收益是"更接近它的观感"——而我们的观感是
+**reduced-motion（§2.4）已落地**：`Motion.reducedMotion`（默认 false）；true 时所有动效直接落终值、
+退场立即隐藏，**保留最终状态与反馈**。探针 `widgets/reduced-motion` + 变异 4/4。
+
+**换肤过渡 + 系统联动（第五十四轮，对照 Flutter 皮肤特效汇总 A1/A2）已落地**，均 opt-in：
+- **A1 换肤过渡**：`UiApp.setThemeAnimated(tokens, {type,ms,originX,originY})` + `ThemeTransition`（快照旧/新两帧位图，
+  `fade`/`circle`（点击点圆形揭示）/`sweep`（左→右扫光），outCubic 默认 240ms）。`Motion.reducedMotion` 时退化为即时换肤——
+  正是上面那条「每个动效都有 reduced-motion 路径」的落地。普通 `Theme.setTheme` 永不 arm。探针 `widgets/theme-transition` 13/13 + 变异 6/6。
+  circle/sweep 用**无 mask 逐像素向量合成**（`getVector/setVector`）：运行时对位图内容施 mask 观察到边缘伪影（G50，视觉判读·未逐像素证实）、`copyPixels` 的 alpha 遮罩未实现（G51，代码实证），
+  故不走 mask；向量合成逐像素验证 120000 像素 0 异常、1500×1050 下 2.5ms/帧。
+- **A2 系统联动**：`UiApp.setFollowSystem(v)`（默认 false）把 `Env.isDark`→`Theme`、`Env.reduceMotion`→`Motion.reducedMotion`
+  在帧边界接上（这两个平台事实此前已交付但无人消费）。探针 `widgets/system-env` 13/13 + 变异 4/4。
+- **B 档（撞运行时硬边界，仅登记上游）**：backdrop blur / BoxShadow spread·inset / radial·focal 渐变 / fragment shader 通道——库侧不假装有。
+  另 G50（位图 mask 疑似双影·未逐像素证实）/ G51（copyPixels alpha 遮罩未实现·代码实证）已登记，A1 用向量合成绕路、不依赖这两条路径。
+
+**4pt 栅格 / 三级圆角**仍是 opt-in 皮肤：`ThemeMetrics.grid4()`（4 的倍数）与自定义表，默认 `base()` 像素零变化。
+
+**明确不做的（默认值上）**：换圆角半径、上 4pt 栅格、改 OKLab 边框、扩到多 accent。
+前两条会打穿现有像素钉与 tour 截图，收益是"更接近它的观感"——而我们的观感是
 逐像素对 `adl` 校准过的，那才是我们的资产。
+
+**第五十二轮之后的区别**：前两条不再等于"改不了"。它们现在是**一张皮肤**
+（`Theme.setMetrics`）：默认为 `base()`（逐值复现旧字面量，像素零变化），要 4pt 栅格或 10/14/18 三级圆角
+就写一张新表传进去，**opt-in、不改默认、不重测默认像素钉**；作用域主题（`themeScope`）再把调色板
+限制在一棵子树内，于是"同一屏两套皮肤"也是可测的（`probes/widgets/theme-scope`）。

@@ -1,0 +1,27 @@
+baseline probes/widgets/theme-metrics: RESULT: PASS  (22 checks)
+
+M1  CAUGHT  the BUTTON baseline keeps the literal padding -> the slot is stored and never read, so a denser skin leaves that one kind at 9/14 while every other kind moves
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL compact: the button's padding is 9/14, want 4/9; compact: the SCOPED button's padding/radius is 14/4, want 9/4 (setMetrics must rebuild every scope); compact: the auto-height button lost 1px, want at least the 8px of vertical padding it sheds;
+     restore: byte-identical (29936f8922657511)
+M2  CAUGHT  buildBaselines ignores the bundle and rebuilds the SHIPPED metrics -> the whole table is frozen at base and no kind follows a swap (the input is the cheapest witness: its left-aligned text origin moves with the padding)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL compact: the button's padding is 9/14, want 4/9; compact: the button's radius is 6, want 4; compact: the button's font size is 14, want 13; compact: the input's padding is 7/10, want 4/7; compact: the input's radius is 4, want 3; compact: the input's font size is 14, want
+     FAIL  pixel (12,12) want #F1F3F5 got #ffffff
+     restore: byte-identical (29936f8922657511)
+M3  CAUGHT  setMetrics swaps the numbers but does NOT bump the epoch -> UiApp never re-solves: the resolved styles still say bad numbers would be fine, but the TREE keeps the old boxes, so nothing shrinks and no sibling slides
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL compact: the button's padding is 9/14, want 4/9; compact: the button's radius is 6, want 4; compact: the button's font size is 14, want 13; compact: the input's padding is 7/10, want 4/7; compact: the input's radius is 4, want 3; compact: the input's font size is 14, want
+     FAIL  pixel (12,12) want #F1F3F5 got #ffffff
+     restore: byte-identical (29936f8922657511)
+M4  CAUGHT  cached SCOPES are not rebuilt -> a scoped subtree keeps its own palette (correct) and the PREVIOUS density (wrong): the failure is invisible unless a scope is on screen next to the global tree
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL compact: the SCOPED button's padding/radius is 14/6, want 9/4 (setMetrics must rebuild every scope); compact: the SCOPED button's font size is 14, want 13; square: the SCOPED button's padding/radius is 14/6, want 14/0 (setMetrics must rebuild every scope);
+     restore: byte-identical (29936f8922657511)
+M5  CAUGHT  the no-op guard is gone -> setMetrics(current()) bumps the epoch and re-solves the entire tree to arrive at the same numbers (a per-frame layout pass waiting to be written by accident)
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL a no-op setMetrics bumped the epoch (0 -> 1) -- that is a full re-solve for the same numbers;
+     restore: byte-identical (29936f8922657511)
+
+MUTATION theme-metrics: 5/5 caught, 0 problem(s)
+RESULT: PASS

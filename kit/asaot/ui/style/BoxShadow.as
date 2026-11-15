@@ -50,7 +50,10 @@ package asaot.ui.style
         public static function fromAny(o:Object):BoxShadow
         {
             if (o == null) return null;
-            if (o is BoxShadow) return BoxShadow(o);
+            // `as`, not `BoxShadow(o)`: a class used as a function is a call mxmlc
+            // rejects ("possibly undefined method"), and the AIR arm has to compile
+            // this file too.
+            if (o is BoxShadow) return o as BoxShadow;
             if (!(o is Object)) return null;
             var b:BoxShadow = new BoxShadow();
             if (o.offset != null && o.offset is Array)

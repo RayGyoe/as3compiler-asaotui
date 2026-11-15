@@ -74,7 +74,7 @@ package asaot.ui.kind
         {
             if (n.shapeA == null) return;
             var s:Style = n.resolved;
-            var col:uint = Theme.tokens().border;
+            var col:uint = n.pal().border;
             if (!isNaN(s.borderColor)) col = uint(s.borderColor) & 0xFFFFFF;
             else if (s.background != null) col = s.background.rgb();
 

@@ -1,0 +1,23 @@
+{
+  "w": 200,
+  "h": 120,
+  "_why": [
+    "HAND-COMPUTED. The root is a 200x120 column at padding 10, so the single 180x100 box",
+    "sits at (10,10). The bitmap is the SETTLED scene after the last retarget landed on C",
+    "(0xFF708090): reduced-motion removes travel, not the final colour, so the box interior",
+    "is exactly C. (5,5) is the white root surface outside the box.",
+    "",
+    "The behavioural assertions (default animates / mid-flight snap / fresh snap / overlay",
+    "entrance+exit honour the switch) are in the program, not here -- they are about TIME,",
+    "which a static frame cannot show. The two rects + two points only pin that the probe",
+    "mounted the scene it claims to drive."
+  ],
+  "rects": {
+    "root": [0, 0, 200, 120],
+    "box": [10, 10, 180, 100]
+  },
+  "points": [
+    { "x": 5, "y": 5, "rgb": "#FFFFFF" },
+    { "x": 100, "y": 60, "rgb": "#708090" }
+  ]
+}

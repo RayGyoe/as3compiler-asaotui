@@ -1,0 +1,133 @@
+[air] reference runtime: D:\Adobe\Flex_Sdk\AIRSDK_51.5.1  (via PATH)
+[probes] 42 probe(s), parallel x6
+   ... widgets/display pass 4.5s  [1/42]
+   ... widgets/form pass 4.5s  [2/42]
+   ... widgets/chip pass 4.5s  [3/42]
+   ... widgets/nav pass 4.6s  [4/42]
+   ... widgets/media pass 5.4s  [5/42]
+   ... widgets/flip pass 3.9s  [6/42]
+   ... widgets/data pass 8.4s  [7/42]
+   ... widgets/vlist pass 7.1s  [8/42]
+   ... redraw pass 4.0s  [9/42]
+   ... widgets/interact pass 7.9s  [10/42]
+   ... widgets/popup pass 4.1s  [11/42]
+   ... widgets/overlay pass 8.1s  [12/42]
+   ... widgets/choice pass 7.5s  [13/42]
+   ... widgets/textfx pass 4.0s  [14/42]
+   ... lifecycle pass 4.1s  [15/42]
+   ... widgets/pointer pass 5.1s  [16/42]
+   ... widgets/scrollbar pass 5.9s  [17/42]
+   ... widgets/callback pass 6.3s  [18/42]
+   ... widgets/imaging pass 3.6s  [19/42]
+   ... widgets/typing pass 8.6s  [20/42]
+   ... widgets/gutter pass 3.2s  [21/42]
+   ... widgets/table2 pass 5.8s  [22/42]
+   ... widgets/stick pass 5.7s  [23/42]
+   ... widgets/select-scroll pass 5.7s  [24/42]
+   ... widgets/pointer-touch pass 5.7s  [25/42]
+   ... widgets/navstack pass 5.6s  [26/42]
+   ... widgets/text-align pass 3.3s  [27/42]
+   ... widgets/icon pass 3.3s  [28/42]
+   ... widgets/appbar pass 6.2s  [29/42]
+   ... widgets/tabbar pass 5.9s  [30/42]
+   ... widgets/accordion pass 3.6s  [31/42]
+   ... widgets/theme-scope pass 4.8s  [32/42]
+   ... widgets/theme-metrics pass 4.3s  [33/42]
+   ... widgets/keys pass 6.9s  [34/42]
+   ... widgets/theme pass 5.1s  [35/42]
+   ... widgets/inputs pass 6.5s  [36/42]
+   ... widgets/actions pass 4.9s  [37/42]
+   ... widgets/static-layer pass 3.8s  [38/42]
+   ... widgets/clip pass 4.0s  [39/42]
+   ... widgets/fps pass 6.2s  [40/42]
+   ... widgets/i18n pass 5.6s  [41/42]
+   ... widgets/env pass 6.5s  [42/42]
+[PASS] probe widgets/display (48 checks, 0 failures)  (exit 0)   4.5s
+[PASS] probe widgets/form (41 checks, 0 failures)  (exit 0)   4.5s
+[PASS] probe widgets/chip (19 checks, 0 failures)  (exit 0)   4.5s
+[PASS] probe widgets/nav (41 checks, 0 failures)  (exit 0)   4.6s
+[PASS] probe widgets/media (43 checks, 0 failures)  (exit 0)   5.4s
+[PASS] probe widgets/flip (54 checks, 0 failures)  (exit 0)   3.9s
+[PASS] probe widgets/data (77 checks, 0 failures)  (exit 0)   8.4s
+[PASS] probe widgets/vlist (26 checks, 0 failures)  (exit 0)   7.1s
+[PASS] probe redraw (14 checks, 0 failures)  (exit 0)   4.0s
+[PASS] probe widgets/interact (25 checks, 0 failures)  (exit 0)   7.9s
+[PASS] probe widgets/popup (26 checks, 0 failures)  (exit 0)   4.1s
+[PASS] probe widgets/overlay (65 checks, 0 failures)  (exit 0)   8.1s
+[PASS] probe widgets/choice (44 checks, 0 failures)  (exit 0)   7.5s
+[PASS] probe widgets/textfx (18 checks, 0 failures)  (exit 0)   4.0s
+[PASS] probe lifecycle (9 checks, 0 failures)  (exit 0)   4.1s
+[PASS] probe widgets/pointer (23 checks, 0 failures)  (exit 0)   5.1s
+[PASS] probe widgets/scrollbar (44 checks, 0 failures)  (exit 0)   5.9s
+[PASS] probe widgets/callback (24 checks, 0 failures)  (exit 0)   6.3s
+[PASS] probe widgets/imaging (31 checks, 0 failures)  (exit 0)   3.6s
+[PASS] probe widgets/typing (18 checks, 0 failures)  (exit 0)   8.6s
+[PASS] probe widgets/gutter (37 checks, 0 failures)  (exit 0)   3.2s
+[PASS] probe widgets/table2 (22 checks, 0 failures)  (exit 0)   5.8s
+[PASS] probe widgets/stick (15 checks, 0 failures)  (exit 0)   5.7s
+[PASS] probe widgets/select-scroll (19 checks, 0 failures)  (exit 0)   5.7s
+[PASS] probe widgets/pointer-touch (30 checks, 0 failures)  (exit 0)   5.7s
+[PASS] probe widgets/navstack (16 checks, 0 failures)  (exit 0)   5.6s
+[PASS] probe widgets/text-align (22 checks, 0 failures)  (exit 0)   3.3s
+[PASS] probe widgets/icon (66 checks, 0 failures)  (exit 0)   3.3s
+[PASS] probe widgets/appbar (22 checks, 0 failures)  (exit 0)   6.2s
+[PASS] probe widgets/tabbar (13 checks, 0 failures)  (exit 0)   5.9s
+[PASS] probe widgets/accordion (18 checks, 0 failures)  (exit 0)   3.6s
+[PASS] probe widgets/theme-scope (55 checks, 0 failures)  (exit 0)   4.8s
+[PASS] probe widgets/theme-metrics (22 checks, 0 failures)  (exit 0)   4.3s
+[PASS] probe widgets/keys (36 checks, 0 failures)  (exit 0)   6.9s
+[PASS] probe widgets/theme (75 checks, 0 failures)  (exit 0)   5.1s
+[PASS] probe widgets/inputs (50 checks, 0 failures)  (exit 0)   6.5s
+[PASS] probe widgets/actions (73 checks, 0 failures)  (exit 0)   4.9s
+[PASS] probe widgets/static-layer (27 checks, 0 failures)  (exit 0)   3.8s
+[PASS] probe widgets/clip (33 checks, 0 failures)  (exit 0)   4.0s
+[PASS] probe widgets/fps (12 checks, 0 failures)  (exit 0)   6.2s
+[PASS] probe widgets/i18n (5 checks, 0 failures)  (exit 0)   5.6s
+[PASS] probe widgets/env (43 checks, 0 failures)  (exit 0)   6.5s
+[probes] 5 probe(s), solo -- stopwatch probes: nothing else may be building
+   ... widgets/anim pass 4.4s  [1/5]
+   ... widgets/feedback pass 4.0s  [2/5]
+   ... widgets/motion pass 5.4s  [3/5]
+   ... widgets/touch-scroll pass 12.2s  [4/5]
+   ... perf pass 4.0s  [5/5]
+[PASS] probe widgets/anim (14 checks, 0 failures)  (exit 0)   4.4s
+[PASS] probe widgets/feedback (43 checks, 0 failures)  (exit 0)   4.0s
+[PASS] probe widgets/motion (23 checks, 0 failures)  (exit 0)   5.4s
+[PASS] probe widgets/touch-scroll (26 checks, 0 failures)  (exit 0)   12.2s
+[PASS] probe perf (1 checks, 0 failures)  (exit 0)   4.0s
+[probes] 47 probe(s) in 69.2s
+[PASS] i18n catalog (55 + 55 keys)  (exit 0)   0.0s
+[PASS] web font covers the page (1239 codepoints)  (exit 0)   0.1s
+[PASS] layout-check text half (133 checks, 0 failures)  (exit 0)   0.9s
+[PASS] ui-demo CheckUi (37 checks, 0 failures)  (exit 0)   1.4s
+[PASS] layout-check visual half (12 checks, 0 failures)  (exit 0)   2.7s
+[PASS] gallery tour: 61 component pages (incl. the overlay tree), hand-computed rects (PASS)  (exit 0)   8.8s
+[PASS] gallery kind coverage: all registered widgets are shown (45/45)  (exit 0)   0.1s
+[PASS] docs demos pass only options the factories read (0 unknown)  (exit 0)   0.1s
+[PASS] author callbacks carry their documented argument (24 calls / 272 handlers) (0 violations)  (exit 0)   0.2s
+[PASS] AIR arm (build.sh default) compiles under mxmlc (227723 B SWF)  (exit 0)   1.4s
+[PASS] build.sh --gpu selects renderMode + backend, app.xml untouched (32 checks, 0 failures)  (exit 0)   4.3s
+[PASS] build.sh web: toolchain spawned, argv pinned, refusals, staged dir untracked (26 checks, 0 failures)  (exit 0)   2.2s
+[PASS] docs app on AIR (adl): every page, popups open, pointer drill, no runtime error (61/61 pages, 17/17 popups, 0 errors, 1769/8339 destroyed)  (exit 0)   42.6s
+[PASS] kit listeners are all releasable (UiNode.listen + destroySubtree) (45 wired, 0 raw)  (exit 0)   0.1s
+[PASS] G13 air-app reach: closure keeps 5/5, both faces build+run (PASS)  (exit 0)   1.6s
+[PASS] descriptor DPI A/B: standard 1x vs high >1x, same logical rects (PASS)  (exit 0)   17.3s
+[PASS] incremental repaint == full repaint (4 paint-only scenarios) (PASS)  (exit 0)   2.0s
+[PASS] style scan: no Object-typed local is used as a condition (0 found)  (exit 0)   0.1s
+[PASS] ink guard: every measured field writes its ink on every paint (0 risk)  (exit 0)   0.1s
+[PASS] ink guard can go red (3 planted defects) (PASS (8/8))  (exit 0)   0.3s
+[PASS] G11 determinism: 5 builds -> 1 C, spellings agree, artifacts decay (1 distinct hash for 5 builds)  (exit 0)   13.3s
+[PASS] G14 array-in-Object-slot identity (26 cases, AOT vs AIR) -- deviations none  (exit 0)   2.1s
+[PASS] G16 ternary-null (20 cases, AOT vs AIR) -- AOT deviations: none  (exit 0)   2.4s
+[PASS] G19 drawRoundRect, AOT vs AIR -- 302 byte-identical, 18 within the AA tolerance, 0 disagreeing, 40 known (negative radius)  (exit 0)   3.6s
+[PASS] G20 setTextFormat replaces the range (AOT vs AIR) (PASS (12 relational cases; both arms treat a repeated range format as a replacement))  (exit 0)   1.8s
+[PASS] G21 getTextFormat reads the run table (AOT vs AIR) (PASS (30 cases; both arms agree and the emitted getTextFormat is range-aware))  (exit 0)   1.8s
+[PASS] G22 closure statics initialise (AOT vs AIR, emitted C audited) (PASS (10 cases; both arms agree and every static read carries its _cinit() guard))  (exit 0)   1.8s
+[PASS] Vector vs Array throughput, both runtimes (AOT ratio 0.18x)  (exit 0)   2.7s
+[PASS] style fromAny is total: 19 cases, AOT vs AIR (PASS (19 cases; both arms agree with the hand-derived answers))  (exit 0)   2.4s
+[PASS] Array(x) wraps on both runtimes (8 cases, AOT vs AIR) (AGREE)  (exit 0)   1.7s
+[PASS] AIR SDK resolution: env -> PATH -> install locations, verified per host (PASS (11/11 cases))  (exit 0)   0.5s
+[PASS] fingerprint porcelain parsing: no dropped records (PASS)  (exit 0)   0.0s
+
+==== 79/79 gates PASS  in 189.5s ====
+RESULT: PASS

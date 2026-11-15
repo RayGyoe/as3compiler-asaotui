@@ -85,7 +85,7 @@ package asaot.ui.kind
             if (n.tf == null) return;
             n.tf.x = PaintKit.insetX(n);
             n.tf.y = PaintKit.insetY(n);
-            if (s.text.color >= 0) PaintKit.applyInk(n, n.tf, uint(s.text.color));
+            PaintKit.applyInk(n, n.tf, PaintKit.inkOf(n));
             PaintKit.decorate(n);
         }
 

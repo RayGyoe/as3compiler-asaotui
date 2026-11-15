@@ -221,7 +221,7 @@ package asaot.ui.kind
             var values:Array = n.extra[VALUES_KEY] as Array;
             var options:Array = n.extra[OPTS_KEY] as Array;
             if (values == null || options == null) return;
-            sh.graphics.lineStyle(2, Theme.tokens().accent, 1.0);
+            sh.graphics.lineStyle(2, n.pal().accent, 1.0);
             for (var i:int = 0; i < drop.children.length && i < options.length; i++)
             {
                 var ov:String = OverlayList.valueOf(options[i], i);

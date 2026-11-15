@@ -82,7 +82,7 @@ package asaot.ui.kind
             var s:Style = n.resolved;
             var w:Number = PaintKit.w1(n);
             var h:Number = PaintKit.h1(n);
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
             var bg:uint = pal.neutral;
             var tone:String = String(n.extra[TONE_KEY]);
             if (tone == "info") bg = pal.accent;

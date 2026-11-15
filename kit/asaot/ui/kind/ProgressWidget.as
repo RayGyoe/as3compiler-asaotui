@@ -84,7 +84,7 @@ package asaot.ui.kind
             if (isNaN(v)) v = 0;
             var ty:Number = n.absH - 12;   // track top
             var fill:Number = w * v;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
             if (n.shapeA != null)
             {
                 var g:Object = n.shapeA.graphics;
@@ -104,7 +104,7 @@ package asaot.ui.kind
                     g2.endFill();
                 }
             }
-            if (n.tf != null && s.text.color >= 0) PaintKit.applyInk(n, n.tf, uint(s.text.color));
+            PaintKit.applyInk(n, n.tf, PaintKit.inkOf(n));
             PaintKit.decorate(n);
         }
 

@@ -91,7 +91,7 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             var s:Style = n.resolved;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
             var h:Number = n.absH;
             var box:Number = 16;
             var cy:Number = (h - box) / 2;
@@ -117,7 +117,7 @@ package asaot.ui.kind
                     g2.lineTo(13, cy + 4);
                 }
             }
-            if (n.tf != null && s.text.color >= 0) PaintKit.applyInk(n, n.tf, uint(s.text.color));
+            PaintKit.applyInk(n, n.tf, PaintKit.inkOf(n));
             PaintKit.decorate(n);
         }
 

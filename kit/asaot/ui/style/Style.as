@@ -491,7 +491,7 @@ package asaot.ui.style
             if (a.length != b.length) return false;
             for (var i:int = 0; i < a.length; i++)
             {
-                if (!BoxShadow(a[i]).equals(BoxShadow(b[i]))) return false;
+                if (!BoxShadow.fromAny(a[i]).equals(BoxShadow.fromAny(b[i]))) return false;
             }
             return true;
         }

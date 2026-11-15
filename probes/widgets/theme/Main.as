@@ -108,6 +108,33 @@ var DARK:Array = [0x111827, 0x1F2937, 0x4B5563, 0x1E3A8A, 0x374151, 0x374151,
 var NAMES:Array = ["page", "button", "switch", "badge", "chip", "divider", "progress fill",
                    "progress track", "author colour", "table header", "table grid",
                    "table body"];
+// ---- THE FIFTH COLOUR CHANNEL: the ink inside the TextField -----------------
+// The four channels in the header all reach a PIXEL through a fill or a stroke, and
+// the twelve points above sample exactly those. Text is different: a TextField's ink
+// is not the node's `background`, it is a RUN FORMAT applied when the string was
+// measured, and a run OUTRANKS `TextField.textColor` (compiler-gaps.md G48). So a
+// theme swap that updates `resolved.text.color` can move every sampled point and
+// still leave every glyph in the previous palette -- which is precisely what the
+// hymn demo shipped (86/86 text nodes stale) until applyInk landed.
+//
+// These five nodes are the widgets that measure their own field, i.e. the ones whose
+// ink can rot. The expected value is the PALETTE SLOT each widget documents, written
+// out by hand:
+//   btn  button baseline  textControl   0x202020 / 0xE5E7EB
+//   bd   badge tone info  accentText    0x1D4ED8 / 0xBFDBFE
+//   ch   chip, no tone    textBody      0x374151 / 0xD1D5DB
+//   sw   switch baseline  UNSET         #000000 / 0xE5E7EB   (see below)
+//   ti   input (empty)    textControl   0x202020 / 0xE5E7EB   (run-free, textColor)
+//
+// `sw` IS THE ONLY NODE WITH NO TEXT COLOUR IN ITS RESOLVED STYLE. `switch` is a
+// CLICKABLE kind, so its baseline is the shared container style (no `text.color`),
+// and the widget's own rule is "apply the author's colour when there is one, else
+// leave the field to the measure-time default". That default is the palette's
+// `textDefault` -- #000000 in light, #E5E7EB in dark -- which is why the two
+// expectations differ by a slot and not by a widget.
+var INK_KEYS:Array = ["btn", "bd", "ch", "sw"];
+var INK_LIGHT:Array = [0x202020, 0x1D4ED8, 0x374151, 0x000000];
+var INK_DARK:Array = [0xE5E7EB, 0xBFDBFE, 0xD1D5DB, 0xE5E7EB];
 var RECT_KEYS:Array = ["root", "surface", "page", "btn", "sw", "bd", "ch", "dv", "pg", "keep", "tbl",
                        "hdr", "h:0", "r0", "ti"];
 
@@ -228,6 +255,44 @@ function checkPoints(want:Array, when:String):void
     say(when + ": " + POINTS_X.length + " points checked");
 }
 
+// What the PAINTER will actually use: `getTextFormat()` answers with the run
+// covering the range, or with the field default when there is no run -- which is
+// exactly the value the renderer reads for each character. `textColor` is NOT the
+// ink (it is only consulted on a field that has no runs at all), so asserting it
+// would pass on a tree that draws the old palette.
+function checkInks(want:Array, when:String):void
+{
+    var seen:int = 0;
+    for (var i:int = 0; i < INK_KEYS.length; i++)
+    {
+        var n:UiNode = app.findByKey(String(INK_KEYS[i]));
+        if (n == null || n.tf == null) { bad(when + ": no text field on " + INK_KEYS[i]); continue; }
+        var f:TextFormat = n.tf.getTextFormat();
+        var got:uint = f == null ? 0 : uint(f.color);
+        if (got != uint(want[i]))
+            bad(when + ": " + INK_KEYS[i] + " ink is " + hex(got) + " not " + hex(uint(want[i]))
+                + " (resolved says " + (isNaN(n.resolved.text.color) ? "unset" : hex(uint(n.resolved.text.color))) + ")");
+        seen++;
+    }
+    say(when + ": " + seen + " inks checked");
+}
+
+// THE RUN-FREE PATH, asserted separately because it is a different channel. Input /
+// TextArea never call `setTextFormat` (InputWidget's header, defect b), so their
+// field has NO runs -- and `textColor` is exactly what the renderer consults when a
+// field has none. `getTextFormat()` on an EMPTY field answers with the blank format
+// rather than with what would be drawn, so asserting the run here would be measuring
+// the wrong thing (there is no glyph and no run).
+function checkInputInk(want:uint, when:String):void
+{
+    var n:UiNode = app.findByKey("ti");
+    if (n == null || n.tf == null) { bad(when + ": no text field on ti"); return; }
+    if (uint(n.tf.textColor) != want)
+        bad(when + ": the input's textColor is " + hex(uint(n.tf.textColor))
+            + " not " + hex(want) + " (run-free path)");
+    say(when + ": input ink " + hex(uint(n.tf.textColor)));
+}
+
 function rectsNow():String
 {
     var s:String = "";
@@ -273,6 +338,8 @@ function lightPhase():void
         + " not 16,277,160,32");
 
     checkPoints(LIGHT, "light");
+    checkInks(INK_LIGHT, "light");
+    checkInputInk(0x202020, "light");
 
     // The BASELINE path: a kind's colours come from `controlDefault`, which
     // `setTheme` rebuilds. Read through a node's resolved style, not the palette,
@@ -310,6 +377,8 @@ function darkPhase():void
     check(Theme.themeEpoch() == 1, "the epoch is " + Theme.themeEpoch() + " not 1");
 
     checkPoints(DARK, "dark");
+    checkInks(INK_DARK, "dark");
+    checkInputInk(0xE5E7EB, "dark");
 
     var after:String = rectsNow();
     check(after == rectsBefore, "the theme switch moved the layout: " + after);
@@ -366,6 +435,8 @@ function dispatchClick():void
     check(Theme.themeEpoch() == epochBeforeLight + 1,
         "the second swap moved the epoch from " + epochBeforeLight + " to " + Theme.themeEpoch());
     checkPoints(LIGHT, "light #2");
+    checkInks(INK_LIGHT, "light #2");
+    checkInputInk(0x202020, "light #2");
     stage.dispatchMouse(46, 195, "click");
     setTimeout(afterClick, 350);
 }
@@ -377,6 +448,8 @@ function afterClick():void
         "the click-driven swap moved the epoch from " + epochBeforeLight + " to "
         + Theme.themeEpoch() + " not +2");
     checkPoints(DARK, "dark, driven by a click");
+    checkInks(INK_DARK, "dark, driven by a click");
+    checkInputInk(0xE5E7EB, "dark, driven by a click");
     finish();
 }
 

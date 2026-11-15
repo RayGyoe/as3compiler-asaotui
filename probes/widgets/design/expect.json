@@ -1,0 +1,29 @@
+{
+  "w": 480,
+  "h": 300,
+  "_why": [
+    "HAND-COMPUTED. The last frame is back on ThemeMetrics.base(), so the pinned rects are",
+    "the shipped geometry: root column padding 12, row1 an explicit 456x40 row with a 10px",
+    "gap (button 160 at x=12, input 200 at x=182), both pinned heights so nothing depends on",
+    "the font. autoBtn / below are auto-height and follow the glyphs, so they are reported",
+    "but NOT pinned -- the re-solve relation (button dH == sibling dY) is asserted in the",
+    "program during the grid4 phase instead.",
+    "",
+    "The discipline assertions (Motion table is the single duration source, concentric",
+    "innerRadius rule, grid4 on the 4pt grid and consumed + re-solved) are about values and",
+    "time, which a static frame cannot show; they live in the program.",
+    "",
+    "Points: (470,290) the white root surface; (30,32) inside the button clear of the 'Run'",
+    "glyphs, the light controlSurface #F1F3F5."
+  ],
+  "rects": {
+    "root": [0, 0, 480, 300],
+    "row1": [12, 12, 456, 40],
+    "btn": [12, 12, 160, 40],
+    "ti": [182, 12, 200, 40]
+  },
+  "points": [
+    { "x": 470, "y": 290, "rgb": "#FFFFFF" },
+    { "x": 30, "y": 32, "rgb": "#F1F3F5" }
+  ]
+}

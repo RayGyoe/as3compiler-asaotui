@@ -43,12 +43,19 @@ package asaot.ui.kind
         // the descriptor by the subclass, because the edge is pure STYLE in the
         // factory and a retained node does not keep its style refinement's fields.
         protected static const SLIDE_KEY:String = "slide";
+        // Opt-in modal focus management (focusTrap). PREV_KEY holds the focus that
+        // was live when the shell opened (may be null); TRAP_KEY marks that WE stole
+        // it, so closing restores exactly that and a non-trapping shell never touches
+        // focus at all (the shipped behaviour).
+        protected static const PREV_KEY:String = "prevFocus";
+        protected static const TRAP_KEY:String = "focusTrapped";
 
         // ---- what the subclass supplies ---------------------------------
         protected function openOf(desc:Node):Boolean { return false; }
         protected function closeOnScrimOf(desc:Node):Boolean { return true; }
         protected function onCloseOf(desc:Node):Function { return null; }
         protected function slideOf(desc:Node):String { return ""; }
+        protected function focusTrapOf(desc:Node):Boolean { return false; }
 
         // ---- the shared behaviour ---------------------------------------
         public function build(n:UiNode):void
@@ -59,6 +66,8 @@ package asaot.ui.kind
             n.extra[HIT_KEY] = 0;
             n.extra[SLIDE_KEY] = "";
             n.extra[EXITING_KEY] = 0;
+            n.extra[PREV_KEY] = null;
+            n.extra[TRAP_KEY] = 0;
             n.listen(n.backing, MouseEvent.CLICK,
                 function (e:MouseEvent):void { PanelShellWidget.onClick(n, e); });
         }
@@ -74,6 +83,7 @@ package asaot.ui.kind
             var was:Boolean = prev != null && Boolean(prev);
             if (was == open) return false;
             n.extra[OPEN_KEY] = open;
+            if (!open && was) releaseFocus(n);
             if (open)
             {
                 // Re-opening during an exit must CANCEL the exit: otherwise the
@@ -84,6 +94,16 @@ package asaot.ui.kind
                 OverlayMotion.start(n);
                 n.visible = true;
                 if (n.backing != null) n.backing.visible = true;
+                // Opt-in: remember the live focus, then move it to the first tab stop
+                // inside the shell. Being inside the floating layer is also what
+                // engages UiApp's existing Tab trap, so auto-focus + trapping come
+                // from the one ring rule. Default (focusTrap false) steals nothing.
+                if (focusTrapOf(desc) && n.app != null)
+                {
+                    n.extra[PREV_KEY] = n.app.focusedNode();
+                    n.extra[TRAP_KEY] = 1;
+                    n.app.focusFirstWithin(n);
+                }
             }
             else if (was && OverlayMotion.startExit(n))
             {
@@ -115,6 +135,20 @@ package asaot.ui.kind
         }
 
         public function wantsPress():Boolean { return true; }
+
+        // Restore the focus that was live when a TRAPPING shell opened. A shell that
+        // never stole focus (TRAP_KEY unset) returns without touching anything, so
+        // the shipped no-steal behaviour is byte-for-byte preserved.
+        protected static function releaseFocus(n:UiNode):void
+        {
+            if (Number(n.extra[TRAP_KEY]) == 0) return;
+            var prev:UiNode = n.extra[PREV_KEY] as UiNode;
+            n.extra[PREV_KEY] = null;
+            n.extra[TRAP_KEY] = 0;
+            if (n.app == null) return;
+            if (prev != null && prev.app == n.app && !prev.inert() && prev.visible) n.app.focusNode(prev);
+            else n.app.focusNode(null);
+        }
 
         public function measure(n:UiNode):void { }
 

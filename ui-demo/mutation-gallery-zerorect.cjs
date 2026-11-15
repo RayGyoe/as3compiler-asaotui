@@ -18,7 +18,7 @@
 // The mutation is undone in `finally` and the restoration is verified by hash: a
 // mutation that leaves the tree dirty is worse than no mutation at all. That
 // applies to the SCREENSHOTS too, not just the source: the M1 run rewrites
-// `air-gallery/gallery-page{0..4}.png` from the mutated build, and an interrupted
+// `air-gallery/gallery-page{0..8}.png` from the mutated build, and an interrupted
 // run would leave mutated images behind as if they were the committed evidence
 // (observed the hard way -- a killed run left a page 4 with the catalog image
 // drawn from the 0x0 box). So the five tracked PNGs are snapshotted before M1 and
@@ -35,7 +35,7 @@ const { spawnSync } = require('child_process');
 
 const HERE = __dirname;
 const VIEW = path.join(HERE, 'demo', 'DocsFeedback.as');
-const SHOTS = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => path.join(HERE, 'air-gallery', 'gallery-page' + i + '.png'));
+const SHOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => path.join(HERE, 'air-gallery', 'gallery-page' + i + '.png'));
 
 const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 // Screenshots are the tour's other output: snapshot them so a mutated run cannot

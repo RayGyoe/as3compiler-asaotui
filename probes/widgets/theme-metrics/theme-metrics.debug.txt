@@ -1,0 +1,11 @@
+nullboot ok
+basePhase in
+rects done
+slots+scoped done
+pixels done
+A1 autoBtn=true below=true autoW=true
+A2 btnH=33
+auto reads done
+about to swap to compact
+swapped to compact
+compact phase entered

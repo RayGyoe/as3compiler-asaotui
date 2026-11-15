@@ -27,11 +27,14 @@ package demo
     import asaot.ui.ActionRegistry;
     import asaot.ui.Dirty;
     import asaot.ui.Env;
+    import asaot.ui.EnvBase;
     import asaot.ui.Node;
     import asaot.ui.Subscription;
     import asaot.ui.Theme;
+    import asaot.ui.ThemeMetrics;
     import asaot.ui.ThemeTokens;
     import asaot.ui.UiApp;
+    import asaot.ui.anim.Motion;
     import asaot.ui.badge;
     import asaot.ui.bindTo;
     import asaot.ui.box;
@@ -45,6 +48,7 @@ package demo
     import asaot.ui.tabs;
     import asaot.ui.text;
     import asaot.ui.textField;
+    import asaot.ui.themeScope;
     import asaot.ui.style.StyleRefinement;
 
     public final class DocsSystem
@@ -53,6 +57,13 @@ package demo
         private static const B:uint = 0x7C3AED;      // violet
         private static const C:uint = 0x059669;      // green
         private static const D:uint = 0xF59E0B;      // amber
+
+        // The two panels of the themeScope demo: a plain bordered surface, so the
+        // ONLY difference between them is the palette their contents resolve against.
+        private static const PANEL:StyleRefinement = StyleRefinement.from({
+            padding: 8, gap: 6, cornerRadii: 6, background: 0xFFFFFF,
+            borderWidths: 1, borderColor: 0xD0D0D0, size: [170, null]
+        });
 
         private static const MONO:StyleRefinement = DocsDemo.MONO;
         private static const BOLD:StyleRefinement = DocsDemo.LABEL_B;
@@ -433,7 +444,7 @@ package demo
             if (id == "theme") return [
                 new DocSection("A palette you can swap at run time", [
                     "Theme.tokens() is the live palette: 47 slots, ONE instance, read by every widget at paint time. Theme.setTheme(ThemeTokens.dark()) copies a palette in, rebuilds the per-kind baselines and the overlay chrome, and bumps themeEpoch(). UiApp compares that epoch at the frame boundary, marks every node style-stale and asks for one re-describe -- so the whole tree follows in ONE frame, with no relayout (a palette never changes a number).",
-                    "The buttons below swap the DOCS APP itself, not a card inside it. That is the feature: a theme is application-wide, and a preview that themed one panel only would be a lie about what the call does. Press Light to come back.",
+                    "The buttons below swap the DOCS APP itself, not a card inside it. That is what setTheme does: it is application-wide, and a preview of it that changed one panel only would be a lie about the call. (A palette that really is meant for one SUBTREE is a different feature -- themeScope, further down this page -- and it exists precisely because a global swap cannot express it.)",
                     "An author colour does not move. A swap replaces the BASELINE, so the blue chip below stays blue in both themes; only the unspecific things (surfaces, borders, text, tracks) follow.",
                     "Theme.tokens() is read-only by contract. To customise one slot: clone it, assign, then setTheme -- copying in is what keeps the epoch honest."
                 ], [
@@ -580,6 +591,62 @@ package demo
                             { style: BOLD, ariaName: "" }),
                         text("1 controlDefault(kind)  2 theme slot  3 inherited subset  4 node.style",
                             { style: MONO, ariaName: "" })
+                    ]);
+                }),
+                new DocSection("A subtree with its own palette: themeScope", [
+                    "setTheme is application-wide by design. themeScope(palette, builder) paints ONE subtree with its own palette while the rest of the app keeps the live one -- the two panels below are the same widget pair, side by side, in one frame.",
+                    "Five channels have to reach the subtree or the illusion breaks: the kind baseline (a scoped button resolves against the scoped table), inheritance (a child with no palette of its own takes its parent's), the describe stack (a factory inside the builder bakes colours as it runs, so the palette has to be ON the stack while it runs), paint-time reads (a widget painting a colour reads ITS node's palette, not the global one), and the ink channel that G48 documented.",
+                    "The builder must be a FUNCTION, not an array of nodes: a factory bakes a colour into a style at describe time, and an array literal would be evaluated BEFORE the palette is pushed. children-as-function is the whole contract.",
+                    "Known limits, stated rather than hidden: a scope does not repaint overlay chrome (menus and dialogs are hosted on the overlay tree, which bakes the global palette) and it does not re-tint an author's own style override. Density is NOT scoped at all -- see the next section."
+                ], [
+                    "themeScope(sepia(), function ():Node {",
+                    "    return [button({ label: \"Scoped\" })];   // an ARRAY of children",
+                    "}, { key: \"thSepia\", style: PANEL })",
+                    "",
+                    "// the leaf palette is a VALUE: the same numbers reuse the",
+                    "// cached scope, so a re-describe does not re-stale the subtree"
+                ], 120, function ():Node
+                {
+                    return column({ gap: 8 }, [
+                        row({ gap: 10, alignItems: "flex-start" }, [
+                            column({ key: "thScopeGlobal", style: PANEL, gap: 6 }, [
+                                text("live palette", { style: MONO, ariaName: "" }),
+                                button({ key: "thScopeGb", label: "Button", onClick: function ():void { } }),
+                                progress("", { value: 0.4,
+                                    style: StyleRefinement.from({ size: [110, 8] }) })
+                            ]),
+                            themeScope(sepiaPalette(), function ():Array {
+                                return [
+                                    text("themeScope(sepia)", { style: MONO, ariaName: "" }),
+                                    button({ label: "Button", onClick: function ():void { } }),
+                                    progress("", { value: 0.4,
+                                        style: StyleRefinement.from({ size: [110, 8] }) })
+                                ];
+                            }, { key: "thSepia", style: PANEL })
+                        ]),
+                        text("two palettes, one frame, no global swap",
+                            { style: MONO, ariaName: "" })
+                    ]);
+                }),
+
+                new DocSection("Density is a second bundle: Theme.setMetrics", [
+                    "A skin is not only colours. ThemeMetrics holds the numbers a kind's baseline is made of: font size, the four control paddings (button / input / chip / badge), two radii and the border width. ThemeMetrics.base() reproduces the shipped numbers EXACTLY -- adopting the bundle changed no pixel -- and compact() is a second skin you can look at.",
+                    "Two epochs, because they are two different jobs: a palette swap only repaints (a colour is never a layout input), while a metrics swap must RE-SOLVE the tree (padding and font size are). UiApp compares both once per frame and does the cheaper thing that is still correct.",
+                    "Density is deliberately NOT scoped. It feeds measure, so a subtree on different numbers makes one node answer differently in two passes; \"a denser sidebar\" is a question for a different layout, not for a style. The buttons below therefore change the WHOLE docs app -- press Base density to come back."
+                ], [
+                    "Theme.setMetrics(ThemeMetrics.compact());   // re-solve, no re-mount",
+                    "Theme.setMetrics(ThemeMetrics.base());      // back to the shipped skin",
+                    "",
+                    "var m:ThemeMetrics = Theme.metrics().clone();",
+                    "m.font = 15;  m.buttonPadY = 12;  m.radiusMd = 10;",
+                    "Theme.setMetrics(m);   // copied in, bumps metricsEpoch"
+                ], 120, function ():Node
+                {
+                    return row({ gap: 10, alignItems: "center" }, [
+                        button({ key: "mtBase", label: "Base density", onClick: metricsBase }),
+                        button({ key: "mtCompact", label: "Compact", onClick: metricsCompact }),
+                        button({ key: "mtWide", label: "Round + wide", onClick: metricsWide }),
+                        text("metricsEpoch " + Theme.metricsEpoch(), { style: MONO, ariaName: "" })
                     ]);
                 })
             ];
@@ -902,6 +969,38 @@ package demo
                             text("Tab reaches index 0 first", { style: MONO, ariaName: "" })
                         ])
                     ]);
+                }),
+
+                // Opt-in modal focus management, live. The dialog itself is described
+                // in DocsView.renderOverlay (key ftDlg); the triggers here only flip
+                // model flags. With trap ON the ring jumps into the panel and Tab /
+                // Shift+Tab cycle only its stops; closing restores the trigger.
+                new DocSection("focusTrap: a modal that keeps the keyboard inside", [
+                    "`dialog({ focusTrap: true })` (and `drawer`) is the opt-in: on open it remembers the live focus and moves it to the panel's first tab stop, which also engages the Tab trap -- Tab / Shift+Tab then cycle ONLY the panel's stops, never the page behind. On close (Escape, scrim, or Close) focus returns to the control that opened it.",
+                    "Open it both ways and watch the ring: with trap ON it jumps to First and stays inside; with trap OFF (the ship default) the dialog steals nothing and the ring stays on this page. The readout shows the library's focus pointer at each render."
+                ], [
+                    "dialog({ key: \"ftDlg\", open: model.ftOpen, focusTrap: true,",
+                    "         onClose: function ():void { model.ftOpen = false; } },",
+                    "       [ button({ key: \"ftA\", label: \"First\" }),",
+                    "         button({ key: \"ftB\", label: \"Second\" }) ])"
+                ], 118, function ():Node
+                {
+                    var trap:Boolean = m.bool("ft.trap", true);
+                    var open:Boolean = m.bool("ft.open", false);
+                    var fk:String = "(none)";
+                    if (view.app != null && view.app.focusedNode() != null)
+                        fk = String(view.app.focusedNode().key);
+                    return column({ gap: 10 }, [
+                        row({ gap: 10, alignItems: "center" }, [
+                            button({ key: "ftOpenTrap", label: "Open with trap", style: DocsDemo.PRIMARY,
+                                     onClick: function ():void { m.put("ft.trap", true); m.put("ft.open", true); } }),
+                            button({ key: "ftOpenPlain", label: "Open without trap", style: DocsDemo.QUIET,
+                                     onClick: function ():void { m.put("ft.trap", false); m.put("ft.open", true); } }),
+                            text("then Tab / Shift+Tab, Esc to close", { style: MONO, ariaName: "" })
+                        ]),
+                        text("trap: " + (trap ? "on" : "off") + "   open: " + open + "   focus: " + fk,
+                            { style: MONO, ariaName: "" })
+                    ]);
                 })
             ];
 
@@ -978,19 +1077,62 @@ package demo
                     ]);
                 }),
 
-                new DocSection("reduceMotion is carried, not obeyed yet", [
-                    "The interface answers `reduceMotion` and the kit replays it faithfully -- but no widget reads it yet: a transition still runs at full duration when the system asks for less motion. That is a stated gap rather than a silent fallback, and it is on the list before any mobile shell ships. The value itself is live below."
+                new DocSection("reduceMotion is carried -- and obeyed when you follow the system", [
+                    "The interface answers `reduceMotion` and the kit replays it faithfully. As of round 54 it is also OBEYED: `UiApp.setFollowSystem(true)` wires `Env.reduceMotion` straight to `Motion.reducedMotion`, so every tween and overlay lands at once when the system asks for less motion. With follow OFF the author still owns the switch -- the value is reported either way, live below."
                 ], [
-                    "e.reduceMotion;   // plumbed through EnvBase, read by nothing yet",
-                    "// planned: transitionMs == 0 (and spin == false) when it is true"
+                    "e.reduceMotion;                 // plumbed through EnvBase",
+                    "app.setFollowSystem(true);      // -> Motion.reducedMotion = e.reduceMotion"
                 ], 96, function ():Node
                 {
                     var e:Env = app.env;
                     return row({ gap: 10, alignItems: "center" }, [
                         chip("reduceMotion " + e.reduceMotion,
                             { key: "envReduce", tone: e.reduceMotion ? "danger" : "neutral" }),
-                        text("the kit will honour it; today it only reports it",
+                        chip("Motion.reducedMotion " + Motion.reducedMotion,
+                            { key: "envReduceLive", tone: Motion.reducedMotion ? "danger" : "neutral" }),
+                        text(app.followSystem ? "followed" : "reported only (follow is off)",
                             { style: DocsDemo.MONO, ariaName: "" })
+                    ]);
+                }),
+
+                // A2 (round 54): follow the system, live. The two platform facts
+                // (isDark / reduceMotion) were delivered but unconsumed; setFollowSystem
+                // is the opt-in that wires them. These buttons drive the REAL EnvBase
+                // (DesktopEnv extends it), so this is the production path, not a mock.
+                new DocSection("Follow the system: appearance + reduced motion", [
+                    "`UiApp.setFollowSystem(true)` wires two facts Env already carried but nothing consumed: `Env.isDark` drives the palette (light/dark) and `Env.reduceMotion` drives `Motion.reducedMotion`, folded at the next frame boundary. Default is OFF -- the author owns both until they opt in.",
+                    "Turn Follow ON, then flip the system switches: the whole window follows. Turn it OFF and the same switches do nothing -- control is back with the author. The swatch reads the live palette."
+                ], [
+                    "app.setFollowSystem(true);",
+                    "var e:EnvBase = app.env as EnvBase;   // DesktopEnv IS an EnvBase",
+                    "e.setDark(true);          // -> Theme dark on the next frame",
+                    "e.setReduceMotion(true);  // -> Motion.reducedMotion = true"
+                ], 120, function ():Node
+                {
+                    var e:EnvBase = app.env as EnvBase;
+                    var follow:Boolean = app.followSystem;
+                    var dark:Boolean = Theme.isTheme(ThemeTokens.dark());
+                    var pal:ThemeTokens = Theme.tokens();
+                    return column({ gap: 8 }, [
+                        row({ gap: 10, alignItems: "center" }, [
+                            button({ key: "envFollow", label: follow ? "Follow: ON" : "Follow: OFF",
+                                     style: DocsDemo.QUIET,
+                                     onClick: function ():void { app.setFollowSystem(!app.followSystem); m.notify(Dirty.THEME); } }),
+                            button({ key: "envSysDark", label: "System dark: " + (e != null && e.isDark ? "on" : "off"),
+                                     style: DocsDemo.QUIET,
+                                     onClick: function ():void { if (e != null) { e.setDark(!e.isDark); m.notify(Dirty.THEME); } } }),
+                            button({ key: "envSysRM", label: "System reduce: " + (e != null && e.reduceMotion ? "on" : "off"),
+                                     style: DocsDemo.QUIET,
+                                     onClick: function ():void { if (e != null) { e.setReduceMotion(!e.reduceMotion); m.notify(Dirty.THEME); } } })
+                        ]),
+                        row({ gap: 10, alignItems: "center" }, [
+                            box({ key: "envFollowSwatch", style: StyleRefinement.from({
+                                size: [64, 32], cornerRadii: 6, background: pal.controlSurface,
+                                borderWidths: 1, borderColor: pal.border }) }, []),
+                            chip("theme " + (dark ? "dark" : "light"), { key: "envFollowTheme" }),
+                            chip("Motion.reducedMotion " + Motion.reducedMotion,
+                                { key: "envFollowRM", tone: Motion.reducedMotion ? "danger" : "neutral" })
+                        ])
                     ]);
                 })
             ];
@@ -1110,6 +1252,30 @@ package demo
             var t:ThemeTokens = Theme.tokens().clone();
             t.accent = 0x059669;
             Theme.setTheme(t);
+        }
+
+        // The sepia palette the scope demo paints with. Built fresh on every describe
+        // (a palette is a VALUE: the scope cache is keyed by it, so the same numbers
+        // reuse the same scope and nothing re-stales).
+        private static function sepiaPalette():ThemeTokens
+        {
+            var t:ThemeTokens = ThemeTokens.light().clone();
+            t.surface = 0xF5EFE4;
+            t.controlSurface = 0xEDE4D3;
+            t.surfaceMuted = 0xEFE6D5;
+            t.accent = 0x8A5A00;
+            return t;
+        }
+
+        private static function metricsBase():void { Theme.setMetrics(ThemeMetrics.base()); }
+        private static function metricsCompact():void { Theme.setMetrics(ThemeMetrics.compact()); }
+        private static function metricsWide():void
+        {
+            var m:ThemeMetrics = Theme.metrics().clone();
+            m.font = 15;
+            m.buttonPadY = 12;
+            m.radiusMd = 10;
+            Theme.setMetrics(m);
         }
 
         private static function subscribeDemo(m:DocsModel):void

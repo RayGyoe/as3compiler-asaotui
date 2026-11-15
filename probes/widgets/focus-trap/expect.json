@@ -1,0 +1,26 @@
+{
+  "w": 480,
+  "h": 300,
+  "_why": [
+    "HAND-COMPUTED. The last frame has both dialogs CLOSED (invisible, not painted), so the",
+    "scene is the main column at padding 12: the bg button 160x40 at (12,12) and the bgField",
+    "200x40 BELOW it at (12,62) (12+40+10; they are separate column children, not a row).",
+    "Both pinned heights, font-independent. The dialogs live in the overlay tree and are",
+    "closed here, so they paint nothing.",
+    "",
+    "The behavioural assertions (default no-steal / auto-focus d1 / Tab+Shift+Tab trapped /",
+    "restore bg) are about FOCUS, which a static frame cannot show; they live in the program.",
+    "",
+    "Points: (470,290) the white root surface; (30,32) inside the bg button clear of its glyphs,",
+    "the light controlSurface #F1F3F5."
+  ],
+  "rects": {
+    "root": [0, 0, 480, 300],
+    "bg": [12, 12, 160, 40],
+    "bgField": [12, 62, 200, 40]
+  },
+  "points": [
+    { "x": 470, "y": 290, "rgb": "#FFFFFF" },
+    { "x": 30, "y": 32, "rgb": "#F1F3F5" }
+  ]
+}

@@ -103,7 +103,7 @@ package asaot.ui.kind
         public function paint(n:UiNode):void
         {
             var s:Style = n.resolved;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
             var cy:Number = (n.absH - 16) / 2 + 8;   // indicator centre y
             var on:Boolean = n.checked;
             if (n.shapeA != null)
@@ -126,7 +126,7 @@ package asaot.ui.kind
                     g2.endFill();
                 }
             }
-            if (n.tf != null && s.text.color >= 0) PaintKit.applyInk(n, n.tf, uint(s.text.color));
+            PaintKit.applyInk(n, n.tf, PaintKit.inkOf(n));
             PaintKit.decorate(n);
         }
 

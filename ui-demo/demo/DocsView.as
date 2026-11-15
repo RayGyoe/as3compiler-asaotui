@@ -548,6 +548,28 @@ package demo
                         OverlayChrome.DIALOG_PANEL, 13, 0x4B5563)
                 ]));
             }
+            // The keyboard page's focusTrap demo. focusTrap is read straight from the
+            // model so the two triggers (with / without) describe the SAME dialog with
+            // the one flag flipped -- the contrast is the lesson.
+            if (m.doc == "keyboard" && m.bool("ft.open", false))
+            {
+                nodes.push(dialog({
+                    key: "ftDlg", open: true, width: 320, title: "Focus trap",
+                    focusTrap: m.bool("ft.trap", true),
+                    footer: [
+                        button({ key: "ftClose", label: "Close",
+                                 onClick: function ():void { m.put("ft.open", false); } })
+                    ],
+                    onClose: function ():void { m.put("ft.open", false); }
+                }, [
+                    barBody("Tab / Shift+Tab cycle only these stops while the trap is on.",
+                        "ftBody", 320, OverlayChrome.DIALOG_PANEL, 13, 0x4B5563),
+                    row({ gap: 10 }, [
+                        button({ key: "ftA", label: "First", style: DocsDemo.QUIET }),
+                        button({ key: "ftB", label: "Second", style: DocsDemo.QUIET })
+                    ])
+                ]));
+            }
             if (m.doc == "drawer" && m.bool("drw.open", false))
             {
                 nodes.push(drawer({

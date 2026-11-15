@@ -1,0 +1,20 @@
+# mutation-widget-system-env -- teeth for the follow-the-system wiring
+
+baseline probes/widgets/system-env: RESULT: PASS  (13 checks)
+
+M1  CAUGHT  syncSystemEnv never applies the palette -> Env.isDark does not drive the theme
+     FAIL  program verdict: FAIL follow ON: Env.isDark=true did not switch to dark; follow ON: button not dark (got 0xf1f3f5);
+     verdict: RESULT: FAIL
+M2  CAUGHT  syncSystemEnv never wires Motion -> Env.reduceMotion does not drive the accessibility switch
+     FAIL  program verdict: FAIL follow ON: Env.reduceMotion=true did not set Motion;
+     verdict: RESULT: FAIL
+M3  CAUGHT  the followSystem guard is removed -> the system drives theme/motion even when the author opted out
+     FAIL  program verdict: FAIL follow OFF: Env.isDark=true changed the palette; follow OFF: button went dark (got 0x1f2937); follow OFF: Env.reduceMotion=true chan
+     verdict: RESULT: FAIL
+M4  CAUGHT  envChanged drops the _sysDirty latch -> a system change is never folded at the frame boundary
+     FAIL  program verdict: FAIL follow ON: Env.isDark=true did not switch to dark; follow ON: button not dark (got 0xf1f3f5); follow ON: Env.reduceMotion=true did n
+     verdict: RESULT: FAIL
+
+MUTATION system-env: 4/4 caught, 0 problem(s)
+all sources restored byte-identical (sha256 verified)
+RESULT: PASS

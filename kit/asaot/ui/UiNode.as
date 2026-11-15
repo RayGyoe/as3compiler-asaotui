@@ -16,8 +16,10 @@
 //   paint    <-> GPUI Element::paint          (element.rs:96)
 package asaot.ui
 {
+    import asaot.ui.ScopedTheme;
+    import asaot.ui.ThemeTokens;
     import asaot.ui.style.BoxShadow;
-    import asaot.ui.style.Corners;
+import asaot.ui.style.Corners;
     import asaot.ui.style.Edges;
     import asaot.ui.style.Fill;
     import asaot.ui.style.Length;
@@ -61,6 +63,10 @@ package asaot.ui
         public var previous:Style;     // snapshot of the previous resolve (diff)
         public var lastStyle:StyleRefinement;
         public var lastStyleStale:Boolean;
+        // The palette scope this node resolves and paints in (2026-11-15). null = the
+        // global one (`Theme.setTheme`). Inherited from the parent unless the
+        // descriptor names a palette; see Element.theme and ScopedTheme.
+        public var scope:ScopedTheme;
         public var state:ElementState;
         public var dirty:int;
         public var engineNode:Object;
@@ -320,6 +326,7 @@ package asaot.ui
             this.shapeB = null;
             this.aboveContent = null;
             this.tf = null;
+            this.scope = null;
             this.absX = 0; this.absY = 0; this.absW = 0; this.absH = 0;
             this.matched = false;
             this.lastIndex = 0;
@@ -703,7 +710,7 @@ package asaot.ui
             // tween's start value becomes its end value (see applyPayload).
             if (!keepPrevious) this.resolved.copyInto(this.previous);
             Theme.resolve(this.resolved, this.kind, this.parent != null ? this.parent.resolved : null,
-                this.lastStyle, this.directionOverride);
+                this.lastStyle, this.directionOverride, this.scope);
             // THE SAFE AREA IS FOLDED HERE, before the diff, so that `previous`,
             // `resolved`, the engine write below, PaintKit's content box and the
             // animator all see the SAME padding. See foldSafePadding for why it is
@@ -884,6 +891,45 @@ package asaot.ui
                 this.children[i].lastStyleStale = true;
                 this.children[i].staleDescendants();
             }
+        }
+
+        // ---- palette scope ------------------------------------------------
+        // Settle this node's scope BEFORE the reconciler resolves it. Called from
+        // Reconciler.reconcile, one line above the resolve, because the scope decides
+        // which per-kind baseline the resolve starts from -- setting it afterwards
+        // would need a second resolve (the directionOverride path pays that price for
+        // a different reason).
+        //
+        // THREE CASES, and the third is the one that rots trees:
+        //   descriptor names a palette        -> that scope (cached by value)
+        //   no palette, parent has a scope    -> the parent's (inheritance)
+        //   a node that HAD its own and lost it -> back to the parent's, not to the
+        //     global one: the scope is inherited state, and dropping it half-way
+        //     would leave the subtree on the previous owner's palette while its
+        //     ancestors moved on.
+        //
+        // A CHANGE STALES THE SUBTREE. Descendants keep their own `lastStyle`
+        // pointers, so nothing would re-resolve them; without this a scoped card
+        // whose parent changed palette would keep its old colours while its parent's
+        // background moved -- the "half a picture" failure in its purest form.
+        public function syncScopedTheme(d:Node):void
+        {
+            var want:ScopedTheme = Theme.scopeFor(Element(d).theme);
+            if (want == null) want = this.parent != null ? this.parent.scope : null;
+            if (want == this.scope) return;
+            this.scope = want;
+            this.lastStyleStale = true;
+            if (this.children != null) this.staleDescendants();
+        }
+
+        // The palette THIS node paints with. Every widget that reads a colour at
+        // paint time must go through this (`n.pal()`), not `Theme.tokens()`: the
+        // latter answers with the GLOBAL palette, which is the one thing a scope is
+        // not. `Theme.tokens()` stays correct inside a factory (describe time), where
+        // the inherited scope sits on Theme's describe stack.
+        public function pal():ThemeTokens
+        {
+            return this.scope != null ? this.scope.tokens() : Theme.tokens();
         }
 
         // ---- the safe area + the chrome gutter, folded into padding -------
@@ -1508,7 +1554,7 @@ package asaot.ui
             var list:Array = [];
             for (var i:int = 0; i < want.length; i++)
             {
-                var b:BoxShadow = BoxShadow(want[i]);
+                var b:BoxShadow = BoxShadow.fromAny(want[i]);
                 // distance/angle is coarser than x/y ONLY in absolute terms: atan2
                 // keeps the quadrant, so (0,-2) and (0,2) stay different.
                 var dist:Number = Math.sqrt(b.offsetX * b.offsetX + b.offsetY * b.offsetY);

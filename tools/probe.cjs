@@ -33,7 +33,15 @@ const { spawnSync, spawn, execSync } = require('child_process');
 const { ALL } = require('../ui-demo/kit-list.cjs');
 
 const UI = path.resolve(__dirname, '..');
-const COMPILER = path.resolve(UI, '..', 'as3compiler');
+// WHICH COMPILER TREE. Default is the sibling checkout -- but that worktree is SHARED:
+// another session can be mid-edit in it (and mid-edit means the emitted C may not
+// compile at all, which has nothing to do with the kit). `ASC_COMPILER=<path>` pins the
+// build to a pristine worktree of the commit you integrated against, so the evidence is
+// attributable to YOUR change and to a known compiler, not to whatever landed seconds
+// ago. Create one with:
+//   git -C ../as3compiler worktree add --detach ../temp/asc-head <commit>
+//   ASC_COMPILER=$(cd ../temp/asc-head && pwd) node tools/probe.cjs probes/widgets/x
+const COMPILER = path.resolve(process.env.ASC_COMPILER || path.join(UI, '..', 'as3compiler'));
 const clang = process.env.ASC_CC || 'clang';
 const ICU = path.join(UI, 'ui-demo', 'icudtl.dat');
 const MANIFEST = 'examples/window.build.example.json';

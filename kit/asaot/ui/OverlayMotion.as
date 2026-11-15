@@ -34,12 +34,16 @@ package asaot.ui
 {
     import flash.utils.getTimer;
 
+    import asaot.ui.anim.Motion;
+
     public final class OverlayMotion
     {
-        public static const MS:int = 140;
-        // Exit is FASTER than entrance: something leaving should not make the
-        // author wait for it (browsers use ~120ms for a fade-out at this size).
-        public static const EXIT_MS:int = 120;
+        // Durations live in the one motion table (anim/Motion), not here: a widget
+        // inventing its own number is a visible diff against that table. These two
+        // getters are the observable seam the design probe pins: the entrance/exit
+        // math below reads THEM, so a hardcoded 250 in this file is a red gate.
+        public static function enterMs():int { return Motion.OVERLAY_ENTER_MS; }
+        public static function exitMs():int { return Motion.OVERLAY_EXIT_MS; }
 
         private static const T0:String = "mt0";
         private static const X0:String = "mx0";
@@ -58,6 +62,9 @@ package asaot.ui
         {
             if (n == null || n.extra == null) return;
             if (n.app == null || n.app.enterFrameTicks <= 0) return;
+            // reduced-motion: no entrance travel; the surface appears at its final
+            // solved pose, fully opaque. Feedback (it opened) is preserved.
+            if (Motion.reducedMotion) return;
             n.extra[T0] = getTimer();
         }
 
@@ -81,6 +88,8 @@ package asaot.ui
         {
             if (n == null || n.extra == null) return false;
             if (n.app == null || n.app.enterFrameTicks <= 0) return false;
+            // reduced-motion: hide immediately, no exit travel (final state = gone).
+            if (Motion.reducedMotion) return false;
             if (n.extra[X0] != null) return true;
             n.extra[X0] = getTimer();
             return true;
@@ -107,7 +116,8 @@ package asaot.ui
             if (x0 == null) return false;
             if (n.app == null) { n.extra[X0] = null; return false; }
 
-            var t:Number = (getTimer() - Number(x0)) / EXIT_MS;
+            var t:Number = (getTimer() - Number(x0)) / exitMs();
+            if (Motion.reducedMotion) t = 1;
             if (t < 0) t = 0;
             if (t > 1) t = 1;
             // Ease-IN on the way out (the mirror of the entrance's ease-out): the
@@ -151,7 +161,8 @@ package asaot.ui
             if (t0 == null) return;
             if (n.app == null) { n.extra[T0] = null; return; }
 
-            var t:Number = (getTimer() - Number(t0)) / MS;
+            var t:Number = (getTimer() - Number(t0)) / enterMs();
+            if (Motion.reducedMotion) t = 1;
             if (t < 0) t = 0;
             if (t > 1) t = 1;
             // Ease-out quad: 1 - (1-t)^2. Fast arrival, soft landing.

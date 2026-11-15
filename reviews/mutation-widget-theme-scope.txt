@@ -1,0 +1,30 @@
+baseline probes/widgets/theme-scope: RESULT: PASS  (55 checks)
+
+M1  CAUGHT  the baseline ignores the scope -> the scoped button gets the GLOBAL control defaults (fill, border, label ink) while the branch still believes it is themed
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the scoped button's surface is #f1f3f5 not the sepia controlSurface #EDE4D3; the scoped button's label slot is #202020 not the sepia textControl #2B2117; the scoped button's border is #d0d0d0 not the sepia borderStrong #D8C9AC; the scoped button's ink is #202020 not the sepia textControl #2B2117; the nested scope's text is #1a1a1a not the dark text #E5E7EB; the nested scope's ink is #1a1a1a not #E5E7EB; the scoped text node is #1a1a1a not #2B2117; light: sepia button at (446,32) is #f1f3f5 not #ede4d3; dark: sepia button at (446,32) is #1f2937 not #ede4d3; the global swap overwrote the scoped button's label (#e5e7eb); the global swap overwrote the scoped button's surface (#1f2937); the global swap overwrote the scoped button's INK (#e5e7eb); the global swap overwrote the scoped text (#e5e7eb); light #2: sepia button at (446,32) is #f1f3f5 not #ede4d3; after the round trip the scoped button's ink is #202020;
+     FAIL  pixel (446,32) want #EDE4D3 got #f1f3f5
+     restore: byte-identical (289d477a9b5c86b7)
+M2  CAUGHT  a child with no palette of its own does NOT inherit the parent scope -> only the boundary node itself is scoped, its whole subtree falls back to the global palette
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL the scoped button's surface is #f1f3f5 not the sepia controlSurface #EDE4D3; the scoped button's label slot is #202020 not the sepia textControl #2B2117; the scoped button's border is #d0d0d0 not the sepia borderStrong #D8C9AC; the scoped button's ink is #202020 not the sepia textControl #2B2117; the nested scope's text is #1a1a1a not the dark text #E5E7EB; the nested scope's ink is #1a1a1a not #E5E7EB; the scoped text node is #1a1a1a not #2B2117; light: sepia button at (446,32) is #f1f3f5 not #ede4d3; light: sepia progress fill at (346,88) is #2563eb not #8a5a00; the scoped button did not inherit the panel's scope; the nested scope did not override its parent's; dark: sepia button at (446,32) is #1f2937 not #ede4d3; dark: sepia progress fill at (346,88) is #60a5fa not #8a5a00; the global swap overwrote the scoped button's label (#e5e7eb); the global swap overwrote the scoped button's surface (#1f2937); the global swap overwrote the scoped button's INK (#e5e7eb); the global swap overwrote the scoped text (#e5e7eb); the scoped button's scope moved; light #2: sepia button at (446,32) is #f1f3f5 not #ede4d3; light #2: sepia progress fill at (346,88) is #2563eb not #8a5a00; after the round trip the scoped button's ink is #202020;
+     FAIL  pixel (446,32) want #EDE4D3 got #f1f3f5
+     FAIL  pixel (346,88) want #8A5A00 got #2563eb
+     restore: byte-identical (3b49073301bd73a2)
+M3  CAUGHT  the builder runs WITHOUT the palette on the describe stack -> factory-baked refinements (the table header fill, the header ink) silently keep the global palette
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL light: sepia table header at (436,116) is #f3f4f6 not #efe6d5; dark: sepia table header at (436,116) is #1f2937 not #efe6d5; light #2: sepia table header at (436,116) is #f3f4f6 not #efe6d5;
+     FAIL  pixel (436,116) want #EFE6D5 got #f3f4f6
+     restore: byte-identical (983eae0fe7c4a685)
+M4  CAUGHT  paint-time reads go to the global palette -> widgets that read a colour while painting (the progress accent) repaint with the wrong one, while resolve still looks right
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL light: sepia progress fill at (346,88) is #2563eb not #8a5a00; dark: sepia progress fill at (346,88) is #60a5fa not #8a5a00; light #2: sepia progress fill at (346,88) is #2563eb not #8a5a00;
+     FAIL  pixel (346,88) want #8A5A00 got #2563eb
+     restore: byte-identical (3b49073301bd73a2)
+M5  CAUGHT  the scope cache is not keyed by palette VALUE -> every describe mints a new scope, so the scope pointer churns every frame and the subtree is re-staled forever
+     verdict: RESULT: FAIL
+     FAIL  program verdict: FAIL Theme.scopeFor did not cache by palette value; the global swap rebuilt the scope object (a new kind table every frame); the scoped button's scope moved;
+     restore: byte-identical (289d477a9b5c86b7)
+
+MUTATION theme-scope: 5/5 caught, 0 problem(s)
+RESULT: PASS

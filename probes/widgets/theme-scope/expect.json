@@ -1,0 +1,47 @@
+{
+  "w": 640,
+  "h": 320,
+  "_why": [
+    "HAND-COMPUTED, not copied from the probe output. The last frame this BMP captures is",
+    "phase 3's -- the global palette round-tripped light -> dark -> light -- so the LEFT",
+    "column must show the light slots again while the RIGHT column has never moved.",
+    "",
+    "Rects: root is a row of two 320-wide panels with no padding, so the sepia panel starts",
+    "at x=320. Inside each panel: padding 16 -> children at x=16 / x=336, then",
+    "y = 16 | +32+8 = 56 | +20+8 = 84 | +12+8 = 104 | +52+8 = 164. Buttons are 120x32",
+    "(trace the sample at x+110, clear of the centred 'Run' glyphs), texts 280x20,",
+    "progress 120x12 (filled to .5, so x+10 lands in the fill), tables 280x52 whose",
+    "header row is 26 tall with two equal 140-wide columns (x+100, y+12 is inside column 0",
+    "and to the right of the left-aligned 'Name').",
+    "",
+    "Points: each one is a slot of the palette that column is bound to, and the two",
+    "columns are bound to DIFFERENT palettes in the same frame -- that simultaneity is the",
+    "whole feature. Left = the global light tokens; right = the probe's SEPIA palette",
+    "(surface F5EFE4, controlSurface EDE4D3, surfaceMuted EFE6D5, accent 8A5A00).",
+    "The sepia values are literals from swatches, so a scope that quietly fell back to the",
+    "global palette cannot accidentally match."
+  ],
+  "rects": {
+    "left": [0, 0, 320, 320],
+    "right": [320, 0, 320, 320],
+    "gbtn": [16, 16, 120, 32],
+    "sbtn": [336, 16, 120, 32],
+    "gtext": [16, 56, 280, 20],
+    "stext": [336, 56, 280, 20],
+    "gpg": [16, 84, 120, 12],
+    "spg": [336, 84, 120, 12],
+    "gtbl": [16, 104, 280, 52],
+    "stbl": [336, 104, 280, 52],
+    "nest": [336, 164, 280, 20]
+  },
+  "points": [
+    { "x": 300, "y": 300, "rgb": "#FFFFFF" },
+    { "x": 126, "y": 32, "rgb": "#F1F3F5" },
+    { "x": 116, "y": 116, "rgb": "#F3F4F6" },
+    { "x": 26, "y": 88, "rgb": "#2563EB" },
+    { "x": 620, "y": 300, "rgb": "#F5EFE4" },
+    { "x": 446, "y": 32, "rgb": "#EDE4D3" },
+    { "x": 436, "y": 116, "rgb": "#EFE6D5" },
+    { "x": 346, "y": 88, "rgb": "#8A5A00" }
+  ]
+}

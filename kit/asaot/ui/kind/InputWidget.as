@@ -198,8 +198,8 @@ package asaot.ui.kind
             PaintKit.paintBox(n, s, PaintKit.w1(n), PaintKit.h1(n));
             if (n.tf == null) return;
             var shown:String = n.value == null ? "" : n.value;
-            var color:Number = isNaN(s.text.color) ? Theme.tokens().textControl : s.text.color;
-            var f:TextFormat = PaintKit.formatFor(s);
+            var color:Number = isNaN(s.text.color) ? n.pal().textControl : s.text.color;
+            var f:TextFormat = PaintKit.formatFor(s, n.pal());
             f.color = uint(color);
             n.tf.defaultTextFormat = f;
             // NEVER write the field while it agrees: assigning `text` in AIR resets
@@ -220,8 +220,8 @@ package asaot.ui.kind
             ph.visible = usePh;
             if (usePh && ph.text != n.placeholder)
             {
-                var pf:TextFormat = PaintKit.formatFor(s);
-                pf.color = Theme.tokens().placeholder;
+                var pf:TextFormat = PaintKit.formatFor(s, n.pal());
+                pf.color = n.pal().placeholder;
                 ph.defaultTextFormat = pf;
                 ph.text = n.placeholder;
             }

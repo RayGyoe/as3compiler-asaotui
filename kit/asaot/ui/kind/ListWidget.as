@@ -145,7 +145,7 @@ package asaot.ui.kind
             // Highlight in LOCAL coordinates (the backing's origin is the list's
             // top-left; abs* is absolute, so subtract).
             var g:Object = n.shapeA.graphics;
-            g.beginFill(Theme.tokens().accentSoft, 1.0);
+            g.beginFill(n.pal().accentSoft, 1.0);
             g.drawRect(child.absX - n.absX, child.absY - n.absY, child.absW, child.absH);
             g.endFill();
         }

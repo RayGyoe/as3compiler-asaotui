@@ -210,7 +210,7 @@ package asaot.ui.kind
 
             if (n.shapeA == null) return;
             var g:Object = n.shapeA.graphics;
-            var pal:ThemeTokens = Theme.tokens();
+            var pal:ThemeTokens = n.pal();
 
             // A TRANSPARENT HIT RECT, drawn first so the table is pickable EVERYWHERE
             // and not just on its hairlines and glyphs. The runtime picks a mouse target

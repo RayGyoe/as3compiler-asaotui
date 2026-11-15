@@ -32,5 +32,10 @@ package asaot.ui.kind
         {
             return DrawerNode(desc).onClose;
         }
+
+        override protected function focusTrapOf(desc:Node):Boolean
+        {
+            return DrawerNode(desc).focusTrap;
+        }
     }
 }
