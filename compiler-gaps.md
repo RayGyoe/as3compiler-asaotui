@@ -888,7 +888,7 @@
 **本轮附带发现（不属 G44，已知未处理）**：并发会话正在把 `ui-demo/air-gallery/app.xml` 的 `renderMode` 从 `cpu` 改成 `direct`。web 构建会把这个描述符字段变成 `ASC_RENDER_GPU=1`（wasm 9.04 → 9.93 MB、渲染路径改成 WebGL 合成器）。本次发布**刻意用 cpu 臂**（与上一版同一种渲染路径，只多滚轮修复），该字段临时换回 cpu 构建后再按 sha256 原字节还原；GPU 臂是否上 web 是另一个决定，没在这里顺手做。
 
 
-### G46 —— `loadPCMFromByteArray` 的 PCM 注册表**固定 64 槽、程序生命周期不可回收**，第 65 次抛 `#2068`
+### G46 —— `loadPCMFromByteArray` 的 PCM 注册表**固定 64 槽、程序生命周期不可回收**，第 65 次抛 `#2068` —— ✅ **阶段四百三十二已修（按需增长）**
 
 | 项 | 内容 |
 |---|---|
@@ -901,9 +901,10 @@
 | 现在的规避 | `hymn-demo` 自己封顶 `IMAGE_CAP = 56`（离 64 留余量）：到顶后不再渲染，`status` 变成 `audio images full (56)`、播放停下并**明说**，不抛异常。另外 `pick()` 采纳上游「`load()` replaces the tune and **stops playback**」的语义，于是「边放边翻列表」不会一次一个映像 |
 | 建议的上游修法 | ① 表按需增长；② 给出可回收路径（`Sound` 不可达时回收其 `buf`，或让 `close()` 对 PCM 映像生效）；③ 至少让注册失败返回可处理状态而不是 `throw` |
 | 为何不算本仓 bug | 「一个 `Sound` 的生命周期内不能丢数据」是对的；不对的是**上限被写死成 64 且不可回收**——这是 `g_bufs` 的实现选择，不是 AIR 的契约。登记在此，等上游决定 |
+| 状态（阶段四百三十二已修） | ✅ **上游已修**：`vendor/audio_glue.c` 的 `g_bufs` 改为按需倍增的指针表（`as_buf_reserve`，初值 64），**旧块永不释放**——实时音频线程无锁读 `g_bufs[voice.buf]`，持旧指针仍安全（poor-man's RCU，O(log N) 保留）；新条目写完再 `__atomic_store_n` 发布。4 处注册路径（decode/register_pcm/stream/buffered）统一改 `if (!as_buf_reserve()) return -1;`，硬 64 上限消除。示例 `examples/audio-pcm-registry.as` 注册 80 个映像（>64）全过；钉 `unit: transport/ProgressiveSound`（4 条）。**回收路径（建议②）仍未做**——`Sound` 不可达时回收其 buf 属增强，另议 |
 
 
-### G47 —— 文本框持焦时 `focusNode(null)` 抛 `Error #1009`：`stage.focus = null` 这条路径在本运行时崩
+### G47 —— 文本框持焦时 `focusNode(null)` 抛 `Error #1009`：`stage.focus = null` 这条路径在本运行时崩 —— ✅ **复核：非编译器缺陷（库侧 blur）**
 
 | 项 | 内容 |
 |---|---|
@@ -913,9 +914,9 @@
 | 与 G45 的区别 | G45 是 GC 在分配流里跑全量采集（`HymnBook.load()` 位置），G47 是**焦点交接**路径；两者都只在「真窗口 + 长生命周期」里出现，都不会被示例级回归抓到 |
 | hymn-demo 现在的规避 | **失焦对象改成另一个节点**而不是 `null`：`focusNode(this.app.findByKey("reader"))`。语义反而更贴合上游（「失焦即提交」走 `InputWidget.onFieldBlur` 的 `FOCUS_OUT`），beacon 里 `fieldGuard 3->3` 就是这条路径的实测 |
 | 建议的上游修法 | `applyStageFocus()` 的清空分支加空守卫并区分「TextField 会话」与「kit 节点焦点」两个状态；或让 `focusNode(null)` 显式对 `stage.focus` 做 `is TextField` 判断后再赋 `null` |
-| 状态 | ⚠️ **已定位、未修**（本仓不擅改核心 `UiApp`）。登记在此，规避写在 `hymn-demo` 里 |
+| 状态（阶段四百三十二复核：非编译器缺陷） | ✅ **运行时侧已排除**：adl 51.4.1 探针 `temp/g47/`（input TextField 持焦→`stage.focus=null`）实测 AIR **确实派发** `focusOut`（`relatedObject=null`、`bubbles=true`），AOT 逐行 **IDENTICAL**；`as_set_focus`/`as_focus_dispatch`/`as_ime_target` 全 null 安全。⇒ `stage.focus=null` 的焦点派发与 AIR 一致，**不是编译器缺口**。残留 #1009 在**库侧 blur 处理**（对 `relatedObject=null` 取属性），归 asaotui 库修（`focusNode(null)` 的清空分支加空守卫），编译器不改 |
 
-### G48 —— `TextField.textColor` 不覆盖**全段 run 格式**：只改颜色的重绘在屏幕上看不见（主题切换后整套文字停在旧调色板）
+### G48 —— `TextField.textColor` 不覆盖**全段 run 格式**：只改颜色的重绘在屏幕上看不见（主题切换后整套文字停在旧调色板） —— ✅ **阶段四百三十二已修（adl 逐像素一致）**
 
 | 项 | 内容 |
 |---|---|
@@ -926,9 +927,9 @@
 | 库侧规避（已做） | 新增 `PaintKit.applyInk(n, field, color)`：**双通道写** —— 写 `textColor`，并在颜色真的变了时补一次全段 `setTextFormat`（稳态只花一次 uint 比较）。13 个画文字标签的 widget 全部改走它（`Text`/`Card`/`Checkbox`/`Radio`/`Switch`/`Slider`/`RangeSlider`/`Progress`/`Badge`/`Chip`/`Avatar`/`Tabs`/`Tooltip`）。窗口实测：亮→暗点一次，正文与品牌标题立即正常 |
 | 闸门 | `run-hymn.cjs` 的像素色板闸门新增第三态（亮→暗快照 `hymn-dark2.png`）与**品牌带墨色亮度**扫描。修前该闸门红：`back to dark: brand ink peaks at luma 22, want > 200`；修后 `palette canary OK` |
 | 是否为运行时缺陷 | **待 `adl` 校验**：`textColor` 在 AIR 里是否覆盖已有 run。**注意：**“本机无 AIR SDK”这句旧结论已推翻（见 §2）——现在 `mxmlc`/`adl` 均能在本机跑（本轮实测 `air-sweep` 61/61 页），所以这一条从“没法验”变成了“还没验”：要做的是在 AIR 上布一张“先 `setTextFormat` 再 `textColor`”的图，看像素跟 run 还是跟 `textColor`。若跟 run ⇒ 我们的运行时与 AIR 一致，G48 直接关闭为「非缺口」；若 AIR 覆盖 ⇒ 上游应让全段 run 也吃 `textColor`，库侧双通道仍无害但可简化 |
-| 状态 | ✅ **库侧已修**（`PaintKit.applyInk` + 13 个 widget），运行时语义待 `adl` 定论 |
+| 状态（阶段四百三十二已修） | ✅ **adl 定性 + 上游已修**：探针 `temp/g48/` 实测 AIR 的 `textColor` setter **覆盖全段 run**（case A：`setTextFormat(红)`后 `textColor=蓝` ⇒ 墨色蓝且 `getTextFormat().color=蓝`；case B 后写的 `setTextFormat` 生效）。修法：`TextField_set_textColor` 镜像 AIR——`as_tf_fmt_blank()` 造 color-only 格式后 `TextField_setTextFormat(_this,f,0,-1)` 全段施加（merge 保留字号/字体）。AOT 5 例与 AIR **逐像素 IDENTICAL**。示例 `examples/textcolor-run.as`；钉 `unit: render/TextColorRun`（5 条）+ 重锚 render/text-input 旧 setter 钉。库侧 `PaintKit.applyInk` 双通道仍无害可简化 |
 
-### G49 —— 数组/对象字面量**缺逗号**时我们不报错（mxmlc 报 `BRACKET_CLOSE`）—— ⚠️ **已实测，待定行为**
+### G49 —— 数组/对象字面量**缺逗号**时我们不报错（mxmlc 报 `BRACKET_CLOSE`）—— ✅ **阶段四百三十二已修（对齐 mxmlc）**
 
 | 项 | 内容 |
 |---|---|
@@ -937,11 +938,11 @@
 | 为什么危险 | 这是**单向**的：我们宽、它严 ⇒ 违反「同一输入 `adl` 能跑对而我们跑不出」的反面（我们能跑而它跑不了）看起来无害，但它让**作者调用的参考编译器口径失效**——`mxmlc` 是本仓唯一能校准 AIR 语义的工具，一行漏逗号会把十几道 AIR 门全部变红，而根因被我们自己的宽容性埋着 |
 | 复现 | `temp/gapcheck/nocomma.as`（`var a:Array = [1` 换行 `2];`）→ `node src/index.ts` 接受并行 codegen |
 | 是否为运行时缺陷 | **是解析器宽容性**（不是 AIR 差异）：`parser.ts` 的数组字面量循环应当 `expect(',')`，或者在缺逗号时抛错而不是继续收一个元素 |
-| 状态 | ⚠️ **已实测**；行为该不该留（"宽松注释"），归编译器项目自己定（本文档纪律：不在本仓改上游） |
+| 状态（阶段四百三十二已修） | ✅ **上游已修，对齐 mxmlc**：mxmlc 51.4.1 实测（`temp/g49/`）数组缺逗号拒（`应为 BRACKET_CLOSE`）、对象缺逗号拒（`应为 SCOPE_CLOSE`）、**数组尾逗号允许**、**对象尾逗号拒**。`parser.ts` 的 `parseArrayLit`/`parseObjectLit` 改 `if (!this.at(',')) break; this.next();`，对象逗号后遇 `}` 抛 `expected a property name but found '}'`。负例钉 `test/unit/diagnostics.ts`（p6/p7/p8 精确文案+行列）。向量字面量本就是 while-comma 模式，无需改 |
 
 ---
 
-### G50 —— 用 `Shape` 遮罩**位图内容**（`Bitmap` 或含 `Bitmap` 的容器）疑似**双影**：揭示边缘出现偏移的浅色副本，读作模糊+抖动 —— ⚠️ **视觉观察到，未逐像素证实；库侧已绕路**
+### G50 —— 用 `Shape` 遮罩**位图内容**（`Bitmap` 或含 `Bitmap` 的容器）疑似**双影**：揭示边缘出现偏移的浅色副本，读作模糊+抖动 —— ✅ **复核：非缺口（D1 后逐像素证实无偏移/重影）**
 
 | 项 | 内容 |
 |---|---|
@@ -952,11 +953,11 @@
 | 库侧绕路 | `ThemeTransition` 改为**无 mask 的逐像素向量合成**：`getVector` 预取旧/新快照，每帧按圆/矩形判定 `cv[i]=inside?new:old`（仅 ~1.5px 边缘带做 AA 混合），`setVector` 写回单张 `Bitmap` 显示。**逐像素验证 120000 像素 0 异常**（每像素恰为 old[i]/new[i]/同坐标混合）；1500×1050 下 **2.5ms/帧**，无抖动。探针 `probes/widgets/theme-transition` 13/13、变异门 6/6 |
 | 证据强度（诚实声明） | 上述①～⑥均为**视觉判读**。而「圆边界穿过文字」本身就会呈现旧深字/白底 vs 新浅字/深底的分裂，极易被误读为「偏移重影」——**向量合成版**曾被同样误读，后经逐像素判定（comp[i] 恰为 old[i]/new[i]/同坐标混合，120000 像素 0 异常）证明是**正确揭示**。mask 版**未做**该逐像素判定，故「双影」是**疑似**、不是已证实的缺陷。要立案须把 mask 版中途帧与向量参考逐像素比对（偏移坐标匹配才算真重影） |
 | 建议（上游） | 若逐像素证实 mask 对位图内容有栅格化偏移（屏上合成与 `BitmapData.draw` 离屏两条路径同源）再修；验收＝「带 mask 的位图揭示中途帧与无 mask 向量参考逐像素一致」 |
-| 状态 | ⚠️ **疑似，未逐像素证实**；库侧已用**逐像素证明正确**的向量合成绕开 mask 路径（不依赖它），登记在此不粉饰、不凭视觉立案 |
+| 状态（阶段四百三十二复核：非缺口，关闭） | ✅ **D1 后逐像素证实无偏移/重影**：探针 `temp/g50/`（锐利非对称位图 + Shape mask，`BitmapData.draw` 离屏）——全覆盖 mask 与原图 **0 差异**；部分矩形 mask 与向量参考 **0 差异、mask 外 0 重影**；圆形 mask 内圈 **0 差异**、外圈 **0 重影**。⇒ 文档自警的「圆边界穿字被误读为偏移重影」成立，mask 对位图内容栅格化**无偏移**。按本文档纪律（逐像素证实才立案）**关闭为非缺口**；库侧向量合成绕路可保留（已逐像素证明正确）也可回退 mask |
 
 ---
 
-### G51 —— `BitmapData.copyPixels` 的 **alpha 遮罩参数被忽略**（`alphaBitmapData`/`alphaPoint`/`mergeAlpha` 全 `(void)`）—— ⚠️ **已定位，库侧已绕路**
+### G51 —— `BitmapData.copyPixels` 的 **alpha 遮罩参数被忽略**（`alphaBitmapData`/`alphaPoint`/`mergeAlpha` 全 `(void)`）—— ✅ **阶段四百三十二已修（adl 实测）**
 
 | 项 | 内容 |
 |---|---|
@@ -965,7 +966,7 @@
 | 影响 | 想用 `copyPixels` 的 alpha 遮罩做逐帧揭示合成（G50 的第一版绕路方案）会**整块覆盖**而非按遮罩揭示 |
 | 库侧绕路 | 同 G50：改用 `getVector`/`setVector`（两者**已实现**，row-major ARGB）做逐像素合成 |
 | 建议（上游） | 实现 `copyPixels` 的 alpha 遮罩与 `mergeAlpha` 语义（AIR 有）；属遗留欠账，立项须先补 `adl` 实测 |
-| 状态 | ⚠️ **已定位，未修上游**；库侧已绕路 |
+| 状态（阶段四百三十二已修） | ✅ **adl 实测 + 上游已修**：探针 `temp/copyprobe/` 锁定 AIR 语义——alpha 调制 `modA = maskA==255 ? srcA : (srcA*maskA)>>8`（m255 特例，44 点扫描全匹配）；`mergeAlpha=false` 直拷 RGB + 调制 alpha 替换、alpha=0 整像素清零；`mergeAlpha=true` 调制后 source-over。`BitmapData_copyPixels` 实现三参数（含 `alphaPoint` 偏移采样、越界读透明）。**false 路径 12 例+扫描逐像素 IDENTICAL**；**true 路径 64 例 ±1 取整容差**（AIR 内部 premul 取整极精细，视觉不可察，如实记录）。示例 `examples/copypixels-alpha.as`；钉 `unit: render/CopyPixelsAlpha`（8 条） |
 
 
 ---
