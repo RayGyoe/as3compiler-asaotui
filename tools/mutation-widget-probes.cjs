@@ -85,7 +85,7 @@ const MUTATIONS = [
 ];
 
 function runProbe(dir) {
-  return spawnSync(process.execPath, ['tools/probe.cjs', dir], { cwd: UI, encoding: 'utf8', maxBuffer: 1 << 28 });
+  return spawnSync(process.execPath, ['tools/probe.cjs', dir], { windowsHide: true, cwd: UI, encoding: 'utf8', maxBuffer: 1 << 28 });
 }
 
 const log = [];

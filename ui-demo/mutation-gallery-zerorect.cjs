@@ -47,7 +47,7 @@ const restoreShots = (snap) => snap.every((s) => {
 });
 
 function runGallery() {
-  const r = spawnSync(process.execPath, [path.join(HERE, 'run-gallery.cjs')], {
+  const r = spawnSync(process.execPath, [path.join(HERE, 'run-gallery.cjs')], { windowsHide: true,
     cwd: HERE,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,

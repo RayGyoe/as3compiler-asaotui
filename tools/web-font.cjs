@@ -204,7 +204,7 @@ function generate() {
     'subset.save_font(f, out, opts)',
     'print("subset: %.2f MB (from %.2f MB)" % (os.path.getsize(out) / 1048576, os.path.getsize(src) / 1048576))',
   ].join('\n');
-  const r = spawnSync('python', ['-c', py, SOURCE, TMP_CHARS, OUT], { encoding: 'utf8' });
+  const r = spawnSync('python', ['-c', py, SOURCE, TMP_CHARS, OUT], { encoding: 'utf8', windowsHide: true });
   if (r.status !== 0) {
     console.error('fontTools subsetting failed (python + fontTools required):');
     console.error((r.stdout || '') + (r.stderr || ''));

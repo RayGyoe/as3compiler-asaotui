@@ -43,7 +43,7 @@ const before = { fill: sha(FILL) };
 
 function runCheck() {
   const r = spawnSync(process.execPath, [path.join(HERE, 'run-check.cjs')],
-    { cwd: HERE, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    { windowsHide: true, cwd: HERE, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   return { code: r.status === null ? 'signal ' + r.signal : r.status, out: (r.stdout || '') + (r.stderr || '') };
 }
 

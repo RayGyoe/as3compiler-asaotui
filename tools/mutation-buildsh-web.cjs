@@ -104,7 +104,7 @@ const log = [];
 const line = (s) => { log.push(s); console.log(s); };
 
 function gate() {
-  return spawnSync(process.execPath, ['tools/buildsh-web.cjs'], { cwd: UI, encoding: 'utf8' });
+  return spawnSync(process.execPath, ['tools/buildsh-web.cjs'], { windowsHide: true, cwd: UI, encoding: 'utf8' });
 }
 
 let caught = 0, broken = 0;

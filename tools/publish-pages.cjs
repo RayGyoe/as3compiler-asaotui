@@ -92,7 +92,7 @@ const MIME = {
 
 const GIT = { cwd: UI, encoding: 'utf8' };
 function git(args, input) {
-  return execFileSync('git', args, input === undefined ? GIT : { ...GIT, input }).trim();
+  return execFileSync('git', args, input === undefined ? GIT : { windowsHide: true, ...GIT, input }).trim();
 }
 const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 

@@ -67,7 +67,7 @@ const rm = (f) => { try { fs.unlinkSync(f); } catch (e) { /* absent */ } };
 
 function buildsh(args, env) {
   const r = spawnSync('bash', ['build.sh', ...args], {
-    cwd: APP, encoding: 'utf8', env: env ? { ...process.env, ...env } : process.env,
+    cwd: APP, encoding: 'utf8', windowsHide: true, env: env ? { ...process.env, ...env } : process.env,
   });
   const out = ((r.stdout || '') + (r.stderr || '')).replace(/\r/g, '');
   return { out, status: r.status, lines: out.split('\n') };
@@ -191,13 +191,13 @@ check(read(XML) === appXmlBefore, 'air-gallery/app.xml is untouched by the web a
 // matters in .gitignore, so this is checked through git rather than by reading the file.
 for (const f of ['app.xml', 'as-image.png', 'build.sh']) {
   const p = path.join('ui-demo', 'air-gallery-web', f);
-  const g = spawnSync('git', ['check-ignore', '-q', '--no-index', p], { cwd: UI });
+  const g = spawnSync('git', ['check-ignore', '-q', '--no-index', p], { cwd: UI, windowsHide: true });
   check(g.status === 0, 'ui-demo/air-gallery-web/' + f + ' is git-ignored', 'git check-ignore says: not ignored');
 }
 // ...while the tracked sources it is built FROM stay tracked.
 for (const f of ['app.xml', 'as-image.png', 'build.sh']) {
   const p = path.join('ui-demo', 'air-gallery', f);
-  const g = spawnSync('git', ['check-ignore', '-q', '--no-index', p], { cwd: UI });
+  const g = spawnSync('git', ['check-ignore', '-q', '--no-index', p], { cwd: UI, windowsHide: true });
   check(g.status !== 0, 'ui-demo/air-gallery/' + f + ' is NOT ignored (it is the input)', 'it became ignored');
 }
 

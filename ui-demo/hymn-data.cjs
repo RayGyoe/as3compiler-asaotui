@@ -48,7 +48,7 @@ for (const f of [ndjson, tuneIndex]) {
 
 function commitOf(dir) {
   try {
-    return execFileSync('git', ['-C', dir, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim();
+    return execFileSync('git', ['-C', dir, 'rev-parse', '--short', 'HEAD'], { windowsHide: true, encoding: 'utf8' }).trim();
   } catch (e) {
     return '(not a git checkout)';
   }

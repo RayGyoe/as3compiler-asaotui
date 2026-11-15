@@ -68,7 +68,7 @@ function sha(file) {
 }
 
 function runTour() {
-  const r = spawnSync(process.execPath, ['run-gallery.cjs'], {
+  const r = spawnSync(process.execPath, ['run-gallery.cjs'], { windowsHide: true,
     cwd: UI, encoding: 'utf8', timeout: 900000,
     env: Object.assign({}, process.env, { ASC_NO_OPEN: '1' }),
   });

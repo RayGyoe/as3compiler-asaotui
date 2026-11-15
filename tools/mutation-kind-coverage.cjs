@@ -42,7 +42,7 @@ const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest
 // --verbose so the verdict carries the `MISSING <kind>` row the mutations assert
 // on; the exit code alone would not say WHICH widget left the demo.
 const run = () => {
-  const r = spawnSync(process.execPath, ['tools/kind-coverage.cjs', '--verbose'], { cwd: UI, encoding: 'utf8', maxBuffer: 1 << 24 });
+  const r = spawnSync(process.execPath, ['tools/kind-coverage.cjs', '--verbose'], { windowsHide: true, cwd: UI, encoding: 'utf8', maxBuffer: 1 << 24 });
   return { code: r.status, out: (r.stdout || '') + (r.stderr || '') };
 };
 

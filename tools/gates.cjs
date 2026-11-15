@@ -426,6 +426,7 @@ const sh = (cmd, args, cwd, env) => {
   const r = spawnSync(cmd, args, {
     cwd, encoding: 'utf8', maxBuffer: 1 << 28,
     env: env ? { ...process.env, ...env } : process.env,
+    windowsHide: true,   // Windows: no visible console per gate child
     timeout: GATE_TIMEOUT_MS,
     killSignal: 'SIGKILL',
   });
@@ -521,7 +522,7 @@ function runProbeBatch(names, width, mode) {
       try { fs.unlinkSync(statusP); } catch (e) { /* absent is the point */ }
       const fd = fs.openSync(logP, 'w');
       const child = spawn(process.execPath, ['tools/probe.cjs', 'probes/' + p], {
-        cwd: UI, detached: true, stdio: ['ignore', fd, fd],
+        cwd: UI, detached: true, stdio: ['ignore', fd, fd], windowsHide: true,
       });
       fs.closeSync(fd);
       running.push({ p, child, statusP, logP, t: Date.now(), deadline: Date.now() + PROBE_DEADLINE_MS });

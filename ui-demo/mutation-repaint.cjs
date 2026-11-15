@@ -85,7 +85,7 @@ function run(id) {
   let out = '';
   try {
     patch(m.file, m.old, m.new);
-    const r = spawnSync(process.execPath, ['run-repaint-diff.cjs'], {
+    const r = spawnSync(process.execPath, ['run-repaint-diff.cjs'], { windowsHide: true,
       cwd: UI, encoding: 'utf8', timeout: 600000,
       env: { ...process.env, ASC_CC: process.env.ASC_CC || 'clang' },
     });

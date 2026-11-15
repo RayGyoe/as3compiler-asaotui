@@ -78,12 +78,12 @@ function killImage(exeName) {
   const base = String(exeName).replace(/\.exe$/i, '');
   try {
     if (process.platform === 'win32') {
-      execFileSync('taskkill', ['/F', '/IM', String(exeName)], { stdio: 'ignore' });
+      execFileSync('taskkill', ['/F', '/IM', String(exeName)], { windowsHide: true, stdio: 'ignore' });
     } else {
       // `killall` matches the process NAME exactly (comm), not a substring of the
       // command line -- the same rule that made `pkill -f Main` dangerous: every
       // probe here is built as `Main`, and `-f` reached unrelated processes.
-      execFileSync('killall', ['-q', base], { stdio: 'ignore' });
+      execFileSync('killall', ['-q', base], { windowsHide: true, stdio: 'ignore' });
     }
   } catch (e) {
     // Not running: that is the normal case.
@@ -161,7 +161,7 @@ function checkShot(file, logical, label) {
 // then be read correctly: a dirty tree means retry later, a clean tree means the
 // failure is ours.
 function compilerTree(compilerDir) {
-  const git = (...a) => execFileSync('git', ['-C', compilerDir, ...a], { encoding: 'utf8' });
+  const git = (...a) => execFileSync('git', ['-C', compilerDir, ...a], { windowsHide: true, encoding: 'utf8' });
   const head = git('rev-parse', '--short', 'HEAD').trim();
   const tracked = [];
   const untracked = [];

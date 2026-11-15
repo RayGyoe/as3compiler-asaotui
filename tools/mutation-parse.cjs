@@ -35,7 +35,7 @@ try {
   console.log('mutator: compiler-fingerprint.cjs  ' + hash(original) + ' -> ' + hash(mutant));
   console.log('');
 
-  const r = spawnSync(process.execPath, [path.join(__dirname, 'fingerprint-parse-check.cjs')], {
+  const r = spawnSync(process.execPath, [path.join(__dirname, 'fingerprint-parse-check.cjs')], { windowsHide: true,
     cwd: path.resolve(__dirname, '..'), encoding: 'utf8', maxBuffer: 1 << 24,
   });
   const out = (r.stdout || '') + (r.stderr || '');

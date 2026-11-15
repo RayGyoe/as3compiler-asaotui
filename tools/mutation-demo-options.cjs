@@ -56,7 +56,7 @@ for (const c of CASES) {
   fs.writeFileSync(c.file, src.replace(c.from, c.to));
   let r;
   try {
-    r = spawnSync(process.execPath, ['tools/demo-options.cjs'], { cwd: ROOT, encoding: 'utf8' });
+    r = spawnSync(process.execPath, ['tools/demo-options.cjs'], { windowsHide: true, cwd: ROOT, encoding: 'utf8' });
   } finally {
     fs.writeFileSync(c.file, src);
   }

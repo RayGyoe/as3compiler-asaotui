@@ -48,7 +48,7 @@ if (fs.existsSync(icu) && !fs.existsSync(path.join(dir, 'icudtl.dat'))) fs.copyF
 
 console.log('[repro] building array-scope (the whole kit is compiled in, as in a real app)');
 const started = Date.now();
-const b = spawnSync(process.execPath, args, { cwd: COMPILER, encoding: 'utf8' });
+const b = spawnSync(process.execPath, args, { windowsHide: true, cwd: COMPILER, encoding: 'utf8' });
 if (b.status !== 0) {
   const out = (b.stdout || '') + (b.stderr || '');
   const errs = out.split(/\r?\n/).filter((l) => /error:/.test(l));
@@ -75,7 +75,7 @@ if (exe == null) { console.error('[repro] build succeeded but no fresh .exe in '
 const exeName = path.basename(exe);
 console.log('[repro] built ' + path.relative(UI, exe));
 
-const child = spawn(exe, [], { cwd: dir, detached: true, stdio: ['ignore', 'ignore', 'pipe'] });
+const child = spawn(exe, [], { windowsHide: true, cwd: dir, detached: true, stdio: ['ignore', 'ignore', 'pipe'] });
 let errOut = '';
 child.stderr.on('data', (d) => { errOut += d.toString(); });
 child.unref();
@@ -83,10 +83,10 @@ child.unref();
 setTimeout(function () {
   let alive = false;
   try {
-    execSync('tasklist /FI "IMAGENAME eq ' + exeName + '"', { stdio: 'ignore' });
+    execSync('tasklist /FI "IMAGENAME eq ' + exeName + '"', { windowsHide: true, stdio: 'ignore' });
     alive = true;
   } catch (e) { alive = false; }
-  try { execSync('taskkill /F /IM "' + exeName + '"', { stdio: 'ignore' }); } catch (e) { /* gone */ }
+  try { execSync('taskkill /F /IM "' + exeName + '"', { windowsHide: true, stdio: 'ignore' }); } catch (e) { /* gone */ }
 
   const log = fs.existsSync(LOG) ? fs.readFileSync(LOG, 'utf8') : '';
   const done = fs.existsSync(DONE) ? fs.readFileSync(DONE, 'utf8') : null;

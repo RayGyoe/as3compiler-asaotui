@@ -56,7 +56,7 @@ const MUTATIONS = [
 ];
 
 function run() {
-  return spawnSync(process.execPath, ['tools/listener-wiring.cjs'], { cwd: UI, encoding: 'utf8' });
+  return spawnSync(process.execPath, ['tools/listener-wiring.cjs'], { windowsHide: true, cwd: UI, encoding: 'utf8' });
 }
 
 const log = [];

@@ -24,7 +24,7 @@ const SNAP = path.join(UI, 'reviews', 'compiler-tree-fingerprint.json');
 // "rc/reach.ts" -- a file that does not exist, so the entry was silently DROPPED.
 // That is how this tool under-reported today: `M src/reach.ts` (the file the whole
 // exercise is about) was invisible while `test/unit/reach.ts` was listed.
-const git = (...args) => execFileSync('git', ['-C', REPO, ...args], { encoding: 'utf8' });
+const git = (...args) => execFileSync('git', ['-C', REPO, ...args], { windowsHide: true, encoding: 'utf8' });
 const sha16 = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 16);
 
 // Parse `git status --porcelain -z`. NUL-separated means git never quotes or escapes

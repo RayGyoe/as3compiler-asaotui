@@ -32,7 +32,7 @@ const DEMO = path.join(ROOT, 'ui-demo');
 function sha(p) { return crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex'); }
 
 function runTour() {
-  const r = spawnSync(process.execPath, ['run-gallery.cjs'], {
+  const r = spawnSync(process.execPath, ['run-gallery.cjs'], { windowsHide: true,
     cwd: DEMO,
     env: { ...process.env, AIRSDK_HOME: process.env.AIRSDK_HOME || 'D:/Adobe/Flex_Sdk/AIRSDK_51.4.1', ASC_CC: process.env.ASC_CC || 'clang', ASC_NO_OPEN: '1' },
     encoding: 'utf8',

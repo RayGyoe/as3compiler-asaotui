@@ -97,7 +97,7 @@ const MUTATIONS = [
 ];
 
 function run() {
-  return spawnSync(process.execPath, ['tools/buildsh-gpu.cjs'], { cwd: UI, encoding: 'utf8' });
+  return spawnSync(process.execPath, ['tools/buildsh-gpu.cjs'], { windowsHide: true, cwd: UI, encoding: 'utf8' });
 }
 
 const log = [];

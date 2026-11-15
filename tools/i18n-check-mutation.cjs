@@ -71,7 +71,7 @@ for (const c of CASES) {
         continue;
     }
     fs.writeFileSync(c.file, original.replace(c.from, c.to));
-    const r = spawnSync(process.execPath, [path.join(__dirname, 'i18n-check.cjs')], { cwd: UI, encoding: 'utf8' });
+    const r = spawnSync(process.execPath, [path.join(__dirname, 'i18n-check.cjs')], { windowsHide: true, cwd: UI, encoding: 'utf8' });
     const out = (r.stdout || '') + (r.stderr || '');
     // Restore BEFORE judging, so a bad case can never leave the tree dirty.
     fs.writeFileSync(c.file, original);
@@ -94,7 +94,7 @@ for (const c of CASES) {
 }
 
 // The unmutated tree must be green, otherwise "caught" above means nothing.
-const clean = spawnSync(process.execPath, [path.join(__dirname, 'i18n-check.cjs')], { cwd: UI, encoding: 'utf8' });
+const clean = spawnSync(process.execPath, [path.join(__dirname, 'i18n-check.cjs')], { windowsHide: true, cwd: UI, encoding: 'utf8' });
 const cleanOk = clean.status === 0;
 console.log('baseline: ' + (cleanOk ? 'PASS' : 'FAIL'));
 if (!cleanOk) {

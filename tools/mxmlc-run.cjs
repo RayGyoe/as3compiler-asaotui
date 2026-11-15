@@ -13,7 +13,9 @@ const WIN = process.platform === 'win32';
 
 // mxmlcRun(mxmlcPath, mxmlcArgs, spawnOpts) -> spawnSync result
 function mxmlcRun(mxmlc, args, opts) {
-  return WIN ? spawnSync('cmd', ['/c', mxmlc, ...args], opts) : spawnSync(mxmlc, args, opts);
+  // Windows: hide the console window cmd /c would otherwise pop for mxmlc/adl.
+  const o = { windowsHide: true, ...(opts || {}) };
+  return WIN ? spawnSync('cmd', ['/c', mxmlc, ...args], o) : spawnSync(mxmlc, args, o);
 }
 
 // The AIR SDK's own binary for a tool name: `.bat` / `.exe` on Windows, bare

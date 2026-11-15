@@ -30,7 +30,7 @@ function patch(rel, from, to) {
 function runProbe() {
   const env = { ...process.env };
   if (!env.ASC_COMPILER) env.ASC_COMPILER = path.resolve(ROOT, '../as3compiler');
-  const r = spawnSync(process.execPath, ['tools/probe.cjs', PROBE], { cwd: ROOT, env, encoding: 'utf8', timeout: 240000, maxBuffer: 32 * 1024 * 1024 });
+  const r = spawnSync(process.execPath, ['tools/probe.cjs', PROBE], { windowsHide: true, cwd: ROOT, env, encoding: 'utf8', timeout: 240000, maxBuffer: 32 * 1024 * 1024 });
   return { out: (r.stdout || '') + '\n' + (r.stderr || ''), pass: /RESULT: PASS/.test(r.stdout || '') && r.status === 0 };
 }
 

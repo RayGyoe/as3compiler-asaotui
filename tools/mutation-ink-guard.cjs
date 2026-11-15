@@ -35,7 +35,7 @@ const src = (f) => fs.readFileSync(path.join(KIND, f), 'utf8');
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 12);
 
 function runGuard() {
-  const r = spawnSync(process.execPath, [GUARD], { cwd: UI, encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [GUARD], { windowsHide: true, cwd: UI, encoding: 'utf8' });
   const out = (r.stdout || '') + (r.stderr || '');
   return { status: r.status, out };
 }

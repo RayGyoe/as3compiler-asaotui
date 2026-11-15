@@ -120,6 +120,9 @@ const buildStarted = Date.now();
 // whole gate run without printing anything.
 const b = spawnSync(process.execPath, args, {
   cwd: COMPILER, encoding: 'utf8',
+  // Windows: don't pop a visible console for the compiler child (a full gate run
+  // spawns dozens; without this they stack up over the user's desktop).
+  windowsHide: true,
   timeout: Number(process.env.ASC_BUILD_TIMEOUT_MS || 300000),
   killSignal: 'SIGKILL',
 });
@@ -175,7 +178,7 @@ console.log('[probe] built ' + path.relative(UI, exe));
 if (rebuildOnly) process.exit(0);
 
 // ---- 3: run (detached: the window blocks main) ------------------------------
-const child = spawn(exe, [], { cwd: dir, detached: true, stdio: 'ignore' });
+const child = spawn(exe, [], { cwd: dir, detached: true, stdio: 'ignore', windowsHide: true });
 child.unref();
 
 function kill() {
@@ -193,7 +196,7 @@ function kill() {
     execSync(process.platform === 'win32'
       ? 'taskkill /F /T /PID ' + child.pid
       : 'kill -9 ' + child.pid,
-      { stdio: 'ignore' });
+      { stdio: 'ignore', windowsHide: true });
   } catch (e) { /* already gone */ }
 }
 

@@ -42,7 +42,7 @@ function killDemo() {
   if (!fs.existsSync(EXE)) return;
   spawnSync(process.platform === 'win32' ? 'taskkill' : 'pkill',
     process.platform === 'win32' ? ['/F', '/IM', path.basename(EXE)] : ['-f', path.basename(EXE)],
-    { encoding: 'utf8' });
+    { windowsHide: true, encoding: 'utf8' });
 }
 function step(msg) { console.log('\n=== ' + msg + ' ==='); }
 
@@ -68,7 +68,7 @@ const build = spawnSync(process.execPath, [
   // each host needs. `--manifest` is why this check is portable at all.
   '--manifest', 'examples/window.build.example.json',
   '-o', path.join(here, 'RepaintDiff'),
-], { cwd: compilerDir, encoding: 'utf8', timeout: Number(process.env.ASC_BUILD_TIMEOUT_MS || 300000) });
+], { windowsHide: true, cwd: compilerDir, encoding: 'utf8', timeout: Number(process.env.ASC_BUILD_TIMEOUT_MS || 300000) });
 
 const buildOut = ((build.stdout || '') + (build.stderr || ''));
 const interesting = buildOut.split('\n').filter((l) => /Build (successful|failed)|rror/.test(l));
@@ -82,7 +82,7 @@ console.log('ok: ' + path.basename(EXE) + ' (' + fs.statSync(EXE).size + ' bytes
 // ---- 3. run it detached (showWindow blocks) ------------------------------
 step('run the window and wait for repaint-diff.done');
 const launchAt = Date.now();
-const win = spawn(EXE, [], { cwd: here, detached: true, stdio: 'ignore' });
+const win = spawn(EXE, [], { windowsHide: true, cwd: here, detached: true, stdio: 'ignore' });
 win.unref();
 console.log('pid ' + win.pid);
 
@@ -96,7 +96,7 @@ const deadline = Date.now() + Number(process.env.ASC_REPAINT_TIMEOUT_MS || 30000
 while (!fresh() && Date.now() < deadline) {
   // A blocking sleep without a child process; the app runs on its own thread of
   // control (detached), so this only paces the poll.
-  spawnSync(process.execPath, ['-e', 'setTimeout(()=>{},150)']);
+  spawnSync(process.execPath, ['-e', 'setTimeout(()=>{},150)'], { windowsHide: true });
 }
 if (!fresh()) {
   console.error('TIMEOUT: the app never wrote ' + path.basename(DONE));

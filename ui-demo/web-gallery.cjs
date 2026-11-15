@@ -224,6 +224,7 @@ if (process.argv.includes('--check')) {
     'doctor', '--json', '--target', 'wasm', '--package', 'web'], {
     cwd: compilerDir,
     encoding: 'utf8',
+    windowsHide: true,
     // The environment the build gives it: the caller's, plus the SDK to use. The
     // compiler merges its own PATH on top (webCompileEnv) -- this file must not
     // pre-chew that, or the check would be testing its own arithmetic.
@@ -358,7 +359,7 @@ if (serveOnly) {
   {
     // stage-air.cjs copies `demo/**` into <appDir>/src and verifies it byte for byte
     // (a stale copy is the one thing a staging step must never leave behind).
-    const r = spawnSync(process.execPath, ['stage-air.cjs', appDirName], { cwd: here, stdio: 'inherit' });
+    const r = spawnSync(process.execPath, ['stage-air.cjs', appDirName], { cwd: here, stdio: 'inherit', windowsHide: true });
     if (r.status !== 0) {
       console.error('[web] STAGING FAILED (exit ' + r.status + ')');
       process.exit(1);
@@ -376,6 +377,7 @@ if (serveOnly) {
   const built = spawnSync(process.execPath, args, {
     cwd: compilerDir,
     stdio: 'inherit',
+    windowsHide: true,
     // EMSDK_HOME (not an inline `VAR=value` prefix: this workspace's shells drop
     // those across the bash -> node.exe boundary) plus whatever the caller had.
     env: { ...process.env, EMSDK_HOME: emsdk },

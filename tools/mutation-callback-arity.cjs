@@ -80,7 +80,7 @@ const MUTATIONS = [
 ];
 
 function runScan() {
-  return spawnSync(process.execPath, ['tools/callback-arity.cjs'], { cwd: UI, encoding: 'utf8' });
+  return spawnSync(process.execPath, ['tools/callback-arity.cjs'], { windowsHide: true, cwd: UI, encoding: 'utf8' });
 }
 
 const log = [];

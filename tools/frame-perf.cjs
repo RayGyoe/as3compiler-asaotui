@@ -53,7 +53,7 @@ function build() {
     '-l', 'zlib',
   ];
   console.log('[frame] building');
-  const b = spawnSync(process.execPath, args, {
+  const b = spawnSync(process.execPath, args, { windowsHide: true,
     cwd: COMPILER, encoding: 'utf8',
     timeout: Number(process.env.ASC_BUILD_TIMEOUT_MS || 300000),
     killSignal: 'SIGKILL',
@@ -82,7 +82,7 @@ function runCase(exe, name) {
   }
   return new Promise((resolve) => {
     const t0 = Date.now();
-    const child = spawn(exe, [], {
+    const child = spawn(exe, [], { windowsHide: true,
       cwd: dir,
       env: { ...process.env, ASC_FRAME_STATS: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],

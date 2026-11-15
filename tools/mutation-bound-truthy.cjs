@@ -52,7 +52,7 @@ try {
   fs.writeFileSync(PLANT, src);
 
   const r = spawnSync(process.execPath, [path.join(__dirname, 'find-bound-truthy.cjs'), 'kit', 'seam'],
-    { cwd: UI, encoding: 'utf8' });
+    { windowsHide: true, cwd: UI, encoding: 'utf8' });
   const out = (r.stdout || '') + (r.stderr || '');
   const hits = out.split(/\r?\n/).filter((l) => /G9-RISK/.test(l)).length;
   record('planted risky local -> tool exits non-zero', r.status !== 0,

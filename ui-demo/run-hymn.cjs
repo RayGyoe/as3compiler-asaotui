@@ -121,7 +121,7 @@ if (process.platform === 'win32') args.push('--cflag', '-ld3d12', '--cflag', '-l
 {
   const gate = path.join(here, '..', 'tools', 'callback-arity.cjs');
   if (fs.existsSync(gate)) {
-    const g = spawnSync(process.execPath, [gate], { cwd: path.join(here, '..'), stdio: 'inherit' });
+    const g = spawnSync(process.execPath, [gate], { cwd: path.join(here, '..'), stdio: 'inherit', windowsHide: true });
     if (g.status !== 0) {
       console.error('[hymn] BUILD FAILED (callback arity)');
       process.exit(1);
@@ -131,7 +131,7 @@ if (process.platform === 'win32') args.push('--cflag', '-ld3d12', '--cflag', '-l
 
 const t0 = Date.now();
 const r = spawnSync(process.execPath, args, {
-  cwd: compilerDir, stdio: 'inherit',
+  cwd: compilerDir, stdio: 'inherit', windowsHide: true,
   timeout: Number(process.env.ASC_BUILD_TIMEOUT_MS || 600000), killSignal: 'SIGKILL',
 });
 if (r.status !== 0) {
@@ -158,7 +158,7 @@ if (!fs.existsSync(exe)) {
 }
 
 const runFd = fs.openSync(RUN_LOG, 'w');
-const child = spawn(exe, [], { cwd: appDir, detached: true, stdio: ['ignore', runFd, runFd] });
+const child = spawn(exe, [], { cwd: appDir, detached: true, stdio: ['ignore', runFd, runFd], windowsHide: true });
 fs.closeSync(runFd);
 launchedPid = child.pid;
 child.unref();

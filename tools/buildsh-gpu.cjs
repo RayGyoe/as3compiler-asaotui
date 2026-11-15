@@ -75,7 +75,7 @@ const MODES = [
 for (const m of MODES) rm(path.join(APP, 'app.' + m.flag + '.xml'));
 
 function buildsh(args) {
-  const r = spawnSync('bash', ['build.sh', ...args], { cwd: APP, encoding: 'utf8' });
+  const r = spawnSync('bash', ['build.sh', ...args], { windowsHide: true, cwd: APP, encoding: 'utf8' });
   const out = (r.stdout || '') + (r.stderr || '');
   return { out, status: r.status, args: out.split(/\r?\n/).filter((l) => l.includes('[build]')).join('\n') };
 }
@@ -156,7 +156,7 @@ for (const m of MODES) {
 // `spawnSync('bash')` resolves to WSL's /bin/bash on this box (which wants
 // /mnt/<drive>/...) and to Git-Bash on others (which wants C:/...). Ask, do not guess.
 function shellSpelling(p) {
-  const probe = spawnSync('bash', ['-c', 'uname -s'], { encoding: 'utf8' });
+  const probe = spawnSync('bash', ['-c', 'uname -s'], { windowsHide: true, encoding: 'utf8' });
   const sys = ((probe.stdout || '') + (probe.stderr || '')).trim();
   if (/^(MINGW|MSYS|CYGWIN)/i.test(sys)) return p.replace(/\\/g, '/');
   if (/^[A-Za-z]:/.test(p)) return '/mnt/' + p[0].toLowerCase() + p.slice(2).replace(/\\/g, '/');
@@ -171,7 +171,7 @@ function shellSpelling(p) {
   const quoted = "'" + shellSpelling(wrap).replace(/'/g, "'\\''") + "'";
   const r = spawnSync('bash',
     ['-c', 'export NODE=' + quoted + '; exec bash build.sh desc --gpu gl'],
-    { cwd: APP, encoding: 'utf8' });
+    { windowsHide: true, cwd: APP, encoding: 'utf8' });
   const out = (r.stdout || '') + (r.stderr || '');
   if (process.platform === 'win32') {
     check(r.status === 0, 'the host is read from the runtime: a node spelled without .exe is still Windows',

@@ -75,7 +75,7 @@ function resolve(env, explicit) {
   const code = 'const {resolveAirSdk}=require(' + JSON.stringify(RESOLVER) + ');'
     + 'process.stdout.write(JSON.stringify(resolveAirSdk(process.argv[1] || null)))';
   const e = { HOME: ROOT, PATH: '', ...env };
-  const r = spawnSync(process.execPath, ['-e', code, explicit || ''], { encoding: 'utf8', env: e });
+  const r = spawnSync(process.execPath, ['-e', code, explicit || ''], { windowsHide: true, encoding: 'utf8', env: e });
   if (r.status !== 0) throw new Error('resolver child failed: ' + (r.stderr || '').trim());
   return JSON.parse(r.stdout);
 }
@@ -165,7 +165,7 @@ console.log('[air-sdk-check] fixture: ' + ROOT);
 //     so they must not be able to disagree.
 {
   const e = { HOME: ROOT, PATH: '', ASC_AIR_SDK_SEARCH_DIRS: A };
-  const cli = spawnSync(process.execPath, [RESOLVER, '--print'], { encoding: 'utf8', env: e });
+  const cli = spawnSync(process.execPath, [RESOLVER, '--print'], { windowsHide: true, encoding: 'utf8', env: e });
   const mod = resolve({ ASC_AIR_SDK_SEARCH_DIRS: A });
   check('the CLI --print agrees with the module',
     cli.status === 0 && cli.stdout.trim() === mod.root, 'cli=' + JSON.stringify(cli.stdout) + ' module=' + mod.root);
@@ -175,7 +175,7 @@ console.log('[air-sdk-check] fixture: ' + ROOT);
 //     the sentence that cost three rounds.
 {
   const e = { HOME: ROOT, PATH: '', ASC_NO_AIR_SCAN: '0', ASC_AIR_SDK_SEARCH_DIRS: path.join(ROOT, 'none') };
-  const r = spawnSync(process.execPath, [RESOLVER, '--why'], { encoding: 'utf8', env: e });
+  const r = spawnSync(process.execPath, [RESOLVER, '--why'], { windowsHide: true, encoding: 'utf8', env: e });
   const out = (r.stdout || '') + (r.stderr || '');
   check('a miss reports exit 3 and names the locations it searched',
     r.status === 3 && /install-location scan/.test(out) && /no AIR SDK found/.test(out),

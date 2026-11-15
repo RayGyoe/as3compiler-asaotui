@@ -144,7 +144,7 @@ const build = spawnSync(process.execPath, [
   '--root', 'ui-demo/demo/DocsAir.as',
   '--src', 'ui-demo', '--src', 'kit', '--src', 'seam',
   '--out', 'ui-demo/air-gallery/GalleryApp.swf',
-], { cwd: UI, encoding: 'utf8', maxBuffer: 1 << 28, timeout: 300000, killSignal: 'SIGKILL' });
+], { cwd: UI, encoding: 'utf8', maxBuffer: 1 << 28, timeout: 300000, killSignal: 'SIGKILL', windowsHide: true });
 const buildOut = (build.stdout || '') + (build.stderr || '');
 if (build.status !== 0) {
   console.log(buildOut);
@@ -160,13 +160,13 @@ try { fs.unlinkSync(logFile); } catch (e) { /* no previous run */ }
 fs.writeFileSync(modeFile, 'sweep ' + logFile + ' open=' + openKeys.join(',') + '\n');
 
 const readLog = () => { try { return fs.readFileSync(logFile, 'utf8'); } catch (e) { return ''; } };
-const child = spawn(adl, ['app.xml'], { cwd: APP });
+const child = spawn(adl, ['app.xml'], { cwd: APP, windowsHide: true });
 let spawnFailed = null;
 child.on('error', (e) => { spawnFailed = e.message; });
 
 const killChild = () => {
   try {
-    if (win) spawnSync('taskkill', ['/F', '/PID', String(child.pid)], { stdio: 'ignore' });
+    if (win) spawnSync('taskkill', ['/F', '/PID', String(child.pid)], { stdio: 'ignore', windowsHide: true });
     else child.kill('SIGKILL');
   } catch (e) { /* already gone */ }
 };

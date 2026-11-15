@@ -95,7 +95,7 @@ const MUTATIONS = [
 ];
 
 function runGate() {
-  return spawnSync(process.execPath, ['tools/air-sweep.cjs'], {
+  return spawnSync(process.execPath, ['tools/air-sweep.cjs'], { windowsHide: true,
     cwd: UI, encoding: 'utf8', maxBuffer: 1 << 28,
     env: process.env,
   });

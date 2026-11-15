@@ -148,7 +148,7 @@ console.log('[gallery] descriptor ' + appDirName + '/' + descriptorName + ': win
 
 // ---- 3) stage -------------------------------------------------------------
 {
-  const r = spawnSync(process.execPath, ['stage-air.cjs', appDirName], { cwd: here, stdio: 'inherit', timeout: 120000 });
+  const r = spawnSync(process.execPath, ['stage-air.cjs', appDirName], { cwd: here, stdio: 'inherit', timeout: 120000, windowsHide: true });
   if (r.status !== 0) {
     console.error('[gallery] STAGING FAILED (exit ' + r.status + ')');
     process.exit(1);
@@ -226,7 +226,7 @@ console.log('[gallery] building GalleryApp with `--air-app ' + appDirName + '/' 
   // process alive for ever (measured: an as-aot run on a tree that another session was
   // editing hung instead of failing).
   const r = spawnSync(process.execPath, args, {
-    cwd: compilerDir, stdio: 'inherit',
+    cwd: compilerDir, stdio: 'inherit', windowsHide: true,
     timeout: Number(process.env.ASC_BUILD_TIMEOUT_MS || 300000), killSignal: 'SIGKILL',
   });
   if (r.status === null && r.signal) {
@@ -269,7 +269,7 @@ console.log('[gallery] launching ' + exe + ' (cwd ' + path.relative(here, outDir
 // `spawn` takes an FD, not a path (`spawnSync` would take a path): open, hand over,
 // close on our side so the window is the only holder.
 const runFd = fs.openSync(RUN_LOG, 'w');
-const child = spawn(exe, [], { cwd: outDir, detached: true, stdio: ['ignore', runFd, runFd] });
+const child = spawn(exe, [], { cwd: outDir, detached: true, stdio: ['ignore', runFd, runFd], windowsHide: true });
 fs.closeSync(runFd);
 launchedPid = child.pid;
 child.unref();

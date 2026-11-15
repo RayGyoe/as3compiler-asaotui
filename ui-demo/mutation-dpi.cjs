@@ -57,7 +57,7 @@ try {
   console.log('mutator: control arm is now requestedDisplayResolution=high (both arms identical)');
   console.log('');
 
-  const r = spawnSync(process.execPath, [path.join(__dirname, 'check-dpi.cjs')], {
+  const r = spawnSync(process.execPath, [path.join(__dirname, 'check-dpi.cjs')], { windowsHide: true,
     cwd: __dirname, encoding: 'utf8', maxBuffer: 1 << 28,
   });
   const out = (r.stdout || '') + (r.stderr || '');

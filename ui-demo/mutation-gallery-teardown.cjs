@@ -41,7 +41,7 @@ const SHOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => path.join(HERE, 'air-galler
 const sha = (p) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 
 function runGallery() {
-  const r = spawnSync(process.execPath, [path.join(HERE, 'run-gallery.cjs')], {
+  const r = spawnSync(process.execPath, [path.join(HERE, 'run-gallery.cjs')], { windowsHide: true,
     cwd: HERE,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,

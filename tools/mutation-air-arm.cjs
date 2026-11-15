@@ -43,7 +43,7 @@ const CASES = [
 const gate = () => spawnSync(process.execPath, ['tools/mxmlc-check.cjs',
   '--root', 'ui-demo/demo/DocsAir.as',
   '--src', 'ui-demo', '--src', 'kit', '--src', 'seam',
-  '--out', 'ui-demo/air-gallery/GalleryApp.swf'], { cwd: ROOT, encoding: 'utf8' });
+  '--out', 'ui-demo/air-gallery/GalleryApp.swf'], { windowsHide: true, cwd: ROOT, encoding: 'utf8' });
 
 let bad = 0;
 for (const c of CASES) {

@@ -67,7 +67,7 @@ const MUTATIONS = [
 ];
 
 function runCheck() {
-  const r = spawnSync(process.execPath, [CHECK], { cwd: UI, encoding: 'utf8', maxBuffer: 1 << 24 });
+  const r = spawnSync(process.execPath, [CHECK], { windowsHide: true, cwd: UI, encoding: 'utf8', maxBuffer: 1 << 24 });
   return { red: r.status !== 0, out: (r.stdout || '') + (r.stderr || '') };
 }
 

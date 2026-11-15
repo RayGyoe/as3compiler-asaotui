@@ -29,6 +29,6 @@ const args = [
 ];
 
 console.log('[run-check] compiling + running CheckUi.as via our AOT');
-const r = spawnSync(process.execPath, args, { cwd: compilerDir, stdio: 'inherit' });
+const r = spawnSync(process.execPath, args, { windowsHide: true, cwd: compilerDir, stdio: 'inherit' });
 console.log('[run-check] aot exit code:', r.status);
 process.exit(r.status == null ? 1 : r.status);
