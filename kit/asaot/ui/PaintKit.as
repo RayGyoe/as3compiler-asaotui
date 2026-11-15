@@ -206,31 +206,29 @@ package asaot.ui
             return f;
         }
 
-        // APPLY THE COLOUR A FIELD WILL BE DRAWN WITH — to BOTH colour channels.
+        // APPLY THE COLOUR A FIELD WILL BE DRAWN WITH.
         //
-        // A field that went through `measureField` carries a RUN format (the
-        // `setTextFormat(f)` there is what forces the format onto text that was already
-        // assigned; `defaultTextFormat` only affects text assigned after it). A run
-        // OUTRANKS `TextField.textColor`: the paint pass reports the run's colour, and
-        // `textColor` is only consulted when the field has no runs at all. So writing
-        // `field.textColor` alone is invisible on every measured field.
+        // `TextField.textColor` IS the ink channel. A field that went through
+        // `measureField` carries a RUN format (the `setTextFormat(f)` there forces the
+        // format onto already-assigned text; `defaultTextFormat` only affects text
+        // assigned after it). Historically a run OUTRANKED `textColor`, so writing
+        // `textColor` alone was invisible on every measured field and this helper had to
+        // re-apply the whole TextFormat as a SECOND channel (compiler-gaps.md G48).
         //
-        // Measured (2026-11-13, hymn-demo light->dark theme switch): all 86 text runs
-        // kept the previous palette's ink while `resolved.text.color` AND
-        // `tf.textColor` both read the new one -- the reader body was dark on dark, and
-        // only a re-measure (which re-ran setTextFormat) ever fixed a run. The kit's own
-        // run-free widgets (Input/TextArea) never showed it, which is what pointed here.
+        // G48 is closed (阶段四百三十二): the runtime's `textColor` setter now mirrors AIR
+        // and applies a colour-only format across the whole run (the merge keeps
+        // font/size), so `textColor` alone overrides the measure-time run. The second
+        // channel is gone. A palette swap raises M_PAINT (never M_MEASURE), and this
+        // write is what refreshes the ink on that paint; font/size/align still refresh
+        // via measureField (they are M_MEASURE fields, so a change there re-measures).
         //
-        // Steady state costs ONE uint compare: the whole-format re-apply only runs when
-        // the colour actually changed.
+        // `n` is retained for call-site stability (the ink is always `inkOf(n)`); steady
+        // state costs ONE uint compare.
         public static function applyInk(n:UiNode, field:TextField, color:uint):void
         {
             if (field == null) return;
             if (field.textColor == color) return;
             field.textColor = color;
-            var f:TextFormat = formatFor(n.resolved, n.pal());
-            f.color = color;
-            field.setTextFormat(f);
         }
 
         // THE COLOUR A TEXT NODE'S GLYPHS ARE DRAWN WITH: the authored `text.color`

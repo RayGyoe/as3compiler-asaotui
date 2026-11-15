@@ -1446,9 +1446,17 @@ kit 侧不再动；本节的数据就是那一轮的基线。
 一条命令跑全部 **68** 道门：
 
 ```sh
-node tools/gates.cjs          # 85/85 PASS 才叫绿（最新本机全量 temp/gates-jitter.log，212 s）
+node tools/gates.cjs          # 86 门（最新本机全量 temp/gates-g47.log，493 s；85/86，唯一红 widgets/pointer 为 HEAD 预存环境性失败，四向 A/B 证非本轮所致）
 ```
 
+> 第五十六轮（2026-11-15）**G46–G51 绕行清理 + G47 编译器根治**（用户指出 `compiler-gaps.md` 的 G46–G51 已修，要求检查并修正库侧妥协/绕行；范围选「全部」，G47 追查中坐实为编译器缺陷、用户授权根治）。改用 **live 编译器 `6c1e6cf`**（阶段四百三十二，v0.4.408，含 G46–G51 修复），弃用 pinned `f3edb3a`。
+>    **G48**：`PaintKit.applyInk` 双通道→**单通道**（`textColor` 已覆盖全段 run，删第二通道 `formatFor`+`setTextFormat`）；ink-guard PASS、mutation-ink-guard 8/8、theme 75/0。
+>    **G46**：`HymnAudio` 删 `IMAGE_CAP=56` 封顶与守卫，注册表按需增长；hymn tour `regs=3/4` 无封顶。
+>    **G50/G51**：G50 经逐像素证实**非缺口**、G51 alpha mask 已修 ⇒ `ThemeTransition` **回退 idiomatic display-list Shape mask**（每帧一个 Shape 重绘，无逐像素 AS3 循环，比向量合成更简更省）；theme-transition 13/13、变异门 6/6（M2 圆永不长 / M6 遮罩脱落首帧全覆盖）。
+>    **G47（本轮最大发现，纠正前会话误判）**：前会话判「非编译器缺陷（库侧 blur）」**错**。真因是编译器 `emit.ts` `sequenceValueExpr` 把短路逻辑的 impure 臂**急切提升**为前导临时语句（`!isPureExpr(left)` 在 `guaranteed` 门外），违反 AGENTS.md §2.4「短路不提升」红线。`UiApp.focusNode` 守卫 `n != null && (n.inert() || ...)` 在 n=null 时对空 n 调 `inert()` ⇒ #1009，**与 TextField 无关**（FRESH 也抛）。最小复现 `f != null && (f.bar() || f.baz())`。修法：提升 gating 到 `guaranteed`（最小改动，不动 emitBinary 快路径）。负例 `examples/short-circuit-guard.as`（8 组，**有牙**：回退→#1009→恢复→绿）；编译器全量 **711/0**（4 skip）。库侧 `HymnMain` 撤绕行改回 `focusNode(null)`，新增 `probes/widgets/blur-null`（8 checks）入 gates（85→86）。
+>    **验证**：hymn tour PASS（`fieldGuard 3->3` + `down,down 3->9` + selftest 1000 首/58652 音符）；三臂 mxmlc 231897 B + run-gallery 9 页 + air-sweep 61/18/0 错；web-font 1239 全覆盖。
+>    **预存红如实记录**：`widgets/pointer`（mouseOver 未派发 + hover 色）经**四向 A/B**（我的修复×我的 kit / pristine 6c1e6cf / pinned f3edb3a / round-55 kit）**全红**，且无残留进程、kit 代码近期未变 ⇒ HEAD 预存环境性失败，**非本轮所致**，按「不替并发会话修在途工作」约束不修，留待另查。
+>
 > 第五十五轮（2026-11-15）**换肤「水平抖动」根因修复（用户报告：切换时画面往右再回左）**。与上一轮的揭示边缘无关，是**布局抖动**：
 >    文档站 demo 框是 `flexDirection:column + alignItems:center`（列上 alignItems 居中即**水平轴**），把 demo 行水平居中；
 >    animation 页「Theme swap」行末读数 `light · running`↔`dark · idle` 随换肤/运行态**变宽**，居中行随之左右滑＝用户所见抖动。

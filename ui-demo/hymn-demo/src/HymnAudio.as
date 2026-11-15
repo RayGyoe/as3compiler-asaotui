@@ -10,11 +10,11 @@
 //
 // TWO HONEST LIMITS, both from the backend rather than from this file:
 //
-//   * A PCM image is program-lifetime (`as_audio_register_pcm` mallocs and never
-//     frees; the table holds 64). So a render is spent only when the SOUND has to
-//     change -- first play of a tune, a different hymn, an instrument or voice
-//     toggle. Switching hymns in a session costs one image each, which is far below
-//     the table, and `regs` reports the running count so a leak would be visible.
+//   * A PCM image is program-lifetime (`as_audio_register_pcm` mallocs and the old
+//     block is never freed -- the registry grows on demand, compiler-gaps.md G46
+//     closed, but reclaim is still pending). So a render is spent only when the SOUND
+//     has to change -- first play of a tune, a different hymn, an instrument or voice
+//     toggle. `regs` reports the running count so a leak would be visible.
 //   * With no backend (`ASC_HAVE_AUDIO` absent, or no device) `play()` returns null
 //     and `Sound.length` is 0. That is reported, not hidden: `ready` goes false and
 //     the player bar says there is no audio rather than showing a dead transport.
@@ -38,8 +38,6 @@ package hymn
         private var sound:Sound = null;
         private var chan:SoundChannel = null;
         private var imageKey:String = "";   // hymn|mask|instrument of the live image
-        // One below the runtime's 64-slot PCM table (compiler-gaps.md G46).
-        private static const IMAGE_CAP:int = 56;
         private var voices:Array = null;    // the four note strings of the open tune
         private var lenSec:Number = 0;
 
@@ -136,20 +134,9 @@ package hymn
             var k:String = this.keyOf(mask, instrument);
             if (k == this.imageKey && this.sound != null) return true;
 
-            // The backend's PCM registry is 64 slots for the life of the process
-            // (`g_bufs[64]` in vendor/audio_glue.c, malloc'd and never freed), and the
-            // 65th registration throws #2068 with nothing an app can do about it. A
-            // session that plays enough tunes or toggles parts enough times can reach
-            // that, so this class stays one image below the wall and says so instead
-            // of dying. It is a backend limit, not a mix decision: see compiler-gaps.md.
-            if (this.regs >= IMAGE_CAP)
-            {
-                this.sound = null;
-                this.imageKey = "";
-                this.status = "audio images full (" + String(this.regs) + ")";
-                return false;
-            }
-
+            // No image cap: the PCM registry grows on demand (compiler-gaps.md G46,
+            // closed 阶段四百三十二 -- the old hard 64-slot wall that threw #2068 is gone).
+            // `regs` still counts registrations so a leak would be visible in the beacon.
             var r:Object = HymnSynth.render(this.voices, mask, instrument, this.lenSec);
             this.samples = int(r.samples);
             this.peak = Number(r.peak);

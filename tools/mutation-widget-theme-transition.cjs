@@ -3,7 +3,8 @@
 //
 // Proves probes/widgets/theme-transition catches: a reveal that snaps instead of
 // progressing, a circle mask that never grows, reduced-motion ignored, a fade that
-// never clears, and an instant swap that forgets to repaint.
+// never clears, an instant swap that forgets to repaint, and a reveal mask detached
+// from the new snapshot (so it covers the window from frame 0).
 //
 // Usage: node tools/mutation-widget-theme-transition.cjs  (writes reviews/mutation-widget-theme-transition.txt)
 const fs = require('node:fs');
@@ -43,7 +44,7 @@ const MUTATIONS = [
   {
     id: 'M2',
     why: 'the circle reveal radius is pinned to 0 -> the new skin is never revealed at the click point',
-    apply() { patch('kit/asaot/ui/ThemeTransition.as', 'var r:Number = this._maxR * p * this._scale;', 'var r:Number = 0;'); },
+    apply() { patch('kit/asaot/ui/ThemeTransition.as', 'var r:Number = this._maxR * p;', 'var r:Number = 0;'); },
   },
   {
     id: 'M3',
@@ -62,8 +63,8 @@ const MUTATIONS = [
   },
   {
     id: 'M6',
-    why: 'the circle composite selects NEW outside the disc -> the reveal direction is inverted',
-    apply() { patch('kit/asaot/ui/ThemeTransition.as', 'if (d2 >= rOut2) cv[i] = ov[i];', 'if (d2 >= rOut2) cv[i] = nv[i];'); },
+    why: 'the reveal mask is detached from the new snapshot -> NEW covers the window from frame 0 (no progressive reveal)',
+    apply() { patch('kit/asaot/ui/ThemeTransition.as', 'this._new.mask = this._mask;', 'this._new.mask = null;'); },
   },
 ];
 

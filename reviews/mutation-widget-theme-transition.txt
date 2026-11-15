@@ -17,8 +17,8 @@ M4  CAUGHT  the fade overlay alpha stays 1 -> the old skin never clears to revea
 M5  CAUGHT  the instant (reduced-motion) path forgets to reflow -> the swap is not visible immediately
      FAIL  program verdict: FAIL reduced: not light immediately after the instant swap;
      verdict: RESULT: FAIL
-M6  CAUGHT  the circle composite selects NEW outside the disc -> the reveal direction is inverted
-     FAIL  program verdict: FAIL circle: click point already new at begin (radius must be 0);
+M6  CAUGHT  the reveal mask is detached from the new snapshot -> NEW covers the window from frame 0 (no progressive reveal)
+     FAIL  program verdict: FAIL circle: click point already new at begin (radius must be 0); circle: click point not revealed mid-flight (got 0xffffff); sweep: left
      verdict: RESULT: FAIL
 
 MUTATION theme-transition: 6/6 caught, 0 problem(s)

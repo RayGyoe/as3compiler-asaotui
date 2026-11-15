@@ -7,33 +7,27 @@
 // moment, built from the engine's own display list, with no shader and no second
 // render pipeline.
 //
-// HOW (snapshot + per-frame composite, the only honest way without a shader):
+// HOW (snapshot + display-list mask):
 //   * UiApp captures the stage BEFORE the swap (the OLD appearance) and AFTER the
 //     swap has been reflowed (the NEW appearance), as two BitmapData at DEVICE
 //     resolution (a logical-size snapshot would be upscaled on a HiDPI backing and
-//     blur). The composite is displayed scaled back to logical so it lands 1:1.
+//     blur). Each is shown as a Bitmap scaled back to logical so it lands 1:1.
 //   * `fade`  : the OLD bitmap lies over the live NEW tree, alpha 1 -> 0.
-//   * `circle`: a composite bitmap, rebuilt each frame: every pixel takes the NEW
-//     snapshot inside a growing disc and the OLD outside, with a ~1.5px anti-
-//     aliased blend at the edge.
-//   * `sweep` : the same composite, the boundary is a vertical line moving left ->
-//     right.
+//   * `circle`: OLD underneath, NEW on top masked by a Shape disc growing from the
+//     click point; inside the disc the new skin shows, outside the old.
+//   * `sweep` : the same pair, the mask is a rectangle widening left -> right.
 //   * At t = 1 the layer is removed and the live NEW tree is all that remains.
 //
-// WHY A PIXEL COMPOSITE AND NOT A DISPLAY-LIST MASK. Masking a Bitmap (or a
-// container holding one) with a Shape double-images the content in this runtime --
-// a light ghost offset from the dark reveal, read as blur + jitter at the moving
-// edge. It happens on screen AND in BitmapData.draw's offscreen raster, with both
-// the vector clipPath and the cacheAsBitmap pixel path; masking the kit's VECTOR
-// containers is fine, so the defect is specific to bitmap content. copyPixels'
-// alpha-mask argument is also unimplemented. So the reveal is computed directly
-// from the two snapshots' pixel vectors (getVector/setVector, both implemented) and
-// shown as ONE unmasked Bitmap -- no mask anywhere, no ghost. The runtime
-// mask-on-bitmap defect is logged upstream in compiler-gaps.md.
+// WHY A MASK IS SAFE NOW. An earlier revision computed the reveal per-pixel from
+// getVector/setVector because masking bitmap content was SUSPECTED of double-imaging
+// (compiler-gaps.md G50) and copyPixels' alpha mask was unimplemented (G51). Both are
+// resolved: G50 was pixel-verified to have NO offset/ghost (the "ghost" was the disc
+// edge crossing text, a misread) and closed as a non-gap; G51's alpha mask is now
+// implemented. So the reveal uses the idiomatic display-list mask -- the Shape is
+// redrawn each frame and the runtime rasterises it (no per-pixel AS3 loop).
 //
-// COST: the two snapshot vectors are read ONCE at begin; each frame is a tight
-// per-pixel select (only the thin edge band pays for a sqrt + blend), then one
-// setVector. No per-pixel API calls, no allocation in the loop.
+// COST: each frame clears and redraws ONE Shape (a disc or a rect) and the runtime
+// composites the masked bitmap. No per-pixel API calls, no allocation in the loop.
 //
 // WHY IT IS SAFE TO FREEZE CONTENT FOR ms: the bitmaps are snapshots, so ticking
 // content (a live board) holds still during the reveal -- exactly what a snapshot
@@ -51,8 +45,8 @@ package asaot.ui
     import flash.display.Bitmap;
     import flash.display.BitmapData;
     import flash.display.DisplayObjectContainer;
+    import flash.display.Shape;
     import flash.display.Sprite;
-    import flash.geom.Rectangle;
     import flash.utils.getTimer;
 
     public final class ThemeTransition
@@ -61,18 +55,12 @@ package asaot.ui
         private var _layer:Sprite;
         // fade: the old snapshot, alpha-animated over the live tree.
         private var _fade:Bitmap;
-        // circle/sweep: one composite bitmap, rebuilt each frame from old + new.
-        private var _comp:Bitmap;
+        // circle/sweep: old underneath, new on top masked by the reveal Shape.
+        private var _old:Bitmap;
+        private var _new:Bitmap;
+        private var _mask:Shape;
         private var _oldBd:BitmapData;
         private var _newBd:BitmapData;
-        private var _compBd:BitmapData;
-        private var _oldVec:Vector.<uint>;
-        private var _newVec:Vector.<uint>;
-        private var _compVec:Vector.<uint>;
-        private var _fullRect:Rectangle;
-        private var _dw:int;
-        private var _dh:int;
-        private var _scale:Number;
         private var _type:String;
         private var _start:Number;
         private var _ms:Number;
@@ -108,7 +96,6 @@ package asaot.ui
             this._oy = oy;
             this._w = w;
             this._h = h;
-            this._scale = oldBd.width / w;
             // Reach the farthest corner so the disc always covers the whole window.
             var dx:Number = Math.max(ox, w - ox);
             var dy:Number = Math.max(oy, h - oy);
@@ -129,19 +116,20 @@ package asaot.ui
             {
                 this._oldBd = oldBd;
                 this._newBd = newBd;
-                this._dw = oldBd.width;
-                this._dh = oldBd.height;
-                this._fullRect = new Rectangle(0, 0, this._dw, this._dh);
-                // Read the two static snapshots once; the per-frame loop only selects
-                // between them, so no pixel API call or allocation happens per frame.
-                this._oldVec = oldBd.getVector(this._fullRect);
-                this._newVec = newBd.getVector(this._fullRect);
-                this._compVec = new Vector.<uint>(this._dw * this._dh);
-                this._compBd = new BitmapData(this._dw, this._dh, true, 0x00000000);
-                this._comp = new Bitmap(this._compBd);
-                this._comp.scaleX = w / this._dw;
-                this._comp.scaleY = h / this._dh;
-                this._layer.addChild(this._comp);
+                this._old = new Bitmap(oldBd);
+                this._old.scaleX = w / oldBd.width;
+                this._old.scaleY = h / oldBd.height;
+                this._new = new Bitmap(newBd);
+                this._new.scaleX = w / newBd.width;
+                this._new.scaleY = h / newBd.height;
+                this._mask = new Shape();
+                this._layer.addChild(this._old);
+                this._layer.addChild(this._new);
+                this._layer.addChild(this._mask);
+                // The mask lives in the layer's (logical) coordinate space, so the
+                // disc/rect is drawn in logical pixels even though the bitmaps are
+                // device-resolution; the runtime rasterises the mask at backing scale.
+                this._new.mask = this._mask;
             }
             host.addChild(this._layer);
             this._active = true;
@@ -175,79 +163,22 @@ package asaot.ui
                 this._fade.alpha = 1 - p;
                 return;
             }
-            var ov:Vector.<uint> = this._oldVec;
-            var nv:Vector.<uint> = this._newVec;
-            var cv:Vector.<uint> = this._compVec;
-            var dw:int = this._dw;
-            var dh:int = this._dh;
-            // Edge half-width in device pixels: a ~1.5px logical band keeps the
-            // moving boundary smooth instead of stair-stepping (which reads as jitter).
-            var aa:Number = 1.5 * this._scale;
-            var i:int = 0;
-            var x:int;
-            var y:int;
+            var g:Object = this._mask.graphics;
+            g.clear();
+            g.beginFill(0xFFFFFF, 1);
             if (this._type == "circle")
             {
-                var cx:Number = this._ox * this._scale;
-                var cy:Number = this._oy * this._scale;
-                var r:Number = this._maxR * p * this._scale;
-                // The nominal radius is the OUTER edge of the AA band: coverage is
-                // (r - dist)/aa, so r == 0 reveals nothing (the begin frame must be
-                // wholly old) and the band softens inward, never past the centre.
-                var rOut:Number = r;
-                var rIn:Number = r - aa;
-                if (rIn < 0) rIn = 0;
-                var rOut2:Number = rOut * rOut;
-                var rIn2:Number = rIn * rIn;
-                for (y = 0; y < dh; y++)
-                {
-                    var ddy:Number = y - cy;
-                    var ddy2:Number = ddy * ddy;
-                    for (x = 0; x < dw; x++)
-                    {
-                        var ddx:Number = x - cx;
-                        var d2:Number = ddx * ddx + ddy2;
-                        // Fast paths cover everything but the thin edge band; only the
-                        // band pays for a sqrt and a channel blend.
-                        if (d2 >= rOut2) cv[i] = ov[i];
-                        else if (d2 <= rIn2) cv[i] = nv[i];
-                        else cv[i] = blend(ov[i], nv[i], (r - Math.sqrt(d2)) / aa);
-                        i++;
-                    }
-                }
+                var r:Number = this._maxR * p;
+                // r == 0 draws nothing: an empty mask hides the NEW bitmap entirely,
+                // so the begin frame is wholly OLD (the probe pins this).
+                if (r > 0) g.drawCircle(this._ox, this._oy, r);
             }
             else
             {
-                var lim:Number = this._w * p * this._scale;
-                var limOut:Number = lim;
-                var limIn:Number = lim - aa;
-                if (limIn < 0) limIn = 0;
-                for (y = 0; y < dh; y++)
-                {
-                    for (x = 0; x < dw; x++)
-                    {
-                        if (x >= limOut) cv[i] = ov[i];
-                        else if (x <= limIn) cv[i] = nv[i];
-                        else cv[i] = blend(ov[i], nv[i], (lim - x) / aa);
-                        i++;
-                    }
-                }
+                var lim:Number = this._w * p;
+                if (lim > 0) g.drawRect(0, 0, lim, this._h);
             }
-            this._compBd.setVector(this._fullRect, cv);
-        }
-
-        // Straight-ARGB lerp of two opaque pixels (both snapshots are opaque, so the
-        // result alpha stays 255). t is clamped coverage 0..1.
-        private function blend(o:uint, n:uint, t:Number):uint
-        {
-            if (t <= 0) return o;
-            if (t >= 1) return n;
-            var ia:Number = 1 - t;
-            var a:uint = uint(((o >> 24) & 255) * ia + ((n >> 24) & 255) * t);
-            var r:uint = uint(((o >> 16) & 255) * ia + ((n >> 16) & 255) * t);
-            var g:uint = uint(((o >> 8) & 255) * ia + ((n >> 8) & 255) * t);
-            var b:uint = uint((o & 255) * ia + (n & 255) * t);
-            return (a << 24) | (r << 16) | (g << 8) | b;
+            g.endFill();
         }
 
         private function top():void
@@ -260,22 +191,20 @@ package asaot.ui
 
         private function finish():void
         {
+            if (this._new != null) this._new.mask = null;
             if (this._layer != null && this._layer.parent != null)
             {
                 this._layer.parent.removeChild(this._layer);
             }
             if (this._oldBd != null) this._oldBd.dispose();
             if (this._newBd != null) this._newBd.dispose();
-            if (this._compBd != null) this._compBd.dispose();
             this._layer = null;
             this._fade = null;
-            this._comp = null;
+            this._old = null;
+            this._new = null;
+            this._mask = null;
             this._oldBd = null;
             this._newBd = null;
-            this._compBd = null;
-            this._oldVec = null;
-            this._newVec = null;
-            this._compVec = null;
             this._host = null;
             this._active = false;
             this._progress = 1;

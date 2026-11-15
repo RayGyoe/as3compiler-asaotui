@@ -898,23 +898,24 @@
 | 我们怎么做 | `vendor/audio_glue.c:102` 的 `static as_pcm_buf g_bufs[64]`；`as_audio_register_pcm` 在 `g_buf_count >= 64` 时返回 `-1`，成功时 `memcpy` 一份 `malloc` 的副本**永不 free**；`as_audio_voice_reap` 只回收**声道**，不碰缓冲区 |
 | 失败形态 | `src/emit.ts:16239` 的 `o->_snd_buf = as_audio_register_pcm(...)`：注册失败且 `as_snd_accept_undecoded` 不接管（**有**后端时）⇒ `#2068 "Error #2068: Invalid sound."`。这是 `throw`，不是可处理的返回值 |
 | 实测代价（hymn-demo） | 一趟 37 s / 22.05 kHz / 单声道 float32 = **3.29 MB**；64 槽 = 最坏 **211 MB** 常驻 + 一次必崩。`HymnAudio.regs` 在 beacon 里可见（`play`=1、`muteS`=2、`flute`=3） |
-| 现在的规避 | `hymn-demo` 自己封顶 `IMAGE_CAP = 56`（离 64 留余量）：到顶后不再渲染，`status` 变成 `audio images full (56)`、播放停下并**明说**，不抛异常。另外 `pick()` 采纳上游「`load()` replaces the tune and **stops playback**」的语义，于是「边放边翻列表」不会一次一个映像 |
+| 库侧绕行（已撤） | 上游修好后，`hymn-demo/HymnAudio.as` 的 `IMAGE_CAP = 56` 封顶与 `regs >= IMAGE_CAP` 守卫（含 `audio images full (…)` 状态）**已删除**，注册表按需增长、旧块永不 free。hymn tour 实测 `regs=3/4` 按需增长无封顶。`pick()` 仍采纳上游「`load()` replaces the tune and **stops playback**」语义（这是 AIR 契约，非绕行） |
 | 建议的上游修法 | ① 表按需增长；② 给出可回收路径（`Sound` 不可达时回收其 `buf`，或让 `close()` 对 PCM 映像生效）；③ 至少让注册失败返回可处理状态而不是 `throw` |
 | 为何不算本仓 bug | 「一个 `Sound` 的生命周期内不能丢数据」是对的；不对的是**上限被写死成 64 且不可回收**——这是 `g_bufs` 的实现选择，不是 AIR 的契约。登记在此，等上游决定 |
 | 状态（阶段四百三十二已修） | ✅ **上游已修**：`vendor/audio_glue.c` 的 `g_bufs` 改为按需倍增的指针表（`as_buf_reserve`，初值 64），**旧块永不释放**——实时音频线程无锁读 `g_bufs[voice.buf]`，持旧指针仍安全（poor-man's RCU，O(log N) 保留）；新条目写完再 `__atomic_store_n` 发布。4 处注册路径（decode/register_pcm/stream/buffered）统一改 `if (!as_buf_reserve()) return -1;`，硬 64 上限消除。示例 `examples/audio-pcm-registry.as` 注册 80 个映像（>64）全过；钉 `unit: transport/ProgressiveSound`（4 条）。**回收路径（建议②）仍未做**——`Sound` 不可达时回收其 buf 属增强，另议 |
 
 
-### G47 —— 文本框持焦时 `focusNode(null)` 抛 `Error #1009`：`stage.focus = null` 这条路径在本运行时崩 —— ✅ **复核：非编译器缺陷（库侧 blur）**
+### G47 —— `focusNode(null)` 抛 `Error #1009`：真因是**编译器把短路逻辑的 impure 臂急切提升**（违反短路红线）—— ✅ **编译器缺陷，已修（提升 gating 到 guaranteed）**
 
 | 项 | 内容 |
 |---|---|
-| 现象 | kit 的 `UiApp.focusNode(null)`（「把焦点交还给舞台」）在**某个 TextField 刚持有过焦点**之后调用，立刻抛 `TypeError: Error #1009: Cannot access a property or method of a null object reference`；同一行在「从未聚焦过任何输入框」的会话里不抛 |
-| 复现（hymn-demo，最省事的一条） | 抽屉里的 `searchField` 先 `focusNode(field)`（键盘输入正常），再 `focusNode(null)` 清焦点 ⇒ `hymn.done` 里落 `BLUR-THROW Error #1009`，后续相位全部不执行（截图与 beacon 都停在那一帧） |
-| 出在哪儿 | `UiApp.focusNode(n)` → `applyStageFocus()`：`want is TextField` 才赋 `stage.focus = want`，否则走 `if (this.stage.focus != null) this.stage.focus = null;`。**可确证的只有这一处是唯一差异**（聚焦时 want 是 TextField、不聚焦时走清空分支）；崩在运行时侧的哪一行**没有逐行插桩取证**，推测是清空时触发的失焦派发对内部对象取了属性。别把推测当结论 |
-| 与 G45 的区别 | G45 是 GC 在分配流里跑全量采集（`HymnBook.load()` 位置），G47 是**焦点交接**路径；两者都只在「真窗口 + 长生命周期」里出现，都不会被示例级回归抓到 |
-| hymn-demo 现在的规避 | **失焦对象改成另一个节点**而不是 `null`：`focusNode(this.app.findByKey("reader"))`。语义反而更贴合上游（「失焦即提交」走 `InputWidget.onFieldBlur` 的 `FOCUS_OUT`），beacon 里 `fieldGuard 3->3` 就是这条路径的实测 |
-| 建议的上游修法 | `applyStageFocus()` 的清空分支加空守卫并区分「TextField 会话」与「kit 节点焦点」两个状态；或让 `focusNode(null)` 显式对 `stage.focus` 做 `is TextField` 判断后再赋 `null` |
-| 状态（阶段四百三十二复核：非编译器缺陷） | ✅ **运行时侧已排除**：adl 51.4.1 探针 `temp/g47/`（input TextField 持焦→`stage.focus=null`）实测 AIR **确实派发** `focusOut`（`relatedObject=null`、`bubbles=true`），AOT 逐行 **IDENTICAL**；`as_set_focus`/`as_focus_dispatch`/`as_ime_target` 全 null 安全。⇒ `stage.focus=null` 的焦点派发与 AIR 一致，**不是编译器缺口**。残留 #1009 在**库侧 blur 处理**（对 `relatedObject=null` 取属性），归 asaotui 库修（`focusNode(null)` 的清空分支加空守卫），编译器不改 |
+| 现象 | kit 的 `UiApp.focusNode(null)`（「把焦点交还给舞台」）抛 `TypeError: Error #1009`。**与是否聚焦过 TextField 无关**——全新会话（从未聚焦）`focusNode(null)` 同样抛（本轮 `probes/widgets/blur-null` 的 FRESH 相位实证） |
+| 真因（本轮逐行取证，纠正旧判定） | 崩在 `focusNode` 的**守卫**而非 `applyStageFocus`：`if (n != null && (n.inert() || !n.visible || n.app != this)) return;`。生成 C 把 `&&` 右侧的 `||` 链**急切提升**成前导临时语句：`bool _sc747 = inert(as_req_obj(n)); bool _sc748 = (_sc747 || ...); bool _sc749 = (_sc746 && _sc748);`——`n=null` 时 `_sc746=false` 本应短路跳过右侧，但 `as_req_obj(n)` 已被急切求值 ⇒ 对空 `n` 调 `inert()` 抛 #1009 |
+| 最小复现（`temp/g47-min/`） | `f != null && f.bar()`（简单守卫）**存活**；`f != null && (f.bar() || f.baz())`（复合 `||`）**抛 #1009**。⇒ 缺陷专属「短路逻辑的 impure 臂被提升」，与 TextField/焦点无关 |
+| 编译器根因 | `src/emit.ts` `sequenceValueExpr` 的 Binary 分支：提升条件 `if (logical && (!isPureExpr(left) || (guaranteed && !isAtomicExpr(left))))` 把 `!isPureExpr(left)` 放在 `guaranteed` 门**外** ⇒ 被短路跳过的分支也发前导语句。违反 AGENTS.md §2.4「短路 `&&`/`||` 不提升」红线 |
+| 修法（已落地） | 提升条件 gating 到 `guaranteed`：`if (logical && guaranteed && (!isPureExpr(left) || !isAtomicExpr(left)))`。双 bool 的 `&&`/`||` 走 `emitBinary` 的 C 快路径（每操作数恰一次、短路），非 guaranteed 不发前导语句。最小改动，不动快路径，避免双求值/值语义回归 |
+| 旧判定为何错（诚实记录） | 阶段四百三十二的复核用 adl 探针测的是 `stage.focus=null` **直接赋值**（那条路径确实 null 安全、与 AIR IDENTICAL），但**没测到真正崩的守卫**——`focusNode` 的 `n != null && (...)` 被误编译。故「非编译器缺陷（库侧 blur）」是**误判**：库代码是正确 AS3，编译器违反了短路语义。本轮以最小复现 + 生成 C 逐行坐实并根治 |
+| 回归钉 | 编译器 `examples/short-circuit-guard.as`（8 组：null 守卫复合 `||` 不抛、跳过分支 impure 操作数零调用、到达时恰一次、`||` 真左跳右、三项 focusNode 形状、对象 `||` 值语义同一性、嵌套跳过）；**有牙验证**：回退修复 ⇒ `Uncaught #1009`，恢复 ⇒ 全过。编译器全量 **711/0**（4 skip）。库侧 `probes/widgets/blur-null`（8 checks：未聚焦 no-op / TextField 持焦后清焦 / 失焦到另一节点）入 `tools/gates.cjs` |
+| 库侧绕行已撤 | `hymn-demo/HymnMain.as` 的 `focusNode(this.app.findByKey("reader"))` 改回 **`focusNode(null)`**（正确 AS3，编译器修好后无需绕路）。hymn tour 实测 `fieldGuard 3->3`（持焦守卫）+ `down,down 3->9`（失焦后 DOWN 走列表）全过 |
 
 ### G48 —— `TextField.textColor` 不覆盖**全段 run 格式**：只改颜色的重绘在屏幕上看不见（主题切换后整套文字停在旧调色板） —— ✅ **阶段四百三十二已修（adl 逐像素一致）**
 
@@ -924,7 +925,7 @@
 | 复现（hymn-demo） | 跑起来后用真实点按点一次标题栏右上角的太阳图标（亮→暗）。`hymn-rects-dark2.txt` 的 `ink` 行逐个节点三个值并列：`brandName=eeeff2/eeeff2/14161c`（= resolved / `tf.textColor` / `tf.getTextFormat().color`） |
 | 出在哪儿 | 渲染侧取色优先级：生成代码的排版入口把 `textColor` 只在**字段没有 run 时**才当颜色用（`fcol = (tf->textColor != 0u && frn == 0) ? tf->textColor : run->color`），而 `setTextFormat` 装的就是 run。`PaintKit.measureField` 必须调 `setTextFormat`（`defaultTextFormat` 只对**之后**赋的文本生效），于是每个被测过的字段都有一个全段 run，`textColor` 永久失效 |
 | 量化 | 亮→暗后 **86/86 个文字节点** `resolved` 与 `textColor` 都是新值、`getTextFormat().color` 全是旧值；同一帧的 `Fill` 全部正确。反方向（暗→亮）不发作，因为那一帧的 measure 顺带重贴了格式 |
-| 库侧规避（已做） | 新增 `PaintKit.applyInk(n, field, color)`：**双通道写** —— 写 `textColor`，并在颜色真的变了时补一次全段 `setTextFormat`（稳态只花一次 uint 比较）。13 个画文字标签的 widget 全部改走它（`Text`/`Card`/`Checkbox`/`Radio`/`Switch`/`Slider`/`RangeSlider`/`Progress`/`Badge`/`Chip`/`Avatar`/`Tabs`/`Tooltip`）。窗口实测：亮→暗点一次，正文与品牌标题立即正常 |
+| 库侧绕行（已撤，简化为单通道） | 上游修好后 `textColor` 已覆盖全段 run，`PaintKit.applyInk(n, field, color)` 的**双通道写已简化为单通道**：`if (field == null) return; if (field.textColor == color) return; field.textColor = color;`（删去第二通道 `formatFor`+`setTextFormat`）。13 个画文字标签的 widget 仍走它。`tools/ink-guard.cjs` PASS、`mutation-ink-guard` 8/8、`probes/widgets/theme` 75/0 |
 | 闸门 | `run-hymn.cjs` 的像素色板闸门新增第三态（亮→暗快照 `hymn-dark2.png`）与**品牌带墨色亮度**扫描。修前该闸门红：`back to dark: brand ink peaks at luma 22, want > 200`；修后 `palette canary OK` |
 | 是否为运行时缺陷 | **待 `adl` 校验**：`textColor` 在 AIR 里是否覆盖已有 run。**注意：**“本机无 AIR SDK”这句旧结论已推翻（见 §2）——现在 `mxmlc`/`adl` 均能在本机跑（本轮实测 `air-sweep` 61/61 页），所以这一条从“没法验”变成了“还没验”：要做的是在 AIR 上布一张“先 `setTextFormat` 再 `textColor`”的图，看像素跟 run 还是跟 `textColor`。若跟 run ⇒ 我们的运行时与 AIR 一致，G48 直接关闭为「非缺口」；若 AIR 覆盖 ⇒ 上游应让全段 run 也吃 `textColor`，库侧双通道仍无害但可简化 |
 | 状态（阶段四百三十二已修） | ✅ **adl 定性 + 上游已修**：探针 `temp/g48/` 实测 AIR 的 `textColor` setter **覆盖全段 run**（case A：`setTextFormat(红)`后 `textColor=蓝` ⇒ 墨色蓝且 `getTextFormat().color=蓝`；case B 后写的 `setTextFormat` 生效）。修法：`TextField_set_textColor` 镜像 AIR——`as_tf_fmt_blank()` 造 color-only 格式后 `TextField_setTextFormat(_this,f,0,-1)` 全段施加（merge 保留字号/字体）。AOT 5 例与 AIR **逐像素 IDENTICAL**。示例 `examples/textcolor-run.as`；钉 `unit: render/TextColorRun`（5 条）+ 重锚 render/text-input 旧 setter 钉。库侧 `PaintKit.applyInk` 双通道仍无害可简化 |
@@ -950,7 +951,7 @@
 | 隔离实证 | ① 旧/新快照本身**干净、对齐、不透明、同尺寸**（逐像素 dump 比对）；② 静态把快照位图 alpha=1 叠在活树上**完全对齐干净**；③ 去掉 mask 赋值重影消失；④ `cacheAsBitmap=true`（像素 mask DstIn 路径）**无效**；⑤ 把 mask 施于 `Sprite` 包裹层**仍双影**；⑥ `BitmapData.draw` **离屏栅格化**带 mask 的包裹层**也双影** ⇒ 缺陷在 mask 对**位图内容**的栅格化本身，屏上/离屏两条路径都中招 |
 | 对照 | kit 的 overflow 裁剪用 mask 作用于**矢量容器**（`probes/widgets/clip` 33/33）正常 ⇒ 缺陷**专属于位图内容**，不是 mask 普遍坏 |
 | 影响 | 任何「位图快照 + 形状 mask 揭示」的动效（换肤圆形揭示、扫光、GIF 遮罩切换）都会边缘双影 |
-| 库侧绕路 | `ThemeTransition` 改为**无 mask 的逐像素向量合成**：`getVector` 预取旧/新快照，每帧按圆/矩形判定 `cv[i]=inside?new:old`（仅 ~1.5px 边缘带做 AA 混合），`setVector` 写回单张 `Bitmap` 显示。**逐像素验证 120000 像素 0 异常**（每像素恰为 old[i]/new[i]/同坐标混合）；1500×1050 下 **2.5ms/帧**，无抖动。探针 `probes/widgets/theme-transition` 13/13、变异门 6/6 |
+| 库侧绕路（已撤，回退 idiomatic mask） | G50 既经逐像素证实**非缺口**、G51 alpha mask 已修，`ThemeTransition` **回退到 display-list Shape mask**：`_old` 在下、`_new` 在上 + `_mask:Shape` 每帧 `clear/beginFill/drawCircle|drawRect/endFill`，`_new.mask = _mask`；fade 仍 alpha 1→0。成本＝每帧一个 Shape 重绘，**无逐像素 AS3 循环**（比向量合成更简更省）。探针 `probes/widgets/theme-transition` 13/13、变异门 6/6（M2 钉「圆永不长」、M6 钉「遮罩脱落首帧全覆盖」） |
 | 证据强度（诚实声明） | 上述①～⑥均为**视觉判读**。而「圆边界穿过文字」本身就会呈现旧深字/白底 vs 新浅字/深底的分裂，极易被误读为「偏移重影」——**向量合成版**曾被同样误读，后经逐像素判定（comp[i] 恰为 old[i]/new[i]/同坐标混合，120000 像素 0 异常）证明是**正确揭示**。mask 版**未做**该逐像素判定，故「双影」是**疑似**、不是已证实的缺陷。要立案须把 mask 版中途帧与向量参考逐像素比对（偏移坐标匹配才算真重影） |
 | 建议（上游） | 若逐像素证实 mask 对位图内容有栅格化偏移（屏上合成与 `BitmapData.draw` 离屏两条路径同源）再修；验收＝「带 mask 的位图揭示中途帧与无 mask 向量参考逐像素一致」 |
 | 状态（阶段四百三十二复核：非缺口，关闭） | ✅ **D1 后逐像素证实无偏移/重影**：探针 `temp/g50/`（锐利非对称位图 + Shape mask，`BitmapData.draw` 离屏）——全覆盖 mask 与原图 **0 差异**；部分矩形 mask 与向量参考 **0 差异、mask 外 0 重影**；圆形 mask 内圈 **0 差异**、外圈 **0 重影**。⇒ 文档自警的「圆边界穿字被误读为偏移重影」成立，mask 对位图内容栅格化**无偏移**。按本文档纪律（逐像素证实才立案）**关闭为非缺口**；库侧向量合成绕路可保留（已逐像素证明正确）也可回退 mask |
@@ -964,7 +965,7 @@
 | 现象 | `copyPixels(src, srcRect, dest, alphaBmp, alphaPt, mergeAlpha)` 应当用 `alphaBmp` 的 alpha 通道调制源像素（做软遮罩合成），实际**整块矩形直 blit**，alpha 遮罩完全不起作用 |
 | 实证 | `temp/asc-head/src/emit.ts` `BitmapData_copyPixels`（约 24409 行）开头即 `(void)alphaBmp; (void)alphaPt; (void)mergeAlpha;`，循环体只做 `bd->pixels[..] = src->pixels[..]` ⇒ 三个参数从未参与 |
 | 影响 | 想用 `copyPixels` 的 alpha 遮罩做逐帧揭示合成（G50 的第一版绕路方案）会**整块覆盖**而非按遮罩揭示 |
-| 库侧绕路 | 同 G50：改用 `getVector`/`setVector`（两者**已实现**，row-major ARGB）做逐像素合成 |
+| 库侧绕路（已撤） | 同 G50：alpha mask 修好后 `ThemeTransition` 回退 display-list Shape mask，不再用 `getVector`/`setVector` 逐像素合成（两者仍已实现、row-major ARGB，它处可用） |
 | 建议（上游） | 实现 `copyPixels` 的 alpha 遮罩与 `mergeAlpha` 语义（AIR 有）；属遗留欠账，立项须先补 `adl` 实测 |
 | 状态（阶段四百三十二已修） | ✅ **adl 实测 + 上游已修**：探针 `temp/copyprobe/` 锁定 AIR 语义——alpha 调制 `modA = maskA==255 ? srcA : (srcA*maskA)>>8`（m255 特例，44 点扫描全匹配）；`mergeAlpha=false` 直拷 RGB + 调制 alpha 替换、alpha=0 整像素清零；`mergeAlpha=true` 调制后 source-over。`BitmapData_copyPixels` 实现三参数（含 `alphaPoint` 偏移采样、越界读透明）。**false 路径 12 例+扫描逐像素 IDENTICAL**；**true 路径 64 例 ±1 取整容差**（AIR 内部 premul 取整极精细，视觉不可察，如实记录）。示例 `examples/copypixels-alpha.as`；钉 `unit: render/CopyPixelsAlpha`（8 条） |
 

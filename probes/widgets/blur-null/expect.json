@@ -1,0 +1,11 @@
+{
+  "w": 240,
+  "h": 120,
+  "rects": {
+    "root": [0, 0, 240, 120]
+  },
+  "points": [
+    { "x": 5, "y": 5, "rgb": "#FFFFFF", "why": "root padding is the white surface" }
+  ],
+  "_why": "G47 reproduction: focus a TextField then focusNode(null). The verdict carries the assertion (no #1009, stage.focus cleared); geometry is just the root so the probe stays about the focus path, not layout."
+}

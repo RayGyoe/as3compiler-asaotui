@@ -321,11 +321,13 @@ package hymn
                         this.kGuard0 = this.model.sel;
                         this.sendKey(40, false);
                         this.kGuard1 = this.model.sel;
-                        // BLUR TO A NODE, NOT TO NULL: focusNode(null) while a text field
-                        // holds the focus throws Error #1009 in this runtime (compiler-gaps
-                        // G47); moving the focus to any other node is the path the typing
-                        // probe already walks and it is clean.
-                        this.app.focusNode(this.app.findByKey("reader"));
+                        // BLUR STRAIGHT TO NULL. G47 is fixed: focusNode(null) while a text
+                        // field holds the focus used to throw #1009 because the compiler
+                        // eagerly hoisted the impure arm of the short-circuited null guard
+                        // (`n != null && (n.inert() || ...)`) out of the branch. That hoist is
+                        // now gated on `guaranteed`, so null blur is clean (probes/widgets/
+                        // blur-null pins it). No need to detour through another node.
+                        this.app.focusNode(null);
                         // DOWN walks the FILTERED list (the `With tune` segment is on),
                         // which is why the numbers jump instead of counting up by one.
                         this.kSel0 = this.model.sel;

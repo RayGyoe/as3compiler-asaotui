@@ -736,6 +736,11 @@ const PROBES = ['widgets/chip', 'widgets/form', 'widgets/display', 'widgets/nav'
     // text-sized readout moves the button (sensitive), a fixed-width slot keeps it
     // put (the fix for the reported theme-swap "jitter"). Layout deltas, no timing.
     'widgets/center-stable',
+    // G47: focusNode(null) is a safe no-op both with nothing focused and after a
+    // TextField held the focus. The root cause was a COMPILER short-circuit hoist
+    // (the impure arm of `n != null && (n.inert() || ...)` ran on a null n); fixed
+    // upstream by gating the hoist on `guaranteed`. This pins the restored contract.
+    'widgets/blur-null',
                  'widgets/actions',
                  // `clip` is the pin for compiler-gaps G29, which the library closed by
                  // finally CONSUMING a style field nothing read: three 120x28 boxes with
