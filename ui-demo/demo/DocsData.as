@@ -11,6 +11,7 @@ package demo
     import asaot.ui.row;
     import asaot.ui.scrollView;
     import asaot.ui.sparkline;
+    import asaot.ui.colorWheel;
     import asaot.ui.table;
     import asaot.ui.text;
     import asaot.ui.tree;
@@ -645,6 +646,22 @@ package demo
                 })
             ];
 
+            if (id == "colorWheel") return [
+                new DocSection("A hue ring with a draggable dot", [
+                    "`value` is the hue angle 0..1 and `spread` the dot's radius fraction; dragging reports the angle through `onChange(v)`.",
+                    "The ring is the colour spectrum; the disc and dot read the theme, so a palette swap follows."
+                ], [
+                    "colorWheel('Shadows', { value: 0, spread: 0.12, size: [72, 72] }),",
+                    "colorWheel('Mid', { value: 0.12, spread: 0.3, size: [72, 72] })"
+                ], 110, function ():Node
+                {
+                    return row({ gap: 24 }, [
+                        column({ alignItems: "center", gap: 6 }, [ colorWheel("Shadows", { value: 0, spread: 0.12, size: [72, 72] }), text("SHADOWS", {}) ]),
+                        column({ alignItems: "center", gap: 6 }, [ colorWheel("Mid", { value: 0.12, spread: 0.3, size: [72, 72] }), text("MID", {}) ]),
+                        column({ alignItems: "center", gap: 6 }, [ colorWheel("Highlights", { value: 0, spread: 0.12, size: [72, 72] }), text("HIGHLIGHTS", {}) ])
+                    ]);
+                })
+            ];
             if (id == "sparkline") return [
                 new DocSection("One series in a box", [
                     "A sparkline is 5..60 numbers and a rectangle -- the shape of a day, not a chart.",

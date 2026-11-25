@@ -82,6 +82,7 @@ package demo
                 new DocPage("virtualList", "virtualList", 6, "Only the visible rows exist as nodes."),
                 new DocPage("scrollView", "scrollView", 6, "A clipped viewport over content taller than itself."),
                 new DocPage("sparkline", "sparkline", 6, "A series in a box: the shape of a day, a hundred points wide."),
+                new DocPage("colorWheel", "colorWheel", 6, "A hue ring with a draggable dot: shadows/mid/highlights colour picking."),
 
                 new DocPage("tabs", "tabs", 7, "A strip that writes its index back through a Binding."),
                 new DocPage("breadcrumb", "breadcrumb", 7, "A trail of crumbs; the last one is current."),
